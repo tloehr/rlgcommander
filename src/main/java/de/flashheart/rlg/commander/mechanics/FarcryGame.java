@@ -25,6 +25,12 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
+
+/**
+ * Ein Hello-World-Programm in Java.
+ * Dies ist ein Javadoc-Kommentar.
+ *
+ */
 @Log4j2
 public class FarcryGame extends TimedGame implements HasRespawn {
     private final int flagcapturetime;
