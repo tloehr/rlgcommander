@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Finite State Machine to implement a capture point for CONQUEST type of games
+
+  https://github.com/Ankzz/easyfsm
+-->
+
+<FSM>
+    <STATE id="PROLOG" type="ID">
+        <MESSAGE id="START" nextState="NEUTRAL"/>
+        <MESSAGE id="INIT" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="NEUTRAL">
+        <!-- As we have only one button it always starts with blue. red players have to push twice.-->
+        <MESSAGE id="BTN01" nextState="BLUE"/>
+        <MESSAGE id="GAME_OVER" nextState="GAME_OVER"/>
+        <MESSAGE id="INIT" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="BLUE">
+        <MESSAGE id="BTN01" nextState="RED"/>
+        <MESSAGE id="GAME_OVER" nextState="GAME_OVER"/>
+        <MESSAGE id="INIT" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="RED">
+        <MESSAGE id="BTN01" nextState="BLUE"/>
+        <MESSAGE id="GAME_OVER" nextState="GAME_OVER"/>
+        <MESSAGE id="INIT" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="GAME_OVER">
+        <MESSAGE id="INIT" nextState="PROLOG"/>
+    </STATE>
+</FSM>
+

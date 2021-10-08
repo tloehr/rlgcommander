@@ -1,0 +1,25 @@
+{
+  "comment": "fc assault / BF rush",
+  "game": "farcry",
+  "agent_roles": {
+    "button": [
+      "ag01"
+    ],
+    "led": [
+      "ag01"
+    ],
+    "siren": [
+      "ag02"
+    ],
+    "red_spawn": [
+      "ag03"
+    ],
+    "green_spawn": [
+      "ag04"
+    ]
+  },
+  "match_length": 600,
+  "flag_capture_time": 180,
+  "respawn_period": 0
+}
+

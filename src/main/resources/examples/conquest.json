@@ -1,0 +1,26 @@
+{
+  "comment": "conquest params as used in BF1",
+  "game": "conquest",
+  "agent_roles": {
+    "cp_agents": [
+      "ag01",
+      "ag02",
+      "ag03"
+    ],
+    "siren_agents": [
+      "ag04",
+      "ag05"
+    ],
+    "blue_spawn_agent": [
+      "ag04"
+    ],
+    "red_spawn_agent": [
+      "ag05"
+    ]
+  },
+  "starting_tickets": 250,
+  "minimum_cp_for_bleeding": 1,
+  "starting_bleed_interval": 5,
+  "interval_reduction_per_cp": 2.25,
+  "ticket_price_to_respawn": 1
+}

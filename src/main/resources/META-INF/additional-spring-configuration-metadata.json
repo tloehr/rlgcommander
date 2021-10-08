@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "mqtt.automaticReconnect",
+      "type": "java.lang.String",
+      "description": "Description for mqtt.automaticReconnect."
+  }
+] }
