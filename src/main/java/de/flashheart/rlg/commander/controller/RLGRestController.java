@@ -9,7 +9,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -28,13 +30,22 @@ public class RLGRestController {
         this.agentsService = agentsService;
     }
 
+//    @ExceptionHandler({JSONException.class, NoSuchElementException.class})
+//    public ResponseEntity<ErrorMessage> handleException(Exception exc) {
+//        log.warn(exc);
+//        ErrorMessage message = new ErrorMessage(
+//                new Throwable(new JSONObject().put("error", "no loaded game found").put("reason", exc.getMessage()).toString())
+//        );
+//        return new ResponseEntity<>(message, HttpStatus.OK);
+//    }
+
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
     public ResponseEntity<?> load_game(@RequestBody String description) {
         try {
             return new ResponseEntity<>(gamesService.load_game(description).orElseThrow().getStatus().toString(), HttpStatus.CREATED);
         } catch (JSONException | NoSuchElementException exc) {
-            return new ResponseEntity<>(new JSONObject().put("error", "no loaded game found").put("reason", exc.getMessage()).toString(), HttpStatus.OK);
+            throw new ResponseStatusException(HttpStatus.OK, exc.getMessage(), exc);
         }
     }
 
@@ -44,7 +55,7 @@ public class RLGRestController {
             gamesService.unload_game();
             return new ResponseEntity<>(new JSONObject().put("message", "game unloaded").toString(), HttpStatus.OK);
         } catch (JSONException | NoSuchElementException exc) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exc.getMessage(), exc);
+            throw new ResponseStatusException(HttpStatus.OK, exc.getMessage(), exc);
         }
     }
 

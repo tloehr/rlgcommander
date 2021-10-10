@@ -68,24 +68,29 @@ public class MQTTInbound {
 
             String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
             String payload = message.getPayload().toString();
-            log.debug(topic + " " + payload);
 
-            // split the topic
             List<String> topic_elements = Arrays.asList(StringUtils.splitByWholeSeparatorPreserveAllTokens(topic, "/"));
-            String event = topic_elements.get(topic_elements.size() - 1); //topic.substring(topic.lastIndexOf('/') + 1);
-            String agentid = topic_elements.get(topic_elements.size() - 2);
-            log.debug("{} sent event {}", agentid, event);
+            String agentid = topic_elements.get(topic_elements.size() - 1);
+            log.debug(topic + " -> " + payload);
 
+            JSONObject event = new JSONObject(payload);
+
+//            // split the topic
+//            List<String> topic_elements = Arrays.asList(StringUtils.splitByWholeSeparatorPreserveAllTokens(topic, "/"));
+//            String event = topic_elements.get(topic_elements.size() - 1); //topic.substring(topic.lastIndexOf('/') + 1);
+//            String agentid = topic_elements.get(topic_elements.size() - 2);
+//            log.debug("{} sent event {}", agentid, event);
             // special case for "heartbeats" from agents
-            if (event.equalsIgnoreCase("status")) {
+
+            if (event.keySet().contains("status")) {
                 try {
-                    agentsService.put(agentid, new Agent(new JSONObject(payload)));
+                    agentsService.put(agentid, new Agent(event.getJSONObject("status")));
                 } catch (JSONException e) {
                     agentsService.remove(agentid);
                 }
-            } else {
-                gamesService.react_to(agentid, event);
-                gamesService.getGame().ifPresent(game -> log.debug(game.getStatus()));
+            } else if (event.keySet().contains("button_pressed")) {
+                gamesService.react_to(agentid, event.getString("button_pressed"));
+                //gamesService.getGame().ifPresent(game -> log.debug(game.getStatus()));
             }
         };
     }
