@@ -15,7 +15,7 @@ public class GameTimeIsUpJob extends QuartzJobBean implements InterruptableJob {
         try {
             log.debug(jobExecutionContext.getJobDetail().getKey() + " executed");
             Game game = (Game) jobExecutionContext.getScheduler().getContext().get("game");
-            game.react_to("", "TIMES_UP");
+            game.react_to("TIMES_UP");
         } catch (SchedulerException e) {
             log.fatal(e);
         }

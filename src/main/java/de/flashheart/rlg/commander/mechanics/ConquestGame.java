@@ -26,9 +26,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 /**
- * lifecycle
- * * cleanup before new game is laoded (by GameService)
- *  *
+ * lifecycle * cleanup before new game is laoded (by GameService) *
  */
 @Log4j2
 public class ConquestGame extends ScheduledGame {
@@ -82,7 +80,12 @@ public class ConquestGame extends ScheduledGame {
 
 
     @Override
-    public void react_to(String sender, String message) {
+    public void react_to(String sender, JSONObject event) {
+        if (event.keySet().contains("button_pressed")) {
+            log.debug("message is not for me. ignoring.");
+            return;
+        }
+
         if (agent_roles.get("red_spawn_agent").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // red respawn button was pressed
             mqttOutbound.sendCommandTo(sender, getSignal(
@@ -101,11 +104,10 @@ public class ConquestGame extends ScheduledGame {
                     .put("line_display", new JSONArray(new String[]{"Press Button", "to Respawn"}))
             );
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_to_respawn);
-        } else if (agentFSMs.containsKey(sender)) {
-            agentFSMs.get(sender).ProcessFSM(message.toUpperCase());
-            log.debug("process: " + message);
+        } else if (agentFSMs.containsKey(sender)) { // CP_AGENTS only
+            agentFSMs.get(sender).ProcessFSM(event.getString("button_pressed").toUpperCase());
         } else {
-            log.debug(message + " is not for me. ignoring.");
+            log.debug("message is not for me. ignoring.");
         }
     }
 

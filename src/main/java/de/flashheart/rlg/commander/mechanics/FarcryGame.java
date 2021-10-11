@@ -4,7 +4,6 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.jobs.RespawnJob;
 import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
@@ -19,7 +18,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -27,9 +25,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 
 /**
- * Ein Hello-World-Programm in Java.
- * Dies ist ein Javadoc-Kommentar.
- *
+ * Ein Hello-World-Programm in Java. Dies ist ein Javadoc-Kommentar.
  */
 @Log4j2
 public class FarcryGame extends TimedGame implements HasRespawn {
@@ -37,7 +33,6 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     private final int respawn_period;
 
     private FSM farcryFSM;
-    // contains all agetns to be used: e.g. "led_agent" -> ["ag01", "ag02"];"siren_agent" -> ["ag01", "ag02"]:"button_agents" -> ["ag01", "ag02"]
     private Multimap<String, Agent> agent_roles;
     final JobKey myRespawnJobKey;
 
@@ -53,7 +48,6 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         myRespawnJobKey = new JobKey(name + "-" + RespawnJob.name, name);
 
         init();
-
     }
 
     @Override
@@ -69,15 +63,14 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.sendCommandTo("sirens", getSignal(
                                     new JSONObject()
-                                            .put("sir_all", "off")
-                                            .put("sir1", "1:on,5000;off,1")
+                                            .put("sir1", new JSONArray().put("1:on,5000;off,1"))
                             )
                     );
 
-                    mqttOutbound.sendCommandTo(agent_roles.get("leds"), getSignal(
+                    mqttOutbound.sendCommandTo("leds", getSignal(
                                     new JSONObject()
-                                            .put("led_all", "off")
-                                            .put("led_grn", "∞:on,1000;off,1000")
+                                            .put("led_all", new JSONArray().put("off"))
+                                            .put("led_grn", new JSONArray().put("∞:on,1000;off,1000"))
                             )
                     );
                     estimated_end_time = LocalDateTime.now().plusSeconds(match_length);
@@ -95,15 +88,15 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.sendCommandTo("sirens", getSignal(
                                     new JSONObject()
-                                            .put("sir3", "off")
-                                            .put("sir2", "1:on,1000;off,1")
+                                            .put("sir3", new JSONArray().put("off"))
+                                            .put("sir2", new JSONArray().put("1:on,1000;off,1"))
                             )
                     );
 
                     mqttOutbound.sendCommandTo("leds", getSignal(
                                     new JSONObject()
-                                            .put("led_all", "off")
-                                            .put("led_red", "∞:on,500;off,500")
+                                            .put("led_all", new JSONArray().put("off"))
+                                            .put("led_red", new JSONArray().put("∞:on,500;off,500"))
                             )
                     );
                     estimated_end_time = LocalDateTime.now().plusSeconds(match_length);
@@ -121,15 +114,15 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.sendCommandTo("sirens", getSignal(
                                     new JSONObject()
-                                            .put("sir2", "off")
-                                            .put("sir3", "1:on,1000;off,1")
+                                            .put("sir2", new JSONArray().put("off"))
+                                            .put("sir3", new JSONArray().put("1:on,1000;off,1"))
                             )
                     );
 
                     mqttOutbound.sendCommandTo("leds", getSignal(
                                     new JSONObject()
-                                            .put("led_all", "off")
-                                            .put("led_grn", "∞:on,2000;off,1000")
+                                            .put("led_all", new JSONArray().put("off"))
+                                            .put("led_grn", new JSONArray().put("∞:on,2000;off,1000"))
                             )
                     );
                     estimated_end_time = LocalDateTime.now().plusSeconds(match_length);
@@ -147,16 +140,16 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.sendCommandTo("sirens", getSignal(
                                     new JSONObject()
-                                            .put("sir_all", "off")
-                                            .put("sir1", "1:on,5000;off,1")
+                                            .put("sir_all", new JSONArray().put("off"))
+                                            .put("sir1", new JSONArray().put("1:on,5000;off,1"))
                             )
                     );
 
                     mqttOutbound.sendCommandTo("leds", getSignal(
                                     new JSONObject()
-                                            .put("led_all", "off")
-                                            .put("led_wht", "∞:on,1000;off,1000")
-                                            .put("led_grn", "∞:on,1000;off,1000")
+                                            .put("led_all", new JSONArray().put("off"))
+                                            .put("led_wht", new JSONArray().put("∞:on,1000;off,1000"))
+                                            .put("led_grn", new JSONArray().put("∞:on,1000;off,1000"))
                             )
                     );
                     stop();
@@ -173,16 +166,16 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.sendCommandTo("sirens", getSignal(
                                     new JSONObject()
-                                            .put("sir_all", "off")
-                                            .put("sir1", "1:on,5000;off,1")
+                                            .put("sir_all", new JSONArray().put("off"))
+                                            .put("sir1", new JSONArray().put("1:on,5000;off,1"))
                             )
                     );
 
                     mqttOutbound.sendCommandTo("leds", getSignal(
                                     new JSONObject()
-                                            .put("led_all", "off")
-                                            .put("led_wht", "∞:on,1000;off,1000")
-                                            .put("led_red", "∞:on,1000;off,1000")
+                                            .put("led_all", new JSONArray().put("off"))
+                                            .put("led_wht", new JSONArray().put("∞:on,1000;off,1000"))
+                                            .put("led_red", new JSONArray().put("∞:on,1000;off,1000"))
                             )
                     );
                     stop();
@@ -197,17 +190,26 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.sendCommandTo("sirens", getSignal(
                                     new JSONObject()
-                                            .put("sir_all", "off")
+                                            .put("sir_all", new JSONArray().put("off"))
+                            )
+                    );
+                    mqttOutbound.sendCommandTo("leds", getSignal(
+                                    new JSONObject()
+                                            .put("led_all", new JSONArray().put("∞:on,1000;off,1000"))
                             )
                     );
                     return true;
                 }
             });
 
+            // clearing all additional subscriptions from agents
+            agent_roles.values().stream().collect(Collectors.toSet()).forEach(agent -> mqttOutbound.sendCommandTo(agent, new JSONObject().put("init", "")));
+            // functional subsriptions
+            for (String group : new String[]{"sirens", "leds"}) {
+                agent_roles.get(group).forEach(agent -> mqttOutbound.sendCommandTo(agent, new JSONObject().put("subscribe_to", new JSONArray().put(group))));
+            }
+
             farcryFSM.ProcessFSM("INIT");
-
-            // todo: subscribe to subchannels
-
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             log.error(ex);
             System.exit(1);
@@ -238,17 +240,20 @@ public class FarcryGame extends TimedGame implements HasRespawn {
             }
         }
 
-        react_to("", "START");
+        react_to("START");
         super.start();
     }
 
-    public void react_to(String sender, String message) {
+    @Override
+    public void react_to(String sender, JSONObject event) {
         // internal message OR message i am interested in
-        if (sender.isEmpty() || agent_roles.get("button_agent").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
-            farcryFSM.ProcessFSM(message.toUpperCase());
-            log.debug("process: " + message);
+        if (sender.equalsIgnoreCase("_internal")) {
+            farcryFSM.ProcessFSM(event.getString("message"));
+        } else if (agent_roles.get("button").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))
+                && event.keySet().contains("button_pressed")) {
+            farcryFSM.ProcessFSM(event.getString("button_pressed").toUpperCase());
         } else {
-            log.debug(message + " is not for me. ignoring.");
+            log.debug("message is not for me. ignoring.");
         }
     }
 

@@ -88,8 +88,8 @@ public class MQTTInbound {
                 } catch (JSONException e) {
                     agentsService.remove(agentid);
                 }
-            } else if (event.keySet().contains("button_pressed")) {
-                gamesService.react_to(agentid, event.getString("button_pressed"));
+            } else {
+                gamesService.react_to(agentid, event);
                 //gamesService.getGame().ifPresent(game -> log.debug(game.getStatus()));
             }
         };

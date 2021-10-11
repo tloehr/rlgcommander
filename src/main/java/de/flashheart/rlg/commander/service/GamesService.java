@@ -64,7 +64,7 @@ public class GamesService {
 
     private Optional<Game> load_farcry(JSONObject description) {
         loaded_game = Optional.of(new FarcryGame(
-                createAgentMap(description.getJSONObject("agent_roles"), new String[]{"button", "led", "siren"}),
+                createAgentMap(description.getJSONObject("agent_roles"), new String[]{"button", "leds", "sirens"}),
                 description.getInt("flag_capture_time"),
                 description.getInt("match_length"),
                 0, // description.getInt("respawn_period")
@@ -75,6 +75,7 @@ public class GamesService {
 
     public void unload_game() {
         loaded_game.ifPresent(game -> {
+            log.debug("unloading game {}", game.getStatus());
             game.cleanup();
         });
         loaded_game = Optional.empty();
@@ -109,7 +110,7 @@ public class GamesService {
         return loaded_game;
     }
 
-    public void react_to(String agentid, String event) {
+    public void react_to(String agentid, JSONObject event) {
         loaded_game.ifPresent(game -> {
             game.react_to(agentid, event); // event, will be mostly button
         });
@@ -120,8 +121,8 @@ public class GamesService {
      * the lifetime of the commander
      *
      * @param agents_for_role
-     * @param roles           an array for the keys to be parsed e.g. {"button_agent", "led_agent",
-     *                        "siren_agent","attack_spawn_agent","defend_spawn_agent"}
+     * @param roles           an array for the keys to be parsed e.g. {"button", "leds",
+     *                        "sirens","attack_spawn_agent","defend_spawn_agent"}
      * @return MultiMap with Agents assigned to their roles.
      * @throws JSONException
      */

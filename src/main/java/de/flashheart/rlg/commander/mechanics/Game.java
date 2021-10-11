@@ -2,14 +2,8 @@ package de.flashheart.rlg.commander.mechanics;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.TimeZone;
 
 @Log4j2
 public abstract class Game {
@@ -22,12 +16,19 @@ public abstract class Game {
     }
 
     /**
-     * when something happens we need to react on it. Implement this method to tell us, WHAT we should do.
+     * when something happens, we need to react on it. Implement this method to tell us, WHAT we should do.
      *
-     * @param message
+     * @param event
      */
-    //todo: extend with payload for later use of rfids
-    public abstract void react_to(String sender, String message);
+    public abstract void react_to(String sender, JSONObject event);
+
+    public void react_to(String event) {
+        react_to("_internal", new JSONObject().put("message", event));
+    }
+
+    public void react_to(JSONObject event) {
+        react_to("_internal", event);
+    }
 
     /**
      * call after constructor is finished
@@ -60,11 +61,11 @@ public abstract class Game {
 
     /**
      * simple envelope for a signal (former pin_scheme)
+     *
      * @param jsonObject
      * @return
      */
-    public JSONObject getSignal(JSONObject jsonObject){
+    public JSONObject getSignal(JSONObject jsonObject) {
         return new JSONObject().put("signal", jsonObject);
     }
-
 }

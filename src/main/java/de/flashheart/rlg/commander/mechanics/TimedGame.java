@@ -2,7 +2,6 @@ package de.flashheart.rlg.commander.mechanics;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.GameTimeIsUpJob;
-import de.flashheart.rlg.commander.jobs.RespawnJob;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
@@ -56,7 +55,7 @@ public abstract class TimedGame extends ScheduledGame {
     void monitorRemainingTime() {
         if (estimated_end_time.compareTo(LocalDateTime.now()) <= 0) { // time is up
             deleteJob(gametimeJobKey);
-            react_to("", "TIMES_UP");
+            react_to( "TIMES_UP");
             return;
         }
 
