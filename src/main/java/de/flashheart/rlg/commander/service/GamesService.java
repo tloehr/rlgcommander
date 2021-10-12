@@ -8,14 +8,15 @@ import de.flashheart.rlg.commander.mechanics.FarcryGame;
 import de.flashheart.rlg.commander.mechanics.Game;
 import de.flashheart.rlg.commander.mechanics.ScheduledGame;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.NoSuchElementException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -51,7 +52,7 @@ public class GamesService {
 
     private Optional<Game> load_conquest(JSONObject description) {
         loaded_game = Optional.of(new ConquestGame(
-                createAgentMap(description.getJSONObject("agent_roles"), new String[]{"cp_agents", "blue_spawn_agent", "red_spawn_agent"}),
+                createAgentMap(description.getJSONObject("agent_roles"), Arrays.asList("cp_agents", "blue_spawn_agent", "red_spawn_agent")),
                 description.getBigDecimal("starting_tickets"),
                 description.getBigDecimal("ticket_price_to_respawn"),
                 description.getBigDecimal("minimum_cp_for_bleeding"),
@@ -64,7 +65,7 @@ public class GamesService {
 
     private Optional<Game> load_farcry(JSONObject description) {
         loaded_game = Optional.of(new FarcryGame(
-                createAgentMap(description.getJSONObject("agent_roles"), new String[]{"button", "leds", "sirens"}),
+                createAgentMap(description.getJSONObject("agent_roles"), Arrays.asList("sirens", "leds", "red_spawn", "green_spawn")),
                 description.getInt("flag_capture_time"),
                 description.getInt("match_length"),
                 0, // description.getInt("respawn_period")
@@ -121,33 +122,28 @@ public class GamesService {
      * the lifetime of the commander
      *
      * @param agents_for_role
-     * @param roles           an array for the keys to be parsed e.g. {"button", "leds",
-     *                        "sirens","attack_spawn_agent","defend_spawn_agent"}
+     * @param requiredRoles   an array for the keys to be parsed e.g. {"button", "leds", "sirens","attack_spawn_agent","defend_spawn_agent"}
      * @return MultiMap with Agents assigned to their roles.
      * @throws JSONException
      */
-    private Multimap<String, Agent> createAgentMap(JSONObject agents_for_role, String[] roles) throws JSONException, NoSuchElementException {
+    private Multimap<String, Agent> createAgentMap(JSONObject agents_for_role, List<String> requiredRoles) throws JSONException {
         final Multimap<String, Agent> result = HashMultimap.create();
-        final ArrayList<String> missingRoleAgents = new ArrayList<>();
-        for (final String role : roles) {
-            if (agents_for_role.has(role)) {
-                agents_for_role.getJSONArray(role).toList().forEach(agentid -> {
+        //final ArrayList<String> missingRoleAgents = new ArrayList<>();
 
-                    Optional<Agent> optAgent = Optional.of(new Agent(agentid.toString()));
-                    //Optional<Agent> optAgent = agentsService.getAgent(agentid.toString());
-                    if (optAgent.isPresent()) {
-                        result.put(role, optAgent.get());
-                        log.debug("{} is alive and will be used for {}", agentid, role);
-                    } else {
-                        missingRoleAgents.add(role);
-                    }
+        agents_for_role.keySet().forEach(role -> {
+            JSONArray agents_for_this_role = agents_for_role.getJSONArray(role);
+            agents_for_this_role.forEach(agentid -> {
+                Optional<Agent> optAgent = agentsService.getAgent(agentid.toString());
+                if (optAgent.isEmpty()) {
+                    optAgent = Optional.of(new Agent(agentid.toString()));
+                    log.warn("agent {} is needed for {}, but hasn't reported in yet. will use dummy", agentid, role);
+                } else {
+                    log.debug("{} is alive and will be used for {}", agentid, role);
+                }
+                result.put(role, optAgent.get());
+            });
+        });
 
-                });
-            }
-        }
-        if (!missingRoleAgents.isEmpty()) {
-            throw new NoSuchElementException(String.format("no agent found for role %s", missingRoleAgents.toString()));
-        }
         return result;
     }
 

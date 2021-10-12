@@ -91,8 +91,11 @@ public class MQTTOutbound {
         agents.forEach(agent -> sendCommandTo(agent, jsonObject));
     }
 
-    public void sendCommandTo(String subchannel, JSONObject jsonObject) {
-        gateway.sendToMqtt(jsonObject.toString(), outbound_topic + subchannel+ "/");
+    public void sendCommandTo(String subchannel, JSONObject data) {
+        String header = outbound_topic + subchannel;
+        String _data = data.toString();
+        log.debug("sending: {} - {}", header, _data);
+        gateway.sendToMqtt(_data, header);
       }
 
     public void sendCommandTo(Agent agent,  JSONObject jsonObject) {

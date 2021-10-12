@@ -5,14 +5,22 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.HashSet;
+
 @Log4j2
 public abstract class Game {
     final String name;
     final MQTTOutbound mqttOutbound;
+    final HashSet<String> function_groups;
 
     Game(String name, MQTTOutbound mqttOutbound) {
         this.name = name;
         this.mqttOutbound = mqttOutbound;
+        function_groups = new HashSet<>();
+    }
+
+    public HashSet<String> getFunction_groups() {
+        return function_groups;
     }
 
     /**

@@ -1,5 +1,6 @@
 {
   "comment": "conquest params as used in BF1",
+  "rest_url": "http://localhost:8090/api/game/load",
   "game": "conquest",
   "agent_roles": {
     "cp_agents": [

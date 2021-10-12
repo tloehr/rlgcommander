@@ -1,14 +1,15 @@
 {
   "comment": "fc assault / BF rush",
+  "rest_url": "http://localhost:8090/api/game/load",
   "game": "farcry",
   "agent_roles": {
     "button": [
       "ag01"
     ],
-    "led": [
+    "leds": [
       "ag01"
     ],
-    "siren": [
+    "sirens": [
       "ag02"
     ],
     "red_spawn": [
@@ -22,4 +23,3 @@
   "flag_capture_time": 180,
   "respawn_period": 0
 }
-

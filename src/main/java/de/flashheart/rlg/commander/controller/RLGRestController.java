@@ -6,7 +6,6 @@ import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.support.ErrorMessage;
@@ -31,21 +30,12 @@ public class RLGRestController {
     @ExceptionHandler({JSONException.class, NoSuchElementException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception exc) {
         log.warn(exc.getMessage());
-        ErrorMessage message = new ErrorMessage(new Throwable(exc.getMessage())
-                //new Throwable(new JSONObject().put("error", "no loaded game found").put("reason", exc.getMessage()).toString())
-        );
-
-        return new ResponseEntity<>(message, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(new ErrorMessage(new Throwable(exc)), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
     public ResponseEntity<?> load_game(@RequestBody String description) {
-//        try {
-//            return new ResponseEntity<>(gamesService.load_game(description).orElseThrow().getStatus().toString(), HttpStatus.CREATED);
-//        } catch (JSONException | NoSuchElementException exc) {
-//            throw new ResponseStatusException(HttpStatus.OK, exc.getMessage(), exc);
-//        }
         return new ResponseEntity<>(gamesService.load_game(description).orElseThrow().getStatus().toString(), HttpStatus.CREATED);
     }
 
