@@ -21,13 +21,15 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public abstract class TimedGame extends ScheduledGame {
 
     final int match_length;
-    LocalDateTime match_starting_time, estimated_end_time;
+    LocalDateTime start_time, estimated_end_time;
     final JobKey gametimeJobKey;
+    long remaining;
 
     TimedGame(String name, int match_length, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(name, scheduler, mqttOutbound);
         this.match_length = match_length;
         gametimeJobKey = new JobKey(name + "-" + GameTimeIsUpJob.name, name);
+        remaining = 0l;
     }
 
     public void pause() {
@@ -36,26 +38,32 @@ public abstract class TimedGame extends ScheduledGame {
     }
 
     public void resume() {
-        super.resume();
-        // shift the end_time by the number of seconds the pause lasted
+        if (pause_start_time == null) return;
+        // shift the start and end_time by the number of seconds the pause lasted
         long pause_length_in_seconds = pause_start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS);
+        start_time = start_time.plusSeconds(pause_length_in_seconds);
         estimated_end_time = estimated_end_time.plusSeconds(pause_length_in_seconds);
-        pause_start_time = null;
+
+        super.resume();
         monitorRemainingTime();
     }
 
 
     @Override
     public void start() {
-        match_starting_time = LocalDateTime.now();
-        estimated_end_time = match_starting_time.plusSeconds(match_length);
-        monitorRemainingTime();
+        start_time = LocalDateTime.now();
+    }
+
+    @Override
+    public void stop() {
+        start_time = null;
+        super.stop();
     }
 
     void monitorRemainingTime() {
         if (estimated_end_time.compareTo(LocalDateTime.now()) <= 0) { // time is up
             deleteJob(gametimeJobKey);
-            react_to( "TIMES_UP");
+            react_to("TIMES_UP");
             return;
         }
 
@@ -73,10 +81,11 @@ public abstract class TimedGame extends ScheduledGame {
                     .build();
             scheduler.scheduleJob(job, trigger);
 
-            log.debug("estimated_end_time = " + estimated_end_time.format(DateTimeFormatter.ISO_DATE_TIME));
+            log.debug("estimated_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_DATE_TIME));
+            remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) : 0l;
+            mqttOutbound.sendCommandTo("all", new JSONObject().put("remaining", remaining));
         } catch (SchedulerException e) {
             log.fatal(e);
-            System.exit(0);
         }
 
     }
@@ -86,8 +95,8 @@ public abstract class TimedGame extends ScheduledGame {
         return super.getStatus()
                 .put("match_length", match_length)
                 .put("estimated_end_time", estimated_end_time != null ? estimated_end_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")
-                .put("remaining", estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) : 0l)
-                .put("match_starting_time", match_starting_time != null ? match_starting_time.format(DateTimeFormatter.ISO_DATE_TIME) : "not started yet");
+                .put("remaining", remaining)
+                .put("match_starting_time", start_time != null ? start_time.format(DateTimeFormatter.ISO_DATE_TIME) : "not started yet");
     }
 
 }

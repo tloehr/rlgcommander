@@ -44,9 +44,16 @@ public abstract class Game {
     public abstract void init();
 
     /**
-     * just before be load another game
+     * just before be load another game or stop the current one
      */
-    public abstract void cleanup();
+    public void cleanup() {
+        mqttOutbound.sendCommandTo("all", getSignal(
+                        new JSONObject()
+                                .put("led_all", "off")
+                                .put("sir_all", "off")
+                ).put("line_display", new JSONArray().put("no game").put("loaded"))
+        );
+    }
 
     /**
      * when the actual game should start. You run this method.

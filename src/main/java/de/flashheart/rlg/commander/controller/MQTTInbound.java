@@ -5,7 +5,6 @@ import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +18,6 @@ import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannel
 import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @Log4j2
@@ -65,15 +61,15 @@ public class MQTTInbound {
     @ServiceActivator(inputChannel = "mqttInputChannel")
     public MessageHandler handler() {
         return message -> {
+//
+//            String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
+//            String payload = message.getPayload().toString();
+//
+//            List<String> topic_elements = Arrays.asList(StringUtils.splitByWholeSeparatorPreserveAllTokens(topic, "/"));
+//            String agentid = topic_elements.get(topic_elements.size() - 1);
+//            log.debug(topic + " -> " + payload);
 
-            String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
-            String payload = message.getPayload().toString();
-
-            List<String> topic_elements = Arrays.asList(StringUtils.splitByWholeSeparatorPreserveAllTokens(topic, "/"));
-            String agentid = topic_elements.get(topic_elements.size() - 1);
-            log.debug(topic + " -> " + payload);
-
-            JSONObject event = new JSONObject(payload);
+            JSONObject event = new JSONObject(message.getPayload().toString());
 
 //            // split the topic
 //            List<String> topic_elements = Arrays.asList(StringUtils.splitByWholeSeparatorPreserveAllTokens(topic, "/"));
@@ -84,12 +80,13 @@ public class MQTTInbound {
 
             if (event.keySet().contains("status")) {
                 try {
-                    agentsService.put(agentid, new Agent(event.getJSONObject("status")));
+                    JSONObject status = event.getJSONObject("status");
+                    agentsService.put(status.getString("agentid"), new Agent(status));
                 } catch (JSONException e) {
-                    agentsService.remove(agentid);
+                    //agentsService.remove(agentid);
                 }
             } else {
-                gamesService.react_to(agentid, event);
+                gamesService.react_to(event.getString("agentid"), event);
                 //gamesService.getGame().ifPresent(game -> log.debug(game.getStatus()));
             }
         };

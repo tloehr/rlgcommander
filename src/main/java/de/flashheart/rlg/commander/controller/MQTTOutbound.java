@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.controller;
 
+import de.flashheart.rlg.commander.mechanics.Game;
 import de.flashheart.rlg.commander.service.Agent;
 import de.flashheart.rlg.commander.service.AgentsService;
 import lombok.NoArgsConstructor;
@@ -50,6 +51,7 @@ public class MQTTOutbound {
         this.agentsService = agentsService;
         gateway = applicationContext.getBean(MyGateway.class);
     }
+
 
     @Bean
     public MqttPahoClientFactory mqttClientFactory() { // for outbound only

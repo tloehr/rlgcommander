@@ -59,6 +59,7 @@ public abstract class ScheduledGame extends Game {
 
     @Override
     public void cleanup() {
+        super.cleanup();
         stop();
         try {
             scheduler.getContext().remove(name);
@@ -71,7 +72,7 @@ public abstract class ScheduledGame extends Game {
      * to resume a paused game.
      */
     public void resume() {
-        if (pause_start_time == null) return; // no pause, no resume
+        pause_start_time = null;
     }
 
     /**

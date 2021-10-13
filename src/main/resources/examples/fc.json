@@ -1,5 +1,5 @@
 {
-  "comment": "fc assault / BF rush",
+  "comment": "FarCry 1 Assault",
   "rest_url": "http://localhost:8090/api/game/load",
   "game": "farcry",
   "agent_roles": {

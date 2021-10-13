@@ -15,6 +15,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -25,7 +26,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 
 /**
- * Ein Hello-World-Programm in Java. Dies ist ein Javadoc-Kommentar.
+ * Implementation for the FarCry 1 (2004) Assault Game Mode.
  */
 @Log4j2
 public class FarcryGame extends TimedGame implements HasRespawn {
@@ -100,7 +101,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                                             .put("led_red", "∞:on,500;off,500")
                             )
                     );
-                    estimated_end_time = LocalDateTime.now().plusSeconds(match_length);
+                    estimated_end_time = LocalDateTime.now().plusSeconds(flagcapturetime);
                     monitorRemainingTime();
                     return true;
                 }
@@ -126,7 +127,11 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                                             .put("led_grn", "∞:on,2000;off,1000")
                             )
                     );
-                    estimated_end_time = LocalDateTime.now().plusSeconds(match_length);
+
+                    // subtract the seconds since the start of the game from the match_length. this would be the remaining time
+                    // if we are in overtime the result is negative, hence shifting the estimated_end_time into the past
+                    // this will trigger the "TIMES_UP" event
+                    estimated_end_time = LocalDateTime.now().plusSeconds(match_length - start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS));
                     monitorRemainingTime();
                     return true;
                 }
@@ -189,6 +194,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{} =====> {}", curState, nextState);
+                    mqttOutbound.sendCommandTo("all", new JSONObject().put("line_display", new JSONArray(new String[]{"Game mode", name})));
                     mqttOutbound.sendCommandTo("sirens", getSignal(
                                     new JSONObject()
                                             .put("sir_all", "off")
