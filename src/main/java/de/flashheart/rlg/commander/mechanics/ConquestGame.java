@@ -60,7 +60,7 @@ public class ConquestGame extends ScheduledGame {
     @Override
     public void init() {
         agent_roles.get("red_spawn_agent").forEach(agent -> {
-            mqttOutbound.sendCommandTo("agent", getSignal(
+            mqttOutbound.sendCommandTo("agent", signal(
                     new JSONObject()
                             .put("led_all", "off")
                             .put("led_red", "∞:off,2000;on,1000"))
@@ -69,7 +69,7 @@ public class ConquestGame extends ScheduledGame {
         });
 
         agent_roles.get("blue_spawn_agent").forEach(agent -> {
-            mqttOutbound.sendCommandTo("agent", getSignal(
+            mqttOutbound.sendCommandTo("agent", signal(
                     new JSONObject()
                             .put("led_all", "off")
                             .put("led_blu", "∞:off,2000;on,1000"))
@@ -88,7 +88,7 @@ public class ConquestGame extends ScheduledGame {
 
         if (agent_roles.get("red_spawn_agent").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // red respawn button was pressed
-            mqttOutbound.sendCommandTo(sender, getSignal(
+            mqttOutbound.sendCommandTo(sender, signal(
                     new JSONObject()
                             .put("buzzer", "2:on,100;off,100")
                             .put("led_wht", "2:on,100;off,100"))
@@ -97,7 +97,7 @@ public class ConquestGame extends ScheduledGame {
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_to_respawn);
         } else if (agent_roles.get("blue_spawn_agent").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // blue respawn button was pressed
-            mqttOutbound.sendCommandTo(sender, getSignal(
+            mqttOutbound.sendCommandTo(sender, signal(
                     new JSONObject()
                             .put("buzzer", "2:on,100;off,100")
                             .put("led_wht", "2:on,100;off,100"))
@@ -122,7 +122,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            getSignal(
+                            signal(
                                     new JSONObject()
                                             .put("led_all", "off")
                                             .put("led_wht", "∞:on,1000;off,1000")
@@ -139,7 +139,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            getSignal(
+                            signal(
                                     new JSONObject()
                                             .put("buzzer", "2:on,125;off,125")
                                             .put("led_all", "off")
@@ -157,7 +157,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            getSignal(
+                            signal(
                                     new JSONObject()
                                             .put("buzzer", "2:on,125;off,125")
                                             .put("led_all", "off")
@@ -175,7 +175,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            getSignal(
+                            signal(
                                     new JSONObject()
                                             .put("buzzer", "2:on,125;off,125")
                                             .put("led_all", "off")
@@ -193,7 +193,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            getSignal(
+                            signal(
                                     new JSONObject()
                                             .put("sir_all", "off")
                                             .put("led_all", "off")
@@ -220,7 +220,7 @@ public class ConquestGame extends ScheduledGame {
         cps_held_by_blue = BigDecimal.ZERO;
         cps_held_by_red = BigDecimal.ZERO;
 
-        mqttOutbound.sendCommandTo("siren_agents", getSignal(
+        mqttOutbound.sendCommandTo("siren_agents", signal(
                 new JSONObject()
                         .put("sir_all", "off")
                         .put("sir1", "1:on,5000;off,1"))
@@ -251,7 +251,7 @@ public class ConquestGame extends ScheduledGame {
     @Override
     public void stop() {
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
-        mqttOutbound.sendCommandTo("siren_agents", getSignal(
+        mqttOutbound.sendCommandTo("siren_agents", signal(
                 new JSONObject()
                         .put("sir_all", "off")
                         .put("sir1", "1:on,5000;off,1"))
@@ -259,11 +259,6 @@ public class ConquestGame extends ScheduledGame {
 
         //mqttOutbound.agentStandbyPattern(agent_roles.get("cp_agents"));
         super.stop();
-    }
-
-    @Override
-    public void cleanup() {
-        super.cleanup();
     }
 
     public void ticket_bleeding_cycle() {
@@ -287,7 +282,7 @@ public class ConquestGame extends ScheduledGame {
     }
 
     private void broadcast_score() {
-        mqttOutbound.sendCommandTo("cp_agents", getSignal(
+        mqttOutbound.sendCommandTo("cp_agents", signal(
                 new JSONObject()
                         .put("sir_all", "off")
                         .put("sir1", "1:on,5000;off,1"))

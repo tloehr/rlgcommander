@@ -49,23 +49,20 @@ public abstract class ScheduledGame extends Game {
             try {
                 scheduler.interrupt(job);
                 scheduler.deleteJob(job);
+                scheduler.getContext().remove(name);
             } catch (SchedulerException e) {
                 log.error(e);
             }
         });
         jobs.clear();
-    }
+        super.stop();
+//        mqttOutbound.sendCommandTo("all",
+//                signal(
+//                        "led_all", "off",
+//                        "sir_all", "off"));
+//        mqttOutbound.sendCommandTo("all", page_content("page0", "no game", "loaded"));
+//        mqttOutbound.sendCommandTo("all", new JSONObject().put("remaining", 0));
 
-
-    @Override
-    public void cleanup() {
-        super.cleanup();
-        stop();
-        try {
-            scheduler.getContext().remove(name);
-        } catch (SchedulerException se) {
-            log.fatal(se);
-        }
     }
 
     /**

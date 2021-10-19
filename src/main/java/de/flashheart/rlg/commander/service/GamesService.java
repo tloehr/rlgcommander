@@ -37,7 +37,7 @@ public class GamesService {
 
     public Optional<Game> load_game(String json) {
         JSONObject description = new JSONObject(json);
-        loaded_game.ifPresent(game -> game.cleanup());
+        loaded_game.ifPresent(game -> game.stop());
 
         if (description.getString("game").equalsIgnoreCase("conquest"))
             loaded_game = load_conquest(description);
@@ -74,14 +74,6 @@ public class GamesService {
         return loaded_game;
     }
 
-    public void unload_game() {
-        loaded_game.ifPresent(game -> {
-            log.debug("unloading game {}", game.getStatus());
-            game.cleanup();
-        });
-        loaded_game = Optional.empty();
-        //agentStandbyPattern(liveAgents.keySet());
-    }
 
     public Optional<Game> getGame() {
         return loaded_game;
@@ -92,9 +84,9 @@ public class GamesService {
         return loaded_game;
     }
 
-    public Optional<Game> stop_game() {
+    public void stop_game() {
         loaded_game.ifPresent(game -> game.stop());
-        return loaded_game;
+        loaded_game = Optional.empty();
     }
 
     public Optional<Game> resume_game() {

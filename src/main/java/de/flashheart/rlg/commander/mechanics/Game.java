@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 @Log4j2
@@ -43,17 +44,6 @@ public abstract class Game {
      */
     public abstract void init();
 
-    /**
-     * just before be load another game or stop the current one
-     */
-    public void cleanup() {
-        mqttOutbound.sendCommandTo("all", getSignal(
-                        new JSONObject()
-                                .put("led_all", "off")
-                                .put("sir_all", "off")
-                ).put("line_display", new JSONArray().put("no game").put("loaded"))
-        );
-    }
 
     /**
      * when the actual game should start. You run this method.
@@ -63,7 +53,10 @@ public abstract class Game {
     /**
      * when the game should end NOW. Now questions asked. Simply cleanup Your stuff an unload the game. stop() does it.
      */
-    public abstract void stop();
+    public void stop(){
+        mqttOutbound.sendCommandTo("all", new JSONObject().put("init", ""));
+    }
+
 
     /**
      * returns a JSON Object which describes the current game situation.
@@ -80,7 +73,29 @@ public abstract class Game {
      * @param jsonObject
      * @return
      */
-    public JSONObject getSignal(JSONObject jsonObject) {
+    public JSONObject signal(JSONObject jsonObject) {
         return new JSONObject().put("signal", jsonObject);
+    }
+
+    public JSONObject signal(String... signals) {
+        if (signals.length == 0 || signals.length % 2 != 0) return new JSONObject();
+        JSONObject signal = new JSONObject();
+        for (int s = 0; s < signals.length; s += 2) {
+            signal.put(signals[s], signals[s + 1]);
+        }
+        return new JSONObject().put("signal", signal);
+    }
+
+    /**
+     * helper method to create a set_page command
+     *
+     * @param page_handle
+     * @param content
+     * @return
+     */
+    public JSONObject page_content(String page_handle, String... content) {
+        final JSONArray lines = new JSONArray();
+        Arrays.stream(content).forEach(line -> lines.put(line));
+        return new JSONObject().put("set_page", new JSONObject().put("handle", page_handle).put("content", lines));
     }
 }

@@ -39,12 +39,6 @@ public class RLGRestController {
         return new ResponseEntity<>(gamesService.load_game(description).orElseThrow().getStatus().toString(), HttpStatus.CREATED);
     }
 
-    @PostMapping("/game/unload")
-    public ResponseEntity<?> unload_game() {
-        gamesService.unload_game();
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
     @PostMapping("/game/start")
     public ResponseEntity<?> start_game() {
         return new ResponseEntity<>(gamesService.start_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
@@ -52,7 +46,8 @@ public class RLGRestController {
 
     @PostMapping("/game/stop")
     public ResponseEntity<?> stop_game() {
-        return new ResponseEntity<>(gamesService.stop_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
+        gamesService.stop_game();
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/pause")
