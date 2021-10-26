@@ -1,8 +1,10 @@
 package de.flashheart.rlg.commander.mechanics;
 
+import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.GameTimeIsUpJob;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
+import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.*;
@@ -25,8 +27,8 @@ public abstract class TimedGame extends ScheduledGame {
     final JobKey gametimeJobKey;
     long remaining;
 
-    TimedGame(String name, int match_length, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(name, scheduler, mqttOutbound);
+    TimedGame(String name, Multimap<String, Agent> agent_roles, int match_length, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(name, agent_roles, scheduler, mqttOutbound);
         this.match_length = match_length;
         gametimeJobKey = new JobKey(name + "-" + GameTimeIsUpJob.name, name);
         remaining = 0l;
@@ -55,9 +57,9 @@ public abstract class TimedGame extends ScheduledGame {
     }
 
     @Override
-    public void stop() {
+    public void cleanup() {
+        super.cleanup();
         start_time = null;
-        super.stop();
     }
 
     void monitorRemainingTime() {
@@ -83,11 +85,14 @@ public abstract class TimedGame extends ScheduledGame {
 
             log.debug("estimated_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_DATE_TIME));
             remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) : 0l;
-            mqttOutbound.sendCommandTo("all", new JSONObject().put("remaining", remaining));
+            mqttOutbound.sendCommandTo("all", remaining());
         } catch (SchedulerException e) {
             log.fatal(e);
         }
+    }
 
+    public JSONObject remaining() {
+        return new JSONObject().put("remaining", remaining);
     }
 
     @Override

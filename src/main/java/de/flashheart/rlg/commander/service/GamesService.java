@@ -36,8 +36,12 @@ public class GamesService {
     }
 
     public Optional<Game> load_game(String json) {
+        log.debug("\n _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
+                "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
+                "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
+                "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         JSONObject description = new JSONObject(json);
-        loaded_game.ifPresent(game -> game.stop());
+        loaded_game.ifPresent(game -> game.cleanup());
 
         if (description.getString("game").equalsIgnoreCase("conquest"))
             loaded_game = load_conquest(description);
@@ -50,9 +54,19 @@ public class GamesService {
         return loaded_game;
     }
 
+    public void unload_game() {
+        loaded_game.ifPresent(game -> game.cleanup());
+        loaded_game = Optional.empty();
+    }
+
     private Optional<Game> load_conquest(JSONObject description) {
+        log.debug("\n   __________  _   ______  __  ___________________\n" +
+                "  / ____/ __ \\/ | / / __ \\/ / / / ____/ ___/_  __/\n" +
+                " / /   / / / /  |/ / / / / / / / __/  \\__ \\ / /\n" +
+                "/ /___/ /_/ / /|  / /_/ / /_/ / /___ ___/ // /\n" +
+                "\\____/\\____/_/ |_/\\___\\_\\____/_____//____//_/\n");
         loaded_game = Optional.of(new ConquestGame(
-                createAgentMap(description.getJSONObject("agent_roles"), Arrays.asList("cp_agents", "blue_spawn_agent", "red_spawn_agent")),
+                createAgentMap(description.getJSONObject("agent_roles"), Arrays.asList("cp_agents", "blue_spawn_agent", "red_spawn_agent", "sirens")),
                 description.getBigDecimal("starting_tickets"),
                 description.getBigDecimal("ticket_price_to_respawn"),
                 description.getBigDecimal("minimum_cp_for_bleeding"),
@@ -64,6 +78,12 @@ public class GamesService {
     }
 
     private Optional<Game> load_farcry(JSONObject description) {
+        log.debug("\n    ______           ______\n" +
+                "   / ____/___ ______/ ____/______  __\n" +
+                "  / /_  / __ `/ ___/ /   / ___/ / / /\n" +
+                " / __/ / /_/ / /  / /___/ /  / /_/ /\n" +
+                "/_/    \\__,_/_/   \\____/_/   \\__, /\n" +
+                "                            /____/");
         loaded_game = Optional.of(new FarcryGame(
                 createAgentMap(description.getJSONObject("agent_roles"), Arrays.asList("sirens", "leds", "red_spawn", "green_spawn")),
                 description.getInt("flag_capture_time"),
@@ -82,11 +102,6 @@ public class GamesService {
     public Optional<Game> start_game() {
         loaded_game.ifPresent(game -> game.start());
         return loaded_game;
-    }
-
-    public void stop_game() {
-        loaded_game.ifPresent(game -> game.stop());
-        loaded_game = Optional.empty();
     }
 
     public Optional<Game> resume_game() {

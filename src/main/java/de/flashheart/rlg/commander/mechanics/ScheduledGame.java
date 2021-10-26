@@ -1,6 +1,8 @@
 package de.flashheart.rlg.commander.mechanics;
 
+import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.JobKey;
@@ -21,8 +23,8 @@ public abstract class ScheduledGame extends Game {
     final Scheduler scheduler;
     final Set<JobKey> jobs;
 
-    public ScheduledGame(String name, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(name, mqttOutbound);
+    public ScheduledGame(String name, Multimap<String, Agent> agent_roles, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(name, agent_roles, mqttOutbound);
         this.scheduler = scheduler;
         jobs = new HashSet<>();
         try {
@@ -44,7 +46,8 @@ public abstract class ScheduledGame extends Game {
     }
 
     @Override
-    public void stop() {
+    public void cleanup() {
+        super.cleanup();
         jobs.forEach(job -> {
             try {
                 scheduler.interrupt(job);
@@ -55,14 +58,6 @@ public abstract class ScheduledGame extends Game {
             }
         });
         jobs.clear();
-        super.stop();
-//        mqttOutbound.sendCommandTo("all",
-//                signal(
-//                        "led_all", "off",
-//                        "sir_all", "off"));
-//        mqttOutbound.sendCommandTo("all", page_content("page0", "no game", "loaded"));
-//        mqttOutbound.sendCommandTo("all", new JSONObject().put("remaining", 0));
-
     }
 
     /**

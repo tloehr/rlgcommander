@@ -61,23 +61,9 @@ public class MQTTInbound {
     @ServiceActivator(inputChannel = "mqttInputChannel")
     public MessageHandler handler() {
         return message -> {
-//
-//            String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
-//            String payload = message.getPayload().toString();
-//
-//            List<String> topic_elements = Arrays.asList(StringUtils.splitByWholeSeparatorPreserveAllTokens(topic, "/"));
-//            String agentid = topic_elements.get(topic_elements.size() - 1);
-//            log.debug(topic + " -> " + payload);
-
             JSONObject event = new JSONObject(message.getPayload().toString());
 
-//            // split the topic
-//            List<String> topic_elements = Arrays.asList(StringUtils.splitByWholeSeparatorPreserveAllTokens(topic, "/"));
-//            String event = topic_elements.get(topic_elements.size() - 1); //topic.substring(topic.lastIndexOf('/') + 1);
-//            String agentid = topic_elements.get(topic_elements.size() - 2);
-//            log.debug("{} sent event {}", agentid, event);
             // special case for "heartbeats" from agents
-
             if (event.keySet().contains("status")) {
                 try {
                     JSONObject status = event.getJSONObject("status");

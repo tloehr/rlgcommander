@@ -1,6 +1,6 @@
 package de.flashheart.rlg.commander.controller;
 
-import de.flashheart.rlg.commander.mechanics.Game;
+import de.flashheart.rlg.commander.misc.Tools;
 import de.flashheart.rlg.commander.service.Agent;
 import de.flashheart.rlg.commander.service.AgentsService;
 import lombok.NoArgsConstructor;
@@ -20,10 +20,9 @@ import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
-import javax.annotation.PreDestroy;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.UUID;
 
 @Configuration
@@ -51,7 +50,6 @@ public class MQTTOutbound {
         this.agentsService = agentsService;
         gateway = applicationContext.getBean(MyGateway.class);
     }
-
 
     @Bean
     public MqttPahoClientFactory mqttClientFactory() { // for outbound only
@@ -83,51 +81,22 @@ public class MQTTOutbound {
         return new DirectChannel();
     }
 
-    //todo: vergessen?
-    public void setRemainingTime(LocalDateTime estimatedEndTime) {
-        final long remaining = LocalDateTime.now().until(estimatedEndTime, ChronoUnit.MILLIS);
-        gateway.sendToMqtt(new JSONObject().put("time", remaining).toString(), outbound_topic + "all/remaining");
-    }
-
-    public void sendCommandTo(Collection<Agent> agents,  JSONObject jsonObject) {
+    public void sendCommandTo(Collection<Agent> agents, JSONObject... jsonObject) {
         agents.forEach(agent -> sendCommandTo(agent, jsonObject));
     }
 
-    public void sendCommandTo(String subchannel, JSONObject data) {
+    public void sendCommandTo(String subchannel, JSONObject... data) {
         String header = outbound_topic + subchannel;
-        String _data = data.toString();
+        String _data = Tools.merge(data).toString();
         log.debug("sending: {} - {}", header, _data);
         gateway.sendToMqtt(_data, header);
-      }
+    }
 
-    public void sendCommandTo(Agent agent,  JSONObject jsonObject) {
+    public void sendCommandTo(Agent agent, JSONObject... jsonObject) {
         sendCommandTo(agent.getAgentid(), jsonObject);
     }
 
-    @PreDestroy
-    void cleanup() {
-        // das klappt so nicht
-        // agentStandbyPattern(agentsService.getLiveAgents());
-    }
 
-
-
-//    public void agentStandbyPattern(Collection<Agent> agents) {
-//        sendCommandTo(agents, new JSONObject()
-//                .put("sir_all", "off")
-//                .put("led_wht", "∞:on,350;off,3700")
-//                .put("led_red", "∞:off,350;on,350;off,3350")
-//                .put("led_ylw", "∞:off,700;on,350;off,3000")
-//                .put("led_grn", "∞:off,1050;on,350;off,2650")
-//                .put("led_blu", "∞:off,1400;on,350;off,2300")
-//        );
-//        sendCommandTo(agents, "line_display", new JSONObject()
-//                .put("1", "Agent").put("2", "standing by")
-//        );
-//        sendCommandTo(agents, "matrix_display", new JSONObject()
-//                .put("1", "Agent").put("2", "standing by")
-//        );
-//    }
 
 
 }

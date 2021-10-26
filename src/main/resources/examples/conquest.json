@@ -3,20 +3,19 @@
   "rest_url": "http://localhost:8090/api/game/load",
   "game": "conquest",
   "agent_roles": {
-    "cp_agents": [
+    "capture_points": [
       "ag01",
       "ag02",
       "ag03"
     ],
-    "siren_agents": [
-      "ag04",
-      "ag05"
-    ],
-    "blue_spawn_agent": [
+    "sirens": [
       "ag04"
     ],
-    "red_spawn_agent": [
+    "blue_spawn": [
       "ag05"
+    ],
+    "red_spawn": [
+      "ag06"
     ]
   },
   "starting_tickets": 250,
