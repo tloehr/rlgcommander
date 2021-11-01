@@ -112,6 +112,12 @@ public abstract class Game {
                 .put("sir3", "off");
     }
 
+    public JSONObject INIT() {
+        return new JSONObject()
+                .put("init", "");
+    }
+
+
     public JSONObject score(String score) {
         return new JSONObject().put("score", score);
     }

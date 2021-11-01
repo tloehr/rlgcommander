@@ -33,13 +33,8 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     private FSM farcryFSM;
     final JobKey myRespawnJobKey;
 
-
     public FarcryGame(Multimap<String, Agent> agent_roles, int flagcapturetime, int match_length, int respawn_period, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        this("farcry", agent_roles, flagcapturetime, match_length, respawn_period, scheduler, mqttOutbound);
-    }
-
-    public FarcryGame(String name, Multimap<String, Agent> agent_roles, int flagcapturetime, int match_length, int respawn_period, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(name, agent_roles, match_length, scheduler, mqttOutbound);
+        super("farcry", agent_roles, match_length, scheduler, mqttOutbound);
         this.flagcapturetime = flagcapturetime;
         this.respawn_period = respawn_period;
         myRespawnJobKey = new JobKey(name + "-" + RespawnJob.name, name);
@@ -161,10 +156,14 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{} =====> {}", curState, nextState);
-                    mqttOutbound.sendCommandTo("all",
+                    mqttOutbound.sendCommandTo("all", INIT());
+                    mqttOutbound.sendCommandTo("red_spawn", new JSONObject().put("add_page", "fcpage"));
+                    mqttOutbound.sendCommandTo("green_spawn", new JSONObject().put("add_page", "fcpage"));
+                    //todo: page änderungen zusammenfassen
+                    mqttOutbound.sendCommandTo("red_spawn",
                             page_content("page0", "Game Mode", "FarCry"));
-                    mqttOutbound.sendCommandTo("sirens",
-                            signal("sir_all", "off"));
+                    mqttOutbound.sendCommandTo("green_spawn",
+                            page_content("page0", "Game Mode", "FarCry"));
                     mqttOutbound.sendCommandTo("leds",
                             signal("led_all", "∞:on,1000;off,1000"));
                     mqttOutbound.sendCommandTo("red_spawn",
@@ -184,10 +183,14 @@ public class FarcryGame extends TimedGame implements HasRespawn {
 
     @Override
     public void start() {
+        super.start();
         // start the respawn timer job.
         deleteJob(myRespawnJobKey);
 
-        if (respawn_period > 0) {
+        mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Respawn at ", "now!"));
+        mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "Respawn", "now!"));
+
+        if (respawn_period > 0) { // respawn_period == 0 means we should not care about it
             JobDetail job = newJob(RespawnJob.class)
                     .withIdentity(myRespawnJobKey)
                     .build();
@@ -205,9 +208,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                 log.fatal(e);
             }
         }
-
         react_to("START");
-        super.start();
     }
 
     @Override
@@ -234,9 +235,9 @@ public class FarcryGame extends TimedGame implements HasRespawn {
 
     @Override
     public void respawn() {
-        // todo: respawn anfordern. Button drücken und auf respawn signal warten.
+        // todo: respawn
         log.debug("respawn message to be sent");
-        mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Respawn", "now!"));
+        mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Respawn at ", "now!"));
         mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "Respawn", "now!"));
     }
 }
