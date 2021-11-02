@@ -27,8 +27,8 @@ public abstract class TimedGame extends ScheduledGame {
     final JobKey gametimeJobKey;
     long remaining;
 
-    TimedGame(String name, Multimap<String, Agent> agent_roles, int match_length, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(name, agent_roles, scheduler, mqttOutbound);
+    TimedGame(String name, Multimap<String, Agent> function_to_agents, int match_length, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(name, function_to_agents, scheduler, mqttOutbound);
         this.match_length = match_length;
         gametimeJobKey = new JobKey(name + "-" + GameTimeIsUpJob.name, name);
         remaining = 0l;
@@ -73,6 +73,7 @@ public abstract class TimedGame extends ScheduledGame {
             deleteJob(gametimeJobKey);
             JobDetail job = newJob(GameTimeIsUpJob.class)
                     .withIdentity(gametimeJobKey)
+                    .usingJobData("name_of_the_game", name) // where we find the context later
                     .build();
 
             jobs.add(gametimeJobKey);
@@ -84,14 +85,15 @@ public abstract class TimedGame extends ScheduledGame {
             scheduler.scheduleJob(job, trigger);
 
             log.debug("estimated_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_DATE_TIME));
-            remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) : 0l;
-            mqttOutbound.sendCommandTo("all", remaining());
+            remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
+            log.debug("remaining seconds: {}", remaining);
+            mqttOutbound.sendCommandTo("all", REMAINING());
         } catch (SchedulerException e) {
             log.fatal(e);
         }
     }
 
-    public JSONObject remaining() {
+    public JSONObject REMAINING() {
         return new JSONObject().put("remaining", remaining);
     }
 

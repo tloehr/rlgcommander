@@ -36,18 +36,13 @@ public class ConquestGame extends ScheduledGame {
     private BigDecimal remaining_blue_tickets, remaining_red_tickets, cps_held_by_blue, cps_held_by_red;
     private JobKey bleedingJob;
 
-    public ConquestGame(Multimap<String, Agent> agent_roles, BigDecimal starting_tickets, BigDecimal ticket_price_to_respawn, BigDecimal minimum_cp_for_bleeding, BigDecimal starting_bleed_interval, BigDecimal interval_reduction_per_cp, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        this("conquest", agent_roles, starting_tickets, ticket_price_to_respawn, minimum_cp_for_bleeding, starting_bleed_interval, interval_reduction_per_cp, scheduler, mqttOutbound);
-    }
-
     /**
      * This class creates a conquest style game as we know it from Battlefield.
      * <p>
      * for the whole issue of ticket arithmetics please refer to https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit#gid=457469542
      * for explanation
      *
-     * @param name                      internal string id for this game
-     * @param agent_roles               is a multimap which contains the list of agents sorted by their purpose. Known
+     * @param function_to_agents        is a multimap which contains the list of agents sorted by their purpose. Known
      *                                  keys for this map are: <b>"red_spawn", "blue_spawn", "capture_points",
      *                                  "sirens"</b>. The class handles as <b>many capture points</b> as there are
      *                                  listed under "capture_points".
@@ -63,8 +58,8 @@ public class ConquestGame extends ScheduledGame {
      * @param mqttOutbound              internal mqtt reference as this class is NOT a spring component and therefore
      *                                  cannot use DI.
      */
-    public ConquestGame(String name, Multimap<String, Agent> agent_roles, BigDecimal starting_tickets, BigDecimal ticket_price_to_respawn, BigDecimal minimum_cp_for_bleeding, BigDecimal starting_bleed_interval, BigDecimal interval_reduction_per_cp, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(name, agent_roles, scheduler, mqttOutbound);
+    public ConquestGame(Multimap<String, Agent> function_to_agents, BigDecimal starting_tickets, BigDecimal ticket_price_to_respawn, BigDecimal minimum_cp_for_bleeding, BigDecimal starting_bleed_interval, BigDecimal interval_reduction_per_cp, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super("conquest", function_to_agents, scheduler, mqttOutbound);
         this.starting_tickets = starting_tickets;
         this.minimum_cp_for_bleeding = minimum_cp_for_bleeding;
         this.starting_bleed_interval = starting_bleed_interval;
@@ -77,7 +72,7 @@ public class ConquestGame extends ScheduledGame {
 
     @Override
     public void init() {
-        agent_roles.get("capture_points").forEach(agent -> agentFSMs.put(agent.getAgentid(), createFSM(agent)));
+        function_to_agents.get("capture_points").forEach(agent -> agentFSMs.put(agent.getAgentid(), createFSM(agent)));
         set_all_to_prolog(false);
         mqttOutbound.sendCommandTo("red_spawn",
                 signal(LED_ALL_OFF(), "led_red", "∞:on,2000;off,1000"));
@@ -94,17 +89,17 @@ public class ConquestGame extends ScheduledGame {
             return;
         }
 
-        if (agent_roles.get("red_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
+        if (function_to_agents.get("red_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // red respawn button was pressed
             mqttOutbound.sendCommandTo(sender, signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_to_respawn);
             broadcast_score();   // to make the respawn show up quicker. 
-        } else if (agent_roles.get("blue_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
+        } else if (function_to_agents.get("blue_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // blue respawn button was pressed
             mqttOutbound.sendCommandTo(sender, signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_to_respawn);
             broadcast_score();   // to make the respawn show up quicker.
-        } else if (agent_roles.get("capture_points").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
+        } else if (function_to_agents.get("capture_points").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             agentFSMs.get(sender).ProcessFSM(event.getString("button_pressed").toUpperCase());
         } else {
             log.debug("message is not for me. ignoring.");
@@ -229,6 +224,7 @@ public class ConquestGame extends ScheduledGame {
             deleteJob(bleedingJob);
             JobDetail job = newJob(ConquestTicketBleedingJob.class)
                     .withIdentity(bleedingJob)
+                    .usingJobData("name_of_the_game", name) // where we find the context later
                     .build();
             jobs.add(bleedingJob);
 

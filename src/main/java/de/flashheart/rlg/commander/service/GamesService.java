@@ -66,7 +66,7 @@ public class GamesService {
                 "/ /___/ /_/ / /|  / /_/ / /_/ / /___ ___/ // /\n" +
                 "\\____/\\____/_/ |_/\\___\\_\\____/_____//____//_/\n");
         loaded_game = Optional.of(new ConquestGame(
-                createAgentMap(description.getJSONObject("agent_roles"), Arrays.asList("cp_agents", "blue_spawn_agent", "red_spawn_agent", "sirens")),
+                createAgentMap(description.getJSONObject("agents"), Arrays.asList("cp_agents", "blue_spawn_agent", "red_spawn_agent", "sirens")),
                 description.getBigDecimal("starting_tickets"),
                 description.getBigDecimal("ticket_price_to_respawn"),
                 description.getBigDecimal("minimum_cp_for_bleeding"),
@@ -85,7 +85,7 @@ public class GamesService {
                 "/_/    \\__,_/_/   \\____/_/   \\__, /\n" +
                 "                            /____/");
         loaded_game = Optional.of(new FarcryGame(
-                createAgentMap(description.getJSONObject("agent_roles"), Arrays.asList("sirens", "leds", "red_spawn", "green_spawn")),
+                createAgentMap(description.getJSONObject("agents"), Arrays.asList("sirens", "leds", "red_spawn", "green_spawn")),
                 description.getInt("flag_capture_time"),
                 description.getInt("match_length"),
                 0, // description.getInt("respawn_period")

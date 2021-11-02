@@ -15,19 +15,15 @@ public abstract class Game {
     final String name;
     final MQTTOutbound mqttOutbound;
     final HashSet<String> function_groups;
-    final Multimap<String, Agent> agent_roles;
+    final Multimap<String, Agent> function_to_agents;
 
-    Game(String name, Multimap<String, Agent> agent_roles, MQTTOutbound mqttOutbound) {
+    Game(String name, Multimap<String, Agent> function_to_agents, MQTTOutbound mqttOutbound) {
         this.name = name;
-        this.agent_roles = agent_roles;
+        this.function_to_agents = function_to_agents;
         this.mqttOutbound = mqttOutbound;
-        function_groups = new HashSet<>(agent_roles.keySet()); // this contains the agent group names : "sirens", "leds", "red_spawn", "green_spawn"´
-//        // clearing all additional subscriptions from agents
-//        mqttOutbound.sendCommandTo("all", new JSONObject().put("init", ""));
-//        // reset old retained messages if conflicting
-//        function_groups.forEach(group -> mqttOutbound.sendCommandTo(group, new JSONObject()));
+        function_groups = new HashSet<>(function_to_agents.keySet()); // this contains the agent group names : "sirens", "leds", "red_spawn", "green_spawn"´
         // functional subsriptions
-        function_groups.forEach(group -> agent_roles.get(group).forEach(agent -> mqttOutbound.sendCommandTo(agent, new JSONObject().put("subscribe_to", group))));
+        function_groups.forEach(group -> function_to_agents.get(group).forEach(agent -> mqttOutbound.sendCommandTo(agent, new JSONObject().put("subscribe_to", group))));
     }
 
     /**

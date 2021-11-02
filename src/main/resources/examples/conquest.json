@@ -2,20 +2,20 @@
   "comment": "conquest params as used in BF1",
   "rest_url": "http://localhost:8090/api/game/load",
   "game": "conquest",
-  "agent_roles": {
+  "agents": {
     "capture_points": [
       "ag01",
       "ag02",
       "ag03"
     ],
-    "sirens": [
-      "ag04"
-    ],
-    "blue_spawn": [
-      "ag05"
-    ],
     "red_spawn": [
       "ag06"
+    ],
+    "blue_spawn": [
+      "ag07"
+    ],
+    "sirens": [
+      "ag08"
     ]
   },
   "starting_tickets": 250,

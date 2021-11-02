@@ -16,8 +16,9 @@ public class ConquestTicketBleedingJob extends QuartzJobBean implements Interrup
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
         try {
             //log.debug(jobExecutionContext.getJobDetail().getKey().getName() + " executed");
-            String gamename = jobExecutionContext.getJobDetail().getKey().getGroup();
-            ConquestGame game = (ConquestGame) jobExecutionContext.getScheduler().getContext().get(gamename);
+            //String gamename = jobExecutionContext.getJobDetail().getKey().getGroup();
+            String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("name_of_the_game");
+            ConquestGame game = (ConquestGame) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
             game.ticket_bleeding_cycle();
         } catch (SchedulerException e) {
             log.error(e);

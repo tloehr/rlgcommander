@@ -23,8 +23,8 @@ public abstract class ScheduledGame extends Game {
     final Scheduler scheduler;
     final Set<JobKey> jobs;
 
-    public ScheduledGame(String name, Multimap<String, Agent> agent_roles, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(name, agent_roles, mqttOutbound);
+    public ScheduledGame(String name, Multimap<String, Agent> function_to_agents, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(name, function_to_agents, mqttOutbound);
         this.scheduler = scheduler;
         jobs = new HashSet<>();
         try {

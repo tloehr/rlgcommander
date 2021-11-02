@@ -2,21 +2,21 @@
   "comment": "FarCry 1 Assault",
   "rest_url": "http://localhost:8090/api/game/load",
   "game": "farcry",
-  "agent_roles": {
+  "agents": {
     "button": [
       "ag01"
     ],
     "leds": [
       "ag01"
     ],
-    "sirens": [
-      "ag02"
-    ],
     "red_spawn": [
-      "ag03"
+      "ag06"
     ],
     "green_spawn": [
-      "ag04"
+      "ag07"
+    ],
+    "sirens": [
+      "ag08"
     ]
   },
   "match_length": 600,
