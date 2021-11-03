@@ -17,7 +17,8 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 /**
- * an abstract superclass for handling any game mode that has an end_time. estimated or fixed
+ * an abstract superclass for handling any game mode that has an (estimated or fixed) end_time We are talking about
+ * time, NOT about END-SCORES or RUNNING OUT OF RESOURCES.
  */
 @Log4j2
 public abstract class TimedGame extends ScheduledGame {
@@ -32,6 +33,7 @@ public abstract class TimedGame extends ScheduledGame {
         this.match_length = match_length;
         gametimeJobKey = new JobKey(name + "-" + GameTimeIsUpJob.name, name);
         remaining = 0l;
+        estimated_end_time = null;
     }
 
     public void pause() {
@@ -44,7 +46,7 @@ public abstract class TimedGame extends ScheduledGame {
         // shift the start and end_time by the number of seconds the pause lasted
         long pause_length_in_seconds = pause_start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS);
         start_time = start_time.plusSeconds(pause_length_in_seconds);
-        estimated_end_time = estimated_end_time.plusSeconds(pause_length_in_seconds);
+        estimated_end_time = start_time.plusSeconds(match_length); //estimated_end_time.plusSeconds(pause_length_in_seconds);
 
         super.resume();
         monitorRemainingTime();
@@ -62,10 +64,13 @@ public abstract class TimedGame extends ScheduledGame {
         start_time = null;
     }
 
+    public abstract void time_is_up();
+
     void monitorRemainingTime() {
-        if (estimated_end_time.compareTo(LocalDateTime.now()) <= 0) { // time is up
+        log.debug("estimated_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_TIME));
+        if (estimated_end_time.compareTo(LocalDateTime.now()) <= 0) { // time is up - endtime has passed already
             deleteJob(gametimeJobKey);
-            react_to("TIMES_UP");
+            time_is_up();
             return;
         }
 
@@ -84,18 +89,21 @@ public abstract class TimedGame extends ScheduledGame {
                     .build();
             scheduler.scheduleJob(job, trigger);
 
-            log.debug("estimated_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_DATE_TIME));
             remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
             log.debug("remaining seconds: {}", remaining);
-            mqttOutbound.sendCommandTo("all", REMAINING());
+            mqttOutbound.sendCommandTo("all", TIMER_MSG("remaining", Long.toString(remaining)));
         } catch (SchedulerException e) {
             log.fatal(e);
         }
     }
 
-    public JSONObject REMAINING() {
-        return new JSONObject().put("remaining", remaining);
+    public JSONObject TIMER_MSG(String... timers) {
+        return envelope("timers", timers);
     }
+
+//    public JSONObject REMAINING() {
+//        return new JSONObject().put("remaining", remaining);
+//    }
 
     @Override
     public JSONObject getStatus() {

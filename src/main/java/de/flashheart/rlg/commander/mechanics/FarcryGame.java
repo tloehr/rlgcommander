@@ -14,7 +14,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -58,7 +57,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     mqttOutbound.sendCommandTo("leds",
                             signal(LED_ALL_OFF(), "led_grn", "∞:on,2000;off,1000"));
 
-                    estimated_end_time = LocalDateTime.now().plusSeconds(match_length);
+                    estimated_end_time = start_time.plusSeconds(match_length);
                     monitorRemainingTime();
                     return true;
                 }
@@ -108,7 +107,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     // if we are in overtime the result is negative, hence shifting the estimated_end_time into the past
                     // this will trigger the "TIMES_UP" event
                     // todo: klappt noch nicht im sudden death
-                    estimated_end_time = LocalDateTime.now().plusSeconds(match_length - start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS));
+                    estimated_end_time = start_time.plusSeconds(match_length); //LocalDateTime.now().plusSeconds(match_length - start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS));
                     monitorRemainingTime();
                     return true;
                 }
@@ -127,7 +126,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     mqttOutbound.sendCommandTo("leds",
                             signal(LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
 
-                    if (start_time.plusSeconds(match_length).isAfter(LocalDateTime.now())){
+                    if (start_time.plusSeconds(match_length).isAfter(LocalDateTime.now())) {
                         log.debug("SUDDEN DEATH");
                     }
                     // todo: overtime and sudden death
@@ -154,7 +153,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     mqttOutbound.sendCommandTo("leds",
                             signal(LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000")
                     );
-                    if (start_time.plusSeconds(match_length).isAfter(LocalDateTime.now())){
+                    if (start_time.plusSeconds(match_length).isAfter(LocalDateTime.now())) {
                         log.debug("overtime");
                     }
                     mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Bomb exploded.", "Winner: Team Red"));
@@ -250,6 +249,11 @@ public class FarcryGame extends TimedGame implements HasRespawn {
             mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "", ""));
         }
         react_to("START");
+    }
+
+    @Override
+    public void time_is_up() {
+        react_to("TIMES_UP");
     }
 
     @Override
