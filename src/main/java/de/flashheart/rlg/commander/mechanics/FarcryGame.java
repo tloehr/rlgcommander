@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -77,7 +78,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                             signal(LED_ALL_OFF(), "led_red", "∞:on,500;off,500"));
 
                     mqttOutbound.sendCommandTo("all",
-                            page_content("page0", "Bomb has been fused", "Bombe ist scharf"));
+                            page_content("page0", "Restspielzeit", "${remaining}", "Bomb has been fused", "Bombe ist scharf"));
 
                     estimated_end_time = LocalDateTime.now().plusSeconds(flagcapturetime);
                     monitorRemainingTime();
@@ -101,7 +102,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                             signal(LED_ALL_OFF(), "led_grn", "∞:on,2000;off,1000"));
 
                     mqttOutbound.sendCommandTo("all",
-                            page_content("page0", "Bomb has been DEfused", "Bombe ist entschärft"));
+                            page_content("page0", "Restspielzeit", "${remaining}", "Bomb has been DEfused", "Bombe ist entschärft"));
 
                     // subtract the seconds since the start of the game from the match_length. this would be the remaining time
                     // if we are in overtime the result is negative, hence shifting the estimated_end_time into the past
@@ -126,13 +127,16 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     mqttOutbound.sendCommandTo("leds",
                             signal(LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
 
-                    if (start_time.plusSeconds(match_length).isAfter(LocalDateTime.now())) {
+                    log.debug(start_time.plusSeconds(match_length).atZone(ZoneId.systemDefault()).toEpochSecond());
+                    log.debug(LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond());
+                    // epochsecond because nanos are too precise
+                    if (start_time.plusSeconds(match_length).atZone(ZoneId.systemDefault()).toEpochSecond() < LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond()) {
                         log.debug("SUDDEN DEATH");
                     }
                     // todo: overtime and sudden death
 
-                    mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Bomb defended.", "Winner: Team Green"));
-                    mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "Bomb defended.", "Winner: Team Green"));
+                    mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "GAME OVER", "", "Bomb defended.", "Winner: Team Green"));
+                    mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "GAME OVER", "", "Bomb defended.", "Winner: Team Green"));
 
                     return true;
                 }
@@ -153,11 +157,14 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     mqttOutbound.sendCommandTo("leds",
                             signal(LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000")
                     );
-                    if (start_time.plusSeconds(match_length).isAfter(LocalDateTime.now())) {
-                        log.debug("overtime");
+                    log.debug(start_time.plusSeconds(match_length).atZone(ZoneId.systemDefault()).toEpochSecond());
+                    log.debug(LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond());
+                    // epochsecond because nanos are too precise
+                    if (start_time.plusSeconds(match_length).atZone(ZoneId.systemDefault()).toEpochSecond() < LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond()) {
+                        log.debug("OVERTIME");
                     }
-                    mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Bomb exploded.", "Winner: Team Red"));
-                    mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "Bomb exploded.", "Winner: Team Red"));
+                    mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "GAME OVER", "", "Bomb exploded.", "Winner: Team Red"));
+                    mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "GAME OVER", "", "Bomb exploded.", "Winner: Team Red"));
 
                     return true;
                 }
@@ -192,10 +199,8 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{} =====> {}", curState, nextState);
                     //todo: page änderungen zusammenfassen
-                    mqttOutbound.sendCommandTo("red_spawn",
-                            page_content("page0", "Game Mode", "FarCry"));
-                    mqttOutbound.sendCommandTo("green_spawn",
-                            page_content("page0", "Game Mode", "FarCry"));
+                    mqttOutbound.sendCommandTo("all",
+                            page_content("page0", "FarCry loaded", "", "Ready to start", ""));
                     mqttOutbound.sendCommandTo("leds",
                             signal("led_all", "∞:on,1000;off,1000"));
                     mqttOutbound.sendCommandTo("sirens",
@@ -225,8 +230,8 @@ public class FarcryGame extends TimedGame implements HasRespawn {
 
         if (respawn_period > 0) { // respawn_period == 0 means we should not care about it
 
-            mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Press Button and wait", "for RESPAWN"));
-            mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "Press Button and wait", "for RESPAWN"));
+            mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Restspielzeit", "${remaining}", "Press Button and wait", "for RESPAWN"));
+            mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "Restspielzeit", "${remaining}", "Press Button and wait", "for RESPAWN"));
 
             JobDetail job = newJob(RespawnJob.class)
                     .withIdentity(myRespawnJobKey)
@@ -245,8 +250,8 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                 log.fatal(e);
             }
         } else {
-            mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "", ""));
-            mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "", ""));
+            mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Restspielzeit", "${remaining}", "", ""));
+            mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "Restspielzeit", "${remaining}", "", ""));
         }
         react_to("START");
     }
@@ -282,7 +287,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     public void respawn() {
         // todo: respawn
         log.debug("respawn message to be sent");
-        mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "Respawn at ", "now!"));
-        mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "Respawn", "now!"));
+        mqttOutbound.sendCommandTo("red_spawn", page_content("page0", "", "", "Respawn at ", "now!"));
+        mqttOutbound.sendCommandTo("green_spawn", page_content("page0", "", "", "Respawn", "now!"));
     }
 }

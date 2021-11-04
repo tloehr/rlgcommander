@@ -91,13 +91,13 @@ public abstract class TimedGame extends ScheduledGame {
 
             remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
             log.debug("remaining seconds: {}", remaining);
-            mqttOutbound.sendCommandTo("all", TIMER_MSG("remaining", Long.toString(remaining)));
+            mqttOutbound.sendCommandTo("all", TIMERS("remaining", Long.toString(remaining)));
         } catch (SchedulerException e) {
             log.fatal(e);
         }
     }
 
-    public JSONObject TIMER_MSG(String... timers) {
+    public JSONObject TIMERS(String... timers) {
         return envelope("timers", timers);
     }
 
