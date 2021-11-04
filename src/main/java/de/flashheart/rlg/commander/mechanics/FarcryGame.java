@@ -78,7 +78,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                             signal(LED_ALL_OFF(), "led_red", "∞:on,500;off,500"));
 
                     mqttOutbound.sendCommandTo("all",
-                            page_content("page0", "Restspielzeit", "${remaining}", "Bomb has been fused", "Bombe ist scharf"));
+                            page_content("page0", "Restspielzeit", "${remaining}", "", "Bombe ist scharf"));
 
                     estimated_end_time = LocalDateTime.now().plusSeconds(flagcapturetime);
                     monitorRemainingTime();
@@ -102,7 +102,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                             signal(LED_ALL_OFF(), "led_grn", "∞:on,2000;off,1000"));
 
                     mqttOutbound.sendCommandTo("all",
-                            page_content("page0", "Restspielzeit", "${remaining}", "Bomb has been DEfused", "Bombe ist entschärft"));
+                            page_content("page0", "Restspielzeit", "${remaining}", "", "Bombe ist entschärft"));
 
                     // subtract the seconds since the start of the game from the match_length. this would be the remaining time
                     // if we are in overtime the result is negative, hence shifting the estimated_end_time into the past
