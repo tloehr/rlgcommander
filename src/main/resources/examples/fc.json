@@ -15,11 +15,14 @@
     "green_spawn": [
       "ag07"
     ],
+    "spawns": [
+      "ag06", "ag07"
+    ],
     "sirens": [
       "ag08"
     ]
   },
-  "match_length": 600,
-  "flag_capture_time": 180,
-  "respawn_period": 0
+  "match_length": 100,
+  "flag_capture_time": 15,
+  "respawn_period": 12
 }

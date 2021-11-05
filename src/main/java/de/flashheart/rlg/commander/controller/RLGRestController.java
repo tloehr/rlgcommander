@@ -6,6 +6,8 @@ import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.support.ErrorMessage;
@@ -21,10 +23,12 @@ public class RLGRestController {
 
     GamesService gamesService;
     AgentsService agentsService;
+    ApplicationContext applicationContext;
 
-    public RLGRestController(GamesService gamesService, AgentsService agentsService) {
+    public RLGRestController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext) {
         this.gamesService = gamesService;
         this.agentsService = agentsService;
+        this.applicationContext = applicationContext;
     }
 
     @ExceptionHandler({JSONException.class, NoSuchElementException.class})
@@ -62,6 +66,13 @@ public class RLGRestController {
 
     @GetMapping("/game/status")
     public ResponseEntity<?> status_game() {
+        return new ResponseEntity<>(gamesService.getGame().orElseThrow().getStatus().toString(), HttpStatus.OK);
+    }
+
+    @GetMapping("/system/shutdown")
+    public ResponseEntity<?> system_shutdown() {
+        gamesService.shutdown_agents();
+        SpringApplication.exit(applicationContext, () -> 0);
         return new ResponseEntity<>(gamesService.getGame().orElseThrow().getStatus().toString(), HttpStatus.OK);
     }
 

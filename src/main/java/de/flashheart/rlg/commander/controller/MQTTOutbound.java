@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.controller;
 
+import de.flashheart.rlg.commander.mechanics.Game;
 import de.flashheart.rlg.commander.misc.Tools;
 import de.flashheart.rlg.commander.service.Agent;
 import de.flashheart.rlg.commander.service.AgentsService;
@@ -20,9 +21,8 @@ import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
-import java.util.Arrays;
+import javax.annotation.PreDestroy;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.UUID;
 
 @Configuration
@@ -76,6 +76,7 @@ public class MQTTOutbound {
         return messageHandler;
     }
 
+
     @Bean
     public MessageChannel mqttOutboundChannel() {
         return new DirectChannel();
@@ -95,8 +96,6 @@ public class MQTTOutbound {
     public void sendCommandTo(Agent agent, JSONObject... jsonObject) {
         sendCommandTo(agent.getAgentid(), jsonObject);
     }
-
-
 
 
 }

@@ -42,12 +42,10 @@ public abstract class TimedGame extends ScheduledGame {
     }
 
     public void resume() {
-        if (pause_start_time == null) return;
         // shift the start and end_time by the number of seconds the pause lasted
         long pause_length_in_seconds = pause_start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS);
         start_time = start_time.plusSeconds(pause_length_in_seconds);
         estimated_end_time = start_time.plusSeconds(match_length); //estimated_end_time.plusSeconds(pause_length_in_seconds);
-
         super.resume();
         monitorRemainingTime();
     }
@@ -69,7 +67,9 @@ public abstract class TimedGame extends ScheduledGame {
     void monitorRemainingTime() {
         log.debug("estimated_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_TIME));
         if (estimated_end_time.compareTo(LocalDateTime.now()) <= 0) { // time is up - endtime has passed already
+            log.debug("time is up");
             deleteJob(gametimeJobKey);
+            mqttOutbound.sendCommandTo("all", TIMERS("remaining", "-1"));
             time_is_up();
             return;
         }

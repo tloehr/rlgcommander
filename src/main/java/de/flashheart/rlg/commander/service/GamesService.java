@@ -88,7 +88,7 @@ public class GamesService {
                 createAgentMap(description.getJSONObject("agents"), Arrays.asList("sirens", "leds", "red_spawn", "green_spawn")),
                 description.getInt("flag_capture_time"),
                 description.getInt("match_length"),
-                0, // description.getInt("respawn_period")
+                description.getInt("respawn_period"),
                 scheduler,
                 mqttOutbound));
         return loaded_game;
@@ -122,6 +122,10 @@ public class GamesService {
         loaded_game.ifPresent(game -> {
             game.react_to(agentid, event); // event, will be mostly button
         });
+    }
+
+    public void shutdown_agents(){
+        mqttOutbound.sendCommandTo("all", new JSONObject().put("init", ""));
     }
 
     /**
