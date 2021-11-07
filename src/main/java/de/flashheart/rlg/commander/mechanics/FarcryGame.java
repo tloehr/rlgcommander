@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.repeatHourlyForever;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
@@ -32,15 +33,12 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     private final int respawn_period;
     private FSM farcryFSM;
     final JobKey myRespawnJobKey;
-    // this is the time, where we expect the game to end, if nothing happens. Only a pause and resume can shift this time.
-    // this variable is needed, when we an the the match in overtime
-    private LocalDateTime regularEndTime;
 
     public FarcryGame(Multimap<String, Agent> function_to_agents, int flagcapturetime, int match_length, int respawn_period, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super("farcry", function_to_agents, match_length, scheduler, mqttOutbound);
         this.flagcapturetime = flagcapturetime;
         this.respawn_period = respawn_period;
-        myRespawnJobKey = new JobKey(name + "-" + RespawnJob.name, name);
+        myRespawnJobKey = new JobKey(name + "-" + RespawnJob.class.getName(), name);
         init();
     }
 
@@ -68,7 +66,6 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     mqttOutbound.sendCommandTo("spawns", page_content("page0", "Restspielzeit", "${remaining}", "Bombe NICHT scharf", "Respawn: ${respawn}"));
 
                     estimated_end_time = start_time.plusSeconds(match_length);
-                    regularEndTime = estimated_end_time; // same value at this moment
                     monitorRemainingTime();
                     return true;
                 }
@@ -115,13 +112,14 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     // subtract the seconds since the start of the game from the match_length. this would be the remaining time
                     // if we are in overtime the result is negative, hence shifting the estimated_end_time into the past
                     // this will trigger the "TIMES_UP" event
-                    // todo: klappt noch nicht im sudden death
                     // das problem ist, dass wir vorher nochmal schnell in modus grün umschalten müssen, wenn
                     estimated_end_time = start_time.plusSeconds(match_length); //LocalDateTime.now().plusSeconds(match_length - start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS));
                     monitorRemainingTime();
                     return true;
                 }
             });
+
+            //todo: implement overtime states
 
             /**
              * bomb was defused in the end. GREEN is WINNER
@@ -220,7 +218,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
             jobs.add(myRespawnJobKey);
 
             Trigger trigger = newTrigger()
-                    .withIdentity(RespawnJob.name + "-trigger", name)
+                    .withIdentity(RespawnJob.class.getName() + "-trigger", name)
                     .startNow()
                     .withSchedule(simpleSchedule().withIntervalInSeconds(respawn_period).repeatForever())
                     .usingJobData("name_of_the_game", name) // where we find the context later
@@ -238,16 +236,20 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     }
 
     @Override
-    public void time_is_up() {
+    public void game_over() {
         deleteJob(myRespawnJobKey);
         mqttOutbound.sendCommandTo("spawns", TIMERS("respawn", "-1"), signal("buzzer", "off"));
         react_to("TIMES_UP");
     }
 
     @Override
+    public void regular_time_up() {
+
+    }
+
+    @Override
     public void resume() {
         super.resume();
-        regularEndTime = estimated_end_time;
     }
 
     @Override

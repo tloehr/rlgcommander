@@ -3,6 +3,7 @@ package de.flashheart.rlg.commander.mechanics;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.GameTimeIsUpJob;
+import de.flashheart.rlg.commander.jobs.RegularGameTimeIsUpJob;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
@@ -24,14 +25,15 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public abstract class TimedGame extends ScheduledGame {
 
     final int match_length;
-    LocalDateTime start_time, estimated_end_time;
-    final JobKey gametimeJobKey;
+    LocalDateTime start_time, estimated_end_time, regular_end_time;
+    final JobKey gametimeJobKey, regularGametimeJobKey;
     long remaining;
 
     TimedGame(String name, Multimap<String, Agent> function_to_agents, int match_length, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(name, function_to_agents, scheduler, mqttOutbound);
         this.match_length = match_length;
-        gametimeJobKey = new JobKey(name + "-" + GameTimeIsUpJob.name, name);
+        gametimeJobKey = new JobKey(name + "-" + GameTimeIsUpJob.class.getName(), name);
+        regularGametimeJobKey = new JobKey(name + "-" + RegularGameTimeIsUpJob.name, name);
         remaining = 0l;
         estimated_end_time = null;
     }
@@ -46,6 +48,7 @@ public abstract class TimedGame extends ScheduledGame {
         long pause_length_in_seconds = pause_start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS);
         start_time = start_time.plusSeconds(pause_length_in_seconds);
         estimated_end_time = start_time.plusSeconds(match_length); //estimated_end_time.plusSeconds(pause_length_in_seconds);
+        regular_end_time = estimated_end_time;
         super.resume();
         monitorRemainingTime();
     }
@@ -54,6 +57,8 @@ public abstract class TimedGame extends ScheduledGame {
     @Override
     public void start() {
         start_time = LocalDateTime.now();
+        regular_end_time = start_time.plusSeconds(match_length);
+
     }
 
     @Override
@@ -62,7 +67,9 @@ public abstract class TimedGame extends ScheduledGame {
         start_time = null;
     }
 
-    public abstract void time_is_up();
+    public abstract void game_over();
+
+    public abstract void regular_time_up();
 
     void monitorRemainingTime() {
         log.debug("estimated_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_TIME));
@@ -70,40 +77,43 @@ public abstract class TimedGame extends ScheduledGame {
             log.debug("time is up");
             deleteJob(gametimeJobKey);
             mqttOutbound.sendCommandTo("all", TIMERS("remaining", "-1"));
-            time_is_up();
+            game_over();
             return;
         }
 
-        try {
-            deleteJob(gametimeJobKey);
-            JobDetail job = newJob(GameTimeIsUpJob.class)
-                    .withIdentity(gametimeJobKey)
-                    .usingJobData("name_of_the_game", name) // where we find the context later
-                    .build();
 
-            jobs.add(gametimeJobKey);
+        create_job(gametimeJobKey, estimated_end_time, GameTimeIsUpJob.class);
+        remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
+        log.debug("remaining seconds: {}", remaining);
+        mqttOutbound.sendCommandTo("all", TIMERS("remaining", Long.toString(remaining)));
 
-            Trigger trigger = newTrigger()
-                    .withIdentity(GameTimeIsUpJob.name + "-trigger", name)
-                    .startAt(JavaTimeConverter.toDate(estimated_end_time))
-                    .build();
-            scheduler.scheduleJob(job, trigger);
-
-            remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
-            log.debug("remaining seconds: {}", remaining);
-            mqttOutbound.sendCommandTo("all", TIMERS("remaining", Long.toString(remaining)));
-        } catch (SchedulerException e) {
-            log.fatal(e);
-        }
     }
 
     public JSONObject TIMERS(String... timers) {
         return envelope("timers", timers);
     }
 
-//    public JSONObject REMAINING() {
-//        return new JSONObject().put("remaining", remaining);
-//    }
+    void create_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz) {
+        try {
+            deleteJob(jobKey);
+            JobDetail job = newJob(clazz)
+                    .withIdentity(jobKey)
+                    .usingJobData("name_of_the_game", name) // where we find the context later
+                    .build();
+
+            jobs.add(jobKey);
+
+            Trigger trigger = newTrigger()
+                    .withIdentity(clazz.getName() + "-trigger", name)
+                    .startAt(JavaTimeConverter.toDate(start_time))
+                    .build();
+            scheduler.scheduleJob(job, trigger);
+        } catch (SchedulerException e) {
+            log.fatal(e);
+        }
+    }
+
+
 
     @Override
     public JSONObject getStatus() {

@@ -10,7 +10,7 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 
 @Log4j2
 public class ConquestTicketBleedingJob extends QuartzJobBean implements InterruptableJob {
-    public static final String name = "TicketBleedingJob";
+//    public static final String name = "TicketBleedingJob";
 
     @Override
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
@@ -27,7 +27,7 @@ public class ConquestTicketBleedingJob extends QuartzJobBean implements Interrup
 
     @Override
     public void interrupt() throws UnableToInterruptJobException {
-        log.debug("{} interrupted", name);
+        log.debug("{} interrupted", getClass().getName());
         // nothing to do here
     }
 
