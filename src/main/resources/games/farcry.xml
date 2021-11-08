@@ -13,7 +13,6 @@
 <FSM>
     <STATE id="PROLOG" type="ID">
         <MESSAGE id="START" nextState="GREEN"/>
-        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="GREEN">
         <MESSAGE id="BTN01" nextState="RED"/>

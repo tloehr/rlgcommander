@@ -132,8 +132,11 @@ public abstract class Game {
      * @return
      */
     public JSONObject page_content(String page_handle, String... content) {
-        final JSONArray lines = new JSONArray();
-        Arrays.stream(content).forEach(line -> lines.put(line));
-        return new JSONObject().put("set_page", new JSONObject().put("handle", page_handle).put("content", lines));
+//        final JSONArray lines = new JSONArray();
+//        Arrays.stream(content).forEach(line -> lines.put(line));
+//        return new JSONObject().put("set_page", new JSONObject().put("handle", page_handle).put("content", lines));
+        return MQTTOutbound.page_content(page_handle, content);
     }
+
+    public abstract void reset();
 }

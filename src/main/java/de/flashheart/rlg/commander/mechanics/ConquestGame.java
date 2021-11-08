@@ -34,7 +34,7 @@ public class ConquestGame extends ScheduledGame {
     private final Map<String, FSM> agentFSMs;
     private final BigDecimal starting_tickets, ticket_price_to_respawn, minimum_cp_for_bleeding, interval_reduction_per_cp, starting_bleed_interval;
     private BigDecimal remaining_blue_tickets, remaining_red_tickets, cps_held_by_blue, cps_held_by_red;
-    private JobKey bleedingJob;
+    private JobKey ticketBleedingJobkey;
 
     /**
      * This class creates a conquest style game as we know it from Battlefield.
@@ -65,7 +65,7 @@ public class ConquestGame extends ScheduledGame {
         this.starting_bleed_interval = starting_bleed_interval;
         this.interval_reduction_per_cp = interval_reduction_per_cp;
         this.ticket_price_to_respawn = ticket_price_to_respawn;
-        bleedingJob = new JobKey(name + "-" + ConquestTicketBleedingJob.class.getName(), name);
+        ticketBleedingJobkey = new JobKey("ticketbleeding", name);
         agentFSMs = new HashMap<>();
         init();
     }
@@ -220,24 +220,9 @@ public class ConquestGame extends ScheduledGame {
 
         // setup and start bleeding job
         long repeat_every_ms = BLEEDING_CALCULATION_INTERVALL_IN_S.multiply(BigDecimal.valueOf(1000l)).longValue();
-        try {
-            deleteJob(bleedingJob);
-            JobDetail job = newJob(ConquestTicketBleedingJob.class)
-                    .withIdentity(bleedingJob)
-                    .usingJobData("name_of_the_game", name) // where we find the context later
-                    .build();
-            jobs.add(bleedingJob);
 
-            Trigger trigger = newTrigger()
-                    .withIdentity(ConquestTicketBleedingJob.class.getName() + "-trigger", name)
-                    .startNow()
-                    .withSchedule(simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever())
-                    .build();
-            broadcast_cycle_counter = 0;
-            scheduler.scheduleJob(job, trigger);
-        } catch (SchedulerException e) {
-            log.fatal(e);
-        }
+        create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
+        broadcast_cycle_counter = 0;
     }
 
     public void ticket_bleeding_cycle() {
@@ -260,7 +245,7 @@ public class ConquestGame extends ScheduledGame {
     }
 
     private void game_over() {
-        deleteJob(bleedingJob); // this cycle has no use anymore
+        deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
         // broadcast_score();
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
         String winner_led = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
@@ -293,6 +278,11 @@ public class ConquestGame extends ScheduledGame {
             ticket_loss = BLEEDING_CALCULATION_INTERVALL_IN_S.divide(OneTicketLostEveryNSeconds, 4, RoundingMode.HALF_UP);
         }
         return ticket_loss;
+    }
+
+    @Override
+    public void reset() {
+        //todo: fixme
     }
 
     @Override

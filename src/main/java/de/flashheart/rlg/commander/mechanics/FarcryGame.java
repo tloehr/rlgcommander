@@ -36,7 +36,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         super("farcry", function_to_agents, match_length, scheduler, mqttOutbound);
         this.flagcapturetime = flagcapturetime;
         this.respawn_period = respawn_period;
-        myRespawnJobKey = new JobKey(name + "-" + RespawnJob.class.getName(), name);
+        myRespawnJobKey = new JobKey("respawn", name);
         init();
     }
 
@@ -202,26 +202,27 @@ public class FarcryGame extends TimedGame implements HasRespawn {
             });
 
 
-            farcryFSM.setAction(new ArrayList<>(
-                    Arrays.asList("PROLOG")), "RESET", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{} =====> {}", curState, nextState);
-                    mqttOutbound.sendCommandTo("all",
-                            page_content("page0", "FarCry loaded", "", "Ready to start", ""));
-                    mqttOutbound.sendCommandTo("leds",
-                            signal("led_all", "∞:on,1000;off,1000"));
-                    mqttOutbound.sendCommandTo("sirens",
-                            signal("led_all", "off"));
-                    mqttOutbound.sendCommandTo("red_spawn",
-                            signal(LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000"));
-                    mqttOutbound.sendCommandTo("green_spawn",
-                            signal(LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
-                    return true;
-                }
-            });
+//            farcryFSM.setAction(new ArrayList<>(
+//                    Arrays.asList("PROLOG")), "RESET", new FSMAction() {
+//                @Override
+//                public boolean action(String curState, String message, String nextState, Object args) {
+//                    log.info("{} =====> {}", curState, nextState);
+//                    mqttOutbound.sendCommandTo("all",
+//                            page_content("page0", "FarCry loaded", "", "Ready to start", ""));
+//                    mqttOutbound.sendCommandTo("leds",
+//                            signal("led_all", "∞:on,1000;off,1000"));
+//                    mqttOutbound.sendCommandTo("sirens",
+//                            signal("led_all", "off"));
+//                    mqttOutbound.sendCommandTo("red_spawn",
+//                            signal(LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000"));
+//                    mqttOutbound.sendCommandTo("green_spawn",
+//                            signal(LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
+//                    return true;
+//                }
+//            });
 
-            react_to("RESET");
+            //react_to("RESET");
+            reset();
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             log.error(ex);
             System.exit(1);
@@ -230,9 +231,9 @@ public class FarcryGame extends TimedGame implements HasRespawn {
 
     @Override
     public void start() {
-        if (!farcryFSM.getCurrentState().equalsIgnoreCase("PROLOG")) react_to("RESET");
+        if (!farcryFSM.getCurrentState().equalsIgnoreCase("PROLOG")) reset();
         super.start();
-        // start the respawn timer job.
+        // (re)start the respawn timer job.
         deleteJob(myRespawnJobKey);
         if (respawn_period > 0) { // respawn_period == 0 means we should not care about it
             create_job(myRespawnJobKey, simpleSchedule().withIntervalInSeconds(respawn_period).repeatForever(), RespawnJob.class);
@@ -244,7 +245,6 @@ public class FarcryGame extends TimedGame implements HasRespawn {
 
     @Override
     public void game_over() {
-        super.game_over();
         deleteJob(myRespawnJobKey);
         mqttOutbound.sendCommandTo("spawns", TIMERS("respawn", "-1"), signal("buzzer", "off"));
         react_to("GAME_OVER");
@@ -252,12 +252,8 @@ public class FarcryGame extends TimedGame implements HasRespawn {
 
     @Override
     public void overtime() {
-        super.overtime();
-    }
-
-    @Override
-    public void resume() {
-        super.resume();
+        log.debug("overtime");
+        react_to("OVERTIME");
     }
 
     @Override
@@ -271,6 +267,21 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         } else {
             log.debug("message is not for me. ignoring.");
         }
+    }
+
+    @Override
+    public void reset() {
+        mqttOutbound.sendCommandTo("all",
+                page_content("page0", "FarCry loaded", "", "Ready to start", ""));
+        mqttOutbound.sendCommandTo("leds",
+                signal("led_all", "∞:on,1000;off,1000"));
+        mqttOutbound.sendCommandTo("sirens",
+                signal("led_all", "off"));
+        mqttOutbound.sendCommandTo("red_spawn",
+                signal(LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000"));
+        mqttOutbound.sendCommandTo("green_spawn",
+                signal(LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
+        react_to("RESET");
     }
 
     @Override

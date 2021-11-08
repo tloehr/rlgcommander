@@ -48,6 +48,12 @@ public class RLGRestController {
         return new ResponseEntity<>(gamesService.start_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
     }
 
+    @PostMapping("/game/reset")
+    public ResponseEntity<?> reset_game() {
+        return new ResponseEntity<>(gamesService.reset_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
+    }
+
+
     @PostMapping("/game/unload")
     public ResponseEntity<?> stop_game() {
         gamesService.unload_game();

@@ -104,6 +104,11 @@ public class GamesService {
         return loaded_game;
     }
 
+    public Optional<Game> reset_game() {
+        loaded_game.ifPresent(game -> game.reset());
+        return loaded_game;
+    }
+
     public Optional<Game> resume_game() {
         loaded_game.ifPresent(game -> {
             if (game instanceof ScheduledGame) ((ScheduledGame) game).resume();

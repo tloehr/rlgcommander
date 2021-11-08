@@ -8,7 +8,7 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 
 @DisallowConcurrentExecution
 @Log4j2
-public class RegularGameTimeIsUpJob extends QuartzJobBean implements InterruptableJob {
+public class OvertimeJob extends QuartzJobBean implements InterruptableJob {
 
     @Override
     protected void executeInternal(JobExecutionContext jobExecutionContext) {

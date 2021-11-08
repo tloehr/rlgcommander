@@ -7,6 +7,7 @@ import de.flashheart.rlg.commander.service.AgentsService;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +23,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
 import javax.annotation.PreDestroy;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -97,5 +99,10 @@ public class MQTTOutbound {
         sendCommandTo(agent.getAgentid(), jsonObject);
     }
 
+    public static JSONObject page_content(String page_handle, String... content) {
+        final JSONArray lines = new JSONArray();
+        Arrays.stream(content).forEach(line -> lines.put(line));
+        return new JSONObject().put("set_page", new JSONObject().put("handle", page_handle).put("content", lines));
+    }
 
 }
