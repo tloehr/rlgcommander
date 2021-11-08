@@ -24,31 +24,57 @@ import static org.quartz.TriggerBuilder.newTrigger;
 @Log4j2
 public abstract class TimedGame extends ScheduledGame {
 
+    /**
+     * the length of the match in seconds. Due to the nature of certain gamemodes (like farcry) this value is rather a
+     * proposal than a constant value
+     */
     final int match_length;
-    LocalDateTime start_time, estimated_end_time, regular_end_time;
-    final JobKey gametimeJobKey, regularGametimeJobKey;
+    /**
+     * start_time is the timestamp when the game started. it will shift forward when the game was paused and is
+     * resumed.
+     */
+    LocalDateTime start_time;
+    /**
+     * estimated_end_time is the timestamp when the game will possibly end. can change due to game situations like in
+     * Farcry (last moment flag activations or quick attacker)
+     */
+    LocalDateTime estimated_end_time;
+    /**
+     * this is the expected end timestamp of the game. will shift with the start_time due to pauses.
+     */
+    LocalDateTime regular_end_time;
+
+    /**
+     * the remaining time in seconds. from now to the end (estimated)
+     */
     long remaining;
+
+    final JobKey gametimeJobKey, regularGametimeJobKey;
 
     TimedGame(String name, Multimap<String, Agent> function_to_agents, int match_length, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(name, function_to_agents, scheduler, mqttOutbound);
         this.match_length = match_length;
         gametimeJobKey = new JobKey(name + "-" + GameTimeIsUpJob.class.getName(), name);
-        regularGametimeJobKey = new JobKey(name + "-" + RegularGameTimeIsUpJob.name, name);
+        regularGametimeJobKey = new JobKey(name + "-" + RegularGameTimeIsUpJob.class.getName(), name);
         remaining = 0l;
         estimated_end_time = null;
     }
 
+    @Override
     public void pause() {
         super.pause();
         deleteJob(gametimeJobKey);
+        deleteJob(regularGametimeJobKey);
     }
 
+    @Override
     public void resume() {
         // shift the start and end_time by the number of seconds the pause lasted
         long pause_length_in_seconds = pause_start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS);
         start_time = start_time.plusSeconds(pause_length_in_seconds);
-        estimated_end_time = start_time.plusSeconds(match_length); //estimated_end_time.plusSeconds(pause_length_in_seconds);
+        estimated_end_time = start_time.plusSeconds(match_length);
         regular_end_time = estimated_end_time;
+        create_job(regularGametimeJobKey, regular_end_time, RegularGameTimeIsUpJob.class);
         super.resume();
         monitorRemainingTime();
     }
@@ -58,7 +84,7 @@ public abstract class TimedGame extends ScheduledGame {
     public void start() {
         start_time = LocalDateTime.now();
         regular_end_time = start_time.plusSeconds(match_length);
-
+        create_job(regularGametimeJobKey, regular_end_time, RegularGameTimeIsUpJob.class);
     }
 
     @Override
@@ -67,20 +93,18 @@ public abstract class TimedGame extends ScheduledGame {
         start_time = null;
     }
 
-    public abstract void game_over();
+    public void game_over() {
+        log.debug("time is up");
+        mqttOutbound.sendCommandTo("all", TIMERS("remaining", "-1"));
+    }
 
-    public abstract void regular_time_up();
+    public void overtime() {
+        log.debug("overtime");
+        overtime();
+    }
 
     void monitorRemainingTime() {
-        log.debug("estimated_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_TIME));
-        if (estimated_end_time.compareTo(LocalDateTime.now()) <= 0) { // time is up - endtime has passed already
-            log.debug("time is up");
-            deleteJob(gametimeJobKey);
-            mqttOutbound.sendCommandTo("all", TIMERS("remaining", "-1"));
-            game_over();
-            return;
-        }
-
+        log.debug("estimated_end_time = {}, regular_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_TIME), regular_end_time.format(DateTimeFormatter.ISO_TIME));
 
         create_job(gametimeJobKey, estimated_end_time, GameTimeIsUpJob.class);
         remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
@@ -89,7 +113,7 @@ public abstract class TimedGame extends ScheduledGame {
 
     }
 
-    public JSONObject TIMERS(String... timers) {
+    JSONObject TIMERS(String... timers) {
         return envelope("timers", timers);
     }
 
@@ -98,7 +122,7 @@ public abstract class TimedGame extends ScheduledGame {
             deleteJob(jobKey);
             JobDetail job = newJob(clazz)
                     .withIdentity(jobKey)
-                    .usingJobData("name_of_the_game", name) // where we find the context later
+                    .usingJobData("name_of_the_game", name)
                     .build();
 
             jobs.add(jobKey);
@@ -113,6 +137,27 @@ public abstract class TimedGame extends ScheduledGame {
         }
     }
 
+    void create_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz) {
+
+        JobDetail job = newJob(clazz)
+                .withIdentity(jobKey)
+                .build();
+        jobs.add(jobKey);
+
+        Trigger trigger = newTrigger()
+                .withIdentity(clazz.getName() + "-trigger", name)
+                .startNow()
+                .withSchedule(ssb)
+                .usingJobData("name_of_the_game", name) // where we find the context later
+                .build();
+
+
+        try {
+            scheduler.scheduleJob(job, trigger);
+        } catch (SchedulerException e) {
+            log.fatal(e);
+        }
+    }
 
 
     @Override

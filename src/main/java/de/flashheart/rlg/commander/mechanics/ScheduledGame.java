@@ -36,8 +36,9 @@ public abstract class ScheduledGame extends Game {
 
     protected void deleteJob(JobKey jobKey) {
         if (jobKey == null) return;
-        log.debug("deleting Job {}", jobKey);
         try {
+            if (scheduler.checkExists(jobKey)) return;
+            log.debug("deleting Job {}", jobKey);
             scheduler.interrupt(jobKey);
             scheduler.deleteJob(jobKey);
             jobs.remove(jobKey);

@@ -16,7 +16,7 @@ public class RegularGameTimeIsUpJob extends QuartzJobBean implements Interruptab
             log.debug(jobExecutionContext.getJobDetail().getKey() + " executed");
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("name_of_the_game");
             TimedGame timedGame = (TimedGame) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
-            timedGame.regular_time_up();
+            timedGame.overtime();
         } catch (SchedulerException e) {
             log.fatal(e);
         }

@@ -13,39 +13,40 @@
 <FSM>
     <STATE id="PROLOG" type="ID">
         <MESSAGE id="START" nextState="GREEN"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="GREEN">
         <MESSAGE id="BTN01" nextState="RED"/>
-        <MESSAGE id="TIMES_UP" nextState="DEFENDED"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="GAME_OVER" nextState="DEFENDED"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="RED">
         <MESSAGE id="BTN01" nextState="GREEN"/>
-        <MESSAGE id="REGULAR_ENDTIME_REACHED" nextState="RED_OVERTIME"/>
-        <MESSAGE id="TIMES_UP" nextState="CAPTURED"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="OVERTIME" nextState="RED_OVERTIME"/>
+        <MESSAGE id="GAME_OVER" nextState="CAPTURED"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="RED_OVERTIME">
         <MESSAGE id="BTN01" nextState="DEFENDED_OVERTIME"/>
-        <MESSAGE id="TIMES_UP" nextState="CAPTURED_OVERTIME"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="GAME_OVER" nextState="CAPTURED_OVERTIME"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
+    <!-- ENDING STATES -->
     <STATE id="DEFENDED">
         <MESSAGE id="START" nextState="GREEN"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="DEFENDED_OVERTIME">
         <MESSAGE id="START" nextState="GREEN"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="CAPTURED">
         <MESSAGE id="START" nextState="GREEN"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="CAPTURED_OVERTIME">
         <MESSAGE id="START" nextState="GREEN"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
 </FSM>
 

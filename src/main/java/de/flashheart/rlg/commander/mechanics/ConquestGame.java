@@ -65,7 +65,7 @@ public class ConquestGame extends ScheduledGame {
         this.starting_bleed_interval = starting_bleed_interval;
         this.interval_reduction_per_cp = interval_reduction_per_cp;
         this.ticket_price_to_respawn = ticket_price_to_respawn;
-        bleedingJob = new JobKey(name + "-" + ConquestTicketBleedingJob.name, name);
+        bleedingJob = new JobKey(name + "-" + ConquestTicketBleedingJob.class.getName(), name);
         agentFSMs = new HashMap<>();
         init();
     }
@@ -229,7 +229,7 @@ public class ConquestGame extends ScheduledGame {
             jobs.add(bleedingJob);
 
             Trigger trigger = newTrigger()
-                    .withIdentity(ConquestTicketBleedingJob.name + "-trigger", name)
+                    .withIdentity(ConquestTicketBleedingJob.class.getName() + "-trigger", name)
                     .startNow()
                     .withSchedule(simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever())
                     .build();
