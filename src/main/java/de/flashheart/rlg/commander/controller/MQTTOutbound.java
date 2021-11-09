@@ -99,10 +99,4 @@ public class MQTTOutbound {
         sendCommandTo(agent.getAgentid(), jsonObject);
     }
 
-    public static JSONObject page_content(String page_handle, String... content) {
-        final JSONArray lines = new JSONArray();
-        Arrays.stream(content).forEach(line -> lines.put(line));
-        return new JSONObject().put("set_page", new JSONObject().put("handle", page_handle).put("content", lines));
-    }
-
 }

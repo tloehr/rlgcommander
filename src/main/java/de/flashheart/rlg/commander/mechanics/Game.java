@@ -114,29 +114,6 @@ public abstract class Game {
                 .put("sir3", "off");
     }
 
-    public JSONObject INIT() {
-        return new JSONObject()
-                .put("init", "");
-    }
-
-
-    public JSONObject score(String score) {
-        return new JSONObject().put("score", score);
-    }
-
-    /**
-     * helper method to create a set_page command
-     *
-     * @param page_handle
-     * @param content
-     * @return
-     */
-    public JSONObject page_content(String page_handle, String... content) {
-//        final JSONArray lines = new JSONArray();
-//        Arrays.stream(content).forEach(line -> lines.put(line));
-//        return new JSONObject().put("set_page", new JSONObject().put("handle", page_handle).put("content", lines));
-        return MQTTOutbound.page_content(page_handle, content);
-    }
 
     public abstract void reset();
 }

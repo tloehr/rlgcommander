@@ -24,12 +24,6 @@ public class Agent {
     private String gameid;
     private LocalDateTime lastheartbeat;
     private int wifi;
-    private boolean has_siren;
-    private boolean has_leds;
-    private boolean has_sound;
-    private boolean has_line_display;
-    private boolean has_matrix_display;
-    private boolean has_rfid;
 
     /**
      * dummy agent for testing
@@ -41,12 +35,6 @@ public class Agent {
         this.gameid = "g1";
         this.lastheartbeat = LocalDateTime.now();
         this.wifi = 3;
-        this.has_siren = true;
-        this.has_leds = true;
-        this.has_sound = true;
-        this.has_line_display = true;
-        this.has_matrix_display = true;
-        this.has_rfid = true;
     }
 
     public Agent(JSONObject jsonObject) {
@@ -54,25 +42,13 @@ public class Agent {
         this.gameid = jsonObject.getString("gameid");
         this.lastheartbeat = JavaTimeConverter.from_iso8601(jsonObject.getString("timestamp"));
         this.wifi = jsonObject.getInt("wifi");
-        this.has_siren = jsonObject.getBoolean(HAS_SIRENS);
-        this.has_leds = jsonObject.getBoolean(HAS_LEDS);
-        this.has_sound = jsonObject.getBoolean(HAS_SOUND);
-        this.has_line_display = jsonObject.getBoolean(HAS_LINE_DISPLAY);
-        this.has_matrix_display = jsonObject.getBoolean(HAS_MATRIX_DISPLAY);
-        this.has_rfid = jsonObject.getBoolean(HAS_RFID);
     }
 
     public JSONObject toJson() {
         return new JSONObject().put("agentid", agentid)
                 .put("gameid", gameid)
                 .put("timestamp", JavaTimeConverter.to_iso8601(lastheartbeat))
-                .put("wifi", wifi)
-                .put(HAS_SIRENS, has_siren)
-                .put(HAS_LEDS, has_leds)
-                .put(HAS_LINE_DISPLAY, has_line_display)
-                .put(HAS_MATRIX_DISPLAY, has_matrix_display)
-                .put(HAS_SOUND, has_sound)
-                .put(HAS_RFID, has_rfid);
+                .put("wifi", wifi);
     }
 
     @Override

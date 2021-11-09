@@ -3,6 +3,7 @@ package de.flashheart.rlg.commander.mechanics;
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.google.common.collect.Multimap;
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.misc.Tools;
@@ -203,7 +204,7 @@ public class ConquestGame extends ScheduledGame {
                         "led_blu", "∞:off,750;on,750"
                 ));
         mqttOutbound.sendCommandTo("all",
-                page_content("page0", "Loaded Game Mode:", "Conquest"));
+                MQTT.page_content("page0", "Loaded Game Mode:", "Conquest"));
 
     }
 
@@ -251,8 +252,8 @@ public class ConquestGame extends ScheduledGame {
         String winner_led = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
         mqttOutbound.sendCommandTo("all",
                 signal(LED_ALL_OFF(), winner_led, "∞:on,1000;off,1000"),
-                score("Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue()),
-                page_content("page0", "The Winner is", outcome)
+                MQTT.score("Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue()),
+                MQTT.page_content("page0", "The Winner is", outcome)
         );
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
         mqttOutbound.sendCommandTo("sirens", signal(SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
@@ -260,8 +261,8 @@ public class ConquestGame extends ScheduledGame {
 
     private void broadcast_score() {
         mqttOutbound.sendCommandTo("all",
-                score("Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue()),
-                page_content("page0", "Red: " + cps_held_by_red.intValue() + " flag(s)", "Blue: " + cps_held_by_blue.intValue() + " flag(s)")
+                MQTT.score("Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue()),
+                MQTT.page_content("page0", "Red: " + cps_held_by_red.intValue() + " flag(s)", "Blue: " + cps_held_by_blue.intValue() + " flag(s)")
         );
         log.debug("Cp: R{} B{}", cps_held_by_red.intValue(), cps_held_by_blue.intValue());
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
