@@ -76,11 +76,11 @@ public class ConquestGame extends ScheduledGame {
         function_to_agents.get("capture_points").forEach(agent -> agentFSMs.put(agent.getAgentid(), createFSM(agent)));
         set_all_to_prolog(false);
         mqttOutbound.sendCommandTo("red_spawn",
-                signal(LED_ALL_OFF(), "led_red", "∞:on,2000;off,1000"));
+                MQTT.signal(MQTT.LED_ALL_OFF(), "led_red", "∞:on,2000;off,1000"));
         mqttOutbound.sendCommandTo("blue_spawn",
-                signal(LED_ALL_OFF(), "led_blu", "∞:on,2000;off,1000"));
+                MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,2000;off,1000"));
         mqttOutbound.sendCommandTo("sirens",
-                signal(Tools.merge(SIR_ALL_OFF(), LED_ALL_OFF())));
+                MQTT.signal(Tools.merge(MQTT.SIR_ALL_OFF(), MQTT.LED_ALL_OFF())));
     }
 
     @Override
@@ -92,12 +92,12 @@ public class ConquestGame extends ScheduledGame {
 
         if (function_to_agents.get("red_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // red respawn button was pressed
-            mqttOutbound.sendCommandTo(sender, signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
+            mqttOutbound.sendCommandTo(sender, MQTT.signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_to_respawn);
             broadcast_score();   // to make the respawn show up quicker. 
         } else if (function_to_agents.get("blue_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // blue respawn button was pressed
-            mqttOutbound.sendCommandTo(sender, signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
+            mqttOutbound.sendCommandTo(sender, MQTT.signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_to_respawn);
             broadcast_score();   // to make the respawn show up quicker.
         } else if (function_to_agents.get("capture_points").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
@@ -118,7 +118,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            signal(LED_ALL_OFF(), "led_wht", "∞:on,2000;off,1000")
+                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_wht", "∞:on,2000;off,1000")
                     );
                     broadcast_score();
                     return true;
@@ -132,7 +132,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            signal(LED_ALL_OFF(),
+                            MQTT.signal(MQTT.LED_ALL_OFF(),
                                     "buzzer", "2:on,75;off,75",
                                     "led_blu", "∞:on,1000;off,1000")
                     );
@@ -148,7 +148,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            signal(LED_ALL_OFF(),
+                            MQTT.signal(MQTT.LED_ALL_OFF(),
                                     "buzzer", "2:on,75;off,75",
                                     "led_red", "∞:on,1000;off,1000")
                     );
@@ -164,7 +164,7 @@ public class ConquestGame extends ScheduledGame {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
                     mqttOutbound.sendCommandTo(agent,
-                            signal(LED_ALL_OFF(),
+                            MQTT.signal(MQTT.LED_ALL_OFF(),
                                     "buzzer", "2:on,75;off,75",
                                     "led_blu", "∞:on,1000;off,1000")
                     );
@@ -199,7 +199,7 @@ public class ConquestGame extends ScheduledGame {
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("INIT"));
         if (ignore_signals_for_capture_points) return;
         mqttOutbound.sendCommandTo("capture_points",
-                signal(Tools.merge(LED_ALL_OFF(), SIR_ALL_OFF()),
+                MQTT.signal(Tools.merge(MQTT.LED_ALL_OFF(), MQTT.SIR_ALL_OFF()),
                         "led_red", "∞:on,750;off,750",
                         "led_blu", "∞:off,750;on,750"
                 ));
@@ -216,7 +216,7 @@ public class ConquestGame extends ScheduledGame {
         cps_held_by_blue = BigDecimal.ZERO;
         cps_held_by_red = BigDecimal.ZERO;
 
-        mqttOutbound.sendCommandTo("sirens", signal(SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
+        mqttOutbound.sendCommandTo("sirens", MQTT.signal(MQTT.SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
 
         // setup and start bleeding job
@@ -251,12 +251,12 @@ public class ConquestGame extends ScheduledGame {
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
         String winner_led = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
         mqttOutbound.sendCommandTo("all",
-                signal(LED_ALL_OFF(), winner_led, "∞:on,1000;off,1000"),
+                MQTT.signal(MQTT.LED_ALL_OFF(), winner_led, "∞:on,1000;off,1000"),
                 MQTT.score("Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue()),
                 MQTT.page_content("page0", "The Winner is", outcome)
         );
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
-        mqttOutbound.sendCommandTo("sirens", signal(SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
+        mqttOutbound.sendCommandTo("sirens", MQTT.signal(MQTT.SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
     }
 
     private void broadcast_score() {

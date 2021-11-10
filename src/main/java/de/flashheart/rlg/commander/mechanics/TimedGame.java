@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.mechanics;
 
 import com.google.common.collect.Multimap;
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.GameTimeIsUpJob;
 import de.flashheart.rlg.commander.jobs.OvertimeJob;
@@ -107,7 +108,7 @@ public abstract class TimedGame extends ScheduledGame {
     }
 
     JSONObject TIMERS(String... timers) {
-        return envelope("timers", timers);
+        return MQTT.envelope("timers", timers);
     }
 
     @Override

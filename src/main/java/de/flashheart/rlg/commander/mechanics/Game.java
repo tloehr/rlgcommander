@@ -70,49 +70,7 @@ public abstract class Game {
         return new JSONObject().put("name", name);
     }
 
-    public JSONObject signal(String... signals) {
-        return signal(new JSONObject(), signals);
-    }
 
-    public JSONObject signal(JSONObject json_to_start_with, String... signals) {
-        return envelope("signal", json_to_start_with, signals);
-    }
-
-    public JSONObject envelope(String key, JSONObject json_to_start_with, String... signals) {
-        return new JSONObject().put(key, fromPairs(json_to_start_with, signals));
-    }
-
-    public JSONObject envelope(String key, String... signals) {
-        return new JSONObject().put(key, fromPairs(new JSONObject(), signals));
-    }
-
-    public JSONObject fromPairs(String... pairs) {
-        return fromPairs(new JSONObject(), pairs);
-    }
-
-    public JSONObject fromPairs(JSONObject json_to_start_with, String... pairs) {
-        if (pairs.length == 0 || pairs.length % 2 != 0) return json_to_start_with;
-        for (int s = 0; s < pairs.length; s += 2) {
-            json_to_start_with.put(pairs[s], pairs[s + 1]);
-        }
-        return json_to_start_with;
-    }
-
-    public JSONObject LED_ALL_OFF() {
-        return new JSONObject()
-                .put("led_wht", "off")
-                .put("led_red", "off")
-                .put("led_ylw", "off")
-                .put("led_grn", "off")
-                .put("led_blu", "off");
-    }
-
-    public JSONObject SIR_ALL_OFF() {
-        return new JSONObject()
-                .put("sir1", "off")
-                .put("sir2", "off")
-                .put("sir3", "off");
-    }
 
 
     public abstract void reset();

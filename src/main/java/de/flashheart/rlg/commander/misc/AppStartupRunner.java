@@ -10,9 +10,12 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
 import java.util.Arrays;
 
 @Component
@@ -33,27 +36,13 @@ public class AppStartupRunner implements ApplicationRunner {
         Arrays.asList(new String[]{"sirens", "leds", "capture_points", "red_spawn", "blue_spawn", "green_spawn", "spawns"})
                 .forEach(group -> mqttOutbound.sendCommandTo(group, new JSONObject()));
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-                .withZone(ZoneId.systemDefault());
+        DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmm");
+        String buildDate = LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()).format(FORMATTER);
 
-
-        DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
-
-        String formatted = LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()).format(FORMATTER);
+        long seconds_since_first_day_2021 = ChronoUnit.MINUTES.between(LocalDateTime.of(2021,11,9,0,0,0), LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()));
 
         mqttOutbound.sendCommandTo("all",
-                //todo: another page vor vanity
-                MQTT.page_content("page0", "RLG2 Cmd", "V" + buildProperties.getVersion(),
-                        "Build:" + formatted, "${agversion}"));
-        // Artifact's name from the pom.xml file
-        log.debug(buildProperties.getName());
-        // Artifact version
-        log.debug(buildProperties.getVersion());
-        // Date and Time of the build
-        log.debug(buildProperties.getTime());
-        // Artifact ID from the pom file
-        log.debug(buildProperties.getArtifact());
-        // Group ID from the pom file
-        log.debug(buildProperties.getGroup());
+                MQTT.page_content("page0", "RLG-Commander", "v" + buildProperties.getVersion() + " b" + seconds_since_first_day_2021,
+                        "RLG-Agent", "v${agversion} b${agbuild}"));
     }
 }
