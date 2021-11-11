@@ -1,9 +1,11 @@
 package de.flashheart.rlg.commander.controller;
 
+import de.flashheart.rlg.commander.misc.Tools;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class MQTT {
     /**
@@ -14,10 +16,20 @@ public class MQTT {
      * @return
      */
     public static JSONObject page_content(String page_handle, String... content) {
-        final JSONArray lines = new JSONArray();
-        Arrays.stream(content).forEach(line -> lines.put(line));
-        return new JSONObject().put("set_page", new JSONObject().put("handle", page_handle).put("content", lines));
+        return new JSONObject().put(page_handle, new JSONArray(content));
     }
+
+    public static JSONObject set_page(JSONObject... pages) {
+        return new JSONObject().put("set_page", merge(pages));
+    }
+
+    public static JSONObject add_page(String... page_handle) {
+        return new JSONObject().put("add_page", new JSONArray(page_handle));
+    }
+
+    public static JSONObject del_pages(String... page_handle) {
+          return new JSONObject().put("del_pages", new JSONArray(page_handle));
+      }
 
 
     public static JSONObject init_agent() {
@@ -75,5 +87,10 @@ public class MQTT {
                 .put("sir3", "off");
     }
 
+    public static JSONObject merge(JSONObject... jsons) {
+        HashMap<String, Object> map = new HashMap<>();
+        Arrays.stream(jsons).forEach(json -> map.putAll(json.toMap()));
+        return new JSONObject(map);
+    }
 
 }

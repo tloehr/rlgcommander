@@ -90,7 +90,7 @@ public class MQTTOutbound {
 
     public void sendCommandTo(String subchannel, JSONObject... data) {
         String header = outbound_topic + subchannel;
-        String _data = Tools.merge(data).toString();
+        String _data = MQTT.merge(data).toString();
         log.debug("sending: {} - {}", header, _data);
         gateway.sendToMqtt(_data, header);
     }

@@ -2,13 +2,12 @@ package de.flashheart.rlg.commander.misc;
 
 import org.json.JSONObject;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.TimeZone;
 
 public class Tools {
-    public static JSONObject merge(JSONObject... jsons) {
-        HashMap<String, Object> map = new HashMap<>();
-        Arrays.stream(jsons).forEach(json -> map.putAll(json.toMap()));
-        return new JSONObject(map);
-    }
+
 }

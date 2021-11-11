@@ -6,11 +6,11 @@ import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
-import de.flashheart.rlg.commander.misc.Tools;
 import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
-import org.quartz.*;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -18,11 +18,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
-import static org.quartz.TriggerBuilder.newTrigger;
 
 /**
  * lifecycle * cleanup before new game is laoded (by GameService) *
@@ -80,7 +79,7 @@ public class ConquestGame extends ScheduledGame {
         mqttOutbound.sendCommandTo("blue_spawn",
                 MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,2000;off,1000"));
         mqttOutbound.sendCommandTo("sirens",
-                MQTT.signal(Tools.merge(MQTT.SIR_ALL_OFF(), MQTT.LED_ALL_OFF())));
+                MQTT.signal(MQTT.merge(MQTT.SIR_ALL_OFF(), MQTT.LED_ALL_OFF())));
     }
 
     @Override
@@ -199,12 +198,12 @@ public class ConquestGame extends ScheduledGame {
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("INIT"));
         if (ignore_signals_for_capture_points) return;
         mqttOutbound.sendCommandTo("capture_points",
-                MQTT.signal(Tools.merge(MQTT.LED_ALL_OFF(), MQTT.SIR_ALL_OFF()),
+                MQTT.signal(MQTT.merge(MQTT.LED_ALL_OFF(), MQTT.SIR_ALL_OFF()),
                         "led_red", "∞:on,750;off,750",
                         "led_blu", "∞:off,750;on,750"
                 ));
         mqttOutbound.sendCommandTo("all",
-                MQTT.page_content("page0", "Loaded Game Mode:", "Conquest"));
+                MQTT.set_page(MQTT.page_content("page0", "Loaded Game Mode:", "Conquest")));
 
     }
 
@@ -253,7 +252,7 @@ public class ConquestGame extends ScheduledGame {
         mqttOutbound.sendCommandTo("all",
                 MQTT.signal(MQTT.LED_ALL_OFF(), winner_led, "∞:on,1000;off,1000"),
                 MQTT.score("Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue()),
-                MQTT.page_content("page0", "The Winner is", outcome)
+                MQTT.set_page(MQTT.page_content("page0", "The Winner is", outcome))
         );
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
         mqttOutbound.sendCommandTo("sirens", MQTT.signal(MQTT.SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
@@ -262,7 +261,7 @@ public class ConquestGame extends ScheduledGame {
     private void broadcast_score() {
         mqttOutbound.sendCommandTo("all",
                 MQTT.score("Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue()),
-                MQTT.page_content("page0", "Red: " + cps_held_by_red.intValue() + " flag(s)", "Blue: " + cps_held_by_blue.intValue() + " flag(s)")
+                MQTT.set_page(MQTT.page_content("page0", "Red: " + cps_held_by_red.intValue() + " flag(s)", "Blue: " + cps_held_by_blue.intValue() + " flag(s)"))
         );
         log.debug("Cp: R{} B{}", cps_held_by_red.intValue(), cps_held_by_blue.intValue());
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
@@ -284,6 +283,19 @@ public class ConquestGame extends ScheduledGame {
     @Override
     public void reset() {
         //todo: fixme
+    }
+
+    @Override
+    public List<String> getDisplay() {
+        super.getDisplay().add(0, "Conquest");
+//        this.minimum_cp_for_bleeding = minimum_cp_for_bleeding;
+//             this.starting_bleed_interval = starting_bleed_interval;
+//             this.interval_reduction_per_cp = interval_reduction_per_cp;
+//             this.ticket_price_to_respawn = ticket_price_to_respawn;
+        super.getDisplay().add(String.format("Tickets: %s", starting_tickets.intValue()));
+        super.getDisplay().add(String.format("Bleeding @%s CPs", minimum_cp_for_bleeding.intValue()));
+        super.getDisplay().add(String.format("Bleeding every: %ds", starting_bleed_interval.intValue()));
+        return super.getDisplay();
     }
 
     @Override

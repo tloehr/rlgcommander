@@ -5,18 +5,19 @@ import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.GameTimeIsUpJob;
 import de.flashheart.rlg.commander.jobs.OvertimeJob;
-import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
-import org.quartz.*;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
-
-import static org.quartz.JobBuilder.newJob;
-import static org.quartz.TriggerBuilder.newTrigger;
+import java.util.List;
+import java.util.TimeZone;
 
 /**
  * an abstract superclass for handling any game mode that has an (estimated or fixed) end_time We are talking about
@@ -120,4 +121,10 @@ public abstract class TimedGame extends ScheduledGame {
                 .put("match_starting_time", start_time != null ? start_time.format(DateTimeFormatter.ISO_DATE_TIME) : "not started yet");
     }
 
+    @Override
+    public List<String> getDisplay() {
+        LocalDateTime ldtTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(match_length), TimeZone.getTimeZone("UTC").toZoneId());
+        super.getDisplay().add(0, String.format("Spielzeit:", ldtTime.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))));
+        return super.getDisplay();
+    }
 }

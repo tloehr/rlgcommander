@@ -1,14 +1,16 @@
 package de.flashheart.rlg.commander.mechanics;
 
 import com.google.common.collect.Multimap;
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 @Log4j2
 public abstract class Game {
@@ -51,7 +53,7 @@ public abstract class Game {
      * before another game is loaded, cleanup first
      */
     public void cleanup() {
-        mqttOutbound.sendCommandTo("all", new JSONObject().put("init", ""));
+        mqttOutbound.sendCommandTo("all", MQTT.init_agent());
         function_groups.forEach(group -> mqttOutbound.sendCommandTo(group, new JSONObject()));
     }
 
@@ -70,8 +72,14 @@ public abstract class Game {
         return new JSONObject().put("name", name);
     }
 
-
-
+    /**
+     * returns a json array with the description of the gamemode in 4 lines by 20 cols.
+     *
+     * @return
+     */
+    public List<String> getDisplay(){
+        return new ArrayList<>();
+    }
 
     public abstract void reset();
 }
