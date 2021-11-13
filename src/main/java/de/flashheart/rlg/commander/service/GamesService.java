@@ -45,7 +45,7 @@ public class GamesService {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    void welcome_page() {
+    public void welcome_page() {
         long hours_since_last_version_change = ChronoUnit.HOURS.between(LocalDateTime.of(2021, 11, 9, 0, 0, 0), LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()));
         mqttOutbound.sendCommandTo("all",
                 MQTT.add_page("versionpage", "gamepage"));
