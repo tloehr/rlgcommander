@@ -19,12 +19,12 @@ public class MQTT {
         return new JSONObject().put(page_handle, new JSONArray(content));
     }
 
-    public static JSONObject set_page(JSONObject... pages) {
-        return new JSONObject().put("set_page", merge(pages));
+    public static JSONObject pages(JSONObject... pages) {
+        return new JSONObject().put("page_content", merge(pages));
     }
 
-    public static JSONObject add_page(String... page_handle) {
-        return new JSONObject().put("add_page", new JSONArray(page_handle));
+    public static JSONObject add_pages(String... page_handle) {
+        return new JSONObject().put("add_pages", new JSONArray(page_handle));
     }
 
     public static JSONObject del_pages(String... page_handle) {

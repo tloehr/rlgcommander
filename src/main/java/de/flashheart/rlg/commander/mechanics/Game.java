@@ -18,6 +18,7 @@ public abstract class Game {
     final MQTTOutbound mqttOutbound;
     final HashSet<String> function_groups;
     final Multimap<String, Agent> function_to_agents;
+    final ArrayList<String> game_description_display;
 
     Game(String name, Multimap<String, Agent> function_to_agents, MQTTOutbound mqttOutbound) {
         this.name = name;
@@ -26,6 +27,7 @@ public abstract class Game {
         function_groups = new HashSet<>(function_to_agents.keySet()); // this contains the agent group names : "sirens", "leds", "red_spawn", "green_spawn"´
         // functional subsriptions
         function_groups.forEach(group -> function_to_agents.get(group).forEach(agent -> mqttOutbound.sendCommandTo(agent, new JSONObject().put("subscribe_to", group))));
+        game_description_display = new ArrayList<>();
     }
 
     /**
@@ -77,8 +79,8 @@ public abstract class Game {
      *
      * @return
      */
-    public List<String> getDisplay(){
-        return new ArrayList<>();
+    public String[] getDisplay(){
+        return game_description_display.toArray(new String[]{});
     }
 
     public abstract void reset();

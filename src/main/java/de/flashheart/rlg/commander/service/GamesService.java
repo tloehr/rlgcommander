@@ -48,13 +48,13 @@ public class GamesService {
     public void welcome_page() {
         long hours_since_last_version_change = ChronoUnit.HOURS.between(LocalDateTime.of(2021, 11, 9, 0, 0, 0), LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()));
         mqttOutbound.sendCommandTo("all",
-                MQTT.add_page("versionpage", "gamepage"));
+                MQTT.add_pages("versionpage", "gamepage"));
         mqttOutbound.sendCommandTo("all",
-                MQTT.set_page(
+                MQTT.pages(
                         MQTT.page_content("page0", "Mister Flashheart", "presents", "the Real Life", "Gaming System 2.0"),
                         MQTT.page_content("versionpage", "RLG-Commander", "v" + buildProperties.getVersion() + " b" + hours_since_last_version_change,
                                 "RLG-Agent", "v${agversion} b${agbuild}"),
-                        MQTT.page_content("gamepage", loaded_game.isPresent() ? loaded_game.get().getDisplay().toArray(new String[]{}) : new String[]{"no", "loaded", "game", "found"})
+                        MQTT.page_content("gamepage", loaded_game.isPresent() ? loaded_game.get().getDisplay() : new String[]{"no", "loaded", "game", "found"})
                 )
         );
     }
@@ -79,7 +79,7 @@ public class GamesService {
             log.info("GAME LOADED: " + game.getStatus());
             mqttOutbound.sendCommandTo("all",
                     MQTT.del_pages("versionpage", "gamepage"),
-                    MQTT.set_page(MQTT.page_content("page0", game.getDisplay().toArray(new String[]{})))
+                    MQTT.pages(MQTT.page_content("page0", game.getDisplay()))
             );
         });
         return loaded_game;
