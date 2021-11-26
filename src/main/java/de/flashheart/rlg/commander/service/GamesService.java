@@ -90,6 +90,32 @@ public class GamesService {
         loaded_game = Optional.empty();
     }
 
+//    /**
+//     * reset a specific agent to neutral and set the remaining tickets to correct an in-game misbehaviour
+//     * @param description
+//     * @return
+//     */
+//    private Optional<Game> reset_conquest_flag(JSONObject description) {
+//        log.debug("Resetting running conquest game");
+//        loaded_game.ifPresent(game -> {
+//            if (game.getName().equalsIgnoreCase(description.getString("name"))) {
+//
+//                description.getBigDecimal("ticket_change")
+//            }
+//        });
+//        loaded_game = Optional.of(new ConquestGame(
+//                createAgentMap(description.getJSONObject("agents"), Arrays.asList("cp_agents", "blue_spawn_agent", "red_spawn_agent", "sirens")),
+//                description.getBigDecimal("starting_tickets"),
+//                description.getBigDecimal("ticket_price_to_respawn"),
+//                description.getBigDecimal("minimum_cp_for_bleeding"),
+//                description.getBigDecimal("starting_bleed_interval"),
+//                description.getBigDecimal("interval_reduction_per_cp"),
+//                scheduler,
+//                mqttOutbound));
+//        return loaded_game;
+//    }
+
+
     private Optional<Game> load_conquest(JSONObject description) {
         log.debug("\n   __________  _   ______  __  ___________________\n" +
                 "  / ____/ __ \\/ | / / __ \\/ / / / ____/ ___/_  __/\n" +

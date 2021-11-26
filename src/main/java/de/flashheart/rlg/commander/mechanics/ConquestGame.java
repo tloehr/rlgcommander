@@ -17,6 +17,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -73,6 +75,8 @@ public class ConquestGame extends ScheduledGame {
         init();
     }
 
+
+
     @Override
     public void init() {
         function_to_agents.get("capture_points").forEach(agent -> agentFSMs.put(agent.getAgentid(), createFSM(agent)));
@@ -92,6 +96,7 @@ public class ConquestGame extends ScheduledGame {
             return;
         }
 
+        // where did this message come from ?
         if (function_to_agents.get("red_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // red respawn button was pressed
             mqttOutbound.sendCommandTo(sender, MQTT.signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
@@ -126,6 +131,21 @@ public class ConquestGame extends ScheduledGame {
                     return true;
                 }
             });
+
+            // switching back to NEUTRAL in case of player error
+            fsm.setAction(new ArrayList<>(Arrays.asList("RED", "BLUE")), "TO_NEUTRAL", new FSMAction() {
+                @Override
+                public boolean action(String curState, String message, String nextState, Object args) {
+                    log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
+                    mqttOutbound.sendCommandTo(agent,
+                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_wht", "∞:on,2000;off,1000")
+                    );
+                    broadcast_score();
+                    return true;
+                }
+            });
+
+
             /**
              * NEUTRAL => BLUE
              */

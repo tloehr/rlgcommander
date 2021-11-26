@@ -5,12 +5,10 @@ import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 @Log4j2
 public abstract class Game {
@@ -50,6 +48,9 @@ public abstract class Game {
      */
     public abstract void init();
 
+    public String getName() {
+        return name;
+    }
 
     /**
      * before another game is loaded, cleanup first
@@ -79,7 +80,7 @@ public abstract class Game {
      *
      * @return
      */
-    public String[] getDisplay(){
+    public String[] getDisplay() {
         return game_description_display.toArray(new String[]{});
     }
 

@@ -21,11 +21,15 @@
         <MESSAGE id="BTN01" nextState="RED"/>
         <MESSAGE id="GAME_OVER" nextState="GAME_OVER"/>
         <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="TO_NEUTRAL" nextState="NEUTRAL"/> <!-- player shouldn't have pressed the button. Go back to
+        neutral -->
     </STATE>
     <STATE id="RED">
         <MESSAGE id="BTN01" nextState="BLUE"/>
         <MESSAGE id="GAME_OVER" nextState="GAME_OVER"/>
         <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="TO_NEUTRAL" nextState="NEUTRAL"/> <!-- player shouldn't have pressed the button. Go back to
+                neutral -->
     </STATE>
     <STATE id="GAME_OVER">
         <MESSAGE id="INIT" nextState="PROLOG"/>
