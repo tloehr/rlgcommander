@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.mechanics;
+package de.flashheart.rlg.commander.games;
 
 /**
  * Interface to mark Gamemodes that tell players when to respawn.

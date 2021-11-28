@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.mechanics;
+package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
@@ -25,7 +25,8 @@ import java.util.Map;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
 /**
- * lifecycle * cleanup before new game is laoded (by GameService) *
+ * lifecycle
+ * cleanup before new game is laoded (by GameService)
  */
 @Log4j2
 public class ConquestGame extends ScheduledGame {
@@ -36,6 +37,7 @@ public class ConquestGame extends ScheduledGame {
     private final BigDecimal starting_tickets, ticket_price_to_respawn, minimum_cp_for_bleeding, interval_reduction_per_cp, starting_bleed_interval;
     private BigDecimal remaining_blue_tickets, remaining_red_tickets, cps_held_by_blue, cps_held_by_red;
     private JobKey ticketBleedingJobkey;
+    private boolean game_in_prolog_state;
 
     /**
      * This class creates a conquest style game as we know it from Battlefield.
@@ -72,21 +74,9 @@ public class ConquestGame extends ScheduledGame {
         game_description_display.add(String.format("Tickets: %s", starting_tickets.intValue()));
         game_description_display.add(String.format("Bleeding @%s CPs", minimum_cp_for_bleeding.intValue()));
         game_description_display.add(String.format("Bleeding every: %ds", starting_bleed_interval.intValue()));
-        init();
-    }
 
-
-
-    @Override
-    public void init() {
         function_to_agents.get("capture_points").forEach(agent -> agentFSMs.put(agent.getAgentid(), createFSM(agent)));
-        set_all_to_prolog(false);
-        mqttOutbound.sendCommandTo("red_spawn",
-                MQTT.signal(MQTT.LED_ALL_OFF(), "led_red", "∞:on,2000;off,1000"));
-        mqttOutbound.sendCommandTo("blue_spawn",
-                MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,2000;off,1000"));
-        mqttOutbound.sendCommandTo("sirens",
-                MQTT.signal(MQTT.merge(MQTT.SIR_ALL_OFF(), MQTT.LED_ALL_OFF())));
+        reset();
     }
 
     @Override
@@ -124,9 +114,7 @@ public class ConquestGame extends ScheduledGame {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
-                    mqttOutbound.sendCommandTo(agent,
-                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_wht", "∞:on,2000;off,1000")
-                    );
+                    agent_to_neutral(agent);
                     broadcast_score();
                     return true;
                 }
@@ -137,14 +125,10 @@ public class ConquestGame extends ScheduledGame {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
-                    mqttOutbound.sendCommandTo(agent,
-                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_wht", "∞:on,2000;off,1000")
-                    );
-                    broadcast_score();
+                    agent_to_neutral(agent);
                     return true;
                 }
             });
-
 
             /**
              * NEUTRAL => BLUE
@@ -153,11 +137,7 @@ public class ConquestGame extends ScheduledGame {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
-                    mqttOutbound.sendCommandTo(agent,
-                            MQTT.signal(MQTT.LED_ALL_OFF(),
-                                    "buzzer", "2:on,75;off,75",
-                                    "led_blu", "∞:on,1000;off,1000")
-                    );
+                    agent_to_blue(agent);
                     broadcast_score();
                     return true;
                 }
@@ -169,11 +149,7 @@ public class ConquestGame extends ScheduledGame {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
-                    mqttOutbound.sendCommandTo(agent,
-                            MQTT.signal(MQTT.LED_ALL_OFF(),
-                                    "buzzer", "2:on,75;off,75",
-                                    "led_red", "∞:on,1000;off,1000")
-                    );
+                    agent_to_red(agent);
                     broadcast_score();
                     return true;
                 }
@@ -185,28 +161,12 @@ public class ConquestGame extends ScheduledGame {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
-                    mqttOutbound.sendCommandTo(agent,
-                            MQTT.signal(MQTT.LED_ALL_OFF(),
-                                    "buzzer", "2:on,75;off,75",
-                                    "led_blu", "∞:on,1000;off,1000")
-                    );
+                    agent_to_blue(agent);
                     broadcast_score();
                     return true;
                 }
             });
 
-//            fsm.setAction(new ArrayList<>(
-//                    Arrays.asList("RED", "BLUE", "NEUTRAL")), "GAME_OVER", new FSMAction() {
-//                @Override
-//                public boolean action(String curState, String message, String nextState, Object args) {
-//                    log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
-//                    mqttOutbound.sendCommandTo(agent,
-//
-//                    return true;
-//                }
-//            });
-            // clearing all additional subscriptions from agents
-            //fsm.ProcessFSM("INIT");
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             log.error(ex);
@@ -214,25 +174,33 @@ public class ConquestGame extends ScheduledGame {
         }
     }
 
-    /**
-     * where ever we are, NOW we are going to PROLOG
-     */
-    void set_all_to_prolog(boolean ignore_signals_for_capture_points) {
-        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("INIT"));
-        if (ignore_signals_for_capture_points) return;
-        mqttOutbound.sendCommandTo("capture_points",
-                MQTT.signal(MQTT.merge(MQTT.LED_ALL_OFF(), MQTT.SIR_ALL_OFF()),
-                        "led_red", "∞:on,750;off,750",
-                        "led_blu", "∞:off,750;on,750"
-                ));
-        mqttOutbound.sendCommandTo("all",
-                MQTT.pages(MQTT.page_content("page0", "Loaded Game Mode:", "Conquest")));
+    private void agent_to_neutral(Agent agent) {
+        mqttOutbound.sendCommandTo(agent,
+                MQTT.signal(MQTT.LED_ALL_OFF(), "led_wht", "∞:on,2000;off,1000")
+        );
+    }
 
+    private void agent_to_blue(Agent agent) {
+        mqttOutbound.sendCommandTo(agent,
+                MQTT.signal(MQTT.LED_ALL_OFF(),
+                        "buzzer", "2:on,75;off,75",
+                        "led_blu", "∞:on,1000;off,1000")
+        );
+    }
+
+    private void agent_to_red(Agent agent) {
+        mqttOutbound.sendCommandTo(agent,
+                MQTT.signal(MQTT.LED_ALL_OFF(),
+                        "buzzer", "2:on,75;off,75",
+                        "led_red", "∞:on,1000;off,1000")
+        );
     }
 
     @Override
     public void start() {
-        set_all_to_prolog(true);
+        if (!game_in_prolog_state) return;
+        game_in_prolog_state = false;
+
         remaining_blue_tickets = starting_tickets;
         remaining_red_tickets = starting_tickets;
         cps_held_by_blue = BigDecimal.ZERO;
@@ -249,7 +217,7 @@ public class ConquestGame extends ScheduledGame {
     }
 
     public void ticket_bleeding_cycle() {
-        if (pause_start_time != null) return; // as we are pausing, we are not doing anything
+        if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
 
         broadcast_cycle_counter++;
         cps_held_by_blue = BigDecimal.valueOf(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("BLUE")).count());
@@ -303,9 +271,22 @@ public class ConquestGame extends ScheduledGame {
         return ticket_loss;
     }
 
+
     @Override
     public void reset() {
-        //todo: fixme
+        super.reset();
+        game_in_prolog_state = true;
+        mqttOutbound.sendCommandTo("capture_points",
+                MQTT.signal(MQTT.merge(MQTT.LED_ALL_OFF(), MQTT.SIR_ALL_OFF()),
+                        // todo: wirklich
+                        "led_red", "∞:on,750;off,750",
+                        "led_blu", "∞:off,750;on,750"
+                ));
+        mqttOutbound.sendCommandTo("red_spawn",
+                MQTT.signal(MQTT.LED_ALL_OFF(), "led_red", "∞:on,2000;off,1000"));
+        mqttOutbound.sendCommandTo("blue_spawn",
+                MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,2000;off,1000"));
+        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("RESET"));
     }
 
     @Override

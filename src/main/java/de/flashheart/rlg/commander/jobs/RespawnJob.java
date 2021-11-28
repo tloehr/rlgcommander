@@ -1,6 +1,6 @@
 package de.flashheart.rlg.commander.jobs;
 
-import de.flashheart.rlg.commander.mechanics.HasRespawn;
+import de.flashheart.rlg.commander.games.HasRespawn;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;

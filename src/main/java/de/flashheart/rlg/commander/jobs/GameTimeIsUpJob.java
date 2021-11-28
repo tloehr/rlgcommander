@@ -1,7 +1,6 @@
 package de.flashheart.rlg.commander.jobs;
 
-import de.flashheart.rlg.commander.mechanics.Game;
-import de.flashheart.rlg.commander.mechanics.TimedGame;
+import de.flashheart.rlg.commander.games.TimedGame;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.*;
 import org.springframework.scheduling.quartz.QuartzJobBean;

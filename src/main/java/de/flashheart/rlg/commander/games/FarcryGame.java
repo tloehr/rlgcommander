@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.mechanics;
+package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
@@ -17,9 +17,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.TimeZone;
 
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -45,11 +43,10 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         game_description_display.add(0, respawn_period == 0 ? "Respawns not handled" : String.format("Respawn-Time: %s", ldtRespawnTime.format(DateTimeFormatter.ofPattern("mm:ss"))));
         game_description_display.add(0, String.format("Bombtime: %s", ldtFlagTime.format(DateTimeFormatter.ofPattern("mm:ss"))));
         game_description_display.add(0, "FarCry Assault/Rush");
-        init();
+        create_FSM();
     }
 
-    @Override
-    public void init() {
+    public void create_FSM() {
         try {
             farcryFSM = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/farcry.xml"), null);
             /**
@@ -242,15 +239,10 @@ public class FarcryGame extends TimedGame implements HasRespawn {
 
     @Override
     public void reset() {
-        mqttOutbound.sendCommandTo("all",
-                MQTT.pages(MQTT.page_content("page0", getDisplay())));
-        mqttOutbound.sendCommandTo("leds",
-                MQTT.signal("led_all", "∞:on,1000;off,1000"));
-        mqttOutbound.sendCommandTo("sirens",
-                MQTT.signal("led_all", "off"));
+        super.reset();
         mqttOutbound.sendCommandTo("red_spawn",
                 MQTT.signal(MQTT.LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000"));
-        mqttOutbound.sendCommandTo("green_spawn",
+        mqttOutbound.sendCommandTo("blue_spawn",
                 MQTT.signal(MQTT.LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
         react_to("RESET");
     }

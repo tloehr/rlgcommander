@@ -47,12 +47,12 @@ public class MQTT {
         return signal(new JSONObject(), signals);
     }
 
-    public static JSONObject signal(JSONObject json_to_start_with, String... signals) {
-        return envelope("signal", json_to_start_with, signals);
+    public static JSONObject signal(JSONObject template, String... signals) {
+        return envelope("signal", template, signals);
     }
 
-    public static JSONObject envelope(String key, JSONObject json_to_start_with, String... signals) {
-        return new JSONObject().put(key, fromPairs(json_to_start_with, signals));
+    public static JSONObject envelope(String key, JSONObject template, String... signals) {
+        return new JSONObject().put(key, fromPairs(template, signals));
     }
 
     public static JSONObject envelope(String key, String... signals) {
@@ -63,12 +63,12 @@ public class MQTT {
         return fromPairs(new JSONObject(), pairs);
     }
 
-    public static JSONObject fromPairs(JSONObject json_to_start_with, String... pairs) {
-        if (pairs.length == 0 || pairs.length % 2 != 0) return json_to_start_with;
+    public static JSONObject fromPairs(JSONObject template, String... pairs) {
+        if (pairs.length == 0 || pairs.length % 2 != 0) return template;
         for (int s = 0; s < pairs.length; s += 2) {
-            json_to_start_with.put(pairs[s], pairs[s + 1]);
+            template.put(pairs[s], pairs[s + 1]);
         }
-        return json_to_start_with;
+        return template;
     }
 
     public static JSONObject LED_ALL_OFF() {

@@ -12,15 +12,15 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="START" nextState="GREEN"/>
+        <MESSAGE id="START" nextState="BLUE"/>
     </STATE>
-    <STATE id="GREEN">
+    <STATE id="BLUE">
         <MESSAGE id="BTN01" nextState="RED"/>
         <MESSAGE id="GAME_OVER" nextState="DEFENDED"/>
         <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="RED">
-        <MESSAGE id="BTN01" nextState="GREEN"/>
+        <MESSAGE id="BTN01" nextState="BLUE"/>
         <MESSAGE id="OVERTIME" nextState="RED_OVERTIME"/>
         <MESSAGE id="GAME_OVER" nextState="CAPTURED"/>
         <MESSAGE id="RESET" nextState="PROLOG"/>
@@ -32,19 +32,19 @@
     </STATE>
     <!-- ENDING STATES -->
     <STATE id="DEFENDED">
-        <MESSAGE id="START" nextState="GREEN"/>
+        <MESSAGE id="START" nextState="BLUE"/>
         <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="DEFENDED_OVERTIME">
-        <MESSAGE id="START" nextState="GREEN"/>
+        <MESSAGE id="START" nextState="BLUE"/>
         <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="CAPTURED">
-        <MESSAGE id="START" nextState="GREEN"/>
+        <MESSAGE id="START" nextState="BLUE"/>
         <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="CAPTURED_OVERTIME">
-        <MESSAGE id="START" nextState="GREEN"/>
+        <MESSAGE id="START" nextState="BLUE"/>
         <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
 </FSM>

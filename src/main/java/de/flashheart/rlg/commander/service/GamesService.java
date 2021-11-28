@@ -4,10 +4,10 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.mechanics.ConquestGame;
-import de.flashheart.rlg.commander.mechanics.FarcryGame;
-import de.flashheart.rlg.commander.mechanics.Game;
-import de.flashheart.rlg.commander.mechanics.ScheduledGame;
+import de.flashheart.rlg.commander.games.ConquestGame;
+import de.flashheart.rlg.commander.games.FarcryGame;
+import de.flashheart.rlg.commander.games.Game;
+import de.flashheart.rlg.commander.games.ScheduledGame;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -142,7 +142,7 @@ public class GamesService {
                 "/_/    \\__,_/_/   \\____/_/   \\__, /\n" +
                 "                            /____/");
         loaded_game = Optional.of(new FarcryGame(
-                createAgentMap(description.getJSONObject("agents"), Arrays.asList("sirens", "leds", "red_spawn", "green_spawn")),
+                createAgentMap(description.getJSONObject("agents"), Arrays.asList("sirens", "leds", "red_spawn", "blue_spawn")),
                 description.getInt("flag_capture_time"),
                 description.getInt("match_length"),
                 description.getInt("respawn_period"),
@@ -167,16 +167,12 @@ public class GamesService {
     }
 
     public Optional<Game> resume_game() {
-        loaded_game.ifPresent(game -> {
-            if (game instanceof ScheduledGame) ((ScheduledGame) game).resume();
-        });
+        loaded_game.ifPresent(game -> game.resume());
         return loaded_game;
     }
 
     public Optional<Game> pause_game() {
-        loaded_game.ifPresent(game -> {
-            if (game instanceof ScheduledGame) ((ScheduledGame) game).pause();
-        });
+        loaded_game.ifPresent(game -> game.pause());
         return loaded_game;
     }
 

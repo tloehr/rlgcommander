@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.mechanics;
+package de.flashheart.rlg.commander.games;
 
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
@@ -11,6 +11,7 @@ import org.quartz.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.quartz.JobBuilder.newJob;
@@ -21,7 +22,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
  */
 @Log4j2
 public abstract class ScheduledGame extends Game {
-    LocalDateTime pause_start_time;
+    Optional<LocalDateTime> pausing_since;
     final Scheduler scheduler;
     final Set<JobKey> jobs;
 
@@ -108,21 +109,24 @@ public abstract class ScheduledGame extends Game {
     /**
      * to resume a paused game.
      */
+    @Override
     public void resume() {
-        pause_start_time = null;
+        pausing_since = Optional.empty();
     }
 
     /**
      * to pause a running game
      */
+    @Override
     public void pause() {
-        pause_start_time = LocalDateTime.now();
+
+        pausing_since = Optional.of(LocalDateTime.now());
     }
 
     @Override
     public JSONObject getStatus() {
         return super.getStatus()
-                .put("pause_start_time", pause_start_time != null ? pause_start_time.format(DateTimeFormatter.ISO_DATE_TIME) : JSONObject.NULL);
+                .put("pause_start_time",  pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ISO_DATE_TIME) : JSONObject.NULL);
     }
 
 }

@@ -9,30 +9,32 @@
 <FSM>
     <STATE id="PROLOG" type="ID">
         <MESSAGE id="START" nextState="NEUTRAL"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="NEUTRAL">
         <!-- As we have only one button it always starts with blue. red players have to push twice.-->
         <MESSAGE id="BTN01" nextState="BLUE"/>
         <MESSAGE id="GAME_OVER" nextState="GAME_OVER"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
     <STATE id="BLUE">
         <MESSAGE id="BTN01" nextState="RED"/>
         <MESSAGE id="GAME_OVER" nextState="GAME_OVER"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
-        <MESSAGE id="TO_NEUTRAL" nextState="NEUTRAL"/> <!-- player shouldn't have pressed the button. Go back to
-        neutral -->
+        <MESSAGE id="RESET" nextState="PROLOG"/>
+        <!-- to correct in game rule violation -->
+        <MESSAGE id="TO_NEUTRAL" nextState="NEUTRAL"/>
+        <MESSAGE id="TO_RED" nextState="RED"/>
     </STATE>
     <STATE id="RED">
         <MESSAGE id="BTN01" nextState="BLUE"/>
         <MESSAGE id="GAME_OVER" nextState="GAME_OVER"/>
-        <MESSAGE id="INIT" nextState="PROLOG"/>
-        <MESSAGE id="TO_NEUTRAL" nextState="NEUTRAL"/> <!-- player shouldn't have pressed the button. Go back to
-                neutral -->
+        <MESSAGE id="RESET" nextState="PROLOG"/>
+        <!-- to correct in game rule violation -->
+        <MESSAGE id="TO_NEUTRAL" nextState="NEUTRAL"/>
+        <MESSAGE id="TO_BLUE" nextState="BLUE"/>
     </STATE>
     <STATE id="GAME_OVER">
-        <MESSAGE id="INIT" nextState="PROLOG"/>
+        <MESSAGE id="RESET" nextState="PROLOG"/>
     </STATE>
 </FSM>
 

@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.mechanics;
+package de.flashheart.rlg.commander.games;
 
 public interface HasCountdown {
     void countdown();

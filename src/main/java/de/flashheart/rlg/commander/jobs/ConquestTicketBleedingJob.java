@@ -1,6 +1,6 @@
 package de.flashheart.rlg.commander.jobs;
 
-import de.flashheart.rlg.commander.mechanics.ConquestGame;
+import de.flashheart.rlg.commander.games.ConquestGame;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;

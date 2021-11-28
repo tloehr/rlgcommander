@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.mechanics;
+package de.flashheart.rlg.commander.games;
 
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
@@ -14,9 +14,7 @@ import org.quartz.Scheduler;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.TimeZone;
 
 /**
@@ -74,7 +72,7 @@ public abstract class TimedGame extends ScheduledGame {
     @Override
     public void resume() {
         // shift the start and end_time by the number of seconds the pause lasted
-        long pause_length_in_seconds = pause_start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS);
+        long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
         start_time = start_time.plusSeconds(pause_length_in_seconds);
         estimated_end_time = start_time.plusSeconds(match_length);
         regular_end_time = estimated_end_time;

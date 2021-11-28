@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.mechanics;
+package de.flashheart.rlg.commander.games;
 
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
@@ -16,6 +16,8 @@ public abstract class Game {
     final MQTTOutbound mqttOutbound;
     final HashSet<String> function_groups;
     final Multimap<String, Agent> function_to_agents;
+    // should be overwritten by the game class to describe the mode and the parameters currently in use
+    // can be displayed on the LCDs
     final ArrayList<String> game_description_display;
 
     Game(String name, Multimap<String, Agent> function_to_agents, MQTTOutbound mqttOutbound) {
@@ -43,11 +45,6 @@ public abstract class Game {
         react_to("_internal", event);
     }
 
-    /**
-     * we call this method after constructor is finished
-     */
-    public abstract void init();
-
     public String getName() {
         return name;
     }
@@ -64,6 +61,10 @@ public abstract class Game {
      * when the actual game should start. You run this method.
      */
     public abstract void start();
+
+    public abstract void pause();
+
+    public abstract void resume();
 
 
     /**
@@ -84,5 +85,13 @@ public abstract class Game {
         return game_description_display.toArray(new String[]{});
     }
 
-    public abstract void reset();
+    public void reset() {
+        mqttOutbound.sendCommandTo("all",
+                MQTT.pages(MQTT.page_content("page0", getDisplay())));
+        mqttOutbound.sendCommandTo("leds",
+                MQTT.signal("led_all", "∞:on,1000;off,1000"));
+        mqttOutbound.sendCommandTo("sirens",
+                MQTT.merge(MQTT.signal("led_all", "off"), MQTT.signal("sir_all", "off")));
+
+    }
 }
