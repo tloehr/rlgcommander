@@ -7,7 +7,6 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.ConquestGame;
 import de.flashheart.rlg.commander.games.FarcryGame;
 import de.flashheart.rlg.commander.games.Game;
-import de.flashheart.rlg.commander.games.ScheduledGame;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,8 +18,10 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
@@ -47,14 +48,17 @@ public class GamesService {
     @EventListener(ApplicationReadyEvent.class)
     public void welcome_page() {
         long hours_since_last_version_change = ChronoUnit.HOURS.between(LocalDateTime.of(2021, 11, 9, 0, 0, 0), LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()));
-        mqttOutbound.sendCommandTo("all",
-                MQTT.add_pages("versionpage", "gamepage"));
+//        mqttOutbound.sendCommandTo("all",
+//                MQTT.add_pages("gamepage"));
         mqttOutbound.sendCommandTo("all",
                 MQTT.pages(
-                        MQTT.page_content("page0", "Mister Flashheart", "presents", "the Real Life", "Gaming System 2.0"),
-                        MQTT.page_content("versionpage", "RLG-Commander", "v" + buildProperties.getVersion() + " b" + hours_since_last_version_change,
-                                "RLG-Agent", "v${agversion} b${agbuild}"),
-                        MQTT.page_content("gamepage", loaded_game.isPresent() ? loaded_game.get().getDisplay() : new String[]{"no", "loaded", "game", "found"})
+                        MQTT.page_content("page0", "RLGS2 ready",
+                                "c v" + buildProperties.getVersion() + " b" + LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyMMddHHmm")),
+                                "a v${agversion} b${agbdate}",
+                                "flashheart.de")
+//                        MQTT.page_content("versionpage", "RLG-Commander", "v" + buildProperties.getVersion() + " b" + LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+//                                "RLG-Agent", "v${agversion} b${agbuild}"),
+//                        MQTT.page_content("gamepage", loaded_game.isPresent() ? loaded_game.get().getDisplay() : new String[]{"no", "loaded", "game", "found"})
                 )
         );
     }
@@ -78,7 +82,6 @@ public class GamesService {
         loaded_game.ifPresent(game -> {
             log.info("GAME LOADED: " + game.getStatus());
             mqttOutbound.sendCommandTo("all",
-                    MQTT.del_pages("versionpage", "gamepage"),
                     MQTT.pages(MQTT.page_content("page0", game.getDisplay()))
             );
         });
@@ -217,4 +220,11 @@ public class GamesService {
     }
 
 
+    public Optional<Game> admin_game(String description) {
+        //loaded_game.ifPresent(game -> game.reset());
+        loaded_game.ifPresent(game -> {
+            if (!game.isPaused()) return;
+        });
+        return loaded_game;
+    }
 }

@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>de.flashheart.rlg</groupId>
-    <artifactId>commander</artifactId>
-    <version>0.1</version>
+    <artifactId>rlgcommander</artifactId>
+    <version>1.0.0</version>
     <name>rlgcommander</name>
-    <description>Command Module for the RLG2 gaming system.</description>
+    <description>Command Module for the RLGS2 gaming system.</description>
     <properties>
         <java.version>11</java.version>
     </properties>
@@ -83,6 +83,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
         </plugins>
+        <finalName>${project.artifactId}</finalName>
     </build>
 
 </project>

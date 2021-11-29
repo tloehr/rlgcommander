@@ -7,8 +7,11 @@ import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Optional;
 
 @Log4j2
 public abstract class Game {
@@ -19,6 +22,7 @@ public abstract class Game {
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
     final ArrayList<String> game_description_display;
+    Optional<LocalDateTime> pausing_since;
 
     Game(String name, Multimap<String, Agent> function_to_agents, MQTTOutbound mqttOutbound) {
         this.name = name;
@@ -28,6 +32,7 @@ public abstract class Game {
         // functional subsriptions
         function_groups.forEach(group -> function_to_agents.get(group).forEach(agent -> mqttOutbound.sendCommandTo(agent, new JSONObject().put("subscribe_to", group))));
         game_description_display = new ArrayList<>();
+        pausing_since = Optional.empty();
     }
 
     /**
@@ -62,10 +67,24 @@ public abstract class Game {
      */
     public abstract void start();
 
-    public abstract void pause();
 
-    public abstract void resume();
+    /**
+     * to resume a paused game.
+     */
+    public void resume() {
+        pausing_since = Optional.empty();
+    }
 
+    /**
+     * to pause a running game
+     */
+    public void pause() {
+        pausing_since = Optional.of(LocalDateTime.now());
+    }
+
+    public boolean isPaused() {
+        return pausing_since.isPresent();
+    }
 
     /**
      * returns a JSON Object which describes the current game situation.
@@ -73,7 +92,9 @@ public abstract class Game {
      * @return
      */
     public JSONObject getStatus() {
-        return new JSONObject().put("name", name);
+        return new JSONObject()
+                .put("name", name)
+                .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ISO_DATE_TIME) : JSONObject.NULL);
     }
 
     /**
@@ -87,11 +108,8 @@ public abstract class Game {
 
     public void reset() {
         mqttOutbound.sendCommandTo("all",
-                MQTT.pages(MQTT.page_content("page0", getDisplay())));
-        mqttOutbound.sendCommandTo("leds",
-                MQTT.signal("led_all", "∞:on,1000;off,1000"));
-        mqttOutbound.sendCommandTo("sirens",
-                MQTT.merge(MQTT.signal("led_all", "off"), MQTT.signal("sir_all", "off")));
-
+                MQTT.signal("led_all", "off", "sir_all", "off"),
+                MQTT.pages(MQTT.page_content("page0", getDisplay()))
+        );
     }
 }

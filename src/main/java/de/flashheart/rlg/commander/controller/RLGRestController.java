@@ -43,6 +43,12 @@ public class RLGRestController {
         return new ResponseEntity<>(gamesService.load_game(description).orElseThrow().getStatus().toString(), HttpStatus.CREATED);
     }
 
+    // set values for a running game in pause mode to fix on field misbehaviour
+    @PostMapping("/game/admin")
+      public ResponseEntity<?> admin_game(@RequestBody String description) {
+          return new ResponseEntity<>(gamesService.admin_game(description).orElseThrow().getStatus().toString(), HttpStatus.OK);
+      }
+
     @PostMapping("/game/start")
     public ResponseEntity<?> start_game() {
         return new ResponseEntity<>(gamesService.start_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
@@ -52,7 +58,6 @@ public class RLGRestController {
     public ResponseEntity<?> reset_game() {
         return new ResponseEntity<>(gamesService.reset_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
     }
-
 
     @PostMapping("/game/unload")
     public ResponseEntity<?> stop_game() {

@@ -22,7 +22,6 @@ import static org.quartz.TriggerBuilder.newTrigger;
  */
 @Log4j2
 public abstract class ScheduledGame extends Game {
-    Optional<LocalDateTime> pausing_since;
     final Scheduler scheduler;
     final Set<JobKey> jobs;
 
@@ -104,29 +103,6 @@ public abstract class ScheduledGame extends Game {
             }
         });
         jobs.clear();
-    }
-
-    /**
-     * to resume a paused game.
-     */
-    @Override
-    public void resume() {
-        pausing_since = Optional.empty();
-    }
-
-    /**
-     * to pause a running game
-     */
-    @Override
-    public void pause() {
-
-        pausing_since = Optional.of(LocalDateTime.now());
-    }
-
-    @Override
-    public JSONObject getStatus() {
-        return super.getStatus()
-                .put("pause_start_time",  pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ISO_DATE_TIME) : JSONObject.NULL);
     }
 
 }

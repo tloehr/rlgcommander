@@ -50,7 +50,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         try {
             farcryFSM = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/farcry.xml"), null);
             /**
-             * PROLOG => GREEN
+             * PROLOG => BLUE
              */
             farcryFSM.setAction("PROLOG", "START", new FSMAction() {
                 @Override
@@ -61,7 +61,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     mqttOutbound.sendCommandTo("sirens",
                             MQTT.signal(MQTT.SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
                     mqttOutbound.sendCommandTo("leds",
-                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_grn", "∞:on,2000;off,1000"));
+                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,2000;off,1000"));
                     mqttOutbound.sendCommandTo("spawns", MQTT.pages(MQTT.page_content("page0", "Restspielzeit", "${remaining}", "Bombe NICHT scharf", respawn_period > 0 ? "Respawn: ${respawn}" : "")));
                     estimated_end_time = start_time.plusSeconds(match_length);
                     monitorRemainingTime();
@@ -70,9 +70,9 @@ public class FarcryGame extends TimedGame implements HasRespawn {
             });
 
             /**
-             * GREEN => RED
+             * BLUE => RED
              */
-            farcryFSM.setAction("GREEN", "BTN01", new FSMAction() {
+            farcryFSM.setAction("BLUE", "BTN01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{} =====> {}", curState, nextState);
@@ -88,7 +88,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
             });
 
             /**
-             * RED => GREEN
+             * RED => BLUE
              */
             farcryFSM.setAction("RED", "BTN01", new FSMAction() {
                 @Override
@@ -99,7 +99,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                                     "sir2", "off",
                                     "sir3", "1:on,1000;off,1"));
                     mqttOutbound.sendCommandTo("leds",
-                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_grn", "∞:on,2000;off,1000"));
+                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,2000;off,1000"));
                     mqttOutbound.sendCommandTo("spawns", MQTT.pages(MQTT.page_content("page0", "Restspielzeit", "${remaining}", "Bombe NICHT scharf", respawn_period > 0 ? "Respawn: ${respawn}" : "")));
                     // subtract the seconds since the start of the game from the match_length. this would be the remaining time
                     // if we are in overtime the result is negative, hence shifting the estimated_end_time into the past
@@ -112,16 +112,16 @@ public class FarcryGame extends TimedGame implements HasRespawn {
             });
 
             /**
-             * bomb was defused in the end. GREEN is WINNER
+             * bomb was defused in the end. BLUE is WINNER
              */
-            farcryFSM.setAction("GREEN", "GAME_OVER", new FSMAction() {
+            farcryFSM.setAction("BLUE", "GAME_OVER", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.sendCommandTo("sirens",
                             MQTT.signal(MQTT.SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
                     mqttOutbound.sendCommandTo("leds",
-                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
+                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,1000;off,1000"));
                     mqttOutbound.sendCommandTo("spawns", MQTT.pages(MQTT.page_content("page0", "GAME OVER", "", "Bomb verteidigt", "Sieger: Team GRÜN")));
                     return true;
                 }
@@ -175,7 +175,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
             });
 
             /**
-             * bomb was defused in overtime. GREEN is WINNER.
+             * bomb was defused in overtime. BLUE is WINNER.
              */
             farcryFSM.setAction("RED_OVERTIME", "BTN01", new FSMAction() {
                 @Override
@@ -184,7 +184,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                     mqttOutbound.sendCommandTo("sirens",
                             MQTT.signal(MQTT.SIR_ALL_OFF(), "sir1", "1:on,5000;off,1"));
                     mqttOutbound.sendCommandTo("leds",
-                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
+                            MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,1000;off,1000"));
                     mqttOutbound.sendCommandTo("spawns", MQTT.pages(MQTT.page_content("page0", "GAME OVER", "--OVERTIME--", "Bomb verteidigt", "Sieger: Team GRÜN")));
                     return true;
                 }
@@ -240,10 +240,12 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     @Override
     public void reset() {
         super.reset();
+        mqttOutbound.sendCommandTo("leds",
+                MQTT.signal(MQTT.LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000","led_blu", "∞:off,1000;on,1000"));
         mqttOutbound.sendCommandTo("red_spawn",
                 MQTT.signal(MQTT.LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000"));
         mqttOutbound.sendCommandTo("blue_spawn",
-                MQTT.signal(MQTT.LED_ALL_OFF(), "led_grn", "∞:on,1000;off,1000"));
+                MQTT.signal(MQTT.LED_ALL_OFF(), "led_blu", "∞:on,1000;off,1000"));
         react_to("RESET");
     }
 
