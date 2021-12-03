@@ -58,8 +58,6 @@ public abstract class TimedGame extends ScheduledGame {
         overtimeJobKey = new JobKey("overtime", name);
         remaining = 0l;
         estimated_end_time = null;
-        LocalDateTime ldtTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(match_length), TimeZone.getTimeZone("UTC").toZoneId());
-        game_description_display.add(0, String.format("Spielzeit: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))));
     }
 
     @Override

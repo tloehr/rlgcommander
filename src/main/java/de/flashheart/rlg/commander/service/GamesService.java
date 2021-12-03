@@ -18,7 +18,6 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -79,12 +78,6 @@ public class GamesService {
         else
             loaded_game = Optional.empty();
 
-        loaded_game.ifPresent(game -> {
-            log.info("GAME LOADED: " + game.getStatus());
-            mqttOutbound.sendCommandTo("all",
-                    MQTT.pages(MQTT.page_content("page0", game.getDisplay()))
-            );
-        });
         return loaded_game;
     }
 

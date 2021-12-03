@@ -1,10 +1,10 @@
 package de.flashheart.rlg.commander.controller;
 
-import de.flashheart.rlg.commander.misc.Tools;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
 public class MQTT {
@@ -19,8 +19,20 @@ public class MQTT {
         return new JSONObject().put(page_handle, new JSONArray(content));
     }
 
+    public static JSONObject page_content(String page_handle, Collection<String> content) {
+        return new JSONObject().put(page_handle, new JSONArray(content));
+    }
+
     public static JSONObject pages(JSONObject... pages) {
         return new JSONObject().put("page_content", merge(pages));
+    }
+
+    public static JSONObject page0(Collection<String> content) {
+        return pages(page_content("page0", content));
+    }
+
+    public static JSONObject page0(String... content) {
+        return pages(page_content("page0", content));
     }
 
     public static JSONObject add_pages(String... page_handle) {
@@ -28,8 +40,8 @@ public class MQTT {
     }
 
     public static JSONObject del_pages(String... page_handle) {
-          return new JSONObject().put("del_pages", new JSONArray(page_handle));
-      }
+        return new JSONObject().put("del_pages", new JSONArray(page_handle));
+    }
 
 
     public static JSONObject init_agent() {

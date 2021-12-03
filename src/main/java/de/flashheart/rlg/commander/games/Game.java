@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 
@@ -21,7 +22,7 @@ public abstract class Game {
     final Multimap<String, Agent> function_to_agents;
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
-    final ArrayList<String> game_description_display;
+    private final ArrayList<String> game_description_display;
     Optional<LocalDateTime> pausing_since;
 
     Game(String name, Multimap<String, Agent> function_to_agents, MQTTOutbound mqttOutbound) {
@@ -98,18 +99,26 @@ public abstract class Game {
     }
 
     /**
+     * the game description should contain all relevant parameters which influence the game mode.
+     * it is send out to all displays during a reset()
+     * @param lines
+     */
+    public void setGameDescription(String... lines) {
+        game_description_display.clear();
+        game_description_display.addAll(Arrays.asList(lines));
+    }
+
+    /**
      * returns a json array with the description of the gamemode in 4 lines by 20 cols.
      *
      * @return
      */
-    public String[] getDisplay() {
-        return game_description_display.toArray(new String[]{});
-    }
-
+//    public String[] getDisplay() {
+//        return game_description_display.toArray(new String[]{});
+//    }
     public void reset() {
         mqttOutbound.sendCommandTo("all",
-                MQTT.signal("led_all", "off", "sir_all", "off"),
-                MQTT.pages(MQTT.page_content("page0", getDisplay()))
-        );
+                MQTT.signal("all", "off"),
+                MQTT.page0(game_description_display));
     }
 }

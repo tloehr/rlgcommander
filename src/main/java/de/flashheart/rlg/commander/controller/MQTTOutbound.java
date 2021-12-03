@@ -83,11 +83,26 @@ public class MQTTOutbound {
         agents.forEach(agent -> sendCommandTo(agent, jsonObject));
     }
 
+    // sends a simple command without any parameters
+    public void sendCommandTo(String subchannel, String command) {
+        String header = outbound_topic + subchannel;
+        gateway.sendToMqtt(new JSONObject().put(command, JSONObject.NULL).toString(), header);
+    }
+
+    public void sendSignalTo(String subchannel, String command, String parameter) {
+        String header = outbound_topic + subchannel;
+        sendCommandTo(header, MQTT.signal(command, parameter));
+    }
+
     public void sendCommandTo(String subchannel, JSONObject... data) {
         String header = outbound_topic + subchannel;
         String _data = MQTT.merge(data).toString();
         log.debug("sending: {} - {}", header, _data);
         gateway.sendToMqtt(_data, header);
+    }
+
+    public void sendSignalTo(Agent agent, String command, String parameter) {
+        sendCommandTo(agent, MQTT.signal(command, parameter));
     }
 
     public void sendCommandTo(Agent agent, JSONObject... jsonObject) {
