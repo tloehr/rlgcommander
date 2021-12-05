@@ -222,7 +222,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     @Override
     public void reset() {
         super.reset();
-        mqttOutbound.sendCommandTo("leds", MQTT.signal(MQTT.LED_ALL_OFF(), "led_red", "∞:on,1000;off,1000", "led_blu", "∞:off,1000;on,1000"));
+        mqttOutbound.sendSignalTo("leds", "led_red", "normal", "led_blu", "normal");
         mqttOutbound.sendSignalTo("red_spawn", "led_red", "normal");
         mqttOutbound.sendSignalTo("blue_spawn", "Led_blue", "normal");
         react_to("RESET");

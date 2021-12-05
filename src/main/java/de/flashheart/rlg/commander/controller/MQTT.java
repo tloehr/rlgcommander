@@ -50,10 +50,9 @@ public class MQTT {
     }
 
 
-    public static JSONObject score(String score) {
-        return new JSONObject().put("score", score);
-    }
-
+//    public static JSONObject score(String score) {
+//        return new JSONObject().put("score", score);
+//    }
 
     public static JSONObject signal(String... signals) {
         return signal(new JSONObject(), signals);

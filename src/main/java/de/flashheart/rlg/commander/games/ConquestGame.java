@@ -87,12 +87,12 @@ public class ConquestGame extends ScheduledGame {
         // where did this message come from ?
         if (function_to_agents.get("red_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // red respawn button was pressed
-            mqttOutbound.sendCommandTo(sender, MQTT.signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
+            mqttOutbound.sendSignalTo(sender, "buzzer", "single_buzz", "led_wht", "single_buzz");
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_to_respawn);
             broadcast_score();   // to make the respawn show up quicker. 
         } else if (function_to_agents.get("blue_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
             // blue respawn button was pressed
-            mqttOutbound.sendCommandTo(sender, MQTT.signal("buzzer", "1:on,75;off,1", "led_wht", "1:on,75;off,1"));
+            mqttOutbound.sendSignalTo(sender, "buzzer", "single_buzz", "led_wht", "single_buzz");
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_to_respawn);
             broadcast_score();   // to make the respawn show up quicker.
         } else if (function_to_agents.get("capture_points").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
@@ -173,17 +173,16 @@ public class ConquestGame extends ScheduledGame {
     }
 
     private void agent_to_neutral(Agent agent) {
-        mqttOutbound.sendSignalTo(agent, "led_wht", "normal");
+        mqttOutbound.sendSignalTo(agent.getAgentid(), "led_wht", "normal");
     }
 
     private void agent_to_blue(Agent agent) {
-        mqttOutbound.sendSignalTo(agent, "led_blu", "normal");
-        mqttOutbound.sendCommandTo(agent, MQTT.signal(MQTT.LED_ALL_OFF(), "buzzer", "2:on,75;off,75"));
+        mqttOutbound.sendSignalTo(agent.getAgentid(), "led_blu", "normal", "buzzer", "double_buzz");
+
     }
 
     private void agent_to_red(Agent agent) {
-        mqttOutbound.sendSignalTo(agent, "led_red", "normal");
-        mqttOutbound.sendCommandTo(agent, MQTT.signal(MQTT.LED_ALL_OFF(), "buzzer", "2:on,75;off,75"));
+        mqttOutbound.sendSignalTo(agent.getAgentid(), "led_red", "normal", "buzzer", "double_buzz");
     }
 
     @Override
