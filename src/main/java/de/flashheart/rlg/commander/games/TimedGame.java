@@ -1,21 +1,17 @@
 package de.flashheart.rlg.commander.games;
 
-import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.GameTimeIsUpJob;
 import de.flashheart.rlg.commander.jobs.OvertimeJob;
-import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.TimeZone;
 
 /**
  * an abstract superclass for handling any game mode that has an (estimated or fixed) end_time We are talking about
@@ -51,9 +47,9 @@ public abstract class TimedGame extends ScheduledGame {
 
     final JobKey gametimeJobKey, overtimeJobKey;
 
-    TimedGame(String name, Multimap<String, Agent> function_to_agents, int match_length, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(name, function_to_agents, scheduler, mqttOutbound);
-        this.match_length = match_length;
+    TimedGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(game_parameters, scheduler, mqttOutbound);
+        this.match_length = game_parameters.getInt("match_length");
         gametimeJobKey = new JobKey("gametime", name);
         overtimeJobKey = new JobKey("overtime", name);
         remaining = 0l;

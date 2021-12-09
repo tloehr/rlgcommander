@@ -22,12 +22,11 @@ import static org.quartz.TriggerBuilder.newTrigger;
  */
 @Log4j2
 public abstract class ScheduledGame extends Game {
-    final Scheduler scheduler;
-    final Set<JobKey> jobs;
+        final Set<JobKey> jobs;
 
-    public ScheduledGame(String name, Multimap<String, Agent> function_to_agents, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(name, function_to_agents, mqttOutbound);
-        this.scheduler = scheduler;
+    public ScheduledGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(game_parameters, scheduler, mqttOutbound);
+
         jobs = new HashSet<>();
         try {
             scheduler.getContext().put(name, this);

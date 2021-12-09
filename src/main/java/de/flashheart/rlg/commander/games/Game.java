@@ -1,38 +1,58 @@
 package de.flashheart.rlg.commander.games;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
+import org.quartz.Scheduler;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 @Log4j2
 public abstract class Game {
     final String name;
     final MQTTOutbound mqttOutbound;
-    final HashSet<String> function_groups;
-    final Multimap<String, Agent> function_to_agents;
+    //final Multimap<String, Agent> function_to_agents;
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
-    private final ArrayList<String> game_description_display;
+    private final ArrayList<String> game_description;
     Optional<LocalDateTime> pausing_since;
 
-    Game(String name, Multimap<String, Agent> function_to_agents, MQTTOutbound mqttOutbound) {
-        this.name = name;
-        this.function_to_agents = function_to_agents;
+    final Scheduler scheduler;
+//    final JSONObject agents;
+//    final Set<String> roles;
+//    HashSet<Pair<String, String>> agent_roles;
+
+
+    final Multimap<String, String> agents, roles;
+
+    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        this.name = game_parameters.getString("name");
+        this.scheduler = scheduler;
         this.mqttOutbound = mqttOutbound;
-        function_groups = new HashSet<>(function_to_agents.keySet()); // this contains the agent group names : "sirens", "leds", "red_spawn", "green_spawn"´
-        // functional subsriptions
-        function_groups.forEach(group -> function_to_agents.get(group).forEach(agent -> mqttOutbound.sendCommandTo(agent, new JSONObject().put("subscribe_to", group))));
-        game_description_display = new ArrayList<>();
+        agents = HashMultimap.create();
+        roles = HashMultimap.create();
+        JSONObject agts = game_parameters.getJSONObject("agents");
+        Set<String> rls = agents.keySet();
+
+
+        rls.forEach(role ->
+                agts.getJSONArray(role).forEach(agent -> {
+                            agents.put(agent.toString(), role);
+                            roles.put(role, agent.toString());
+                            mqttOutbound.sendCommandTo(agent.toString(), new JSONObject().put("subscribe_to", role));
+                        }
+                )
+        );
+
+        game_description = new ArrayList<>();
         pausing_since = Optional.empty();
     }
 
@@ -60,7 +80,8 @@ public abstract class Game {
      */
     public void cleanup() {
         mqttOutbound.sendCommandTo("all", MQTT.init_agent());
-        function_groups.forEach(group -> mqttOutbound.sendCommandTo(group, new JSONObject()));
+        // cleanup the retained messages
+        roles.keys().forEach(role -> mqttOutbound.sendCommandTo(role, new JSONObject()));
     }
 
     /**
@@ -99,26 +120,24 @@ public abstract class Game {
     }
 
     /**
-     * the game description should contain all relevant parameters which influence the game mode.
-     * it is send out to all displays during a reset()
+     * the game description should contain all relevant parameters which influence the game mode. it is send out to all
+     * displays during a reset()
+     *
      * @param lines
      */
     public void setGameDescription(String... lines) {
-        game_description_display.clear();
-        game_description_display.addAll(Arrays.asList(lines));
+        game_description.clear();
+        game_description.addAll(Arrays.asList(lines));
     }
 
-    /**
-     * returns a json array with the description of the gamemode in 4 lines by 20 cols.
-     *
-     * @return
-     */
-//    public String[] getDisplay() {
-//        return game_description_display.toArray(new String[]{});
-//    }
     public void reset() {
         mqttOutbound.sendCommandTo("all",
                 MQTT.signal("all", "off"),
-                MQTT.page0(game_description_display));
+                MQTT.page0(game_description));
     }
+
+    public boolean hasRole(String agent, String role) {
+        return agents.get(agent).contains(role);
+    }
+
 }

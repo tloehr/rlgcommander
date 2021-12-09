@@ -2,11 +2,9 @@ package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
-import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.RespawnJob;
-import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.JobKey;
@@ -33,10 +31,10 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     private FSM farcryFSM;
     final JobKey myRespawnJobKey;
 
-    public FarcryGame(Multimap<String, Agent> function_to_agents, int flagcapturetime, int match_length, int respawn_period, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super("farcry", function_to_agents, match_length, scheduler, mqttOutbound);
-        this.flagcapturetime = flagcapturetime;
-        this.respawn_period = respawn_period;
+    public FarcryGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(game_parameters, scheduler, mqttOutbound);
+        this.flagcapturetime = game_parameters.getInt("flag_capture_time");
+        this.respawn_period = game_parameters.getInt("respawn_period");
         myRespawnJobKey = new JobKey("respawn", name);
         LocalDateTime ldtFlagTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(flagcapturetime), TimeZone.getTimeZone("UTC").toZoneId());
         LocalDateTime ldtRespawnTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(respawn_period), TimeZone.getTimeZone("UTC").toZoneId());
@@ -211,8 +209,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_internal")) {
             farcryFSM.ProcessFSM(event.getString("message"));
-        } else if (function_to_agents.get("button").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))
-                && event.keySet().contains("button_pressed")) {
+        } else if (hasRole(sender, "button") && event.keySet().contains("button_pressed")) {
             farcryFSM.ProcessFSM(event.getString("button_pressed").toUpperCase());
         } else {
             log.debug("message is not for me. ignoring.");

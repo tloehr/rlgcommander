@@ -18,11 +18,10 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,7 +45,7 @@ public class GamesService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome_page() {
-        long hours_since_last_version_change = ChronoUnit.HOURS.between(LocalDateTime.of(2021, 11, 9, 0, 0, 0), LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()));
+        //long hours_since_last_version_change = ChronoUnit.HOURS.between(LocalDateTime.of(2021, 11, 9, 0, 0, 0), LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()));
 //        mqttOutbound.sendCommandTo("all",
 //                MQTT.add_pages("gamepage"));
         mqttOutbound.sendCommandTo("all",
@@ -70,6 +69,17 @@ public class GamesService {
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         JSONObject description = new JSONObject(json);
         loaded_game.ifPresent(game -> game.cleanup());
+
+
+        try {
+            Game game = (Game) Class.forName("de.flashheart.rlg.commander.games.FarcryGame").getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(description, scheduler, mqttOutbound);
+            loaded_game = Optional.ofNullable(game);
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            log.warn(e);
+            loaded_game = Optional.empty();
+        }
+
+
 
         if (description.getString("game").equalsIgnoreCase("conquest"))
             loaded_game = load_conquest(description);
@@ -118,13 +128,7 @@ public class GamesService {
                 " / /   / / / /  |/ / / / / / / / __/  \\__ \\ / /\n" +
                 "/ /___/ /_/ / /|  / /_/ / /_/ / /___ ___/ // /\n" +
                 "\\____/\\____/_/ |_/\\___\\_\\____/_____//____//_/\n");
-        loaded_game = Optional.of(new ConquestGame(
-                createAgentMap(description.getJSONObject("agents"), Arrays.asList("cp_agents", "blue_spawn_agent", "red_spawn_agent", "sirens")),
-                description.getBigDecimal("starting_tickets"),
-                description.getBigDecimal("ticket_price_to_respawn"),
-                description.getBigDecimal("minimum_cp_for_bleeding"),
-                description.getBigDecimal("starting_bleed_interval"),
-                description.getBigDecimal("interval_reduction_per_cp"),
+        loaded_game = Optional.of(new ConquestGame(description,
                 scheduler,
                 mqttOutbound));
         return loaded_game;
@@ -138,10 +142,7 @@ public class GamesService {
                 "/_/    \\__,_/_/   \\____/_/   \\__, /\n" +
                 "                            /____/");
         loaded_game = Optional.of(new FarcryGame(
-                createAgentMap(description.getJSONObject("agents"), Arrays.asList("sirens", "leds", "red_spawn", "blue_spawn")),
-                description.getInt("flag_capture_time"),
-                description.getInt("match_length"),
-                description.getInt("respawn_period"),
+                description,
                 scheduler,
                 mqttOutbound));
         return loaded_game;
@@ -191,28 +192,6 @@ public class GamesService {
      * @return MultiMap with Agents assigned to their roles.
      * @throws JSONException
      */
-    private Multimap<String, Agent> createAgentMap(JSONObject agents_for_role, List<String> requiredRoles) throws JSONException {
-        final Multimap<String, Agent> result = HashMultimap.create();
-        //final ArrayList<String> missingRoleAgents = new ArrayList<>();
-
-        agents_for_role.keySet().forEach(role -> {
-            JSONArray agents_for_this_role = agents_for_role.getJSONArray(role);
-            agents_for_this_role.forEach(agentid -> {
-                Optional<Agent> optAgent = agentsService.getAgent(agentid.toString());
-                if (optAgent.isEmpty()) {
-                    optAgent = Optional.of(new Agent(agentid.toString()));
-                    log.warn("agent {} is needed for {}, but hasn't reported in yet. will use dummy", agentid, role);
-                } else {
-                    log.debug("{} is alive and will be used for {}", agentid, role);
-                }
-                result.put(role, optAgent.get());
-            });
-        });
-
-        return result;
-    }
-
-
     public Optional<Game> admin_game(String description) {
         //loaded_game.ifPresent(game -> game.reset());
         loaded_game.ifPresent(game -> {
@@ -220,4 +199,26 @@ public class GamesService {
         });
         return loaded_game;
     }
+
+//    private Multimap<String, Agent> createAgentMap(JSONObject agents_for_role, List<String> requiredRoles) throws JSONException {
+//        final Multimap<String, Agent> result = HashMultimap.create();
+//        //final ArrayList<String> missingRoleAgents = new ArrayList<>();
+//
+//        agents_for_role.keySet().forEach(role -> {
+//            JSONArray agents_for_this_role = agents_for_role.getJSONArray(role);
+//            agents_for_this_role.forEach(agentid -> {
+//                Optional<Agent> optAgent = agentsService.getAgent(agentid.toString());
+//                if (optAgent.isEmpty()) {
+//                    optAgent = Optional.of(new Agent(agentid.toString()));
+//                    log.warn("agent {} is needed for {}, but hasn't reported in yet. will use dummy", agentid, role);
+//                } else {
+//                    log.debug("{} is alive and will be used for {}", agentid, role);
+//                }
+//                result.put(role, optAgent.get());
+//            });
+//        });
+//
+//        return result;
+//    }
+
 }

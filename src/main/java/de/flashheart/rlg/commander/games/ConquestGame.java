@@ -2,11 +2,9 @@ package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
-import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
-import de.flashheart.rlg.commander.service.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.JobKey;
@@ -60,20 +58,21 @@ public class ConquestGame extends ScheduledGame {
      * @param mqttOutbound              internal mqtt reference as this class is NOT a spring component and therefore
      *                                  cannot use DI.
      */
-    public ConquestGame(Multimap<String, Agent> function_to_agents, BigDecimal starting_tickets, BigDecimal ticket_price_to_respawn, BigDecimal minimum_cp_for_bleeding, BigDecimal starting_bleed_interval, BigDecimal interval_reduction_per_cp, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super("conquest", function_to_agents, scheduler, mqttOutbound);
-        this.starting_tickets = starting_tickets;
-        this.minimum_cp_for_bleeding = minimum_cp_for_bleeding;
-        this.starting_bleed_interval = starting_bleed_interval;
-        this.interval_reduction_per_cp = interval_reduction_per_cp;
-        this.ticket_price_to_respawn = ticket_price_to_respawn;
+    public ConquestGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(game_parameters, scheduler, mqttOutbound);
+        this.starting_tickets = game_parameters.getBigDecimal("starting_tickets");
+        this.minimum_cp_for_bleeding = game_parameters.getBigDecimal("minimum_cp_for_bleeding");
+        this.starting_bleed_interval = game_parameters.getBigDecimal("starting_bleed_interval");
+        this.interval_reduction_per_cp = game_parameters.getBigDecimal("interval_reduction_per_cp");
+        this.ticket_price_to_respawn = game_parameters.getBigDecimal("ticket_price_to_respawn");
         ticketBleedingJobkey = new JobKey("ticketbleeding", name);
         agentFSMs = new HashMap<>();
         setGameDescription("Conquest",
                 String.format("Bleeding every: %ds", starting_bleed_interval.intValue()),
                 String.format("Bleeding @%s CPs", minimum_cp_for_bleeding.intValue()),
                 String.format("Tickets: %s", starting_tickets.intValue()));
-        function_to_agents.get("capture_points").forEach(agent -> agentFSMs.put(agent.getAgentid(), createFSM(agent)));
+
+        roles.get("capture_points").forEach(agent -> agentFSMs.put(agent, createFSM(agent)));
         reset();
     }
 
@@ -85,24 +84,24 @@ public class ConquestGame extends ScheduledGame {
         }
 
         // where did this message come from ?
-        if (function_to_agents.get("red_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
+        if (hasRole(sender, "red_spawn")) {
             // red respawn button was pressed
             mqttOutbound.sendSignalTo(sender, "buzzer", "single_buzz", "led_wht", "single_buzz");
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_to_respawn);
             broadcast_score();   // to make the respawn show up quicker. 
-        } else if (function_to_agents.get("blue_spawn").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
+        } else if (hasRole(sender, "blue_spawn")) {
             // blue respawn button was pressed
             mqttOutbound.sendSignalTo(sender, "buzzer", "single_buzz", "led_wht", "single_buzz");
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_to_respawn);
             broadcast_score();   // to make the respawn show up quicker.
-        } else if (function_to_agents.get("capture_points").stream().anyMatch(agent -> agent.getAgentid().equalsIgnoreCase(sender))) {
+        } else if (hasRole(sender, "capture_points")) {
             agentFSMs.get(sender).ProcessFSM(event.getString("button_pressed").toUpperCase());
         } else {
             log.debug("message is not for me. ignoring.");
         }
     }
 
-    private FSM createFSM(Agent agent) {
+    private FSM createFSM(String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest.xml"), null);
             /**
@@ -111,7 +110,7 @@ public class ConquestGame extends ScheduledGame {
             fsm.setAction("PROLOG", "START", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
+                    log.info("{}:{} =====> {}", agent, curState, nextState);
                     agent_to_neutral(agent);
                     broadcast_score();
                     return true;
@@ -122,7 +121,7 @@ public class ConquestGame extends ScheduledGame {
             fsm.setAction(new ArrayList<>(Arrays.asList("RED", "BLUE")), "TO_NEUTRAL", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
+                    log.info("{}:{} =====> {}", agent, curState, nextState);
                     agent_to_neutral(agent);
                     return true;
                 }
@@ -134,7 +133,7 @@ public class ConquestGame extends ScheduledGame {
             fsm.setAction("NEUTRAL", "BTN01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
+                    log.info("{}:{} =====> {}", agent, curState, nextState);
                     agent_to_blue(agent);
                     broadcast_score();
                     return true;
@@ -146,7 +145,7 @@ public class ConquestGame extends ScheduledGame {
             fsm.setAction("BLUE", "BTN01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
+                    log.info("{}:{} =====> {}", agent, curState, nextState);
                     agent_to_red(agent);
                     broadcast_score();
                     return true;
@@ -158,7 +157,7 @@ public class ConquestGame extends ScheduledGame {
             fsm.setAction("RED", "BTN01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent.getAgentid(), curState, nextState);
+                    log.info("{}:{} =====> {}", agent, curState, nextState);
                     agent_to_blue(agent);
                     broadcast_score();
                     return true;
@@ -172,17 +171,17 @@ public class ConquestGame extends ScheduledGame {
         }
     }
 
-    private void agent_to_neutral(Agent agent) {
-        mqttOutbound.sendSignalTo(agent.getAgentid(), "led_wht", "normal");
+    private void agent_to_neutral(String agent) {
+        mqttOutbound.sendSignalTo(agent, "led_wht", "normal");
     }
 
-    private void agent_to_blue(Agent agent) {
-        mqttOutbound.sendSignalTo(agent.getAgentid(), "led_blu", "normal", "buzzer", "double_buzz");
+    private void agent_to_blue(String agent) {
+        mqttOutbound.sendSignalTo(agent, "led_blu", "normal", "buzzer", "double_buzz");
 
     }
 
-    private void agent_to_red(Agent agent) {
-        mqttOutbound.sendSignalTo(agent.getAgentid(), "led_red", "normal", "buzzer", "double_buzz");
+    private void agent_to_red(String agent) {
+        mqttOutbound.sendSignalTo(agent, "led_red", "normal", "buzzer", "double_buzz");
     }
 
     @Override
