@@ -51,8 +51,8 @@ public class GamesService {
         mqttOutbound.sendCommandTo("all",
                 MQTT.pages(
                         MQTT.page_content("page0", "RLGS2 ready",
-                                "c v" + buildProperties.getVersion() + " b" + LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyMMddHHmm")),
-                                "a v${agversion} b${agbdate}",
+                                "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
+                                "agnt ${agversion}",
                                 "flashheart.de")
 //                        MQTT.page_content("versionpage", "RLG-Commander", "v" + buildProperties.getVersion() + " b" + LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
 //                                "RLG-Agent", "v${agversion} b${agbuild}"),
@@ -61,32 +61,19 @@ public class GamesService {
         );
     }
 
-    public Optional<Game> load_game(String json) {
+    public Optional<Game> load_game(String json) throws Exception {
 
         log.debug("\n _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
                 "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
                 "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
-        JSONObject description = new JSONObject(json);
+        JSONObject game_description = new JSONObject(json);
         loaded_game.ifPresent(game -> game.cleanup());
 
 
-        try {
-            Game game = (Game) Class.forName("de.flashheart.rlg.commander.games.FarcryGame").getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(description, scheduler, mqttOutbound);
+            Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
             loaded_game = Optional.ofNullable(game);
-        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            log.warn(e);
-            loaded_game = Optional.empty();
-        }
 
-
-
-        if (description.getString("game").equalsIgnoreCase("conquest"))
-            loaded_game = load_conquest(description);
-        else if (description.getString("game").equalsIgnoreCase("farcry"))
-            loaded_game = load_farcry(description);
-        else
-            loaded_game = Optional.empty();
 
         return loaded_game;
     }
@@ -122,31 +109,26 @@ public class GamesService {
 //    }
 
 
-    private Optional<Game> load_conquest(JSONObject description) {
-        log.debug("\n   __________  _   ______  __  ___________________\n" +
-                "  / ____/ __ \\/ | / / __ \\/ / / / ____/ ___/_  __/\n" +
-                " / /   / / / /  |/ / / / / / / / __/  \\__ \\ / /\n" +
-                "/ /___/ /_/ / /|  / /_/ / /_/ / /___ ___/ // /\n" +
-                "\\____/\\____/_/ |_/\\___\\_\\____/_____//____//_/\n");
-        loaded_game = Optional.of(new ConquestGame(description,
-                scheduler,
-                mqttOutbound));
-        return loaded_game;
-    }
-
-    private Optional<Game> load_farcry(JSONObject description) {
-        log.debug("\n    ______           ______\n" +
-                "   / ____/___ ______/ ____/______  __\n" +
-                "  / /_  / __ `/ ___/ /   / ___/ / / /\n" +
-                " / __/ / /_/ / /  / /___/ /  / /_/ /\n" +
-                "/_/    \\__,_/_/   \\____/_/   \\__, /\n" +
-                "                            /____/");
-        loaded_game = Optional.of(new FarcryGame(
-                description,
-                scheduler,
-                mqttOutbound));
-        return loaded_game;
-    }
+//    private Optional<Game> load_conquest(JSONObject description) {
+//        log.debug("\n   __________  _   ______  __  ___________________\n" +
+//                "  / ____/ __ \\/ | / / __ \\/ / / / ____/ ___/_  __/\n" +
+//                " / /   / / / /  |/ / / / / / / / __/  \\__ \\ / /\n" +
+//                "/ /___/ /_/ / /|  / /_/ / /_/ / /___ ___/ // /\n" +
+//                "\\____/\\____/_/ |_/\\___\\_\\____/_____//____//_/\n");
+//        loaded_game = Optional.of(new ConquestGame(description,
+//                scheduler,
+//                mqttOutbound));
+//        return loaded_game;
+//    }
+//
+//    private Optional<Game> load_farcry(JSONObject description) {
+//
+//        loaded_game = Optional.of(new FarcryGame(
+//                description,
+//                scheduler,
+//                mqttOutbound));
+//        return loaded_game;
+//    }
 
 
     public Optional<Game> getGame() {
@@ -192,7 +174,7 @@ public class GamesService {
      * @return MultiMap with Agents assigned to their roles.
      * @throws JSONException
      */
-    public Optional<Game> admin_game(String description) {
+    public Optional<Game> admin_sed_values(String description) {
         //loaded_game.ifPresent(game -> game.reset());
         loaded_game.ifPresent(game -> {
             if (!game.isPaused()) return;

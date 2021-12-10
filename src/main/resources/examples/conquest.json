@@ -1,7 +1,8 @@
 {
   "comment": "conquest params as used in BF1",
   "rest_url": "http://localhost:8090/api/game/load",
-  "game": "conquest",
+  "class": "de.flashheart.rlg.commander.games.ConquestGame",
+  "name": "conquest",
   "agents": {
     "capture_points": [
       "ag01",

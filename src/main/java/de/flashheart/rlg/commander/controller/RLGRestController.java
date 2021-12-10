@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.web.bind.annotation.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -40,14 +41,25 @@ public class RLGRestController {
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
     public ResponseEntity<?> load_game(@RequestBody String description) {
-        return new ResponseEntity<>(gamesService.load_game(description).orElseThrow().getStatus().toString(), HttpStatus.CREATED);
+
+        ResponseEntity<?> responseEntity;
+        try {
+            responseEntity = new ResponseEntity<>(gamesService.load_game(description).orElseThrow().getStatus().toString(), HttpStatus.CREATED);
+        } catch (Exception e) {
+            String msg = e.toString();
+            if (e instanceof InvocationTargetException){
+                msg = ((InvocationTargetException) e).getTargetException().toString();
+            }
+            responseEntity = new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return responseEntity;
     }
 
     // set values for a running game in pause mode to fix on field misbehaviour
     @PostMapping("/game/admin")
-      public ResponseEntity<?> admin_game(@RequestBody String description) {
-          return new ResponseEntity<>(gamesService.admin_game(description).orElseThrow().getStatus().toString(), HttpStatus.OK);
-      }
+    public ResponseEntity<?> admin_game(@RequestBody String description) {
+        return new ResponseEntity<>(gamesService.admin_sed_values(description).orElseThrow().getStatus().toString(), HttpStatus.OK);
+    }
 
     @PostMapping("/game/start")
     public ResponseEntity<?> start_game() {

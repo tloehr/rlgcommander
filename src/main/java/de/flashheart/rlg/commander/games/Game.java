@@ -40,8 +40,7 @@ public abstract class Game {
         agents = HashMultimap.create();
         roles = HashMultimap.create();
         JSONObject agts = game_parameters.getJSONObject("agents");
-        Set<String> rls = agents.keySet();
-
+        Set<String> rls = agts.keySet();
 
         rls.forEach(role ->
                 agts.getJSONArray(role).forEach(agent -> {
@@ -51,6 +50,9 @@ public abstract class Game {
                         }
                 )
         );
+
+        log.debug(agents);
+        log.debug(roles);
 
         game_description = new ArrayList<>();
         pausing_since = Optional.empty();
@@ -111,7 +113,7 @@ public abstract class Game {
     /**
      * returns a JSON Object which describes the current game situation.
      *
-     * @return
+     * @return status information to be sent if we are asked for it
      */
     public JSONObject getStatus() {
         return new JSONObject()
@@ -120,10 +122,10 @@ public abstract class Game {
     }
 
     /**
-     * the game description should contain all relevant parameters which influence the game mode. it is send out to all
-     * displays during a reset()
+     * if the commander sends out screen for the lcd display to show the current set game parameters it will use the
+     * data set by this method.
      *
-     * @param lines
+     * @param lines line by line description as we want it to be broadcasted
      */
     public void setGameDescription(String... lines) {
         game_description.clear();
