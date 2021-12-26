@@ -1,15 +1,9 @@
 package de.flashheart.rlg.commander.service;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.ConquestGame;
-import de.flashheart.rlg.commander.games.FarcryGame;
 import de.flashheart.rlg.commander.games.Game;
 import lombok.extern.log4j.Log4j2;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +12,6 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.InvocationTargetException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -49,10 +38,11 @@ public class GamesService {
 //        mqttOutbound.sendCommandTo("all",
 //                MQTT.add_pages("gamepage"));
         mqttOutbound.sendCommandTo("all",
+                MQTT.signal("led_all", "∞:on,250;off,2500"),
                 MQTT.pages(
                         MQTT.page_content("page0", "RLGS2 ready",
                                 "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
-                                "agnt ${agversion}",
+                                "agnt ${agversion}.${agbuild}",
                                 "flashheart.de")
 //                        MQTT.page_content("versionpage", "RLG-Commander", "v" + buildProperties.getVersion() + " b" + LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
 //                                "RLG-Agent", "v${agversion} b${agbuild}"),
@@ -69,12 +59,8 @@ public class GamesService {
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         JSONObject game_description = new JSONObject(json);
         loaded_game.ifPresent(game -> game.cleanup());
-
-
-            Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
-            loaded_game = Optional.ofNullable(game);
-
-
+        Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
+        loaded_game = Optional.ofNullable(game);
         return loaded_game;
     }
 
@@ -165,16 +151,7 @@ public class GamesService {
         mqttOutbound.sendCommandTo("all", new JSONObject().put("init", ""));
     }
 
-    /**
-     * creates a multimap which contains the role to agent assignment. but only if those agents have reported in during
-     * the lifetime of the commander
-     *
-     * @param agents_for_role
-     * @param requiredRoles   an array for the keys to be parsed e.g. {"button", "leds", "sirens","attack_spawn_agent","defend_spawn_agent"}
-     * @return MultiMap with Agents assigned to their roles.
-     * @throws JSONException
-     */
-    public Optional<Game> admin_sed_values(String description) {
+    public Optional<Game> admin_set_values(String description) {
         //loaded_game.ifPresent(game -> game.reset());
         loaded_game.ifPresent(game -> {
             if (!game.isPaused()) return;

@@ -58,7 +58,7 @@ public class RLGRestController {
     // set values for a running game in pause mode to fix on field misbehaviour
     @PostMapping("/game/admin")
     public ResponseEntity<?> admin_game(@RequestBody String description) {
-        return new ResponseEntity<>(gamesService.admin_sed_values(description).orElseThrow().getStatus().toString(), HttpStatus.OK);
+        return new ResponseEntity<>(gamesService.admin_set_values(description).orElseThrow().getStatus().toString(), HttpStatus.OK);
     }
 
     @PostMapping("/game/start")

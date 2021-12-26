@@ -89,8 +89,12 @@ public abstract class Game {
     /**
      * when the actual game should start. You run this method.
      */
-    public abstract void start();
-
+    public void start() {
+        mqttOutbound.sendCommandTo("all",
+                MQTT.signal("all", "off")
+        );
+    }
+//    public abstract void start();
 
     /**
      * to resume a paused game.
