@@ -41,7 +41,6 @@ public abstract class Game {
         roles = HashMultimap.create();
         JSONObject agts = game_parameters.getJSONObject("agents");
         Set<String> rls = agts.keySet();
-
         rls.forEach(role ->
                 agts.getJSONArray(role).forEach(agent -> {
                             agents.put(agent.toString(), role);

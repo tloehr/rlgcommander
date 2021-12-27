@@ -34,25 +34,18 @@ public class GamesService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome_page() {
-        //long hours_since_last_version_change = ChronoUnit.HOURS.between(LocalDateTime.of(2021, 11, 9, 0, 0, 0), LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()));
-//        mqttOutbound.sendCommandTo("all",
-//                MQTT.add_pages("gamepage"));
         mqttOutbound.sendCommandTo("all",
                 MQTT.signal("led_all", "∞:on,250;off,2500"),
                 MQTT.pages(
-                        MQTT.page_content("page0", "RLGS2 ready",
+                        MQTT.page_content("page0", "RLGS2 ready...",
                                 "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
                                 "agnt ${agversion}.${agbuild}",
                                 "flashheart.de")
-//                        MQTT.page_content("versionpage", "RLG-Commander", "v" + buildProperties.getVersion() + " b" + LocalDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-//                                "RLG-Agent", "v${agversion} b${agbuild}"),
-//                        MQTT.page_content("gamepage", loaded_game.isPresent() ? loaded_game.get().getDisplay() : new String[]{"no", "loaded", "game", "found"})
                 )
         );
     }
 
     public Optional<Game> load_game(String json) throws Exception {
-
         log.debug("\n _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
                 "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
                 "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
@@ -68,53 +61,6 @@ public class GamesService {
         loaded_game.ifPresent(game -> game.cleanup());
         loaded_game = Optional.empty();
     }
-
-//    /**
-//     * reset a specific agent to neutral and set the remaining tickets to correct an in-game misbehaviour
-//     * @param description
-//     * @return
-//     */
-//    private Optional<Game> reset_conquest_flag(JSONObject description) {
-//        log.debug("Resetting running conquest game");
-//        loaded_game.ifPresent(game -> {
-//            if (game.getName().equalsIgnoreCase(description.getString("name"))) {
-//
-//                description.getBigDecimal("ticket_change")
-//            }
-//        });
-//        loaded_game = Optional.of(new ConquestGame(
-//                createAgentMap(description.getJSONObject("agents"), Arrays.asList("cp_agents", "blue_spawn_agent", "red_spawn_agent", "sirens")),
-//                description.getBigDecimal("starting_tickets"),
-//                description.getBigDecimal("ticket_price_to_respawn"),
-//                description.getBigDecimal("minimum_cp_for_bleeding"),
-//                description.getBigDecimal("starting_bleed_interval"),
-//                description.getBigDecimal("interval_reduction_per_cp"),
-//                scheduler,
-//                mqttOutbound));
-//        return loaded_game;
-//    }
-
-
-//    private Optional<Game> load_conquest(JSONObject description) {
-//        log.debug("\n   __________  _   ______  __  ___________________\n" +
-//                "  / ____/ __ \\/ | / / __ \\/ / / / ____/ ___/_  __/\n" +
-//                " / /   / / / /  |/ / / / / / / / __/  \\__ \\ / /\n" +
-//                "/ /___/ /_/ / /|  / /_/ / /_/ / /___ ___/ // /\n" +
-//                "\\____/\\____/_/ |_/\\___\\_\\____/_____//____//_/\n");
-//        loaded_game = Optional.of(new ConquestGame(description,
-//                scheduler,
-//                mqttOutbound));
-//        return loaded_game;
-//    }
-//
-//    private Optional<Game> load_farcry(JSONObject description) {
-//
-//        loaded_game = Optional.of(new FarcryGame(
-//                description,
-//                scheduler,
-//                mqttOutbound));
-//        return loaded_game;
-//    }
 
 
     public Optional<Game> getGame() {

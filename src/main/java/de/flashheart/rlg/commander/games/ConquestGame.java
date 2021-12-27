@@ -37,26 +37,33 @@ public class ConquestGame extends ScheduledGame {
     private boolean game_in_prolog_state;
 
     /**
-     * This class creates a conquest style game as we know it from Battlefield.
+     * This class creates a conquest style game as known from Battlefield.
      * <p>
      * for the whole issue of ticket arithmetics please refer to https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit#gid=457469542
      * for explanation
+     * The mandatory parameters are handed down to this class via a JSONObject called <b>game_parameters</b>.
      *
-     * @param function_to_agents        is a multimap which contains the list of agents sorted by their purpose. Known
-     *                                  keys for this map are: <b>"red_spawn", "blue_spawn", "capture_points",
-     *                                  "sirens"</b>. The class handles as <b>many capture points</b> as there are
-     *                                  listed under "capture_points".
-     * @param starting_tickets          the number of tickets for each team when the game start
-     * @param ticket_price_to_respawn   the price a team has to pay when a player respawns
-     * @param minimum_cp_for_bleeding   the minimum number of capture points a team has to hold before the ticket
-     *                                  bleeding starts for the opposing team
-     * @param starting_bleed_interval   the number of seconds for the first bleeding interval
-     * @param interval_reduction_per_cp the number of seconds the bleeding interval shortens for every newly captured
-     *                                  point
-     * @param scheduler                 internal scheduler reference as this class is NOT a spring component and
-     *                                  therefore cannot use DI.
-     * @param mqttOutbound              internal mqtt reference as this class is NOT a spring component and therefore
-     *                                  cannot use DI.
+     * <ul>
+     * <li><b>starting_tickets</b>: the number of respawn tickets each team starts with</li>
+     * <li><b>ticket_price_to_respawn</b>: the number of tickets lost, when a player pushes the spawn button</li>
+     * <li><b>minimum_cp_for_bleeding</b>: the minimum number of capture points a team has to hold before the ticket bleeding starts for the other team</li>
+     * <li><b>starting_bleed_interval</b>: number of seconds for the first bleeding interval step</li>
+     * <li><b>interval_reduction_per_cp</b>: number of seconds for the bleeding interval to shorten, when another point is taken. <b>note:</b> the last two parameters are virtual. This calculation method is used in the video games. For us it is easier that the bleeding interval doesn't change at all. Bleeding happens at a constant rate of 0,5 seconds (see BLEEDING_CALCULATION_INTERVALL_IN_S). The amount of tickets lost in- or decrease to match the number of owned capture points.</li>
+     * <li><b>agents</b>
+     * <ul>
+     *     <li><b>capture_points</b> a list of agents to act as capture points. This class handles as many points as listed here.</li>
+     *     <li><b>red_spawn</b> the agent for the red spawn. Handles the red spawn button.</li>
+     *     <li><b>blue_spawn</b> the agent for the red spawn. Handles the blue spawn button.</li>
+     *     <li><b>sirens</b> the list of agents providing sirens for the game.</li>
+     * </ul>
+     * </li>
+     * </ul>
+     *
+     * @param game_parameters a JSONObject containing the (mandatory) game parameters for this match.
+     * @param scheduler       internal scheduler reference as this class is NOT a spring component and
+     *                        therefore cannot use DI.
+     * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore
+     *                        cannot use DI.
      */
     public ConquestGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
@@ -97,7 +104,7 @@ public class ConquestGame extends ScheduledGame {
         } else if (hasRole(sender, "capture_points")) {
             agentFSMs.get(sender).ProcessFSM(event.getString("button_pressed").toUpperCase());
         } else {
-            log.debug("message is not for me. ignoring.");
+            log.debug("i don't care about this message.");
         }
     }
 
@@ -117,7 +124,7 @@ public class ConquestGame extends ScheduledGame {
                 }
             });
 
-            // switching back to NEUTRAL in case of player error
+            // switching back to NEUTRAL in case of misuse
             fsm.setAction(new ArrayList<>(Arrays.asList("RED", "BLUE")), "TO_NEUTRAL", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
@@ -172,16 +179,16 @@ public class ConquestGame extends ScheduledGame {
     }
 
     private void agent_to_neutral(String agent) {
-        mqttOutbound.sendSignalTo(agent, "led_wht", "normal");
+        mqttOutbound.sendSignalTo(agent, "led_all", "off", "led_wht", "normal");
     }
 
     private void agent_to_blue(String agent) {
-        mqttOutbound.sendSignalTo(agent, "led_blu", "normal", "buzzer", "double_buzz");
+        mqttOutbound.sendSignalTo(agent, "led_all", "off", "led_blu", "normal", "buzzer", "double_buzz");
 
     }
 
     private void agent_to_red(String agent) {
-        mqttOutbound.sendSignalTo(agent, "led_red", "normal", "buzzer", "double_buzz");
+        mqttOutbound.sendSignalTo(agent, "led_all", "off", "led_red", "normal", "buzzer", "double_buzz");
     }
 
     @Override
@@ -211,13 +218,14 @@ public class ConquestGame extends ScheduledGame {
         cps_held_by_blue = BigDecimal.valueOf(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("BLUE")).count());
         cps_held_by_red = BigDecimal.valueOf(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("RED")).count());
 
-        remaining_red_tickets = remaining_red_tickets.subtract(ticketsLostWhen(cps_held_by_blue));
-        remaining_blue_tickets = remaining_blue_tickets.subtract(ticketsLostWhen(cps_held_by_red));
+        remaining_red_tickets = remaining_red_tickets.subtract(ticketLossPerIntervalWithCPsHeld(cps_held_by_blue));
+        remaining_blue_tickets = remaining_blue_tickets.subtract(ticketLossPerIntervalWithCPsHeld(cps_held_by_red));
 
         if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_CYCLES == 0)
             broadcast_score();
 
         if (remaining_blue_tickets.intValue() <= 0 || remaining_red_tickets.intValue() <= 0) {
+            broadcast_score();
             game_over();
         }
 
@@ -238,7 +246,10 @@ public class ConquestGame extends ScheduledGame {
     private void broadcast_score() {
 
         mqttOutbound.sendCommandTo("all",
-                MQTT.page0("", "Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue(), "The Winner is", "Red: " + cps_held_by_red.intValue() + " flag(s)", "Blue: " + cps_held_by_blue.intValue() + " flag(s)")
+                MQTT.page0("Red: " + remaining_red_tickets.intValue() + " Tickets",
+                        cps_held_by_red.intValue() + " flag(s)",
+                        "Blue: " + remaining_blue_tickets.intValue() + " Tickets",
+                        cps_held_by_blue.intValue() + " flag(s)")
         );
         log.debug("Cp: R{} B{}", cps_held_by_red.intValue(), cps_held_by_blue.intValue());
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
@@ -248,7 +259,7 @@ public class ConquestGame extends ScheduledGame {
      * see https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit#gid=457469542 for
      * explanation
      */
-    private BigDecimal ticketsLostWhen(BigDecimal cps_held) {
+    private BigDecimal ticketLossPerIntervalWithCPsHeld(BigDecimal cps_held) {
         BigDecimal ticket_loss = BigDecimal.ZERO;
         if (cps_held.compareTo(minimum_cp_for_bleeding) >= 0) {
             BigDecimal OneTicketLostEveryNSeconds = starting_bleed_interval.subtract(cps_held.subtract(minimum_cp_for_bleeding).multiply(interval_reduction_per_cp));
@@ -262,9 +273,9 @@ public class ConquestGame extends ScheduledGame {
     public void reset() {
         super.reset();
         game_in_prolog_state = true;
-        mqttOutbound.sendSignalTo("capture_points", "led_wht", "slow");
-        mqttOutbound.sendSignalTo("red_spawn", "led_red", "slow");
-        mqttOutbound.sendSignalTo("blue_spawn", "led_blu", "slow");
+        mqttOutbound.sendSignalTo("capture_points", "led_all", "off", "led_wht", "slow");
+        mqttOutbound.sendSignalTo("red_spawn", "led_all", "off", "led_red", "slow");
+        mqttOutbound.sendSignalTo("blue_spawn", "led_all", "off", "led_blu", "slow");
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("RESET"));
     }
 
