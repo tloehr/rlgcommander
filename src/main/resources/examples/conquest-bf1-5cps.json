@@ -1,0 +1,33 @@
+{
+  "comment": "5 CPs, BF1 style",
+  "rest_url": "http://localhost:8090/api/game/load",
+  "class": "de.flashheart.rlg.commander.games.ConquestGame",
+  "name": "conquest",
+  "agents": {
+    "capture_points": [
+      "ag01",
+      "ag02",
+      "ag03",
+      "ag04",
+      "ag05"
+    ],
+    "red_spawn": [
+      "ag06"
+    ],
+    "blue_spawn": [
+      "ag07"
+    ],
+    "spawns": [
+      "ag06",
+      "ag07"
+    ],
+    "sirens": [
+      "ag08"
+    ]
+  },
+  "starting_tickets": 250,
+  "minimum_cp_for_bleeding": 1,
+  "starting_bleed_interval": 5,
+  "interval_reduction_per_cp": 1.12,
+  "ticket_price_to_respawn": 1
+}

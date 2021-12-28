@@ -40,8 +40,8 @@ public class ConquestGame extends ScheduledGame {
      * This class creates a conquest style game as known from Battlefield.
      * <p>
      * for the whole issue of ticket arithmetics please refer to https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit#gid=457469542
-     * for explanation
-     * The mandatory parameters are handed down to this class via a JSONObject called <b>game_parameters</b>.
+     * for explanation The mandatory parameters are handed down to this class via a JSONObject called
+     * <b>game_parameters</b>.
      *
      * <ul>
      * <li><b>starting_tickets</b>: the number of respawn tickets each team starts with</li>
@@ -60,10 +60,10 @@ public class ConquestGame extends ScheduledGame {
      * </ul>
      *
      * @param game_parameters a JSONObject containing the (mandatory) game parameters for this match.
-     * @param scheduler       internal scheduler reference as this class is NOT a spring component and
-     *                        therefore cannot use DI.
-     * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore
-     *                        cannot use DI.
+     * @param scheduler       internal scheduler reference as this class is NOT a spring component and therefore cannot
+     *                        use DI.
+     * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore cannot use
+     *                        DI.
      */
     public ConquestGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
@@ -75,9 +75,11 @@ public class ConquestGame extends ScheduledGame {
         ticketBleedingJobkey = new JobKey("ticketbleeding", name);
         agentFSMs = new HashMap<>();
         setGameDescription("Conquest",
-                String.format("Bleeding every: %ds", starting_bleed_interval.intValue()),
-                String.format("Bleeding @%s CPs", minimum_cp_for_bleeding.intValue()),
-                String.format("Tickets: %s", starting_tickets.intValue()));
+                game_parameters.getString("comment"),
+                "Respawn Tickets:",
+//                String.format("Int: %ds/%f", starting_bleed_interval.intValue(), interval_reduction_per_cp.setScale(2, RoundingMode.HALF_UP).doubleValue()),
+//                String.format("Start @%s CPs", minimum_cp_for_bleeding.intValue()),
+                String.format("%s for each team", starting_tickets.intValue()));
 
         roles.get("capture_points").forEach(agent -> agentFSMs.put(agent, createFSM(agent)));
         reset();
@@ -86,7 +88,7 @@ public class ConquestGame extends ScheduledGame {
     @Override
     public void react_to(String sender, JSONObject event) {
         if (!event.keySet().contains("button_pressed")) {
-            log.debug("message is not for me. ignoring.");
+            log.debug("Don't care for this button.");
             return;
         }
 
@@ -236,16 +238,17 @@ public class ConquestGame extends ScheduledGame {
         // broadcast_score();
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
         String winner = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
-        mqttOutbound.sendSignalTo("all", winner, "normal");
-        MQTT.page0("Game Over", "Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue(), "The Winner is", outcome);
+        mqttOutbound.sendSignalTo("capture_points", "led_all", "off", winner, "normal");
+        mqttOutbound.sendCommandTo("spawns",
+                MQTT.page0("Game Over", "Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue(), "The Winner is", outcome)
+        );
 
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
         mqttOutbound.sendSignalTo("sirens", "sir1", "very_long");
     }
 
     private void broadcast_score() {
-
-        mqttOutbound.sendCommandTo("all",
+        mqttOutbound.sendCommandTo("spawns",
                 MQTT.page0("Red: " + remaining_red_tickets.intValue() + " Tickets",
                         cps_held_by_red.intValue() + " flag(s)",
                         "Blue: " + remaining_blue_tickets.intValue() + " Tickets",
