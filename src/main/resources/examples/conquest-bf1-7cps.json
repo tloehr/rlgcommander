@@ -7,7 +7,11 @@
     "capture_points": [
       "ag01",
       "ag02",
-      "ag03"
+      "ag03",
+      "ag04",
+      "ag05",
+      "ag09",
+      "ag10"
     ],
     "red_spawn": [
       "ag06"
@@ -23,9 +27,9 @@
       "ag08"
     ]
   },
-  "starting_tickets": 250,
-  "minimum_cp_for_bleeding": 1,
-  "starting_bleed_interval": 5,
-  "interval_reduction_per_cp": 0.75,
-  "ticket_price_to_respawn": 1
+  "respawn_tickets": 250,
+  "not_bleeding_before_cps": 1,
+  "start_bleed_interval": 5,
+  "end_bleed_interval": 0.5,
+  "ticket_price_for_respawn": 1
 }

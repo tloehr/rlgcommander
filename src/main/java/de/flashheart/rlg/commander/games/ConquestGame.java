@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.lang.Math.toIntExact;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
 /**
@@ -27,14 +28,17 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  */
 @Log4j2
 public class ConquestGame extends ScheduledGame {
-    private final BigDecimal BLEEDING_CALCULATION_INTERVALL_IN_S = BigDecimal.valueOf(0.5d);
+    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
     private final long BROADCAST_SCORE_EVERY_N_CYCLES = 10;
     private long broadcast_cycle_counter;
     private final Map<String, FSM> agentFSMs;
-    private final BigDecimal starting_tickets, ticket_price_to_respawn, minimum_cp_for_bleeding, interval_reduction_per_cp, starting_bleed_interval;
-    private BigDecimal remaining_blue_tickets, remaining_red_tickets, cps_held_by_blue, cps_held_by_red;
+    private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
+
+    private BigDecimal remaining_blue_tickets, remaining_red_tickets;
+    private int cps_held_by_blue, cps_held_by_red;
     private JobKey ticketBleedingJobkey;
     private boolean game_in_prolog_state;
+    private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
 
     /**
      * This class creates a conquest style game as known from Battlefield.
@@ -67,11 +71,29 @@ public class ConquestGame extends ScheduledGame {
      */
     public ConquestGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
-        this.starting_tickets = game_parameters.getBigDecimal("starting_tickets");
-        this.minimum_cp_for_bleeding = game_parameters.getBigDecimal("minimum_cp_for_bleeding");
-        this.starting_bleed_interval = game_parameters.getBigDecimal("starting_bleed_interval");
-        this.interval_reduction_per_cp = game_parameters.getBigDecimal("interval_reduction_per_cp");
-        this.ticket_price_to_respawn = game_parameters.getBigDecimal("ticket_price_to_respawn");
+        this.respawn_tickets = game_parameters.getBigDecimal("respawn_tickets");
+        this.not_bleeding_before_cps = game_parameters.getBigDecimal("not_bleeding_before_cps");
+        this.start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
+        this.end_bleed_interval = game_parameters.getBigDecimal("end_bleed_interval");
+        this.ticket_price_for_respawn = game_parameters.getBigDecimal("ticket_price_for_respawn");
+
+        // calculate ticket losses per captured flags
+        // see https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit?usp=sharing
+        int number_of_cps = roles.get("capture_points").size();
+        BigDecimal[] interval_table = new BigDecimal[number_of_cps];
+        ticket_bleed_table = new BigDecimal[number_of_cps];
+        BigDecimal between = start_bleed_interval.subtract(end_bleed_interval);
+        BigDecimal interval_reduction_per_cp = between.divide(BigDecimal.valueOf(number_of_cps - 1), 2, RoundingMode.HALF_UP);
+
+        interval_table[0] = start_bleed_interval;
+        ticket_bleed_table[0] = BigDecimal.ONE.divide(start_bleed_interval, 2, RoundingMode.HALF_UP);
+        for (int flag = 1; flag < number_of_cps; flag++) {
+            interval_table[flag] = interval_table[flag - 1].subtract(interval_reduction_per_cp);
+            ticket_bleed_table[flag] = BigDecimal.ONE.divide(interval_table[flag], 2, RoundingMode.HALF_UP);
+        }
+        log.debug("Interval Table: {}", Arrays.toString(interval_table));
+        log.debug("Ticket Bleeding per second: {}", Arrays.toString(ticket_bleed_table));
+
         ticketBleedingJobkey = new JobKey("ticketbleeding", name);
         agentFSMs = new HashMap<>();
         setGameDescription("Conquest",
@@ -79,7 +101,7 @@ public class ConquestGame extends ScheduledGame {
                 "Respawn Tickets:",
 //                String.format("Int: %ds/%f", starting_bleed_interval.intValue(), interval_reduction_per_cp.setScale(2, RoundingMode.HALF_UP).doubleValue()),
 //                String.format("Start @%s CPs", minimum_cp_for_bleeding.intValue()),
-                String.format("%s for each team", starting_tickets.intValue()));
+                String.format("%s for each team", respawn_tickets.intValue()));
 
         roles.get("capture_points").forEach(agent -> agentFSMs.put(agent, createFSM(agent)));
         reset();
@@ -96,12 +118,12 @@ public class ConquestGame extends ScheduledGame {
         if (hasRole(sender, "red_spawn")) {
             // red respawn button was pressed
             mqttOutbound.sendSignalTo(sender, "buzzer", "single_buzz", "led_wht", "single_buzz");
-            remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_to_respawn);
+            remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             broadcast_score();   // to make the respawn show up quicker. 
         } else if (hasRole(sender, "blue_spawn")) {
             // blue respawn button was pressed
             mqttOutbound.sendSignalTo(sender, "buzzer", "single_buzz", "led_wht", "single_buzz");
-            remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_to_respawn);
+            remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             broadcast_score();   // to make the respawn show up quicker.
         } else if (hasRole(sender, "capture_points")) {
             agentFSMs.get(sender).ProcessFSM(event.getString("button_pressed").toUpperCase());
@@ -198,16 +220,16 @@ public class ConquestGame extends ScheduledGame {
         if (!game_in_prolog_state) return;
         game_in_prolog_state = false;
 
-        remaining_blue_tickets = starting_tickets;
-        remaining_red_tickets = starting_tickets;
-        cps_held_by_blue = BigDecimal.ZERO;
-        cps_held_by_red = BigDecimal.ZERO;
+        remaining_blue_tickets = respawn_tickets;
+        remaining_red_tickets = respawn_tickets;
+        cps_held_by_blue = 0;
+        cps_held_by_red = 0;
 
         mqttOutbound.sendSignalTo("sirens", "sir1", "very_long");
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
 
         // setup and start bleeding job
-        long repeat_every_ms = BLEEDING_CALCULATION_INTERVALL_IN_S.multiply(BigDecimal.valueOf(1000l)).longValue();
+        long repeat_every_ms = BigDecimal.ONE.divide(BLEEDING_DIVISOR).multiply(BigDecimal.valueOf(1000l)).longValue();
 
         create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
         broadcast_cycle_counter = 0;
@@ -217,11 +239,11 @@ public class ConquestGame extends ScheduledGame {
         if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
 
         broadcast_cycle_counter++;
-        cps_held_by_blue = BigDecimal.valueOf(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("BLUE")).count());
-        cps_held_by_red = BigDecimal.valueOf(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("RED")).count());
+        cps_held_by_blue = toIntExact(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("BLUE")).count());
+        cps_held_by_red = toIntExact(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("RED")).count());
 
-        remaining_red_tickets = remaining_red_tickets.subtract(ticketLossPerIntervalWithCPsHeld(cps_held_by_blue));
-        remaining_blue_tickets = remaining_blue_tickets.subtract(ticketLossPerIntervalWithCPsHeld(cps_held_by_red));
+        remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue]);
+        remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_blue]);
 
         if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_CYCLES == 0)
             broadcast_score();
@@ -250,27 +272,13 @@ public class ConquestGame extends ScheduledGame {
     private void broadcast_score() {
         mqttOutbound.sendCommandTo("spawns",
                 MQTT.page0("Red: " + remaining_red_tickets.intValue() + " Tickets",
-                        cps_held_by_red.intValue() + " flag(s)",
+                        cps_held_by_red + " flag(s)",
                         "Blue: " + remaining_blue_tickets.intValue() + " Tickets",
-                        cps_held_by_blue.intValue() + " flag(s)")
+                        cps_held_by_blue + " flag(s)")
         );
-        log.debug("Cp: R{} B{}", cps_held_by_red.intValue(), cps_held_by_blue.intValue());
+        log.debug("Cp: R{} B{}", cps_held_by_red, cps_held_by_blue);
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
     }
-
-    /**
-     * see https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit#gid=457469542 for
-     * explanation
-     */
-    private BigDecimal ticketLossPerIntervalWithCPsHeld(BigDecimal cps_held) {
-        BigDecimal ticket_loss = BigDecimal.ZERO;
-        if (cps_held.compareTo(minimum_cp_for_bleeding) >= 0) {
-            BigDecimal OneTicketLostEveryNSeconds = starting_bleed_interval.subtract(cps_held.subtract(minimum_cp_for_bleeding).multiply(interval_reduction_per_cp));
-            ticket_loss = BLEEDING_CALCULATION_INTERVALL_IN_S.divide(OneTicketLostEveryNSeconds, 4, RoundingMode.HALF_UP);
-        }
-        return ticket_loss;
-    }
-
 
     @Override
     public void reset() {
@@ -286,15 +294,15 @@ public class ConquestGame extends ScheduledGame {
     public JSONObject getStatus() {
         final JSONObject statusObject = super.getStatus()
                 .put("mode", "conquest")
-                .put("starting_tickets", starting_tickets)
-                .put("ticket_price_to_respawn", ticket_price_to_respawn)
-                .put("minimum_cp_for_bleeding", minimum_cp_for_bleeding)
-                .put("interval_reduction_per_cp", interval_reduction_per_cp)
-                .put("starting_bleed_interval", starting_bleed_interval)
-                .put("remaining_blue_tickets", JSONObject.wrap(remaining_blue_tickets))
-                .put("remaining_red_tickets", JSONObject.wrap(remaining_red_tickets))
-                .put("cps_held_by_blue", JSONObject.wrap(cps_held_by_blue))
-                .put("cps_held_by_red", JSONObject.wrap(cps_held_by_red));
+                .put("respawn_tickets", respawn_tickets)
+                .put("ticket_price_for_respawn", ticket_price_for_respawn)
+                .put("not_bleeding_before_cps", not_bleeding_before_cps)
+                .put("end_bleed_interval", end_bleed_interval)
+                .put("starting_bleed_interval", start_bleed_interval)
+                .put("remaining_blue_tickets", remaining_blue_tickets)
+                .put("remaining_red_tickets", remaining_red_tickets)
+                .put("cps_held_by_blue", cps_held_by_blue)
+                .put("cps_held_by_red", cps_held_by_red);
         final JSONObject states = new JSONObject();
         agentFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
         statusObject.put("states", states);
