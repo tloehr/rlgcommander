@@ -28,8 +28,9 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  */
 @Log4j2
 public class ConquestGame extends ScheduledGame {
-    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
-    private final long BROADCAST_SCORE_EVERY_N_CYCLES = 10;
+    //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
+    private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
+    private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
     private final Map<String, FSM> agentFSMs;
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
@@ -71,6 +72,13 @@ public class ConquestGame extends ScheduledGame {
      */
     public ConquestGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
+
+        log.debug("\n  _____                            __\n" +
+                " / ___/__  ___  ___ ___ _____ ___ / /_\n" +
+                "/ /__/ _ \\/ _ \\/ _ `/ // / -_|_-</ __/\n" +
+                "\\___/\\___/_//_/\\_, /\\_,_/\\__/___/\\__/\n" +
+                "                /_/");
+
         this.respawn_tickets = game_parameters.getBigDecimal("respawn_tickets");
         this.not_bleeding_before_cps = game_parameters.getBigDecimal("not_bleeding_before_cps");
         this.start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
@@ -83,16 +91,16 @@ public class ConquestGame extends ScheduledGame {
         BigDecimal[] interval_table = new BigDecimal[number_of_cps];
         ticket_bleed_table = new BigDecimal[number_of_cps];
         BigDecimal between = start_bleed_interval.subtract(end_bleed_interval);
-        BigDecimal interval_reduction_per_cp = between.divide(BigDecimal.valueOf(number_of_cps - 1), 2, RoundingMode.HALF_UP);
+        BigDecimal interval_reduction_per_cp = between.divide(BigDecimal.valueOf(number_of_cps - 1), 4, RoundingMode.HALF_UP);
 
         interval_table[0] = start_bleed_interval;
-        ticket_bleed_table[0] = BigDecimal.ONE.divide(start_bleed_interval, 2, RoundingMode.HALF_UP);
+        ticket_bleed_table[0] = TICKET_CALCULATION_EVERY_N_SECONDS.divide(start_bleed_interval, 2, RoundingMode.HALF_UP);
         for (int flag = 1; flag < number_of_cps; flag++) {
             interval_table[flag] = interval_table[flag - 1].subtract(interval_reduction_per_cp);
-            ticket_bleed_table[flag] = BigDecimal.ONE.divide(interval_table[flag], 2, RoundingMode.HALF_UP);
+            ticket_bleed_table[flag] = TICKET_CALCULATION_EVERY_N_SECONDS.divide(interval_table[flag], 4, RoundingMode.HALF_UP);
         }
         log.debug("Interval Table: {}", Arrays.toString(interval_table));
-        log.debug("Ticket Bleeding per second: {}", Arrays.toString(ticket_bleed_table));
+        log.debug("Ticket Bleeding per {} seconds: {}", TICKET_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
 
         ticketBleedingJobkey = new JobKey("ticketbleeding", name);
         agentFSMs = new HashMap<>();
@@ -229,8 +237,7 @@ public class ConquestGame extends ScheduledGame {
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
 
         // setup and start bleeding job
-        long repeat_every_ms = BigDecimal.ONE.divide(BLEEDING_DIVISOR).multiply(BigDecimal.valueOf(1000l)).longValue();
-
+        long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
         create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
         broadcast_cycle_counter = 0;
     }
@@ -245,7 +252,7 @@ public class ConquestGame extends ScheduledGame {
         remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue]);
         remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_blue]);
 
-        if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_CYCLES == 0)
+        if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0)
             broadcast_score();
 
         if (remaining_blue_tickets.intValue() <= 0 || remaining_red_tickets.intValue() <= 0) {

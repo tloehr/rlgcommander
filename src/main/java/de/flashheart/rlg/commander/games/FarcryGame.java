@@ -33,6 +33,11 @@ public class FarcryGame extends TimedGame implements HasRespawn {
 
     public FarcryGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
+        log.debug("\n   ____         _____\n" +
+                "  / __/__ _____/ ___/_____ __\n" +
+                " / _// _ `/ __/ /__/ __/ // /\n" +
+                "/_/  \\_,_/_/  \\___/_/  \\_, /\n" +
+                "                      /___/");
         this.flagcapturetime = game_parameters.getInt("flag_capture_time");
         this.respawn_period = game_parameters.getInt("respawn_period");
         myRespawnJobKey = new JobKey("respawn", name);
