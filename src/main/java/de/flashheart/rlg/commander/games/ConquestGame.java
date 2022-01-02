@@ -15,6 +15,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -88,28 +90,45 @@ public class ConquestGame extends ScheduledGame {
         // calculate ticket losses per captured flags
         // see https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit?usp=sharing
         int number_of_cps = roles.get("capture_points").size();
-        BigDecimal[] interval_table = new BigDecimal[number_of_cps];
-        ticket_bleed_table = new BigDecimal[number_of_cps];
+        BigDecimal[] interval_table = new BigDecimal[number_of_cps + 1];
+        ticket_bleed_table = new BigDecimal[number_of_cps + 1];
         BigDecimal between = start_bleed_interval.subtract(end_bleed_interval);
-        BigDecimal interval_reduction_per_cp = between.divide(BigDecimal.valueOf(number_of_cps - 1), 4, RoundingMode.HALF_UP);
+        BigDecimal interval_reduction_per_cp = between.divide(BigDecimal.valueOf(number_of_cps).subtract(not_bleeding_before_cps), 4, RoundingMode.HALF_UP);
 
-        interval_table[0] = start_bleed_interval;
-        ticket_bleed_table[0] = TICKET_CALCULATION_EVERY_N_SECONDS.divide(start_bleed_interval, 2, RoundingMode.HALF_UP);
-        for (int flag = 1; flag < number_of_cps; flag++) {
+        // fill array with zeros under "not_bleeding..."
+        for (int cp = 0; cp < not_bleeding_before_cps.intValue(); cp++) {
+            interval_table[cp] = BigDecimal.ZERO;
+            ticket_bleed_table[cp] = BigDecimal.ZERO;
+        }
+
+        // not_bleeding_before_cps is the first index when we need a bleeding calculation
+        int start_index = not_bleeding_before_cps.intValue();
+        interval_table[start_index] = start_bleed_interval;
+        ticket_bleed_table[start_index] = TICKET_CALCULATION_EVERY_N_SECONDS.divide(start_bleed_interval, 4, RoundingMode.HALF_UP);
+        BigDecimal min_bleeding = ticket_bleed_table[start_index];
+        BigDecimal max_bleeding = BigDecimal.ZERO;
+        for (int flag = start_index + 1; flag <= number_of_cps; flag++) {
             interval_table[flag] = interval_table[flag - 1].subtract(interval_reduction_per_cp);
             ticket_bleed_table[flag] = TICKET_CALCULATION_EVERY_N_SECONDS.divide(interval_table[flag], 4, RoundingMode.HALF_UP);
+            max_bleeding = ticket_bleed_table[flag].max(max_bleeding);
         }
+
+        // min and max game time (once the minimum amount of flag has been captured, no bleeding before that point in time). see parameter: not_bleeding_before_cps
+        BigDecimal min_seconds_gametime = respawn_tickets.divide(max_bleeding, 4, RoundingMode.HALF_UP).multiply(TICKET_CALCULATION_EVERY_N_SECONDS);
+        BigDecimal max_seconds_gametime = respawn_tickets.divide(min_bleeding, 4, RoundingMode.HALF_UP).multiply(TICKET_CALCULATION_EVERY_N_SECONDS);
+        LocalTime min_time = LocalTime.ofSecondOfDay(min_seconds_gametime.intValue());
+        LocalTime max_time = LocalTime.ofSecondOfDay(max_seconds_gametime.intValue());
+
         log.debug("Interval Table: {}", Arrays.toString(interval_table));
         log.debug("Ticket Bleeding per {} seconds: {}", TICKET_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
+        log.debug("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
         ticketBleedingJobkey = new JobKey("ticketbleeding", name);
         agentFSMs = new HashMap<>();
-        setGameDescription("Conquest",
-                game_parameters.getString("comment"),
-                "Respawn Tickets:",
-//                String.format("Int: %ds/%f", starting_bleed_interval.intValue(), interval_reduction_per_cp.setScale(2, RoundingMode.HALF_UP).doubleValue()),
-//                String.format("Start @%s CPs", minimum_cp_for_bleeding.intValue()),
-                String.format("%s for each team", respawn_tickets.intValue()));
+        setGameDescription(game_parameters.getString("comment"),
+                String.format("Respawn Tickets: %s", respawn_tickets.intValue()),
+                String.format("Bleed starts @%sCPs", not_bleeding_before_cps),
+                String.format("Time≈%s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         roles.get("capture_points").forEach(agent -> agentFSMs.put(agent, createFSM(agent)));
         reset();
@@ -216,7 +235,6 @@ public class ConquestGame extends ScheduledGame {
 
     private void agent_to_blue(String agent) {
         mqttOutbound.sendSignalTo(agent, "led_all", "off", "led_blu", "normal", "buzzer", "double_buzz");
-
     }
 
     private void agent_to_red(String agent) {
@@ -250,7 +268,7 @@ public class ConquestGame extends ScheduledGame {
         cps_held_by_red = toIntExact(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("RED")).count());
 
         remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue]);
-        remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_blue]);
+        remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_red]);
 
         if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0)
             broadcast_score();

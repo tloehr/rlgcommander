@@ -133,6 +133,7 @@ public abstract class Game {
     public void setGameDescription(String... lines) {
         game_description.clear();
         game_description.addAll(Arrays.asList(lines));
+        log.debug(game_description);
     }
 
     public void reset() {
