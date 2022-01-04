@@ -253,6 +253,9 @@ public class ConquestGame extends ScheduledGame {
 
         mqttOutbound.sendSignalTo("sirens", "sir1", "very_long");
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
+        // add a screen in the spawns for the state of all CPs
+        mqttOutbound.sendCommandTo("spawns", MQTT.add_pages("cpstates")); // the agent ignores duplicate adds.
+        mqttOutbound.sendCommandTo("spawns", MQTT.page_content("cpstates","RED CPs","","BLUE CPs",""));
 
         // setup and start bleeding job
         long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
