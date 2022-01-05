@@ -17,10 +17,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.toIntExact;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -38,7 +36,7 @@ public class ConquestGame extends ScheduledGame {
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
 
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
-    private int cps_held_by_blue, cps_held_by_red;
+    private HashSet<String> cps_held_by_blue, cps_held_by_red;
     private JobKey ticketBleedingJobkey;
     private boolean game_in_prolog_state;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
@@ -86,6 +84,9 @@ public class ConquestGame extends ScheduledGame {
         this.start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
         this.end_bleed_interval = game_parameters.getBigDecimal("end_bleed_interval");
         this.ticket_price_for_respawn = game_parameters.getBigDecimal("ticket_price_for_respawn");
+
+        cps_held_by_blue = new HashSet<>();
+        cps_held_by_red = new HashSet<>();
 
         // calculate ticket losses per captured flags
         // see https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit?usp=sharing
@@ -248,8 +249,8 @@ public class ConquestGame extends ScheduledGame {
 
         remaining_blue_tickets = respawn_tickets;
         remaining_red_tickets = respawn_tickets;
-        cps_held_by_blue = 0;
-        cps_held_by_red = 0;
+        cps_held_by_blue.clear();
+        cps_held_by_red.clear();
 
         mqttOutbound.sendSignalTo("sirens", "sir1", "very_long");
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
@@ -267,11 +268,17 @@ public class ConquestGame extends ScheduledGame {
         if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
 
         broadcast_cycle_counter++;
-        cps_held_by_blue = toIntExact(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("BLUE")).count());
-        cps_held_by_red = toIntExact(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("RED")).count());
+        cps_held_by_blue.clear();
+        cps_held_by_red.clear();
+        agentFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("BLUE")).forEach(stringFSMEntry -> cps_held_by_blue.add(stringFSMEntry.getKey()));
+        agentFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("RED")).forEach(stringFSMEntry -> cps_held_by_red.add(stringFSMEntry.getKey()));
+        //cps_held_by_red = toIntExact(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("RED")).count());
 
-        remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue]);
-        remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_red]);
+        remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue.size()]);
+        remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_red.size()]);
+
+        log.trace("Cp: R{} B{}", cps_held_by_red, cps_held_by_blue);
+        log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
 
         if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0)
             broadcast_score();
@@ -304,8 +311,11 @@ public class ConquestGame extends ScheduledGame {
                         "Blue: " + remaining_blue_tickets.intValue() + " Tickets",
                         cps_held_by_blue + " flag(s)")
         );
-        log.debug("Cp: R{} B{}", cps_held_by_red, cps_held_by_blue);
+        log.debug("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+
+        log.debug(" Red: {}", cps_held_by_red);
+        log.debug("Blue: {}", cps_held_by_blue);
     }
 
     @Override
