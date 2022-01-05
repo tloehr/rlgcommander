@@ -36,12 +36,10 @@ public class GamesService {
     public void welcome_page() {
         mqttOutbound.sendCommandTo("all",
                 MQTT.signal("led_all", "∞:on,250;off,2500"),
-                MQTT.pages(
-                        MQTT.page0("Waiting for a game",
-                                "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
-                                "agnt ${agversion}.${agbuild}",
-                                "RLGS2 @flashheart.de")
-                )
+                MQTT.page0("Waiting for a game",
+                        "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
+                        "agnt ${agversion}.${agbuild}",
+                        "RLGS2 @flashheart.de")
         );
     }
 
