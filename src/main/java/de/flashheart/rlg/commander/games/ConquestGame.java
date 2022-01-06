@@ -18,9 +18,7 @@ import java.math.RoundingMode;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static java.lang.Math.toIntExact;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
 /**
@@ -255,8 +253,19 @@ public class ConquestGame extends ScheduledGame {
         mqttOutbound.sendSignalTo("sirens", "sir1", "very_long");
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
         // add a screen in the spawns for the state of all CPs
-        mqttOutbound.sendCommandTo("spawns", MQTT.add_pages("cpstates")); // the agent ignores duplicate adds.
-        mqttOutbound.sendCommandTo("spawns", MQTT.page_content("cpstates","RED CPs","","BLUE CPs",""));
+        mqttOutbound.sendCMDto("spawns", MQTT.add_pages("cpstates")); // the agent ignores duplicate adds.
+        mqttOutbound.sendCMDto("spawns", MQTT.page_content("cpstates", "RED CPs", "", "BLUE CPs", ""));
+
+        mqttOutbound.sendCMDto("spawns",
+                MQTT.VARS("red_tickets", remaining_red_tickets.toPlainString(),
+                        "blue_tickets", remaining_blue_tickets.toPlainString(),
+                        "red_flags", Integer.toString(cps_held_by_red.size()),
+                        "blue_flags", Integer.toString(cps_held_by_blue.size())),
+                MQTT.page0("Red: ${red_tickets} Tickets",
+                        "${red_flags} flag(s)",
+                        "Blue: ${blue_tickets} Tickets",
+                        "${blue_flags} flag(s)")
+        );
 
         // setup and start bleeding job
         long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
@@ -296,8 +305,8 @@ public class ConquestGame extends ScheduledGame {
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
         String winner = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
         mqttOutbound.sendSignalTo("capture_points", "led_all", "off", winner, "normal");
-        mqttOutbound.sendCommandTo("spawns",
-                MQTT.page0("Game Over", "Red: " + remaining_red_tickets.intValue() + " Blue: " + remaining_blue_tickets.intValue(), "The Winner is", outcome)
+        mqttOutbound.sendCMDto("spawns",
+                MQTT.page0("Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome)
         );
 
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
@@ -305,12 +314,13 @@ public class ConquestGame extends ScheduledGame {
     }
 
     private void broadcast_score() {
-        mqttOutbound.sendCommandTo("spawns",
-                MQTT.page0("Red: " + remaining_red_tickets.intValue() + " Tickets",
-                        cps_held_by_red + " flag(s)",
-                        "Blue: " + remaining_blue_tickets.intValue() + " Tickets",
-                        cps_held_by_blue + " flag(s)")
+        mqttOutbound.sendCMDto("spawns",
+                MQTT.VARS("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
+                        "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
+                        "red_flags", Integer.toString(cps_held_by_red.size()),
+                        "blue_flags", Integer.toString(cps_held_by_blue.size()))
         );
+
         log.debug("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
 

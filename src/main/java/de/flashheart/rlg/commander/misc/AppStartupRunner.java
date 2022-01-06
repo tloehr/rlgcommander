@@ -25,8 +25,8 @@ public class AppStartupRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        mqttOutbound.sendCommandTo("all", MQTT.init_agent());
-        Arrays.asList(new String[]{"sirens", "leds", "capture_points", "red_spawn", "blue_spawn", "green_spawn", "spawns"})
-                .forEach(group -> mqttOutbound.sendCommandTo(group, new JSONObject()));
+        mqttOutbound.sendCMDto("all", MQTT.init_agent());
+        Arrays.asList(new String[]{"sirens", "leds", "capture_points", "red_spawn", "blue_spawn", "spawns"})
+                .forEach(group -> mqttOutbound.sendCMDto(group, new JSONObject()));
     }
 }

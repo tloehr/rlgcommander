@@ -104,4 +104,14 @@ public class MQTT {
         return new JSONObject(map);
     }
 
+
+    public static JSONObject TIMERS(String... timers) {
+        return envelope("timers", timers);
+    }
+
+    public static JSONObject VARS(String... vars) {
+           return envelope("vars", vars);
+       }
+
+
 }

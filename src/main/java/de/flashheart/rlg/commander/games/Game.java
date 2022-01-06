@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 
@@ -45,13 +46,17 @@ public abstract class Game {
                 agts.getJSONArray(role).forEach(agent -> {
                             agents.put(agent.toString(), role);
                             roles.put(role, agent.toString());
-                            mqttOutbound.sendCommandTo(agent.toString(), new JSONObject().put("subscribe_to", role));
                         }
                 )
         );
 
         log.debug(agents);
         log.debug(roles);
+
+        // subscribe here
+        agents.keySet().forEach(key -> mqttOutbound.sendSubscriptionList(key, new JSONArray(agents.get(key))));
+
+        // mqttOutbound.sendSubCMDTo(agent.toString(), role);
 
         game_description = new ArrayList<>();
         pausing_since = Optional.empty();
@@ -80,16 +85,16 @@ public abstract class Game {
      * before another game is loaded, cleanup first
      */
     public void cleanup() {
-        mqttOutbound.sendCommandTo("all", MQTT.init_agent());
+        mqttOutbound.sendCMDto("all", MQTT.init_agent());
         // cleanup the retained messages
-        roles.keys().forEach(role -> mqttOutbound.sendCommandTo(role, new JSONObject()));
+        roles.keys().forEach(role -> mqttOutbound.sendCMDto(role, new JSONObject()));
     }
 
     /**
      * when the actual game should start. You run this method.
      */
     public void start() {
-        mqttOutbound.sendCommandTo("all",
+        mqttOutbound.sendCMDto("all",
                 MQTT.signal("all", "off")
         );
     }
@@ -137,7 +142,7 @@ public abstract class Game {
     }
 
     public void reset() {
-        mqttOutbound.sendCommandTo("all",
+        mqttOutbound.sendCMDto("all",
                 MQTT.signal("all", "off"),
                 MQTT.page0(game_description));
     }

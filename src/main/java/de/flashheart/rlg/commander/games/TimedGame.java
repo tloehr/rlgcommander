@@ -100,12 +100,9 @@ public abstract class TimedGame extends ScheduledGame {
         create_job(gametimeJobKey, estimated_end_time, GameTimeIsUpJob.class);
         remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
         log.debug("remaining seconds: {}", remaining);
-        mqttOutbound.sendCommandTo("all", TIMERS("remaining", Long.toString(remaining)));
+        mqttOutbound.sendCMDto("all", MQTT.TIMERS("remaining", Long.toString(remaining)));
     }
 
-    JSONObject TIMERS(String... timers) {
-        return MQTT.envelope("timers", timers);
-    }
 
     @Override
     public JSONObject getStatus() {

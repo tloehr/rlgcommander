@@ -34,7 +34,7 @@ public class GamesService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome_page() {
-        mqttOutbound.sendCommandTo("all",
+        mqttOutbound.sendCMDto("all",
                 MQTT.signal("led_all", "∞:on,250;off,2500"),
                 MQTT.page0("Waiting for a game",
                         "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
@@ -92,7 +92,7 @@ public class GamesService {
     }
 
     public void shutdown_agents() {
-        mqttOutbound.sendCommandTo("all", new JSONObject().put("init", ""));
+        mqttOutbound.sendCMDto("all", new JSONObject().put("init", ""));
     }
 
     public Optional<Game> admin_set_values(String description) {
