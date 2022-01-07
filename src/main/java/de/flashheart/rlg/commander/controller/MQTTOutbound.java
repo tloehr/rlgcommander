@@ -5,7 +5,6 @@ import de.flashheart.rlg.commander.service.AgentsService;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +19,8 @@ import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
-import java.util.UUID;
+import java.util.Arrays;
+import java.util.Collection;
 
 @Configuration
 @Log4j2
@@ -55,7 +55,7 @@ public class MQTTOutbound {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
         options.setServerURIs(new String[]{mqtturl});
-        options.setMaxInflight(30);
+        options.setMaxInflight(1000);
 //        options.setUserName("username");
 //        options.setPassword("password".toCharArray());
         factory.setConnectionOptions(options);
@@ -65,7 +65,7 @@ public class MQTTOutbound {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {  // for outbound only
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(UUID.randomUUID().toString(), mqttClientFactory());
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientid, mqttClientFactory());
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(prefix);
         messageHandler.setDefaultQos(qos);
@@ -81,51 +81,13 @@ public class MQTTOutbound {
         return new DirectChannel();
     }
 
-//    public void sendCommandTo(Collection<Agent> agents, JSONObject... jsonObject) {
-//        agents.forEach(agent -> sendCommandTo(agent, jsonObject));
-//    }
-//
-//    // sends a simple command without any parameters
-//    public void sendCommandTo(String subchannel, String command) {
-//        String header = outbound_topic + subchannel;
-//        gateway.sendToMqtt(new JSONObject().put(command, JSONObject.NULL).toString(), header);
-//    }
 
-    public void sendSignalTo(String subchannel, String... signals) {
-        //String header = outbound_topic + subchannel;
-        sendCMDto(subchannel, MQTT.signal(signals));
-    }
-
-    public void sendSubscriptionList(String agentid, JSONArray subs) {
-        String header = subscription_topic + agentid;
-
-        log.debug("sending: {} - {}", header, subs);
-        gateway.sendToMqtt(subs.toString(), header);
-    }
-
-
-    public void initAgents() {
+    public void send(String channel, JSONObject payload, Collection<String> agents) {
+        Arrays.asList(agents).forEach(agent -> {
+            gateway.sendToMqtt(payload.toString(), prefix + channel + "/" + agent);
+        });
 
     }
 
-    public void send_paged(JSONObject pages, String... recipient) {
-        gateway.sendToMqtt(pages.toString(), prefix + "disp/" + recipient);
-    }
-
-
-    public void sendCMDto(String subchannel, JSONObject... data) {
-        String header = cmd_topic + subchannel;
-        String _data = MQTT.merge(data).toString();
-        log.debug("sending: {} - {}", header, _data);
-        gateway.sendToMqtt(_data, header);
-    }
-//
-//    public void sendSignalTo(Agent agent, String command, String parameter) {
-//        sendCommandTo(agent, MQTT.signal(command, parameter));
-//    }
-
-    public void sendCMDto(Agent agent, JSONObject... jsonObject) {
-        sendCMDto(agent.getAgentid(), jsonObject);
-    }
 
 }

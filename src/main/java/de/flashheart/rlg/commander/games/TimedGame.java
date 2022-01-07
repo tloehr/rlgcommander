@@ -96,11 +96,10 @@ public abstract class TimedGame extends ScheduledGame {
 
     void monitorRemainingTime() {
         log.debug("estimated_end_time = {}, regular_end_time = {}", estimated_end_time.format(DateTimeFormatter.ISO_TIME), regular_end_time.format(DateTimeFormatter.ISO_TIME));
-
         create_job(gametimeJobKey, estimated_end_time, GameTimeIsUpJob.class);
         remaining = estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
         log.debug("remaining seconds: {}", remaining);
-        mqttOutbound.sendCMDto("all", MQTT.TIMERS("remaining", Long.toString(remaining)));
+        mqttOutbound.send("timers", MQTT.TIMERS("remaining", Long.toString(remaining)), agents.keySet()); // sending to everyone
     }
 
 

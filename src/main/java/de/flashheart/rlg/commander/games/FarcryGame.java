@@ -62,7 +62,8 @@ public class FarcryGame extends TimedGame implements HasRespawn {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{} =====> {}", curState, nextState);
-                    mqttOutbound.sendSignalTo("sirens", "sir1", "very_long");
+
+                    mqttOutbound.send("signals", MQTT.signal("sir1", "very_long"), agents.get("sirens"));
                     mqttOutbound.sendSignalTo("leds", "led_all", "off", "led_blu", "slow");
                     mqttOutbound.sendCMDto("spawns", MQTT.page0("Restspielzeit", "${remaining}", "Bombe NICHT scharf", respawn_period > 0 ? "Respawn: ${respawn}" : ""));
                     estimated_end_time = start_time.plusSeconds(match_length);

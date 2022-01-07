@@ -5,7 +5,6 @@ import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import lombok.extern.log4j.Log4j2;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 
@@ -32,6 +31,7 @@ public abstract class Game {
 //    HashSet<Pair<String, String>> agent_roles;
 
 
+    // these maps contain functional combinations for agents like all the sirens in one group etc.
     final Multimap<String, String> agents, roles;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
@@ -85,18 +85,16 @@ public abstract class Game {
      * before another game is loaded, cleanup first
      */
     public void cleanup() {
-        mqttOutbound.sendCMDto("all", MQTT.init_agent());
+        mqttOutbound.send("init", new JSONObject(), agents.keySet());
         // cleanup the retained messages
-        roles.keys().forEach(role -> mqttOutbound.sendCMDto(role, new JSONObject()));
+        //roles.keys().forEach(role -> mqttOutbound.sendCMDto(role, new JSONObject()));
     }
 
     /**
      * when the actual game should start. You run this method.
      */
     public void start() {
-        mqttOutbound.sendCMDto("all",
-                MQTT.signal("all", "off")
-        );
+        mqttOutbound.send("signals", MQTT.signal("all", "off"), agents.keySet());
     }
 //    public abstract void start();
 
@@ -142,9 +140,7 @@ public abstract class Game {
     }
 
     public void reset() {
-        mqttOutbound.sendCMDto("all",
-                MQTT.signal("all", "off"),
-                MQTT.page0(game_description));
+        mqttOutbound.send("signal", MQTT.signal("all", "off"), agents.keySet());
     }
 
     public boolean hasRole(String agent, String role) {
