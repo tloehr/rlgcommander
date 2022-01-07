@@ -30,14 +30,14 @@ public class MQTTOutbound {
     public String mqtturl;
     @Value("${mqtt.clientid}")
     public String clientid;
-    @Value("${mqtt.cmd.topic}")
-    public String cmd_topic;
-    @Value("${mqtt.subscription.topic}")
-    public String subscription_topic;
+    @Value("${mqtt.prefix}")
+    public String prefix;
     @Value("${mqtt.qos}")
     public int qos;
     @Value("${mqtt.retained}")
     public boolean retained;
+
+    private final String TOPIC_GAMEID = "g1"; // maybe for multiple games in a later version
 
     ApplicationContext applicationContext;
     AgentsService agentsService;
@@ -67,7 +67,7 @@ public class MQTTOutbound {
     public MessageHandler mqttOutbound() {  // for outbound only
         MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(UUID.randomUUID().toString(), mqttClientFactory());
         messageHandler.setAsync(true);
-        messageHandler.setDefaultTopic(cmd_topic);
+        messageHandler.setDefaultTopic(prefix);
         messageHandler.setDefaultQos(qos);
         messageHandler.setDefaultRetained(retained);
         messageHandler.setQosExpressionString("null");
@@ -102,6 +102,16 @@ public class MQTTOutbound {
         log.debug("sending: {} - {}", header, subs);
         gateway.sendToMqtt(subs.toString(), header);
     }
+
+
+    public void initAgents() {
+
+    }
+
+    public void send_paged(JSONObject pages, String... recipient) {
+        gateway.sendToMqtt(pages.toString(), prefix + "disp/" + recipient);
+    }
+
 
     public void sendCMDto(String subchannel, JSONObject... data) {
         String header = cmd_topic + subchannel;

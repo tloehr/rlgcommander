@@ -54,7 +54,7 @@ public abstract class Game {
         log.debug(roles);
 
         // subscribe here
-        agents.keySet().forEach(key -> mqttOutbound.sendSubscriptionList(key, new JSONArray(agents.get(key))));
+        //agents.keySet().forEach(key -> mqttOutbound.sendSubscriptionList(key, new JSONArray(agents.get(key))));
 
         // mqttOutbound.sendSubCMDTo(agent.toString(), role);
 
