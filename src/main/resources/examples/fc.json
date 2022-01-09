@@ -2,7 +2,7 @@
   "comment": "FarCry 1 Assault",
   "rest_url": "http://localhost:8090/api/game/load",
   "class": "de.flashheart.rlg.commander.games.FarcryGame",
-  "name": "farcry",
+  "name": "farcry1",
   "agents": {
     "button": [
       "ag01"

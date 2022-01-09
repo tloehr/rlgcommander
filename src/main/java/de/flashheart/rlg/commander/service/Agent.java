@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.service;
 
+import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,7 +33,7 @@ public class Agent {
      */
     public Agent(String agentid) {
         this.agentid = agentid;
-        this.gameid = "g1";
+        this.gameid = MQTTOutbound.GAMEID;
         this.lastheartbeat = LocalDateTime.now();
         this.wifi = 3;
     }

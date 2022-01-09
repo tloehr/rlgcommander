@@ -21,6 +21,8 @@ import org.springframework.messaging.MessageHandler;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.UUID;
 
 @Configuration
 @Log4j2
@@ -28,16 +30,16 @@ import java.util.Collection;
 public class MQTTOutbound {
     @Value("${mqtt.url}")
     public String mqtturl;
-    @Value("${mqtt.clientid}")
-    public String clientid;
     @Value("${mqtt.prefix}")
     public String prefix;
     @Value("${mqtt.qos}")
     public int qos;
     @Value("${mqtt.retained}")
     public boolean retained;
+    @Value("${mqtt.clientid}")
+    public String clientid;
 
-    private final String TOPIC_GAMEID = "g1"; // maybe for multiple games in a later version
+    public static final String GAMEID = "g1"; // maybe for multiple games in a later version
 
     ApplicationContext applicationContext;
     AgentsService agentsService;
@@ -65,13 +67,13 @@ public class MQTTOutbound {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {  // for outbound only
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientid, mqttClientFactory());
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientid + "-mqtt-outbound", mqttClientFactory());
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(prefix);
         messageHandler.setDefaultQos(qos);
-        messageHandler.setDefaultRetained(retained);
-        messageHandler.setQosExpressionString("null");
-        messageHandler.setRetainedExpressionString("null");
+        messageHandler.setDefaultRetained(true);
+//        messageHandler.setQosExpressionString("null");
+//        messageHandler.setRetainedExpressionString("null");
         return messageHandler;
     }
 
@@ -81,12 +83,27 @@ public class MQTTOutbound {
         return new DirectChannel();
     }
 
+    public void send(String cmd, String gameid, String agent) {
+        send(cmd, gameid, new JSONObject(), agent);
+    }
 
-    public void send(String channel, JSONObject payload, Collection<String> agents) {
-        Arrays.asList(agents).forEach(agent -> {
-            gateway.sendToMqtt(payload.toString(), prefix + channel + "/" + agent);
+    public void send(String cmd, String gameid, JSONObject payload, String agent) {
+        if (agent.isEmpty()) return;
+        HashSet<String> agents = new HashSet<>();
+        agents.add(agent);
+        send(cmd, gameid, payload, agents);
+    }
+
+    public void send(String cmd, String gameid, JSONObject payload, Collection<String> agents) {
+        if (agents.isEmpty()) return;
+        agents.forEach(agent -> {
+            log.debug("sending {}", prefix + gameid + "/" + agent + "/" + cmd);
+            send(gameid + "/" + agent + "/" + cmd, payload);
         });
+    }
 
+    public void send(String topic, JSONObject payload) {
+        gateway.sendToMqtt(payload.toString(), prefix + topic);
     }
 
 

@@ -135,24 +135,24 @@ public class ConquestGame extends ScheduledGame {
 
     @Override
     public void react_to(String sender, JSONObject event) {
-        if (!event.keySet().contains("button_pressed")) {
-            log.debug("Don't care for this button.");
+        // where did this message come from ?
+        String source = event.optString("source", "");
+        if (!source.equalsIgnoreCase("btn01")) {
+            log.debug("no btn1 event. ignoring.");
             return;
         }
-
-        // where did this message come from ?
         if (hasRole(sender, "red_spawn")) {
             // red respawn button was pressed
-            mqttOutbound.sendSignalTo(sender, "buzzer", "single_buzz", "led_wht", "single_buzz");
+            mqttOutbound.send("signals", name, MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), sender);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             broadcast_score();   // to make the respawn show up quicker. 
         } else if (hasRole(sender, "blue_spawn")) {
             // blue respawn button was pressed
-            mqttOutbound.sendSignalTo(sender, "buzzer", "single_buzz", "led_wht", "single_buzz");
+            mqttOutbound.send("signals", name, MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), sender);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             broadcast_score();   // to make the respawn show up quicker.
         } else if (hasRole(sender, "capture_points")) {
-            agentFSMs.get(sender).ProcessFSM(event.getString("button_pressed").toUpperCase());
+            agentFSMs.get(sender).ProcessFSM(source.toUpperCase());
         } else {
             log.debug("i don't care about this message.");
         }
@@ -229,15 +229,15 @@ public class ConquestGame extends ScheduledGame {
     }
 
     private void agent_to_neutral(String agent) {
-        mqttOutbound.sendSignalTo(agent, "led_all", "off", "led_wht", "normal");
+        mqttOutbound.send("signals", name, MQTT.toJSON("led_all", "off", "led_wht", "normal"), agent);
     }
 
     private void agent_to_blue(String agent) {
-        mqttOutbound.sendSignalTo(agent, "led_all", "off", "led_blu", "normal", "buzzer", "double_buzz");
+        mqttOutbound.send("signals", name, MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
     }
 
     private void agent_to_red(String agent) {
-        mqttOutbound.sendSignalTo(agent, "led_all", "off", "led_red", "normal", "buzzer", "double_buzz");
+        mqttOutbound.send("signals", name, MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
     }
 
     @Override
@@ -250,22 +250,25 @@ public class ConquestGame extends ScheduledGame {
         cps_held_by_blue.clear();
         cps_held_by_red.clear();
 
-        mqttOutbound.sendSignalTo("sirens", "sir1", "very_long");
+        mqttOutbound.send("signals", name, MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
         // add a screen in the spawns for the state of all CPs
-        mqttOutbound.sendCMDto("spawns", MQTT.add_pages("cpstates")); // the agent ignores duplicate adds.
-        mqttOutbound.sendCMDto("spawns", MQTT.page_content("cpstates", "RED CPs", "", "BLUE CPs", ""));
+//        mqttOutbound.sendCMDto("spawns", MQTT.add_pages("cpstates")); // the agent ignores duplicate adds.
+//        mqttOutbound.sendCMDto("spawns", MQTT.page_content("cpstates", "RED CPs", "", "BLUE CPs", ""));
 
-        mqttOutbound.sendCMDto("spawns",
-                MQTT.VARS("red_tickets", remaining_red_tickets.toPlainString(),
-                        "blue_tickets", remaining_blue_tickets.toPlainString(),
+        mqttOutbound.send("vars", name,
+                MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
+                        "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
                         "red_flags", Integer.toString(cps_held_by_red.size()),
                         "blue_flags", Integer.toString(cps_held_by_blue.size())),
-                MQTT.page0("Red: ${red_tickets} Tickets",
+                roles.get("spawns"));
+        mqttOutbound.send("paged", name,
+                MQTT.page("page0",
+                        "Red: ${red_tickets} Tickets",
                         "${red_flags} flag(s)",
                         "Blue: ${blue_tickets} Tickets",
-                        "${blue_flags} flag(s)")
-        );
+                        "${blue_flags} flag(s)"),
+                roles.get("spawns"));
 
         // setup and start bleeding job
         long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
@@ -304,22 +307,22 @@ public class ConquestGame extends ScheduledGame {
         // broadcast_score();
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
         String winner = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
-        mqttOutbound.sendSignalTo("capture_points", "led_all", "off", winner, "normal");
-        mqttOutbound.sendCMDto("spawns",
-                MQTT.page0("Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome)
-        );
-
+        mqttOutbound.send("signals", name, MQTT.toJSON("led_all", "off", winner, "normal"), "capture_points");
+        mqttOutbound.send("paged", name,
+                MQTT.page("page0",
+                        "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome),
+                roles.get("spawns"));
+        mqttOutbound.send("signals", name, MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
-        mqttOutbound.sendSignalTo("sirens", "sir1", "very_long");
     }
 
     private void broadcast_score() {
-        mqttOutbound.sendCMDto("spawns",
-                MQTT.VARS("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
+        mqttOutbound.send("vars", name,
+                MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
                         "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
                         "red_flags", Integer.toString(cps_held_by_red.size()),
-                        "blue_flags", Integer.toString(cps_held_by_blue.size()))
-        );
+                        "blue_flags", Integer.toString(cps_held_by_blue.size())),
+                roles.get("spawns"));
 
         log.debug("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
@@ -332,9 +335,9 @@ public class ConquestGame extends ScheduledGame {
     public void reset() {
         super.reset();
         game_in_prolog_state = true;
-        mqttOutbound.sendSignalTo("capture_points", "led_all", "off", "led_wht", "slow");
-        mqttOutbound.sendSignalTo("red_spawn", "led_all", "off", "led_red", "slow");
-        mqttOutbound.sendSignalTo("blue_spawn", "led_all", "off", "led_blu", "slow");
+        mqttOutbound.send("signals", name, MQTT.toJSON("led_all", "off", "led_wht", "slow"), roles.get("capture_points"));
+        mqttOutbound.send("signals", name, MQTT.toJSON("led_all", "off", "led_red", "slow"), roles.get("red_spawn"));
+        mqttOutbound.send("signals", name, MQTT.toJSON("led_all", "off", "led_blu", "slow"), roles.get("blue_spawn"));
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("RESET"));
     }
 

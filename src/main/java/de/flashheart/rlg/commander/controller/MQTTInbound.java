@@ -19,8 +19,11 @@ import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
-import javax.annotation.PreDestroy;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 @Configuration
 @Log4j2
@@ -31,10 +34,12 @@ import java.util.Arrays;
 public class MQTTInbound {
     @Value("${mqtt.url}")
     public String mqtturl;
-    @Value("${mqtt.clientid}")
-    public String clientid;
     @Value("${mqtt.inbound.topic}")
     public String inbound_topic;
+    @Value("${mqtt.qos}")
+    public int qos;
+    @Value("${mqtt.clientid}")
+    public String clientid;
     MQTTOutbound mqttOutbound;
     AgentsService agentsService;
     GamesService gamesService;
@@ -53,10 +58,10 @@ public class MQTTInbound {
 
     @Bean
     public MessageProducer inbound() {
-        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(mqtturl, clientid, inbound_topic);
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(mqtturl, clientid + "-mqtt-inbound", inbound_topic);
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
-        adapter.setQos(2); // brauchen wir das ?
+        adapter.setQos(qos);
         adapter.setOutputChannel(mqttInputChannel());
         return adapter;
     }
@@ -65,21 +70,29 @@ public class MQTTInbound {
     @ServiceActivator(inputChannel = "mqttInputChannel")
     public MessageHandler handler() {
         return message -> {
-            JSONObject event = new JSONObject(message.getPayload().toString());
+            //JSONObject event = new JSONObject(message.getPayload().toString());
+            // GenericMessage [payload=, headers={mqtt_receivedRetained=false, mqtt_id=1, mqtt_duplicate=false, id=1ed88f18-b360-3ac6-4797-b28e2fc16857, mqtt_receivedTopic=rlg/g1/evt/ag01/btn01, mqtt_receivedQos=1, timestamp=1641739880253}]
+            // rlg/g1/evt/ag01/btn01
+            String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
+            List<String> tokens = Collections.list(new StringTokenizer(topic, "/")).stream().map(token -> (String) token).collect(Collectors.toList());
+            String agent = tokens.get(tokens.size() - 2);
+            String source = tokens.get(tokens.size() - 1); // which button ?
 
-            // special case for "heartbeats" from agents
-            if (event.keySet().contains("status")) {
-                try {
-                    JSONObject status = event.getJSONObject("status");
-                    agentsService.put(status.getString("agentid"), new Agent(status));
-                } catch (JSONException e) {
-                    //agentsService.remove(agentid);
-                }
+            if (source.equalsIgnoreCase("status")) {
+                log.debug(message.getPayload().toString());
+//                try {
+//                    JSONObject status = event.getJSONObject("status");
+//                    agentsService.put(status.getString("agentid"), new Agent(status));
+//                } catch (JSONException e) {
+//                    //agentsService.remove(agentid);
+//                }
             } else {
-                gamesService.react_to(event.getString("agentid"), event);
+                gamesService.react_to(agent, new JSONObject().put("source", source));
                 //gamesService.getGame().ifPresent(game -> log.debug(game.getStatus()));
             }
-        };
+        }
+
+                ;
     }
 
 //    @PreDestroy

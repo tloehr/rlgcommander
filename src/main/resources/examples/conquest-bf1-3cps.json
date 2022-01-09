@@ -2,7 +2,7 @@
   "comment": "3 CPs, BF1 style",
   "rest_url": "http://localhost:8090/api/game/load",
   "class": "de.flashheart.rlg.commander.games.ConquestGame",
-  "name": "conquest",
+  "name": "g1",
   "agents": {
     "capture_points": [
       "ag01",

@@ -1,5 +1,5 @@
 {
-  "comment": "5 CPs, BF1 style",
+  "comment": "6 CPs, BF1 style",
   "rest_url": "http://localhost:8090/api/game/load",
   "class": "de.flashheart.rlg.commander.games.ConquestGame",
   "name": "g1",
@@ -9,7 +9,8 @@
       "ag02",
       "ag03",
       "ag04",
-      "ag05"
+      "ag05",
+      "ag09"
     ],
     "red_spawn": [
       "ag06"

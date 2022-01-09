@@ -53,11 +53,6 @@ public abstract class Game {
         log.debug(agents);
         log.debug(roles);
 
-        // subscribe here
-        //agents.keySet().forEach(key -> mqttOutbound.sendSubscriptionList(key, new JSONArray(agents.get(key))));
-
-        // mqttOutbound.sendSubCMDTo(agent.toString(), role);
-
         game_description = new ArrayList<>();
         pausing_since = Optional.empty();
     }
@@ -85,7 +80,7 @@ public abstract class Game {
      * before another game is loaded, cleanup first
      */
     public void cleanup() {
-        mqttOutbound.send("init", new JSONObject(), agents.keySet());
+        mqttOutbound.send("init", name, new JSONObject(), agents.keySet());
         // cleanup the retained messages
         //roles.keys().forEach(role -> mqttOutbound.sendCMDto(role, new JSONObject()));
     }
@@ -94,7 +89,7 @@ public abstract class Game {
      * when the actual game should start. You run this method.
      */
     public void start() {
-        mqttOutbound.send("signals", MQTT.signal("all", "off"), agents.keySet());
+        mqttOutbound.send("signals", name, MQTT.toJSON("all", "off"), agents.keySet());
     }
 //    public abstract void start();
 
@@ -128,7 +123,7 @@ public abstract class Game {
     }
 
     /**
-     * if the commander sends out screen for the lcd display to show the current set game parameters it will use the
+     * if the commander sends out a screen for the lcd display to show the current set game parameters it will use the
      * data set by this method.
      *
      * @param lines line by line description as we want it to be broadcasted
@@ -137,10 +132,12 @@ public abstract class Game {
         game_description.clear();
         game_description.addAll(Arrays.asList(lines));
         log.debug(game_description);
+
     }
 
     public void reset() {
-        mqttOutbound.send("signal", MQTT.signal("all", "off"), agents.keySet());
+        mqttOutbound.send(name + "/all/signals", MQTT.toJSON("all", "off"));
+        mqttOutbound.send(name + "/all/paged", MQTT.page("page0", game_description));
     }
 
     public boolean hasRole(String agent, String role) {
