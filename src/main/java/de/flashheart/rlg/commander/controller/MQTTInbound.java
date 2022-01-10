@@ -1,11 +1,9 @@
 package de.flashheart.rlg.commander.controller;
 
-import de.flashheart.rlg.commander.service.Agent;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +17,6 @@ import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -75,7 +72,8 @@ public class MQTTInbound {
             // rlg/g1/evt/ag01/btn01
             String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
             List<String> tokens = Collections.list(new StringTokenizer(topic, "/")).stream().map(token -> (String) token).collect(Collectors.toList());
-            String agent = tokens.get(tokens.size() - 2);
+            String gameid = tokens.get(tokens.size() - 3);
+            String agentid = tokens.get(tokens.size() - 2);
             String source = tokens.get(tokens.size() - 1); // which button ?
 
             if (source.equalsIgnoreCase("status")) {
@@ -87,12 +85,10 @@ public class MQTTInbound {
 //                    //agentsService.remove(agentid);
 //                }
             } else {
-                gamesService.react_to(agent, new JSONObject().put("source", source));
+                gamesService.react_to(agentid, new JSONObject().put("source", source));
                 //gamesService.getGame().ifPresent(game -> log.debug(game.getStatus()));
             }
-        }
-
-                ;
+        };
     }
 
 //    @PreDestroy

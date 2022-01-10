@@ -1,6 +1,5 @@
 package de.flashheart.rlg.commander.service;
 
-import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,7 +21,7 @@ public class Agent {
     public static final String HAS_RFID = "has_rfid";
 
     private String agentid;
-    private String gameid;
+
     private LocalDateTime lastheartbeat;
     private int wifi;
 
@@ -33,21 +32,21 @@ public class Agent {
      */
     public Agent(String agentid) {
         this.agentid = agentid;
-        this.gameid = MQTTOutbound.GAMEID;
+
         this.lastheartbeat = LocalDateTime.now();
         this.wifi = 3;
     }
 
     public Agent(JSONObject jsonObject) {
         this.agentid = jsonObject.getString("agentid");
-        this.gameid = jsonObject.getString("gameid");
+
         this.lastheartbeat = JavaTimeConverter.from_iso8601(jsonObject.getString("timestamp"));
         this.wifi = jsonObject.getInt("wifi");
     }
 
     public JSONObject toJson() {
         return new JSONObject().put("agentid", agentid)
-                .put("gameid", gameid)
+
                 .put("timestamp", JavaTimeConverter.to_iso8601(lastheartbeat))
                 .put("wifi", wifi);
     }

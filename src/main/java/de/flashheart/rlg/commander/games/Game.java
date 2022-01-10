@@ -80,7 +80,7 @@ public abstract class Game {
      * before another game is loaded, cleanup first
      */
     public void cleanup() {
-        mqttOutbound.send("init", name, new JSONObject(), agents.keySet());
+        mqttOutbound.send("init", new JSONObject(), agents.keySet());
         // cleanup the retained messages
         //roles.keys().forEach(role -> mqttOutbound.sendCMDto(role, new JSONObject()));
     }
@@ -89,7 +89,7 @@ public abstract class Game {
      * when the actual game should start. You run this method.
      */
     public void start() {
-        mqttOutbound.send("signals", name, MQTT.toJSON("all", "off"), agents.keySet());
+        mqttOutbound.send("signals", MQTT.toJSON("all", "off"), agents.keySet());
     }
 //    public abstract void start();
 
@@ -136,8 +136,8 @@ public abstract class Game {
     }
 
     public void reset() {
-        mqttOutbound.send(name + "/all/signals", MQTT.toJSON("all", "off"));
-        mqttOutbound.send(name + "/all/paged", MQTT.page("page0", game_description));
+        mqttOutbound.send("signals", MQTT.toJSON("all", "off"), agents.keySet());
+        mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
     }
 
     public boolean hasRole(String agent, String role) {

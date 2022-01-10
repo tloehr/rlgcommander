@@ -12,6 +12,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 @Service
@@ -22,6 +23,7 @@ public class GamesService {
     AgentsService agentsService;
     BuildProperties buildProperties;
     private Optional<Game> loaded_game;
+    //todo: private HashMap<String, Game> loaded_games; // for later use when handling multiple games. will replace loaded_game.
 
     @Autowired
     public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties) {
@@ -32,8 +34,12 @@ public class GamesService {
         this.loaded_game = Optional.empty();
     }
 
+    /**
+     * start behavior for all agents when the server starts
+     */
     @EventListener(ApplicationReadyEvent.class)
-    public void welcome_page() {
+    public void welcome() {
+        mqttOutbound.send("all/init", new JSONObject());
         mqttOutbound.send("all/signals", MQTT.toJSON("led_all", "∞:on,250;off,2500"));
         mqttOutbound.send("all/paged", MQTT.page("page0", "Waiting for a game",
                 "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
@@ -90,7 +96,7 @@ public class GamesService {
     }
 
     public void shutdown_agents() {
-        mqttOutbound.send("init", MQTTOutbound.GAMEID, "all");
+        mqttOutbound.send("init", "all");
     }
 
     public Optional<Game> admin_set_values(String description) {

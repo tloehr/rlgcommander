@@ -39,8 +39,6 @@ public class MQTTOutbound {
     @Value("${mqtt.clientid}")
     public String clientid;
 
-    public static final String GAMEID = "g1"; // maybe for multiple games in a later version
-
     ApplicationContext applicationContext;
     AgentsService agentsService;
     MyGateway gateway;
@@ -71,7 +69,7 @@ public class MQTTOutbound {
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(prefix);
         messageHandler.setDefaultQos(qos);
-        messageHandler.setDefaultRetained(true);
+        messageHandler.setDefaultRetained(retained);
 //        messageHandler.setQosExpressionString("null");
 //        messageHandler.setRetainedExpressionString("null");
         return messageHandler;
@@ -83,22 +81,22 @@ public class MQTTOutbound {
         return new DirectChannel();
     }
 
-    public void send(String cmd, String gameid, String agent) {
-        send(cmd, gameid, new JSONObject(), agent);
+    public void send(String cmd,  String agent) {
+        send(cmd, new JSONObject(), agent);
     }
 
-    public void send(String cmd, String gameid, JSONObject payload, String agent) {
+    public void send(String cmd,  JSONObject payload, String agent) {
         if (agent.isEmpty()) return;
         HashSet<String> agents = new HashSet<>();
         agents.add(agent);
-        send(cmd, gameid, payload, agents);
+        send(cmd, payload, agents);
     }
 
-    public void send(String cmd, String gameid, JSONObject payload, Collection<String> agents) {
+    public void send(String cmd, JSONObject payload, Collection<String> agents) {
         if (agents.isEmpty()) return;
         agents.forEach(agent -> {
-            log.debug("sending {}", prefix + gameid + "/" + agent + "/" + cmd);
-            send(gameid + "/" + agent + "/" + cmd, payload);
+            log.debug("sending {}", prefix +  "/" + agent + "/" + cmd);
+            send( agent + "/" + cmd, payload);
         });
     }
 

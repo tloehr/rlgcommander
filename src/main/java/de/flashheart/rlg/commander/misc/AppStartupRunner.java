@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.misc;
 
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
@@ -22,6 +23,6 @@ public class AppStartupRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        mqttOutbound.send("all/init", new JSONObject());
+
     }
 }
