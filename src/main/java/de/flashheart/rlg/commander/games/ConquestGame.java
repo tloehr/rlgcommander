@@ -135,6 +135,7 @@ public class ConquestGame extends ScheduledGame {
 
     @Override
     public void react_to(String sender, JSONObject event) {
+        super.react_to(sender, event);
         // where did this message come from ?
         String source = event.optString("source", "");
         if (!source.equalsIgnoreCase("btn01")) {
@@ -307,7 +308,7 @@ public class ConquestGame extends ScheduledGame {
         // broadcast_score();
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
         String winner = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", winner, "normal"), "capture_points");
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", winner, "normal"), roles.get("capture_points"));
         mqttOutbound.send("paged",
                 MQTT.page("page0",
                         "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome),

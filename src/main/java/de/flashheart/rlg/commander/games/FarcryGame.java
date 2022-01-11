@@ -193,7 +193,7 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         } else {
             mqttOutbound.send("paged", MQTT.page("page0", "", "Restspielzeit", "${remaining}", "", ""), roles.get("spawns"));
         }
-        react_to("START");
+        trigger_internal_event("START");
     }
 
     @Override
@@ -201,17 +201,18 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         deleteJob(myRespawnJobKey);
         mqttOutbound.send("signals", MQTT.toJSON("buzzer", "off"), roles.get("spawns"));
         mqttOutbound.send("timers", MQTT.toJSON("respawn", "-1"), roles.get("spawns"));
-        react_to("GAME_OVER");
+        trigger_internal_event("GAME_OVER");
     }
 
     @Override
     public void overtime() {
         log.debug("overtime");
-        react_to("OVERTIME");
+        trigger_internal_event("OVERTIME");
     }
 
     @Override
     public void react_to(String sender, JSONObject event) {
+        super.react_to(sender, event);
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_internal")) {
             farcryFSM.ProcessFSM(event.getString("message"));
@@ -228,13 +229,12 @@ public class FarcryGame extends TimedGame implements HasRespawn {
         mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal", "led_blu", "normal"), roles.get("leds"));
         mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal"), roles.get("red_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_blu", "normal"), roles.get("blue_spawn"));
-        react_to("RESET");
+        trigger_internal_event("RESET");
     }
 
     @Override
     public JSONObject getStatus() {
         return super.getStatus()
-                .put("mode", "farcry")
                 .put("flag_capture_time", flagcapturetime)
                 .put("respawn_period", respawn_period)
                 .put("current_state", farcryFSM.getCurrentState());

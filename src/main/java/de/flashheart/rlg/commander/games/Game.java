@@ -62,15 +62,20 @@ public abstract class Game {
      *
      * @param event
      */
-    public abstract void react_to(String sender, JSONObject event);
+    public void react_to(String sender, JSONObject event) {
+        if (isPausing()) {
+            log.info("received event {} from {} during pause. ignoring.", event, sender);
+            return;
+        }
+    }
 
-    public void react_to(String event) {
+    public void trigger_internal_event(String event) {
         react_to("_internal", new JSONObject().put("message", event));
     }
 
-    public void react_to(JSONObject event) {
-        react_to("_internal", event);
-    }
+//    public void react_to(JSONObject event) {
+//        react_to("_internal", event);
+//    }
 
     public String getName() {
         return name;
@@ -81,17 +86,12 @@ public abstract class Game {
      */
     public void cleanup() {
         mqttOutbound.send("init", new JSONObject(), agents.keySet());
-        // cleanup the retained messages
-        //roles.keys().forEach(role -> mqttOutbound.sendCMDto(role, new JSONObject()));
     }
 
     /**
      * when the actual game should start. You run this method.
      */
-    public void start() {
-        mqttOutbound.send("signals", MQTT.toJSON("all", "off"), agents.keySet());
-    }
-//    public abstract void start();
+    public abstract void start();
 
     /**
      * to resume a paused game.
@@ -107,7 +107,7 @@ public abstract class Game {
         pausing_since = Optional.of(LocalDateTime.now());
     }
 
-    public boolean isPaused() {
+    public boolean isPausing() {
         return pausing_since.isPresent();
     }
 
@@ -119,6 +119,7 @@ public abstract class Game {
     public JSONObject getStatus() {
         return new JSONObject()
                 .put("name", name)
+                .put("class", this.getClass().getName())
                 .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ISO_DATE_TIME) : JSONObject.NULL);
     }
 

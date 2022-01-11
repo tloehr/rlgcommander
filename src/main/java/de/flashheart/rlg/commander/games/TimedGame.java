@@ -78,7 +78,6 @@ public abstract class TimedGame extends ScheduledGame {
 
     @Override
     public void start() {
-        super.start();
         start_time = LocalDateTime.now();
         regular_end_time = start_time.plusSeconds(match_length);
         create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);

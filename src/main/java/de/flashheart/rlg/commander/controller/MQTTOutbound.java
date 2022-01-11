@@ -1,6 +1,5 @@
 package de.flashheart.rlg.commander.controller;
 
-import de.flashheart.rlg.commander.service.Agent;
 import de.flashheart.rlg.commander.service.AgentsService;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -19,10 +18,8 @@ import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.UUID;
 
 @Configuration
 @Log4j2
@@ -70,8 +67,6 @@ public class MQTTOutbound {
         messageHandler.setDefaultTopic(prefix);
         messageHandler.setDefaultQos(qos);
         messageHandler.setDefaultRetained(retained);
-//        messageHandler.setQosExpressionString("null");
-//        messageHandler.setRetainedExpressionString("null");
         return messageHandler;
     }
 
@@ -81,11 +76,11 @@ public class MQTTOutbound {
         return new DirectChannel();
     }
 
-    public void send(String cmd,  String agent) {
+    public void send(String cmd, String agent) {
         send(cmd, new JSONObject(), agent);
     }
 
-    public void send(String cmd,  JSONObject payload, String agent) {
+    public void send(String cmd, JSONObject payload, String agent) {
         if (agent.isEmpty()) return;
         HashSet<String> agents = new HashSet<>();
         agents.add(agent);
@@ -95,13 +90,17 @@ public class MQTTOutbound {
     public void send(String cmd, JSONObject payload, Collection<String> agents) {
         if (agents.isEmpty()) return;
         agents.forEach(agent -> {
-            log.debug("sending {}", prefix +  "/" + agent + "/" + cmd);
-            send( agent + "/" + cmd, payload);
+            log.debug("sending {}", prefix + "/" + agent + "/" + cmd);
+            send(agent + "/" + cmd, payload);
         });
     }
 
     public void send(String topic, JSONObject payload) {
         gateway.sendToMqtt(payload.toString(), prefix + topic);
+    }
+
+    public void send(String topic, JSONObject payload, boolean retained) {
+        gateway.sendToMqtt(payload.toString(), retained, prefix + topic);
     }
 
 

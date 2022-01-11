@@ -12,7 +12,6 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Optional;
 
 @Service
@@ -39,12 +38,12 @@ public class GamesService {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
-        mqttOutbound.send("all/init", new JSONObject());
-        mqttOutbound.send("all/signals", MQTT.toJSON("led_all", "∞:on,250;off,2500"));
+        mqttOutbound.send("all/init", new JSONObject(), false);
+        mqttOutbound.send("all/signals", MQTT.toJSON("led_all", "∞:on,250;off,2500"), false);
         mqttOutbound.send("all/paged", MQTT.page("page0", "Waiting for a game",
                 "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
                 "agnt ${agversion}.${agbuild}",
-                "RLGS2 @flashheart.de"));
+                "RLGS2 @flashheart.de"), false);
     }
 
     public Optional<Game> load_game(String json) throws Exception {
@@ -102,7 +101,7 @@ public class GamesService {
     public Optional<Game> admin_set_values(String description) {
         //loaded_game.ifPresent(game -> game.reset());
         loaded_game.ifPresent(game -> {
-            if (!game.isPaused()) return;
+            if (!game.isPausing()) return;
         });
         return loaded_game;
     }
