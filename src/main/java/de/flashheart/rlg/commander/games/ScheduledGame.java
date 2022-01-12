@@ -91,7 +91,6 @@ public abstract class ScheduledGame extends Game {
 
     @Override
     public void cleanup() {
-        super.cleanup();
         jobs.forEach(job -> {
             try {
                 scheduler.interrupt(job);

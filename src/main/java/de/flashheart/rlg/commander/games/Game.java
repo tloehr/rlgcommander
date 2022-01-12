@@ -84,9 +84,7 @@ public abstract class Game {
     /**
      * before another game is loaded, cleanup first
      */
-    public void cleanup() {
-        mqttOutbound.send("init", new JSONObject(), agents.keySet());
-    }
+    public abstract void cleanup();
 
     /**
      * when the actual game should start. You run this method.
@@ -98,6 +96,7 @@ public abstract class Game {
      */
     public void resume() {
         pausing_since = Optional.empty();
+        // todo: remove pause screen
     }
 
     /**
@@ -105,6 +104,7 @@ public abstract class Game {
      */
     public void pause() {
         pausing_since = Optional.of(LocalDateTime.now());
+        // todo: add pause screen
     }
 
     public boolean isPausing() {

@@ -38,12 +38,12 @@ public class GamesService {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
-        mqttOutbound.send("all/init", new JSONObject(), false);
-        mqttOutbound.send("all/signals", MQTT.toJSON("led_all", "∞:on,250;off,2500"), false);
+        mqttOutbound.send("all/init", new JSONObject());
+        mqttOutbound.send("all/signals", MQTT.toJSON("led_all", "∞:on,250;off,2500"));
         mqttOutbound.send("all/paged", MQTT.page("page0", "Waiting for a game",
                 "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
                 "agnt ${agversion}.${agbuild}",
-                "RLGS2 @flashheart.de"), false);
+                "RLGS2 @flashheart.de"));
     }
 
     public Optional<Game> load_game(String json) throws Exception {
@@ -61,6 +61,7 @@ public class GamesService {
     public void unload_game() {
         loaded_game.ifPresent(game -> game.cleanup());
         loaded_game = Optional.empty();
+        welcome();
     }
 
 
@@ -95,7 +96,7 @@ public class GamesService {
     }
 
     public void shutdown_agents() {
-        mqttOutbound.send("init", "all");
+        mqttOutbound.send("shutdown", "all");
     }
 
     public Optional<Game> admin_set_values(String description) {

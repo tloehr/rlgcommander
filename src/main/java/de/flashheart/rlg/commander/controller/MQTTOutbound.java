@@ -62,7 +62,7 @@ public class MQTTOutbound {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {  // for outbound only
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientid + "-mqtt-outbound", mqttClientFactory());
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientid + (int) (Math.random() * 10000) + "-mqtt-outbound", mqttClientFactory());
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(prefix);
         messageHandler.setDefaultQos(qos);
