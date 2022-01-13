@@ -47,37 +47,50 @@ public abstract class TimedGame extends ScheduledGame {
 
     final JobKey gametimeJobKey, overtimeJobKey;
 
-    TimedGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(game_parameters, scheduler, mqttOutbound);
+    TimedGame(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(id, game_parameters, scheduler, mqttOutbound);
         this.match_length = game_parameters.getInt("match_length");
-        gametimeJobKey = new JobKey("gametime", name);
-        overtimeJobKey = new JobKey("overtime", name);
+        gametimeJobKey = new JobKey("gametime", id);
+        overtimeJobKey = new JobKey("overtime", id);
         remaining = 0l;
         estimated_end_time = null;
     }
 
     @Override
     public void pause() {
-        super.pause();
+        try {
+            super.pause();
+        } catch (IllegalStateException e) {
+            return;
+        }
         deleteJob(gametimeJobKey);
         deleteJob(overtimeJobKey);
     }
 
     @Override
     public void resume() {
+        try {
+            super.resume();
+        } catch (IllegalStateException e) {
+            return;
+        }
         // shift the start and end_time by the number of seconds the pause lasted
         long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
         start_time = start_time.plusSeconds(pause_length_in_seconds);
         estimated_end_time = start_time.plusSeconds(match_length);
         regular_end_time = estimated_end_time;
         create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);
-        super.resume();
         monitorRemainingTime();
     }
 
 
     @Override
     public void start() {
+        try {
+            super.start();
+        } catch (IllegalStateException e) {
+            return;
+        }
         start_time = LocalDateTime.now();
         regular_end_time = start_time.plusSeconds(match_length);
         create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);
@@ -88,8 +101,6 @@ public abstract class TimedGame extends ScheduledGame {
         super.cleanup();
         start_time = null;
     }
-
-    public abstract void game_over();
 
     public abstract void overtime();
 

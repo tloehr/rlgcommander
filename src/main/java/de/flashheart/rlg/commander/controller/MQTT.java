@@ -22,7 +22,7 @@ public class MQTT {
     public static JSONObject page(String page_handle, Collection<String> content) {
         return new JSONObject().put(page_handle, new JSONArray(content));
     }
-
+//
 //    public static JSONObject del_pages(String... page_handle) {
 //        return new JSONObject().put("del_pages", new JSONArray(page_handle));
 //    }

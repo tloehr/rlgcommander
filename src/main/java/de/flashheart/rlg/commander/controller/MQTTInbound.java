@@ -72,8 +72,7 @@ public class MQTTInbound {
             // rlg/g1/evt/ag01/btn01
             String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
             List<String> tokens = Collections.list(new StringTokenizer(topic, "/")).stream().map(token -> (String) token).collect(Collectors.toList());
-            String gameid = tokens.get(tokens.size() - 3);
-            String agentid = tokens.get(tokens.size() - 2);
+            String agent = tokens.get(tokens.size() - 2);
             String source = tokens.get(tokens.size() - 1); // which button ?
 
             if (source.equalsIgnoreCase("status")) {
@@ -85,17 +84,11 @@ public class MQTTInbound {
 //                    //agentsService.remove(agentid);
 //                }
             } else {
-                gamesService.react_to(agentid, new JSONObject().put("source", source));
-                //gamesService.getGame().ifPresent(game -> log.debug(game.getStatus()));
+                agentsService.get_gameid_for(agent).ifPresent(gameid -> {
+                    gamesService.react_to(gameid, agent, new JSONObject().put("source", source));
+                });
             }
         };
     }
-
-//    @PreDestroy
-//    public void before_shutdown() {
-//        mqttOutbound.sendCommandTo("all", MQTT.init_agent());
-//        Arrays.asList(new String[]{"sirens", "leds", "capture_points", "red_spawn", "blue_spawn", "green_spawn", "spawns"})
-//                .forEach(group -> mqttOutbound.sendCommandTo(group, new JSONObject()));
-//    }
 
 }

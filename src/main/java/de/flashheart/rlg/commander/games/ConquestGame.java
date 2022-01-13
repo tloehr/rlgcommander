@@ -36,7 +36,6 @@ public class ConquestGame extends ScheduledGame {
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
     private HashSet<String> cps_held_by_blue, cps_held_by_red;
     private JobKey ticketBleedingJobkey;
-    private boolean game_in_prolog_state;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
 
     /**
@@ -68,8 +67,8 @@ public class ConquestGame extends ScheduledGame {
      * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore cannot use
      *                        DI.
      */
-    public ConquestGame(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(game_parameters, scheduler, mqttOutbound);
+    public ConquestGame(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(id, game_parameters, scheduler, mqttOutbound);
 
         log.debug("\n  _____                            __\n" +
                 " / ___/__  ___  ___ ___ _____ ___ / /_\n" +
@@ -122,7 +121,7 @@ public class ConquestGame extends ScheduledGame {
         log.debug("Ticket Bleeding per {} seconds: {}", TICKET_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
         log.debug("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
-        ticketBleedingJobkey = new JobKey("ticketbleeding", name);
+        ticketBleedingJobkey = new JobKey("ticketbleeding", id);
         agentFSMs = new HashMap<>();
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Respawn Tickets: %s", respawn_tickets.intValue()),
@@ -135,7 +134,12 @@ public class ConquestGame extends ScheduledGame {
 
     @Override
     public void react_to(String sender, JSONObject event) {
-        super.react_to(sender, event);
+        try {
+            super.react_to(sender, event);
+        } catch (IllegalStateException e) {
+            return;
+        }
+
         // where did this message come from ?
         String source = event.optString("source", "");
         if (!source.equalsIgnoreCase("btn01")) {
@@ -243,9 +247,11 @@ public class ConquestGame extends ScheduledGame {
 
     @Override
     public void start() {
-        if (!game_in_prolog_state) return;
-        game_in_prolog_state = false;
-
+        try {
+            super.start();
+        } catch (IllegalStateException e) {
+            return;
+        }
         remaining_blue_tickets = respawn_tickets;
         remaining_red_tickets = respawn_tickets;
         cps_held_by_blue.clear();
@@ -303,7 +309,9 @@ public class ConquestGame extends ScheduledGame {
 
     }
 
-    private void game_over() {
+    @Override
+    public void game_over() {
+        super.game_over();
         deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
         // broadcast_score();
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
@@ -335,7 +343,6 @@ public class ConquestGame extends ScheduledGame {
     @Override
     public void reset() {
         super.reset();
-        game_in_prolog_state = true;
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "slow"), roles.get("capture_points"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "slow"), roles.get("red_spawn"));

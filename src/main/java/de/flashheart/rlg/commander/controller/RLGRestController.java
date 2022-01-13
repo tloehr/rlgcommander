@@ -6,7 +6,6 @@ import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
-import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,14 +39,13 @@ public class RLGRestController {
 
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
-    public ResponseEntity<?> load_game(@RequestBody String description) {
-
+    public ResponseEntity<?> load_game(@RequestParam(name = "id") String id, @RequestBody String description) {
         ResponseEntity<?> responseEntity;
         try {
-            responseEntity = new ResponseEntity<>(gamesService.load_game(description).orElseThrow().getStatus().toString(), HttpStatus.CREATED);
+            responseEntity = new ResponseEntity<>(gamesService.load_game(id, description).getStatus().toString(), HttpStatus.CREATED);
         } catch (Exception e) {
             String msg = e.toString();
-            if (e instanceof InvocationTargetException){
+            if (e instanceof InvocationTargetException) {
                 msg = ((InvocationTargetException) e).getTargetException().toString();
             }
             responseEntity = new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -55,53 +53,57 @@ public class RLGRestController {
         return responseEntity;
     }
 
-    // set values for a running game in pause mode to fix on field misbehaviour
+    // set values for a running game in pause mode
     @PostMapping("/game/admin")
-    public ResponseEntity<?> admin_game(@RequestBody String description) {
-        return new ResponseEntity<>(gamesService.admin_set_values(description).orElseThrow().getStatus().toString(), HttpStatus.OK);
+    public ResponseEntity<?> admin_game(@RequestParam(name = "id") String id, @RequestBody String description) {
+        return new ResponseEntity<>(gamesService.admin_set_values(id, description).orElseThrow().getStatus().toString(), HttpStatus.OK);
     }
 
     @PostMapping("/game/start")
-    public ResponseEntity<?> start_game() {
-        return new ResponseEntity<>(gamesService.start_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
+    public ResponseEntity<?> start_game(@RequestParam(name = "id") String id) {
+        gamesService.start_game(id);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/reset")
-    public ResponseEntity<?> reset_game() {
-        return new ResponseEntity<>(gamesService.reset_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
+    public ResponseEntity<?> reset_game(@RequestParam(name = "id") String id) {
+        gamesService.reset_game(id);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/unload")
-    public ResponseEntity<?> stop_game() {
-        gamesService.unload_game();
+    public ResponseEntity<?> stop_game(@RequestParam(name = "id") String id) {
+        gamesService.unload_game(id);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/pause")
-    public ResponseEntity<?> pause_game() {
-        return new ResponseEntity<>(gamesService.pause_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
+    public ResponseEntity<?> pause_game(@RequestParam(name = "id") String id) {
+        gamesService.pause_game(id);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/resume")
-    public ResponseEntity<?> resume_game() {
-        return new ResponseEntity<>(gamesService.resume_game().orElseThrow().getStatus().toString(), HttpStatus.OK);
+    public ResponseEntity<?> resume_game(@RequestParam(name = "id") String id) {
+        gamesService.resume_game(id);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @GetMapping("/game/status")
-    public ResponseEntity<?> status_game() {
-        return new ResponseEntity<>(gamesService.getGame().orElseThrow().getStatus().toString(), HttpStatus.OK);
+    public ResponseEntity<?> status_game(@RequestParam(name = "id") String id) {
+        return new ResponseEntity<>(gamesService.getGame(id).orElseThrow().getStatus().toString(), HttpStatus.OK);
     }
 
     @GetMapping("/system/shutdown")
     public ResponseEntity<?> system_shutdown() {
         gamesService.shutdown_agents();
-        SpringApplication.exit(applicationContext, () -> 0);
-        return new ResponseEntity<>(gamesService.getGame().orElseThrow().getStatus().toString(), HttpStatus.OK);
+        //SpringApplication.exit(applicationContext, () -> 0);
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
-    @GetMapping("/agents/list")
-    public List<Agent> list_agents() {
-        return agentsService.getLiveAgents();
-    }
+//    @GetMapping("/agents/list")
+//    public List<Agent> list_agents() {
+//        return agentsService.getLiveAgents();
+//    }
 
 }

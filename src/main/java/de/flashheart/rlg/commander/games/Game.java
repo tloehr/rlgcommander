@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 
@@ -17,25 +18,23 @@ import java.util.Set;
 
 @Log4j2
 public abstract class Game {
-    final String name;
+    final String id;
     final MQTTOutbound mqttOutbound;
     //final Multimap<String, Agent> function_to_agents;
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
     private final ArrayList<String> game_description;
     Optional<LocalDateTime> pausing_since;
+    private boolean prolog, epilog;
 
     final Scheduler scheduler;
-//    final JSONObject agents;
-//    final Set<String> roles;
-//    HashSet<Pair<String, String>> agent_roles;
 
-
-    // these maps contain functional combinations for agents like all the sirens in one group etc.
     final Multimap<String, String> agents, roles;
 
-    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        this.name = game_parameters.getString("name");
+    Game(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        this.id = id;
+        prolog = true;
+        epilog = false;
         this.scheduler = scheduler;
         this.mqttOutbound = mqttOutbound;
         agents = HashMultimap.create();
@@ -57,6 +56,10 @@ public abstract class Game {
         pausing_since = Optional.empty();
     }
 
+    public Multimap<String, String> getAgents() {
+        return agents;
+    }
+
     /**
      * when something happens, we need to react on it. Implement this method to tell us, WHAT we should do.
      *
@@ -65,7 +68,7 @@ public abstract class Game {
     public void react_to(String sender, JSONObject event) {
         if (isPausing()) {
             log.info("received event {} from {} during pause. ignoring.", event, sender);
-            return;
+            throw new IllegalStateException();
         }
     }
 
@@ -77,8 +80,8 @@ public abstract class Game {
 //        react_to("_internal", event);
 //    }
 
-    public String getName() {
-        return name;
+    public String getId() {
+        return id;
     }
 
     /**
@@ -89,22 +92,33 @@ public abstract class Game {
     /**
      * when the actual game should start. You run this method.
      */
-    public abstract void start();
+    public void start() {
+        if (!prolog) throw new IllegalStateException();
+        prolog = false;
+        epilog = false;
+    }
 
     /**
      * to resume a paused game.
      */
     public void resume() {
+        if (prolog || epilog) throw new IllegalStateException();
         pausing_since = Optional.empty();
-        // todo: remove pause screen
+        mqttOutbound.send("delpage", new JSONObject().put("page_handles", new JSONArray().put("pause")), agents.keySet());
+    }
+
+    public void game_over() {
+        prolog = false;
+        epilog = true;
     }
 
     /**
      * to pause a running game
      */
     public void pause() {
+        if (prolog || epilog) throw new IllegalStateException();
         pausing_since = Optional.of(LocalDateTime.now());
-        // todo: add pause screen
+        mqttOutbound.send("paged", MQTT.page("pause", "", "      PAUSE      ", "", ""), agents.keySet());
     }
 
     public boolean isPausing() {
@@ -118,7 +132,7 @@ public abstract class Game {
      */
     public JSONObject getStatus() {
         return new JSONObject()
-                .put("name", name)
+                .put("name", id)
                 .put("class", this.getClass().getName())
                 .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ISO_DATE_TIME) : JSONObject.NULL);
     }
@@ -137,6 +151,8 @@ public abstract class Game {
     }
 
     public void reset() {
+        prolog = true;
+        epilog = false;
         mqttOutbound.send("signals", MQTT.toJSON("all", "off"), agents.keySet());
         mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
     }

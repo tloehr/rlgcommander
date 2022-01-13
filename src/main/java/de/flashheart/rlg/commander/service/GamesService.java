@@ -1,5 +1,7 @@
 package de.flashheart.rlg.commander.service;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
@@ -12,6 +14,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 @Service
@@ -21,8 +24,7 @@ public class GamesService {
     Scheduler scheduler;
     AgentsService agentsService;
     BuildProperties buildProperties;
-    private Optional<Game> loaded_game;
-    //todo: private HashMap<String, Game> loaded_games; // for later use when handling multiple games. will replace loaded_game.
+    private final HashMap<String, Game> loaded_games;
 
     @Autowired
     public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties) {
@@ -30,7 +32,7 @@ public class GamesService {
         this.scheduler = scheduler;
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
-        this.loaded_game = Optional.empty();
+        this.loaded_games = new HashMap<>();
     }
 
     /**
@@ -46,51 +48,50 @@ public class GamesService {
                 "RLGS2 @flashheart.de"));
     }
 
-    public Optional<Game> load_game(String json) throws Exception {
+    public Game load_game(String id, String json) throws Exception {
         log.debug("\n _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
                 "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
                 "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         JSONObject game_description = new JSONObject(json);
-        loaded_game.ifPresent(game -> game.cleanup());
-        Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
-        loaded_game = Optional.ofNullable(game);
-        return loaded_game;
+        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.cleanup());
+        Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(String.class, JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(id, game_description, scheduler, mqttOutbound);
+        // todo: check for agent conflicts when loading
+        loaded_games.put(id, game);
+        agentsService.assign_gameid_to_agents(id, game.getAgents().keySet());
+        return game;
     }
 
-    public void unload_game() {
-        loaded_game.ifPresent(game -> game.cleanup());
-        loaded_game = Optional.empty();
+    public void unload_game(String id) {
+        // todo: release agents from id
+        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.cleanup());
+        loaded_games.remove(id);
         welcome();
     }
 
 
-    public Optional<Game> getGame() {
-        return loaded_game;
+    public Optional<Game> getGame(String id) {
+        return Optional.ofNullable(loaded_games.get(id));
     }
 
-    public Optional<Game> start_game() {
-        loaded_game.ifPresent(game -> game.start());
-        return loaded_game;
+    public void start_game(String id) {
+        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.start());
     }
 
-    public Optional<Game> reset_game() {
-        loaded_game.ifPresent(game -> game.reset());
-        return loaded_game;
+    public void reset_game(String id) {
+        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.reset());
     }
 
-    public Optional<Game> resume_game() {
-        loaded_game.ifPresent(game -> game.resume());
-        return loaded_game;
+    public void resume_game(String id) {
+        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.resume());
     }
 
-    public Optional<Game> pause_game() {
-        loaded_game.ifPresent(game -> game.pause());
-        return loaded_game;
+    public void pause_game(String id) {
+        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.pause());
     }
 
-    public void react_to(String agentid, JSONObject payload) {
-        loaded_game.ifPresent(game -> {
+    public void react_to(String id, String agentid, JSONObject payload) {
+        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> {
             game.react_to(agentid, payload); // event, will be mostly button
         });
     }
@@ -99,13 +100,15 @@ public class GamesService {
         mqttOutbound.send("shutdown", "all");
     }
 
-    public Optional<Game> admin_set_values(String description) {
+    public Optional<Game> admin_set_values(String id, String description) {
         //loaded_game.ifPresent(game -> game.reset());
+        Optional<Game> loaded_game = Optional.ofNullable(loaded_games.get(id));
         loaded_game.ifPresent(game -> {
             if (!game.isPausing()) return;
         });
         return loaded_game;
     }
+
 
 //    private Multimap<String, Agent> createAgentMap(JSONObject agents_for_role, List<String> requiredRoles) throws JSONException {
 //        final Multimap<String, Agent> result = HashMultimap.create();

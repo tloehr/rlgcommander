@@ -4,6 +4,7 @@ import de.flashheart.rlg.commander.service.AgentsService;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -90,12 +91,24 @@ public class MQTTOutbound {
     public void send(String cmd, JSONObject payload, Collection<String> agents) {
         if (agents.isEmpty()) return;
         agents.forEach(agent -> {
-            log.debug("sending {}", prefix + "/" + agent + "/" + cmd);
+            log.debug("sending {}", prefix + agent + "/" + cmd);
+            send(agent + "/" + cmd, payload);
+        });
+    }
+
+    public void send(String cmd, JSONArray payload, Collection<String> agents) {
+        if (agents.isEmpty()) return;
+        agents.forEach(agent -> {
+            log.debug("sending {}", prefix + agent + "/" + cmd);
             send(agent + "/" + cmd, payload);
         });
     }
 
     public void send(String topic, JSONObject payload) {
+        gateway.sendToMqtt(payload.toString(), prefix + topic);
+    }
+
+    public void send(String topic, JSONArray payload) {
         gateway.sendToMqtt(payload.toString(), prefix + topic);
     }
 
