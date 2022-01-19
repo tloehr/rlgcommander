@@ -70,8 +70,7 @@ public class MQTTOutbound {
         messageHandler.setDefaultRetained(retained);
         return messageHandler;
     }
-
-
+    
     @Bean
     public MessageChannel mqttOutboundChannel() {
         return new DirectChannel();
