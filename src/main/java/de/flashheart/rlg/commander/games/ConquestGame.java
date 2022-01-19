@@ -34,6 +34,7 @@ public class ConquestGame extends ScheduledGame {
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
 
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
+    private int blue_respawns, red_respawns;
     private HashSet<String> cps_held_by_blue, cps_held_by_red;
     private JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
@@ -150,11 +151,13 @@ public class ConquestGame extends ScheduledGame {
             // red respawn button was pressed
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), sender);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
+            red_respawns++;
             broadcast_score();   // to make the respawn show up quicker. 
         } else if (hasRole(sender, "blue_spawn")) {
             // blue respawn button was pressed
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), sender);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
+            blue_respawns++;
             broadcast_score();   // to make the respawn show up quicker.
         } else if (hasRole(sender, "capture_points")) {
             agentFSMs.get(sender).ProcessFSM(source.toUpperCase());
@@ -250,8 +253,11 @@ public class ConquestGame extends ScheduledGame {
         try {
             super.start();
         } catch (IllegalStateException e) {
+            log.warn(e);
             return;
         }
+        blue_respawns = 0;
+        red_respawns = 0;
         remaining_blue_tickets = respawn_tickets;
         remaining_red_tickets = respawn_tickets;
         cps_held_by_blue.clear();
@@ -314,6 +320,7 @@ public class ConquestGame extends ScheduledGame {
         super.game_over();
         deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
         // broadcast_score();
+        log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
         String winner = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", winner, "normal"), roles.get("capture_points"));

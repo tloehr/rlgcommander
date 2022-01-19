@@ -66,8 +66,8 @@ public abstract class Game {
      * @param event
      */
     public void react_to(String sender, JSONObject event) {
-        if (isPausing()) {
-            log.info("received event {} from {} during pause. ignoring.", event, sender);
+        if (!is_match_running()) {
+            log.info("received event {} from {} but match is not running. ignoring.", event, sender);
             throw new IllegalStateException();
         }
     }
@@ -93,7 +93,10 @@ public abstract class Game {
      * when the actual game should start. You run this method.
      */
     public void start() {
-        if (!prolog) throw new IllegalStateException();
+        if (!prolog) {
+            log.info("Can't start the match. Not in PROLOG.");
+            throw new IllegalStateException();
+        }
         prolog = false;
         epilog = false;
     }
@@ -102,7 +105,14 @@ public abstract class Game {
      * to resume a paused game.
      */
     public void resume() {
-        if (prolog || epilog) throw new IllegalStateException();
+        if (prolog || epilog){
+            log.info("Can't resume the match. We are in PROLOG or EPILOG.");
+            throw new IllegalStateException();
+        }
+        if (!isPausing()){
+            log.info("Can't resume the match. We are not PAUSING.");
+            throw new IllegalStateException();
+        }
         pausing_since = Optional.empty();
         mqttOutbound.send("delpage", new JSONObject().put("page_handles", new JSONArray().put("pause")), agents.keySet());
     }
@@ -116,13 +126,24 @@ public abstract class Game {
      * to pause a running game
      */
     public void pause() {
-        if (prolog || epilog) throw new IllegalStateException();
+        if (prolog || epilog){
+            log.info("Can't pause the match. We are in PROLOG or EPILOG.");
+            throw new IllegalStateException();
+        }
+        if (isPausing()){
+            log.info("Can't pause the match. We are in PAUSING already.");
+            throw new IllegalStateException();
+        }
         pausing_since = Optional.of(LocalDateTime.now());
         mqttOutbound.send("paged", MQTT.page("pause", "", "      PAUSE      ", "", ""), agents.keySet());
     }
 
     public boolean isPausing() {
         return pausing_since.isPresent();
+    }
+
+    public boolean is_match_running() {
+        return !isPausing() && !prolog && !epilog;
     }
 
     /**
