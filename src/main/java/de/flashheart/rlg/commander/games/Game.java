@@ -65,7 +65,7 @@ public abstract class Game {
      *
      * @param event
      */
-    public void react_to(String sender, JSONObject event) {
+    public void react_to(String sender, String source, JSONObject event) {
         if (!is_match_running()) {
             log.info("received event {} from {} but match is not running. ignoring.", event, sender);
             throw new IllegalStateException();
@@ -73,7 +73,7 @@ public abstract class Game {
     }
 
     public void trigger_internal_event(String event) {
-        react_to("_internal", new JSONObject().put("message", event));
+        react_to("_internal", "_internal", new JSONObject().put("message", event));
     }
 
 //    public void react_to(JSONObject event) {
@@ -105,11 +105,11 @@ public abstract class Game {
      * to resume a paused game.
      */
     public void resume() {
-        if (prolog || epilog){
+        if (prolog || epilog) {
             log.info("Can't resume the match. We are in PROLOG or EPILOG.");
             throw new IllegalStateException();
         }
-        if (!isPausing()){
+        if (!isPausing()) {
             log.info("Can't resume the match. We are not PAUSING.");
             throw new IllegalStateException();
         }
@@ -126,11 +126,11 @@ public abstract class Game {
      * to pause a running game
      */
     public void pause() {
-        if (prolog || epilog){
+        if (prolog || epilog) {
             log.info("Can't pause the match. We are in PROLOG or EPILOG.");
             throw new IllegalStateException();
         }
-        if (isPausing()){
+        if (isPausing()) {
             log.info("Can't pause the match. We are in PAUSING already.");
             throw new IllegalStateException();
         }

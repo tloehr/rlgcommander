@@ -134,17 +134,19 @@ public class ConquestGame extends ScheduledGame {
     }
 
     @Override
-    public void react_to(String sender, JSONObject event) {
+    public void react_to(String sender, String source, JSONObject event) {
         try {
-            super.react_to(sender, event);
+            super.react_to(sender, source, event);
         } catch (IllegalStateException e) {
             return;
         }
 
-        // where did this message come from ?
-        String source = event.optString("source", "");
         if (!source.equalsIgnoreCase("btn01")) {
-            log.debug("no btn1 event. ignoring.");
+            log.debug("no btn1 event. discarding.");
+            return;
+        }
+        if (!event.getString("button").equalsIgnoreCase("up")) {
+            log.debug("only reacting on button UP. discarding.");
             return;
         }
         if (hasRole(sender, "red_spawn")) {

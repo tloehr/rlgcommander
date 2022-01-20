@@ -215,16 +215,16 @@ public class FarcryGame extends TimedGame implements HasRespawn {
     }
 
     @Override
-    public void react_to(String sender, JSONObject event) {
+    public void react_to(String sender, String source, JSONObject event) {
         try {
-            super.react_to(sender, event);
+            super.react_to(sender, source, event);
         } catch (IllegalStateException e) {
             return;
         }
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_internal")) {
             farcryFSM.ProcessFSM(event.getString("message"));
-        } else if (hasRole(sender, "button") && event.keySet().contains("button_pressed")) {
+        } else if (hasRole(sender, "button") && event.getString("button").equalsIgnoreCase("up")) {
             farcryFSM.ProcessFSM(event.getString("button_pressed").toUpperCase());
         } else {
             log.debug("message is not for me. ignoring.");

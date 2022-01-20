@@ -1,7 +1,5 @@
 package de.flashheart.rlg.commander.service;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
@@ -41,7 +39,9 @@ public class GamesService {
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
         mqttOutbound.send("all/init", new JSONObject());
-        mqttOutbound.send("all/signals", MQTT.toJSON("led_all", "∞:on,250;off,2500"));
+        //mqttOutbound.send("all/signals", MQTT.toJSON("led_all", "∞:on,250;off,2500"));
+        mqttOutbound.send("all/signals", MQTT.toJSON("led_wht", "∞:on,500;off,500", "led_ylw", "∞:on,500;off,500", "led_blu", "∞:on,500;off,500",
+                "led_red", "∞:off,500;on,500", "led_grn", "∞:off,500;on,500"));
         mqttOutbound.send("all/paged", MQTT.page("page0", "Waiting for a game",
                 "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
                 "agnt ${agversion}.${agbuild}",
@@ -90,9 +90,10 @@ public class GamesService {
         Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.pause());
     }
 
-    public void react_to(String id, String agentid, JSONObject payload) {
+    public void react_to(String id, String agentid, String source, JSONObject payload) {
+        log.debug(source);
         Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> {
-            game.react_to(agentid, payload); // event, will be mostly button
+            game.react_to(agentid, source, payload); // event, will be mostly button
         });
     }
 
