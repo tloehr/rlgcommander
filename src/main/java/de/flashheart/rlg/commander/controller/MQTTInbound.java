@@ -20,6 +20,7 @@ import org.springframework.messaging.MessageHandler;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -55,7 +56,7 @@ public class MQTTInbound {
 
     @Bean
     public MessageProducer inbound() {
-        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(mqtturl, clientid + (int) (Math.random() * 10000) + "-mqtt-inbound", inbound_topic);
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(mqtturl, String.format("%s-%s-inbound", clientid, UUID.randomUUID()), inbound_topic);
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
         adapter.setQos(qos);

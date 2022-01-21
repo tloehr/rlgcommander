@@ -21,6 +21,7 @@ import org.springframework.messaging.MessageHandler;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.UUID;
 
 @Configuration
 @Log4j2
@@ -36,6 +37,8 @@ public class MQTTOutbound {
     public boolean retained;
     @Value("${mqtt.clientid}")
     public String clientid;
+    @Value("${mqtt.max_inflight}")
+    public int max_inflight;
 
     ApplicationContext applicationContext;
     AgentsService agentsService;
@@ -53,7 +56,7 @@ public class MQTTOutbound {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
         options.setServerURIs(new String[]{mqtturl});
-        options.setMaxInflight(1000);
+        options.setMaxInflight(max_inflight);
 //        options.setUserName("username");
 //        options.setPassword("password".toCharArray());
         factory.setConnectionOptions(options);
@@ -63,14 +66,14 @@ public class MQTTOutbound {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {  // for outbound only
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientid + (int) (Math.random() * 10000) + "-mqtt-outbound", mqttClientFactory());
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(String.format("%s-%s-outbound", clientid, UUID.randomUUID()), mqttClientFactory());
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(prefix);
         messageHandler.setDefaultQos(qos);
         messageHandler.setDefaultRetained(retained);
         return messageHandler;
     }
-    
+
     @Bean
     public MessageChannel mqttOutboundChannel() {
         return new DirectChannel();
