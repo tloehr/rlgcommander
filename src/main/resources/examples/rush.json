@@ -1,0 +1,45 @@
+{
+  "comment": "3x2 CPs, Rush",
+  "class": "de.flashheart.rlg.commander.games.Rush",
+  "agents": {
+    "zone1": [
+      "ag01",
+      "ag02"
+    ],
+    "zone2": [
+      "ag03",
+      "ag04"
+    ],
+    "zone3": [
+      "ag05",
+      "ag09"
+    ],
+    "red_spawn": [
+      "ag06"
+    ],
+    "blue_spawn": [
+      "ag07"
+    ],
+    "spawns": [
+      "ag06",
+      "ag07"
+    ],
+    "siren_zone1": [
+      "ag08"
+    ],
+    "siren_zone2": [
+      "ag11"
+    ],
+    "siren_zone3": [
+      "ag12"
+    ],
+    "sirens": [
+      "ag08",
+      "ag11",
+      "ag12"
+    ]
+  },
+  "respawn_tickets": 75,
+  "flag_capture_time": 15
+}
+

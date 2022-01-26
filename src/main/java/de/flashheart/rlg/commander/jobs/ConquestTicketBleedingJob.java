@@ -1,6 +1,6 @@
 package de.flashheart.rlg.commander.jobs;
 
-import de.flashheart.rlg.commander.games.ConquestGame;
+import de.flashheart.rlg.commander.games.Conquest;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;
@@ -18,7 +18,7 @@ public class ConquestTicketBleedingJob extends QuartzJobBean implements Interrup
             //log.debug(jobExecutionContext.getJobDetail().getKey().getName() + " executed");
             //String gamename = jobExecutionContext.getJobDetail().getKey().getGroup();
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("name_of_the_game");
-            ConquestGame game = (ConquestGame) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
+            Conquest game = (Conquest) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
             game.ticket_bleeding_cycle();
         } catch (SchedulerException e) {
             log.error(e);

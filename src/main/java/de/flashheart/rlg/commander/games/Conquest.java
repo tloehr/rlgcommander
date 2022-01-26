@@ -25,7 +25,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * lifecycle cleanup before new game is laoded (by GameService)
  */
 @Log4j2
-public class ConquestGame extends ScheduledGame {
+public class Conquest extends ScheduledGame {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
     private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
@@ -68,7 +68,7 @@ public class ConquestGame extends ScheduledGame {
      * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore cannot use
      *                        DI.
      */
-    public ConquestGame(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Conquest(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(id, game_parameters, scheduler, mqttOutbound);
 
         log.debug("\n  _____                            __\n" +
