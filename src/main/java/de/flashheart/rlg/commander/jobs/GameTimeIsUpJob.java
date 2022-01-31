@@ -1,6 +1,6 @@
 package de.flashheart.rlg.commander.jobs;
 
-import de.flashheart.rlg.commander.games.TimedGame;
+import de.flashheart.rlg.commander.games.Timed;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.*;
 import org.springframework.scheduling.quartz.QuartzJobBean;
@@ -15,7 +15,7 @@ public class GameTimeIsUpJob extends QuartzJobBean implements InterruptableJob {
         try {
             log.debug(jobExecutionContext.getJobDetail().getKey() + " executed");
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("name_of_the_game");
-            TimedGame timedGame = (TimedGame) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
+            Timed timedGame = (Timed) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
             timedGame.game_over();
         } catch (SchedulerException e) {
             log.fatal(e);

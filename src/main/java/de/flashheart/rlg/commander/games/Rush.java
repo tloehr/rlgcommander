@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.games;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 
@@ -10,9 +11,15 @@ import org.quartz.Scheduler;
  * <li>defenders have an un-limited amount of respawn tickets</li>
  * <li>when BOTH M-COMs or the last remaining one have been armed, attackers can still spawn even when their ticket level has reached ZERO</li>
  */
-public class Rush extends ScheduledGame {
+@Log4j2
+public class Rush extends Scheduled {
     public Rush(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(id, game_parameters, scheduler, mqttOutbound);
+        log.debug("    ____             __\n" +
+                "   / __ \\__  _______/ /_\n" +
+                "  / /_/ / / / / ___/ __ \\\n" +
+                " / _, _/ /_/ (__  ) / / /\n" +
+                "/_/ |_|\\__,_/____/_/ /_/\n");
     }
 
 }

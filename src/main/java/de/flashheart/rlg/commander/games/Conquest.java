@@ -25,7 +25,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * lifecycle cleanup before new game is laoded (by GameService)
  */
 @Log4j2
-public class Conquest extends ScheduledGame {
+public class Conquest extends Scheduled {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
     private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
@@ -71,11 +71,12 @@ public class Conquest extends ScheduledGame {
     public Conquest(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(id, game_parameters, scheduler, mqttOutbound);
 
-        log.debug("\n  _____                            __\n" +
-                " / ___/__  ___  ___ ___ _____ ___ / /_\n" +
-                "/ /__/ _ \\/ _ \\/ _ `/ // / -_|_-</ __/\n" +
-                "\\___/\\___/_//_/\\_, /\\_,_/\\__/___/\\__/\n" +
-                "                /_/");
+        log.debug("   ______                                  __\n" +
+                "  / ____/___  ____  ____ ___  _____  _____/ /_\n" +
+                " / /   / __ \\/ __ \\/ __ `/ / / / _ \\/ ___/ __/\n" +
+                "/ /___/ /_/ / / / / /_/ / /_/ /  __(__  ) /_\n" +
+                "\\____/\\____/_/ /_/\\__, /\\__,_/\\___/____/\\__/\n" +
+                "                    /_/");
 
         this.respawn_tickets = game_parameters.getBigDecimal("respawn_tickets");
         this.not_bleeding_before_cps = game_parameters.getBigDecimal("not_bleeding_before_cps");

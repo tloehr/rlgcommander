@@ -25,13 +25,13 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * Implementation for the FarCry 1 (2004) Assault Game Mode.
  */
 @Log4j2
-public class FarcryGame extends TimedGame implements HasRespawn {
+public class Farcry extends Timed implements HasRespawn {
     private final int flagcapturetime;
     private final int respawn_period;
     private FSM farcryFSM;
     final JobKey myRespawnJobKey;
 
-    public FarcryGame(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Farcry(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(id, game_parameters, scheduler, mqttOutbound);
         log.debug("\n   ____         _____\n" +
                 "  / __/__ _____/ ___/_____ __\n" +

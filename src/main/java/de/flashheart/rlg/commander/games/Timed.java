@@ -18,7 +18,7 @@ import java.time.temporal.ChronoUnit;
  * time, NOT about END-SCORES or RUNNING OUT OF RESOURCES.
  */
 @Log4j2
-public abstract class TimedGame extends ScheduledGame {
+public abstract class Timed extends Scheduled {
 
     /**
      * the length of the match in seconds. Due to the nature of certain gamemodes (like farcry) this value is rather a
@@ -47,7 +47,7 @@ public abstract class TimedGame extends ScheduledGame {
 
     final JobKey gametimeJobKey, overtimeJobKey;
 
-    TimedGame(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    Timed(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(id, game_parameters, scheduler, mqttOutbound);
         this.match_length = game_parameters.getInt("match_length");
         gametimeJobKey = new JobKey("gametime", id);

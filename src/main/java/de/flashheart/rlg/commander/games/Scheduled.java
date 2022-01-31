@@ -17,10 +17,10 @@ import static org.quartz.TriggerBuilder.newTrigger;
  * an abstract superclass for handling any game mode that needs an scheduler
  */
 @Log4j2
-public abstract class ScheduledGame extends Game {
+public abstract class Scheduled extends Game {
         final Set<JobKey> jobs;
 
-    public ScheduledGame(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Scheduled(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(id, game_parameters, scheduler, mqttOutbound);
 
         jobs = new HashSet<>();
