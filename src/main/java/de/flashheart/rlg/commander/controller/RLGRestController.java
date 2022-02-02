@@ -1,11 +1,12 @@
 package de.flashheart.rlg.commander.controller;
 
 
-import de.flashheart.rlg.commander.service.Agent;
+
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -101,9 +103,16 @@ public class RLGRestController {
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
-//    @GetMapping("/agents/list")
-//    public List<Agent> list_agents() {
-//        return agentsService.getLiveAgents();
-//    }
+    @PostMapping("/system/test")
+    public ResponseEntity<?> test_rest(@RequestParam(name = "id") String id, @RequestBody String description) {
+        log.debug("id: {}", id);
+        log.debug("description: {}", description);
+          return new ResponseEntity(HttpStatus.ACCEPTED);
+      }
+
+    @GetMapping("/system/list_agents")
+    public ResponseEntity<?> list_agents() {
+        return new ResponseEntity<>(agentsService.getLiveAgents().toString(), HttpStatus.OK);
+    }
 
 }
