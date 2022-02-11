@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.controller;
 
 
+import de.flashheart.rlg.commander.entity.Agent;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.NoArgsConstructor;
@@ -70,38 +71,31 @@ public class MQTTInbound {
     @ServiceActivator(inputChannel = "mqttInputChannel")
     public MessageHandler handler() {
         return message -> {
-            //JSONObject event = new JSONObject(message.getPayload().toString());
-            // GenericMessage [payload=, headers={mqtt_receivedRetained=false, mqtt_id=1, mqtt_duplicate=false, id=1ed88f18-b360-3ac6-4797-b28e2fc16857, mqtt_receivedTopic=rlg/g1/evt/ag01/btn01, mqtt_receivedQos=1, timestamp=1641739880253}]
-            //2022-01-20 11:49:42.658 DEBUG 57357 --- [27-mqtt-inbound] d.f.r.commander.controller.MQTTInbound   : GenericMessage [payload=down, headers={mqtt_receivedRetained=false, mqtt_id=1, mqtt_duplicate=false, id=81c28622-3d91-66c4-9ba1-0b7432b043d2, mqtt_receivedTopic=rlg/evt/ag01/btn01, mqtt_receivedQos=2, timestamp=1642675782657}]
-            //2022-01-20 11:49:42.751 DEBUG 57357 --- [27-mqtt-inbound] d.f.r.commander.controller.MQTTInbound   : GenericMessage [payload=up, headers={mqtt_receivedRetained=false, mqtt_id=2, mqtt_duplicate=false, id=20ce02d3-172d-4fe5-e6e3-89998c1bf9a8, mqtt_receivedTopic=rlg/evt/ag01/btn01, mqtt_receivedQos=2, timestamp=1642675782751}]
-            // rlg/g1/evt/ag01/btn01
             String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
             List<String> tokens = Collections.list(new StringTokenizer(topic, "/")).stream().map(token -> (String) token).collect(Collectors.toList());
-            String agent = tokens.get(tokens.size() - 2);
+            String agentid = tokens.get(tokens.size() - 2);
             String source = tokens.get(tokens.size() - 1);
             String payload = message.getPayload().toString();
 
-//            {
-//                "mqtt-broker":"localhost", "wifi":"PERFECT", "mqtt_connect_tries":1, "network_stats":{
-//                "access_point":"Not-Associated", "essid":"!DESKTOP!", "last_ping":"02.02.22, 16:04:03", "link":
-//                "not zelda", "freq":"good vibes", "ping_max":"0.043", "bitrate":"super", "ap":"!DESKTOP!", "txpower":
-//                "high", "ping_success":"reached successfully", "powermgt":"off", "ping_loss":"0%", "ping_min":
-//                "max ", "ping_avg":" 0.043", "signal":"-30", "ping_host":"localhost"
-//            },"version":"1.0.1.348", "timestamp":"02.02.22, 16:04:03"
-//            }
+            log.debug(message.toString());
+            log.debug(message.getPayload().toString());
 
             if (source.equalsIgnoreCase("status")) {
-                log.debug(message.getPayload().toString());
                 try {
                     JSONObject status = new JSONObject(message.getPayload().toString());
-                    agentsService.store_status_from_agent(agent, status);
+                    agentsService.store_status_from_agent(agentid, status);
                 } catch (JSONException e) {
                     //agentsService.remove(agentid);
                 }
             } else {
-                agentsService.get_gameid_for(agent).ifPresent(gameid -> {
-                    log.debug(message.toString());
-                    gamesService.react_to(gameid, agent, source, new JSONObject(payload));
+                agentsService.getLive_agents().getOrDefault(agentid, new Agent()).getGameid().ifPresent(gameid -> {
+                    try {
+                        gamesService.react_to(gameid, agentid, source, new JSONObject(payload));
+                    } catch (IllegalStateException ise) {
+                        log.warn(ise);
+                    } catch (Exception e){
+                        log.warn(e);
+                    }
                 });
             }
         };

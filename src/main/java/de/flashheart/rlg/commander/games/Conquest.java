@@ -135,12 +135,10 @@ public class Conquest extends Scheduled {
     }
 
     @Override
-    public void react_to(String sender, String source, JSONObject event) {
-        try {
+    public void react_to(String sender, String source, JSONObject event)  throws IllegalStateException  {
+
             super.react_to(sender, source, event);
-        } catch (IllegalStateException e) {
-            return;
-        }
+
 
         if (!source.equalsIgnoreCase("btn01")) {
             log.debug("no btn1 event. discarding.");
@@ -252,13 +250,10 @@ public class Conquest extends Scheduled {
     }
 
     @Override
-    public void start() {
-        try {
-            super.start();
-        } catch (IllegalStateException e) {
-            log.warn(e);
-            return;
-        }
+    public void start() throws IllegalStateException {
+
+        super.start();
+
         blue_respawns = 0;
         red_respawns = 0;
         remaining_blue_tickets = respawn_tickets;

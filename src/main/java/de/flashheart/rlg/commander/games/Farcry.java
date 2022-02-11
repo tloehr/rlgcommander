@@ -183,12 +183,10 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    public void start() {
-        try {
+    public void start() throws IllegalStateException  {
+
             super.start();
-        } catch (IllegalStateException e) {
-            return;
-        }
+
         // (re)start the respawn timer job.
         deleteJob(myRespawnJobKey);
         if (respawn_period > 0) { // respawn_period == 0 means we should not care about it

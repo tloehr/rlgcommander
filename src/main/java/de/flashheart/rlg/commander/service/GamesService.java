@@ -39,7 +39,6 @@ public class GamesService {
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
         mqttOutbound.send("all/init", new JSONObject());
-        //mqttOutbound.send("all/signals", MQTT.toJSON("led_all", "∞:on,250;off,2500"));
         mqttOutbound.send("all/signals", MQTT.toJSON("led_wht", "∞:on,500;off,500", "led_ylw", "∞:on,500;off,500", "led_blu", "∞:on,500;off,500",
                 "led_red", "∞:off,500;on,500", "led_grn", "∞:off,500;on,500"));
         mqttOutbound.send("all/paged", MQTT.page("page0", "Waiting for a game",
@@ -74,27 +73,36 @@ public class GamesService {
         return Optional.ofNullable(loaded_games.get(id));
     }
 
-    public void start_game(String id) {
-        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.start());
+    public void start_game(String id) throws IllegalStateException {
+        Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
+        if (mygame.isPresent()) {
+            mygame.get().start();
+        }
     }
 
     public void reset_game(String id) {
         Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.reset());
     }
 
-    public void resume_game(String id) {
-        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.resume());
+    public void resume_game(String id) throws IllegalStateException {
+        Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
+        if (mygame.isPresent()) {
+            mygame.get().resume();
+        }
     }
 
-    public void pause_game(String id) {
-        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.pause());
+    public void pause_game(String id) throws IllegalStateException {
+        Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
+        if (mygame.isPresent()) {
+            mygame.get().pause();
+        }
     }
 
-    public void react_to(String id, String agentid, String source, JSONObject payload) {
-        log.debug(source);
-        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> {
-            game.react_to(agentid, source, payload); // event, will be mostly button
-        });
+    public void react_to(String id, String agentid, String source, JSONObject payload) throws IllegalStateException {
+        Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
+        if (mygame.isPresent()) {
+            mygame.get().react_to(agentid, source, payload);
+        }
     }
 
     public void shutdown_agents() {

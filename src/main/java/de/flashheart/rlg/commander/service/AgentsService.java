@@ -1,47 +1,59 @@
 package de.flashheart.rlg.commander.service;
 
-import org.apache.commons.collections4.bidimap.TreeBidiMap;
+import de.flashheart.rlg.commander.entity.Agent;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
 
 @Service
 public class AgentsService {
-    private final TreeBidiMap<String, String> agents_to_gameid;
-    private final HashMap<String, JSONObject> agent_states;
+    private final HashMap<String, Agent> live_agents;
 
     //    private final HashMap<String, String> agents_to_gameid;
 //    private final Multimap<String, String> gameid_to_agents;
 //
     public AgentsService() {
-        this.agents_to_gameid = new TreeBidiMap<>();
-        this.agent_states = new HashMap<>();
+        live_agents = new HashMap<>();
     }
 
-    public void assign_gameid_to_agents(String id, Set<String> agents) {
-        agents.forEach(agent -> agents_to_gameid.put(agent, id));
+//    public Optional<String> get_agent_for(String gameid) {
+//        return Optional.ofNullable(agents_to_gameid.inverseBidiMap().get(gameid));
+//    }
+
+
+    public HashMap<String, Agent> getLive_agents() {
+        return live_agents;
     }
 
-    public Optional<String> get_gameid_for(String agent) {
-        return Optional.ofNullable(agents_to_gameid.get(agent));
+    public void assign_gameid_to_agents(String gameid, Set<String> agentids) {
+        agentids.forEach(agentid -> {
+            Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+            my_agent.setGameid(Optional.of(gameid));
+            live_agents.put(agentid, my_agent);
+        });
     }
 
-    public Optional<String> get_agent_for(String gameid) {
-        return Optional.ofNullable(agents_to_gameid.inverseBidiMap().get(gameid));
+
+    public void store_status_from_agent(String agentid, JSONObject status) {
+        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+        my_agent.setLast_state(status);
+        live_agents.put(agentid, my_agent);
     }
 
-    public void store_status_from_agent(String agent, JSONObject status) {
-        agent_states.put(agent, status);
+    public boolean agent_belongs_to_game(String agentid, String gameid){
+        Agent myAgent = live_agents.getOrDefault(agentid, new Agent("dummy"));
+        return myAgent.getGameid().isPresent() && myAgent.getGameid().get().equals(gameid);
+
     }
 
-    public JSONObject getLiveAgents() {
+    //
+    public JSONObject get_all_agent_states() {
         final JSONObject jsonObject = new JSONObject();
-        agent_states.forEach((agent, status) -> {
-            jsonObject.put(agent, status);
+        live_agents.values().forEach(agent -> {
+            jsonObject.put(agent.getId(), agent.getLast_state());
         });
         return jsonObject;
     }

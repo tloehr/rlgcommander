@@ -11,6 +11,7 @@ import org.quartz.Scheduler;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -64,8 +65,9 @@ public abstract class Game {
      * when something happens, we need to react on it. Implement this method to tell us, WHAT we should do.
      *
      * @param event
+     * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
      */
-    public void react_to(String sender, String source, JSONObject event) {
+    public void react_to(String sender, String source, JSONObject event) throws IllegalStateException {
         if (!is_match_running()) {
             log.info("received event {} from {} but match is not running. ignoring.", event, sender);
             throw new IllegalStateException();
@@ -92,7 +94,7 @@ public abstract class Game {
     /**
      * when the actual game should start. You run this method.
      */
-    public void start() {
+    public void start() throws IllegalStateException {
         if (!prolog) {
             log.info("Can't start the match. Not in PROLOG.");
             throw new IllegalStateException();
@@ -103,8 +105,9 @@ public abstract class Game {
 
     /**
      * to resume a paused game.
+     * @throws IllegalStateException calls to this method without sense are answered with an ISE
      */
-    public void resume() {
+    public void resume() throws IllegalStateException {
         if (prolog || epilog) {
             log.info("Can't resume the match. We are in PROLOG or EPILOG.");
             throw new IllegalStateException();
@@ -124,8 +127,9 @@ public abstract class Game {
 
     /**
      * to pause a running game
+     * @throws IllegalStateException calls to this method without sense are answered with an ISE
      */
-    public void pause() {
+    public void pause() throws IllegalStateException {
         if (prolog || epilog) {
             log.info("Can't pause the match. We are in PROLOG or EPILOG.");
             throw new IllegalStateException();
@@ -154,8 +158,9 @@ public abstract class Game {
     public JSONObject getStatus() {
         return new JSONObject()
                 .put("name", id)
+                .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
-                .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ISO_DATE_TIME) : JSONObject.NULL);
+                .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL);
     }
 
     /**
