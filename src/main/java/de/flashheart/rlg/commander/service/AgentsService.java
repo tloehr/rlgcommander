@@ -49,7 +49,6 @@ public class AgentsService {
 
     }
 
-    //
     public JSONObject get_all_agent_states() {
         final JSONObject jsonObject = new JSONObject();
         live_agents.values().forEach(agent -> {

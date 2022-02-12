@@ -118,6 +118,11 @@ public class RLGRestController {
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
+    @PostMapping("/system/list_games")
+    public ResponseEntity<?> list_games() {
+        return new ResponseEntity(gamesService.get_running_games().toString(), HttpStatus.OK);
+    }
+
     @GetMapping("/system/list_agents")
     public ResponseEntity<?> list_agents() {
         return new ResponseEntity<>(agentsService.get_all_agent_states().toString(), HttpStatus.OK);

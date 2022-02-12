@@ -105,6 +105,12 @@ public class GamesService {
         }
     }
 
+    public JSONObject get_running_games() {
+        final JSONObject jsonObject = new JSONObject();
+        loaded_games.entrySet().forEach(stringGameEntry -> jsonObject.put(stringGameEntry.getKey(), stringGameEntry.getValue().getStatus()));
+        return jsonObject;
+    }
+
     public void shutdown_agents() {
         mqttOutbound.send("shutdown", "all");
     }
@@ -118,26 +124,5 @@ public class GamesService {
         return loaded_game;
     }
 
-
-//    private Multimap<String, Agent> createAgentMap(JSONObject agents_for_role, List<String> requiredRoles) throws JSONException {
-//        final Multimap<String, Agent> result = HashMultimap.create();
-//        //final ArrayList<String> missingRoleAgents = new ArrayList<>();
-//
-//        agents_for_role.keySet().forEach(role -> {
-//            JSONArray agents_for_this_role = agents_for_role.getJSONArray(role);
-//            agents_for_this_role.forEach(agentid -> {
-//                Optional<Agent> optAgent = agentsService.getAgent(agentid.toString());
-//                if (optAgent.isEmpty()) {
-//                    optAgent = Optional.of(new Agent(agentid.toString()));
-//                    log.warn("agent {} is needed for {}, but hasn't reported in yet. will use dummy", agentid, role);
-//                } else {
-//                    log.debug("{} is alive and will be used for {}", agentid, role);
-//                }
-//                result.put(role, optAgent.get());
-//            });
-//        });
-//
-//        return result;
-//    }
 
 }

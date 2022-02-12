@@ -95,27 +95,21 @@ public abstract class Game {
      * when the actual game should start. You run this method.
      */
     public void start() throws IllegalStateException {
-        if (!prolog) {
-            log.info("Can't start the match. Not in PROLOG.");
-            throw new IllegalStateException();
-        }
+        if (!prolog) throw new IllegalStateException("Can't start the match. Not in PROLOG.");
+
         prolog = false;
         epilog = false;
     }
 
     /**
      * to resume a paused game.
+     *
      * @throws IllegalStateException calls to this method without sense are answered with an ISE
      */
     public void resume() throws IllegalStateException {
-        if (prolog || epilog) {
-            log.info("Can't resume the match. We are in PROLOG or EPILOG.");
-            throw new IllegalStateException();
-        }
-        if (!isPausing()) {
-            log.info("Can't resume the match. We are not PAUSING.");
-            throw new IllegalStateException();
-        }
+        if (prolog || epilog) throw new IllegalStateException("Can't resume the match. We are in PROLOG or EPILOG.");
+        if (!isPausing()) throw new IllegalStateException("Can't resume the match. We are not PAUSING.");
+
         pausing_since = Optional.empty();
         mqttOutbound.send("delpage", new JSONObject().put("page_handles", new JSONArray().put("pause")), agents.keySet());
     }
@@ -127,17 +121,13 @@ public abstract class Game {
 
     /**
      * to pause a running game
+     *
      * @throws IllegalStateException calls to this method without sense are answered with an ISE
      */
     public void pause() throws IllegalStateException {
-        if (prolog || epilog) {
-            log.info("Can't pause the match. We are in PROLOG or EPILOG.");
-            throw new IllegalStateException();
-        }
-        if (isPausing()) {
-            log.info("Can't pause the match. We are in PAUSING already.");
-            throw new IllegalStateException();
-        }
+        if (prolog || epilog) throw new IllegalStateException("Can't pause the match. We are in PROLOG or EPILOG.");
+        if (isPausing()) throw new IllegalStateException("Can't pause the match. We are in PAUSING already.");
+
         pausing_since = Optional.of(LocalDateTime.now());
         mqttOutbound.send("paged", MQTT.page("pause", "", "      PAUSE      ", "", ""), agents.keySet());
     }
