@@ -94,7 +94,7 @@ public class MQTTInbound {
                     } catch (IllegalStateException ise) {
                         log.warn(ise);
                     } catch (Exception e){
-                        log.warn(e);
+                        log.error(e);
                     }
                 });
             }

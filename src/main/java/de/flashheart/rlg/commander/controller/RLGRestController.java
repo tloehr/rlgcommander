@@ -5,6 +5,7 @@ import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +64,7 @@ public class RLGRestController {
             gamesService.start_game(id);
             return new ResponseEntity(HttpStatus.ACCEPTED);
         } catch (IllegalStateException e) {
-            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
         }
     }
 
@@ -85,7 +86,7 @@ public class RLGRestController {
             gamesService.pause_game(id);
             return new ResponseEntity(HttpStatus.ACCEPTED);
         } catch (IllegalStateException e) {
-            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
         }
     }
 
@@ -95,7 +96,7 @@ public class RLGRestController {
             gamesService.resume_game(id);
             return new ResponseEntity(HttpStatus.ACCEPTED);
         } catch (IllegalStateException e) {
-            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
         }
     }
 
@@ -118,7 +119,7 @@ public class RLGRestController {
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
-    @PostMapping("/system/list_games")
+    @GetMapping("/system/list_games")
     public ResponseEntity<?> list_games() {
         return new ResponseEntity(gamesService.get_running_games().toString(), HttpStatus.OK);
     }

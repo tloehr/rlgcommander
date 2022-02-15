@@ -135,10 +135,8 @@ public class Conquest extends Scheduled {
     }
 
     @Override
-    public void react_to(String sender, String source, JSONObject event)  throws IllegalStateException  {
-
-            super.react_to(sender, source, event);
-
+    public void react_to(String sender, String source, JSONObject event) throws IllegalStateException {
+        super.react_to(sender, source, event);
 
         if (!source.equalsIgnoreCase("btn01")) {
             log.debug("no btn1 event. discarding.");

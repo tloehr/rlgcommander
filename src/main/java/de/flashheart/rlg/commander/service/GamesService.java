@@ -74,6 +74,7 @@ public class GamesService {
     }
 
     public void start_game(String id) throws IllegalStateException {
+        if (!loaded_games.containsKey(id)) throw new IllegalStateException("Game #"+id+" not loaded. Can't start.");
         Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
         if (mygame.isPresent()) {
             mygame.get().start();
