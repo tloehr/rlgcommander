@@ -12,7 +12,7 @@ import java.util.Optional;
 @Setter
 public class Agent {
     String id;
-    Optional<String> gameid; // that this agent currently belongs to
+    Optional<String> gameid; // this agent may or may not belong to a gameid
     JSONObject last_state;
 
     public Agent() {

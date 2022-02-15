@@ -148,9 +148,14 @@ public abstract class Game {
     public JSONObject getStatus() {
         return new JSONObject()
                 .put("name", id)
+                .put("gameid", id)
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
-                .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL);
+                .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL)
+                .put("prolog", Boolean.toString(prolog))
+                .put("epilog", Boolean.toString(epilog))
+                .put("pausing", Boolean.toString(isPausing()))
+                .put("match_running", Boolean.toString(is_match_running()));
     }
 
     /**
