@@ -102,7 +102,12 @@ public class RLGRestController {
 
     @GetMapping("/game/status")
     public ResponseEntity<?> status_game(@RequestParam(name = "id") String id) {
-        return new ResponseEntity<>(gamesService.getGame(id).orElseThrow().getStatus().toString(), HttpStatus.OK);
+        try {
+            String response = gamesService.getGame(id).orElseThrow().getStatus().toString();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
     }
 
     @GetMapping("/system/shutdown")
