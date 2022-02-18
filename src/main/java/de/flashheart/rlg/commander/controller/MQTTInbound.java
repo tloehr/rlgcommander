@@ -88,15 +88,16 @@ public class MQTTInbound {
                     //agentsService.remove(agentid);
                 }
             } else {
-                agentsService.getLive_agents().getOrDefault(agentid, new Agent()).getGameid().ifPresent(gameid -> {
+                int gameid = agentsService.getLive_agents().getOrDefault(agentid, new Agent()).getGameid();
+                if (gameid > 0) {
                     try {
                         gamesService.react_to(gameid, agentid, source, new JSONObject(payload));
                     } catch (IllegalStateException ise) {
                         log.warn(ise);
-                    } catch (Exception e){
+                    } catch (Exception e) {
                         log.error(e);
                     }
-                });
+                }
             }
         };
     }

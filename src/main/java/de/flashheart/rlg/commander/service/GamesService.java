@@ -4,6 +4,7 @@ import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +13,10 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -22,7 +25,8 @@ public class GamesService {
     Scheduler scheduler;
     AgentsService agentsService;
     BuildProperties buildProperties;
-    private final HashMap<String, Game> loaded_games;
+    private final Optional<Game>[] loaded_games; // exactly n games are possible
+    private final int MAX_GAMES = 1;
 
     @Autowired
     public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties) {
@@ -30,7 +34,7 @@ public class GamesService {
         this.scheduler = scheduler;
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
-        this.loaded_games = new HashMap<>();
+        this.loaded_games = new Optional[]{Optional.empty()};
     }
 
     /**
@@ -47,83 +51,83 @@ public class GamesService {
                 "RLGS2 @flashheart.de"));
     }
 
-    public Game load_game(String id, String json) throws Exception {
+    public Game load_game(int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        //if (loaded_games[id-1].isPresent()) throw new IllegalAccessException("id "+id+" is in use. Unload first.");
         log.debug("\n _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
                 "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
                 "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         JSONObject game_description = new JSONObject(json);
-        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.cleanup());
+        loaded_games[id-1].ifPresent(game -> game.cleanup());
+        // todo: check for agent conflicts when loading. reject if necessary
         Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(String.class, JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(id, game_description, scheduler, mqttOutbound);
-        // todo: check for agent conflicts when loading
-        loaded_games.put(id, game);
+        loaded_games[id-1] = Optional.of(game);
         agentsService.assign_gameid_to_agents(id, game.getAgents().keySet());
         return game;
     }
 
-    public void unload_game(String id) {
-        // todo: release agents from id
-        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.cleanup());
-        loaded_games.remove(id);
+    public void unload_game(int id) throws ArrayIndexOutOfBoundsException {
+        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        loaded_games[id-1].ifPresent(game -> {
+            agentsService.assign_gameid_to_agents(-1, game.getAgents().keySet());
+            game.cleanup();
+        });
+        loaded_games[id-1] = Optional.empty();
         welcome();
     }
 
 
-    public Optional<Game> getGame(String id) {
-        return Optional.ofNullable(loaded_games.get(id));
+    public Optional<Game> getGame(int id) {
+        return loaded_games[id-1];
     }
 
-    public void start_game(String id) throws IllegalStateException {
-        if (!loaded_games.containsKey(id)) throw new IllegalStateException("Game #"+id+" not loaded. Can't start.");
-        Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
-        if (mygame.isPresent()) {
-            mygame.get().start();
-        }
+    public void start_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't start.");
+        loaded_games[id-1].get().start();
     }
 
-    public void reset_game(String id) {
-        Optional.ofNullable(loaded_games.get(id)).ifPresent(game -> game.reset());
+    public void reset_game(int id) {
+        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't reset.");
+        loaded_games[id-1].get().reset();
     }
 
-    public void resume_game(String id) throws IllegalStateException {
-        Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
-        if (mygame.isPresent()) {
-            mygame.get().resume();
-        }
+    public void resume_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't resume.");
+        loaded_games[id-1].get().resume();
     }
 
-    public void pause_game(String id) throws IllegalStateException {
-        Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
-        if (mygame.isPresent()) {
-            mygame.get().pause();
-        }
+    public void pause_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't resume.");
+        loaded_games[id-1].get().pause();
     }
 
-    public void react_to(String id, String agentid, String source, JSONObject payload) throws IllegalStateException {
-        Optional<Game> mygame = Optional.ofNullable(loaded_games.get(id));
-        if (mygame.isPresent()) {
-            mygame.get().react_to(agentid, source, payload);
-        }
+    public void react_to(int id, String agentid, String source, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't resume.");
+        loaded_games[id-1].get().react_to(agentid, source, payload);
     }
 
-    public JSONObject get_running_games() {
-        final JSONObject jsonObject = new JSONObject();
-        loaded_games.entrySet().forEach(stringGameEntry -> jsonObject.put(stringGameEntry.getKey(), stringGameEntry.getValue().getStatus()));
-        return jsonObject;
+    public JSONArray get_games() {
+        return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game).collect(Collectors.toList()));
     }
 
     public void shutdown_agents() {
         mqttOutbound.send("shutdown", "all");
     }
 
-    public Optional<Game> admin_set_values(String id, String description) {
-        //loaded_game.ifPresent(game -> game.reset());
-        Optional<Game> loaded_game = Optional.ofNullable(loaded_games.get(id));
-        loaded_game.ifPresent(game -> {
-            if (!game.isPausing()) return;
-        });
-        return loaded_game;
-    }
+//    public Optional<Game> admin_set_values(String id, String description) {
+//        //loaded_game.ifPresent(game -> game.reset());
+//        Optional<Game> loaded_game = Optional.ofNullable(loaded_games.get(id));
+//        loaded_game.ifPresent(game -> {
+//            if (!game.isPausing()) return;
+//        });
+//        return loaded_game;
+//    }
 
 
 }

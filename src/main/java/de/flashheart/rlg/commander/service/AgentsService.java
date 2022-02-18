@@ -28,14 +28,13 @@ public class AgentsService {
         return live_agents;
     }
 
-    public void assign_gameid_to_agents(String gameid, Set<String> agentids) {
+    public void assign_gameid_to_agents(int gameid, Set<String> agentids) {
         agentids.forEach(agentid -> {
             Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
-            my_agent.setGameid(Optional.of(gameid));
+            my_agent.setGameid(gameid);
             live_agents.put(agentid, my_agent);
         });
     }
-
 
     public void store_status_from_agent(String agentid, JSONObject status) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
@@ -43,10 +42,9 @@ public class AgentsService {
         live_agents.put(agentid, my_agent);
     }
 
-    public boolean agent_belongs_to_game(String agentid, String gameid){
+    public boolean agent_belongs_to_game(String agentid, int gameid){
         Agent myAgent = live_agents.getOrDefault(agentid, new Agent("dummy"));
-        return myAgent.getGameid().isPresent() && myAgent.getGameid().get().equals(gameid);
-
+        return myAgent.getGameid() == gameid;
     }
 
     public JSONObject get_all_agent_states() {

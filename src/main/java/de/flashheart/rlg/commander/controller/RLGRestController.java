@@ -38,7 +38,7 @@ public class RLGRestController {
 
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
-    public ResponseEntity<?> load_game(@RequestParam(name = "id") String id, @RequestBody String description) {
+    public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) {
         ResponseEntity<?> responseEntity;
         try {
             responseEntity = new ResponseEntity<>(gamesService.load_game(id, description).getStatus().toString(), HttpStatus.CREATED);
@@ -53,13 +53,13 @@ public class RLGRestController {
     }
 
     // set values for a running game in pause mode
-    @PostMapping("/game/admin")
-    public ResponseEntity<?> admin_game(@RequestParam(name = "id") String id, @RequestBody String description) {
-        return new ResponseEntity<>(gamesService.admin_set_values(id, description).orElseThrow().getStatus().toString(), HttpStatus.OK);
-    }
+//    @PostMapping("/game/admin")
+//    public ResponseEntity<?> admin_game(@RequestParam(name = "id") String id, @RequestBody String description) {
+//        return new ResponseEntity<>(gamesService.admin_set_values(id, description).orElseThrow().getStatus().toString(), HttpStatus.OK);
+//    }
 
     @PostMapping("/game/start")
-    public ResponseEntity<?> start_game(@RequestParam(name = "id") String id) {
+    public ResponseEntity<?> start_game(@RequestParam(name = "id") int id) {
         try {
             gamesService.start_game(id);
             return new ResponseEntity(HttpStatus.ACCEPTED);
@@ -69,19 +69,19 @@ public class RLGRestController {
     }
 
     @PostMapping("/game/reset")
-    public ResponseEntity<?> reset_game(@RequestParam(name = "id") String id) {
+    public ResponseEntity<?> reset_game(@RequestParam(name = "id") int id) {
         gamesService.reset_game(id);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/unload")
-    public ResponseEntity<?> stop_game(@RequestParam(name = "id") String id) {
+    public ResponseEntity<?> stop_game(@RequestParam(name = "id") int id) {
         gamesService.unload_game(id);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/pause")
-    public ResponseEntity<?> pause_game(@RequestParam(name = "id") String id) {
+    public ResponseEntity<?> pause_game(@RequestParam(name = "id") int id) {
         try {
             gamesService.pause_game(id);
             return new ResponseEntity(HttpStatus.ACCEPTED);
@@ -91,7 +91,7 @@ public class RLGRestController {
     }
 
     @PostMapping("/game/resume")
-    public ResponseEntity<?> resume_game(@RequestParam(name = "id") String id) {
+    public ResponseEntity<?> resume_game(@RequestParam(name = "id") int id) {
         try {
             gamesService.resume_game(id);
             return new ResponseEntity(HttpStatus.ACCEPTED);
@@ -101,7 +101,7 @@ public class RLGRestController {
     }
 
     @GetMapping("/game/status")
-    public ResponseEntity<?> status_game(@RequestParam(name = "id") String id) {
+    public ResponseEntity<?> status_game(@RequestParam(name = "id") int id) {
         try {
             String response = gamesService.getGame(id).orElseThrow().getStatus().toString();
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -117,16 +117,9 @@ public class RLGRestController {
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
-    @PostMapping("/system/test")
-    public ResponseEntity<?> test_rest(@RequestParam(name = "id") String id, @RequestBody String description) {
-        log.debug("id: {}", id);
-        log.debug("description: {}", description);
-        return new ResponseEntity(HttpStatus.ACCEPTED);
-    }
-
     @GetMapping("/system/list_games")
     public ResponseEntity<?> list_games() {
-        return new ResponseEntity(gamesService.get_running_games().toString(), HttpStatus.OK);
+        return new ResponseEntity(gamesService.get_games().toString(), HttpStatus.OK);
     }
 
     @GetMapping("/system/list_agents")
