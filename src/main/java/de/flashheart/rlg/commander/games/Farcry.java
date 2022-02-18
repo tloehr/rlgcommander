@@ -32,7 +32,7 @@ public class Farcry extends Timed implements HasRespawn {
     final JobKey myRespawnJobKey;
 
     public Farcry(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(id, game_parameters, scheduler, mqttOutbound);
+        super(game_parameters, scheduler, mqttOutbound);
         log.debug("\n   ____         _____\n" +
                 "  / __/__ _____/ ___/_____ __\n" +
                 " / _// _ `/ __/ /__/ __/ // /\n" +

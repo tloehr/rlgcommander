@@ -20,12 +20,12 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public abstract class Scheduled extends Game {
         final Set<JobKey> jobs;
 
-    public Scheduled(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(id, game_parameters, scheduler, mqttOutbound);
+    public Scheduled( JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(game_parameters, scheduler, mqttOutbound);
 
         jobs = new HashSet<>();
         try {
-            scheduler.getContext().put(id, this);
+            scheduler.getContext().put(uuid.toString(), this);
         } catch (SchedulerException se) {
             log.fatal(se);
         }
@@ -48,13 +48,13 @@ public abstract class Scheduled extends Game {
             deleteJob(jobKey);
             JobDetail job = newJob(clazz)
                     .withIdentity(jobKey)
-                    .usingJobData("name_of_the_game", id)
+                    .usingJobData("name_of_the_game", uuid.toString())
                     .build();
 
             jobs.add(jobKey);
 
             Trigger trigger = newTrigger()
-                    .withIdentity(jobKey.getName() + "-trigger", id)
+                    .withIdentity(jobKey.getName() + "-trigger", uuid.toString())
                     .startAt(JavaTimeConverter.toDate(start_time))
                     .build();
             scheduler.scheduleJob(job, trigger);
@@ -71,10 +71,10 @@ public abstract class Scheduled extends Game {
         jobs.add(jobKey);
 
         Trigger trigger = newTrigger()
-                .withIdentity(jobKey.getName() + "-trigger", id)
+                .withIdentity(jobKey.getName() + "-trigger", uuid.toString())
                 .startNow()
                 .withSchedule(ssb)
-                .usingJobData("name_of_the_game", id) // where we find the context later
+                .usingJobData("name_of_the_game", uuid.toString()) // where we find the context later
                 .build();
 
 
@@ -91,7 +91,7 @@ public abstract class Scheduled extends Game {
             try {
                 scheduler.interrupt(job);
                 scheduler.deleteJob(job);
-                scheduler.getContext().remove(id);
+                scheduler.getContext().remove(uuid.toString());
             } catch (SchedulerException e) {
                 log.error(e);
             }

@@ -47,11 +47,11 @@ public abstract class Timed extends Scheduled {
 
     final JobKey gametimeJobKey, overtimeJobKey;
 
-    Timed(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(id, game_parameters, scheduler, mqttOutbound);
+    Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(game_parameters, scheduler, mqttOutbound);
         this.match_length = game_parameters.getInt("match_length");
-        gametimeJobKey = new JobKey("gametime", id);
-        overtimeJobKey = new JobKey("overtime", id);
+        gametimeJobKey = new JobKey("gametime", uuid.toString());
+        overtimeJobKey = new JobKey("overtime", uuid.toString());
         remaining = 0l;
         estimated_end_time = null;
     }

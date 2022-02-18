@@ -1,6 +1,7 @@
 {
   "comment": "7 CPs, Conquest",
   "class": "de.flashheart.rlg.commander.games.Conquest",
+  "mode": "conquest",
   "agents": {
     "capture_points": [
       "ag01",

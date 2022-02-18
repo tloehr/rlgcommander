@@ -3,6 +3,7 @@ package de.flashheart.rlg.commander.controller;
 
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,26 +31,25 @@ public class RLGRestController {
         this.applicationContext = applicationContext;
     }
 
-    @ExceptionHandler({JSONException.class, NoSuchElementException.class})
+    @ExceptionHandler({JSONException.class,
+            NoSuchElementException.class,
+            ArrayIndexOutOfBoundsException.class,
+            ClassNotFoundException.class,
+            NoSuchMethodException.class,
+            InvocationTargetException.class,
+            InstantiationException.class,
+            IllegalAccessException.class,
+            IllegalStateException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception exc) {
         log.warn(exc.getMessage());
-        return new ResponseEntity<>(new ErrorMessage(new Throwable(exc)), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity(new JSONObject().put("error", exc.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
     }
 
+    @SneakyThrows
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
     public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) {
-        ResponseEntity<?> responseEntity;
-        try {
-            responseEntity = new ResponseEntity<>(gamesService.load_game(id, description).getStatus().toString(), HttpStatus.CREATED);
-        } catch (Exception e) {
-            String msg = e.toString();
-            if (e instanceof InvocationTargetException) {
-                msg = ((InvocationTargetException) e).getTargetException().toString();
-            }
-            responseEntity = new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return responseEntity;
+        return new ResponseEntity<>(gamesService.load_game(id, description).getStatus().toString(4), HttpStatus.CREATED);
     }
 
     // set values for a running game in pause mode
@@ -60,12 +60,8 @@ public class RLGRestController {
 
     @PostMapping("/game/start")
     public ResponseEntity<?> start_game(@RequestParam(name = "id") int id) {
-        try {
-            gamesService.start_game(id);
-            return new ResponseEntity(HttpStatus.ACCEPTED);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
-        }
+        gamesService.start_game(id);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/reset")
@@ -82,44 +78,24 @@ public class RLGRestController {
 
     @PostMapping("/game/pause")
     public ResponseEntity<?> pause_game(@RequestParam(name = "id") int id) {
-        try {
-            gamesService.pause_game(id);
-            return new ResponseEntity(HttpStatus.ACCEPTED);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
-        }
+        gamesService.pause_game(id);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/game/resume")
     public ResponseEntity<?> resume_game(@RequestParam(name = "id") int id) {
-        try {
-            gamesService.resume_game(id);
-            return new ResponseEntity(HttpStatus.ACCEPTED);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
-        }
+        gamesService.resume_game(id);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @GetMapping("/game/status")
     public ResponseEntity<?> status_game(@RequestParam(name = "id") int id) {
-        try {
-            String response = gamesService.getGame(id).orElseThrow().getStatus().toString();
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.UNPROCESSABLE_ENTITY);
-        }
+        return new ResponseEntity<>(gamesService.getGame(id).get().getStatus().toString(4), HttpStatus.OK);
     }
 
-    @GetMapping("/system/shutdown")
-    public ResponseEntity<?> system_shutdown() {
-        gamesService.shutdown_agents();
-        //SpringApplication.exit(applicationContext, () -> 0);
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
-    }
-
-    @GetMapping("/system/list_games")
+    @GetMapping("/game/list_games")
     public ResponseEntity<?> list_games() {
-        return new ResponseEntity(gamesService.get_games().toString(), HttpStatus.OK);
+        return new ResponseEntity(gamesService.get_games().toString(4), HttpStatus.OK);
     }
 
     @GetMapping("/system/list_agents")

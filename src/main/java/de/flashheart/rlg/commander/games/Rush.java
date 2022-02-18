@@ -13,8 +13,8 @@ import org.quartz.Scheduler;
  */
 @Log4j2
 public class Rush extends Scheduled {
-    public Rush(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(id, game_parameters, scheduler, mqttOutbound);
+    public Rush(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(game_parameters, scheduler, mqttOutbound);
         log.debug("    ____             __\n" +
                 "   / __ \\__  _______/ /_\n" +
                 "  / /_/ / / / / ___/ __ \\\n" +

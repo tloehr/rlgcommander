@@ -68,8 +68,8 @@ public class Conquest extends Scheduled {
      * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore cannot use
      *                        DI.
      */
-    public Conquest(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        super(id, game_parameters, scheduler, mqttOutbound);
+    public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        super(game_parameters, scheduler, mqttOutbound);
 
         log.debug("   ______                                  __\n" +
                 "  / ____/___  ____  ____ ___  _____  _____/ /_\n" +
@@ -123,7 +123,7 @@ public class Conquest extends Scheduled {
         log.debug("Ticket Bleeding per {} seconds: {}", TICKET_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
         log.debug("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
-        ticketBleedingJobkey = new JobKey("ticketbleeding", id);
+        ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
         agentFSMs = new HashMap<>();
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Respawn Tickets: %s", respawn_tickets.intValue()),

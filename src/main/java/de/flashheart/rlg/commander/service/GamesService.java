@@ -59,65 +59,64 @@ public class GamesService {
                 "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         JSONObject game_description = new JSONObject(json);
-        loaded_games[id-1].ifPresent(game -> game.cleanup());
+        loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
-        Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(String.class, JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(id, game_description, scheduler, mqttOutbound);
-        loaded_games[id-1] = Optional.of(game);
+        Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
+        loaded_games[id - 1] = Optional.of(game);
         agentsService.assign_gameid_to_agents(id, game.getAgents().keySet());
         return game;
     }
 
-    public void unload_game(int id) throws ArrayIndexOutOfBoundsException {
-        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
-        loaded_games[id-1].ifPresent(game -> {
-            agentsService.assign_gameid_to_agents(-1, game.getAgents().keySet());
-            game.cleanup();
-        });
-        loaded_games[id-1] = Optional.empty();
+    public void unload_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        check_id(id);
+        agentsService.assign_gameid_to_agents(-1, loaded_games[id - 1].get().getAgents().keySet());
+        loaded_games[id - 1].get().cleanup();
+        loaded_games[id - 1] = Optional.empty();
         welcome();
     }
 
 
-    public Optional<Game> getGame(int id) {
-        return loaded_games[id-1];
+    public Optional<Game> getGame(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        check_id(id);
+        return loaded_games[id - 1];
     }
 
     public void start_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
-        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
-        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't start.");
-        loaded_games[id-1].get().start();
+        check_id(id);
+        loaded_games[id - 1].get().start();
     }
 
-    public void reset_game(int id) {
-        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
-        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't reset.");
-        loaded_games[id-1].get().reset();
+    public void reset_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        check_id(id);
+        loaded_games[id - 1].get().reset();
     }
 
     public void resume_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
-        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
-        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't resume.");
-        loaded_games[id-1].get().resume();
+        check_id(id);
+        loaded_games[id - 1].get().resume();
     }
 
     public void pause_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
-        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
-        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't resume.");
-        loaded_games[id-1].get().pause();
+        check_id(id);
+        loaded_games[id - 1].get().pause();
     }
 
     public void react_to(int id, String agentid, String source, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
-        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
-        if (loaded_games[id-1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded. Can't resume.");
-        loaded_games[id-1].get().react_to(agentid, source, payload);
+        check_id(id);
+        loaded_games[id - 1].get().react_to(agentid, source, payload);
     }
 
     public JSONArray get_games() {
-        return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game).collect(Collectors.toList()));
+        return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game.get().getStatus()).collect(Collectors.toList()));
     }
+//
+//    public void shutdown_agents() {
+//        mqttOutbound.send("shutdown", "all");
+//    }
 
-    public void shutdown_agents() {
-        mqttOutbound.send("shutdown", "all");
+    private void check_id(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        if (loaded_games[id - 1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded.");
     }
 
 //    public Optional<Game> admin_set_values(String id, String description) {

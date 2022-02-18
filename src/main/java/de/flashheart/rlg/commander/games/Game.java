@@ -12,14 +12,11 @@ import org.quartz.Scheduler;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Log4j2
 public abstract class Game {
-    final String id;
+
     final MQTTOutbound mqttOutbound;
     //final Multimap<String, Agent> function_to_agents;
     // should be overwritten by the game class to describe the mode and the parameters currently in use
@@ -27,13 +24,14 @@ public abstract class Game {
     private final ArrayList<String> game_description;
     Optional<LocalDateTime> pausing_since;
     private boolean prolog, epilog;
+    final UUID uuid;
 
     final Scheduler scheduler;
 
     final Multimap<String, String> agents, roles;
 
-    Game(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
-        this.id = id;
+    Game( JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+        uuid = UUID.randomUUID();
         prolog = true;
         epilog = false;
         this.scheduler = scheduler;
@@ -81,10 +79,6 @@ public abstract class Game {
 //    public void react_to(JSONObject event) {
 //        react_to("_internal", event);
 //    }
-
-    public String getId() {
-        return id;
-    }
 
     /**
      * before another game is loaded, cleanup first
@@ -147,8 +141,6 @@ public abstract class Game {
      */
     public JSONObject getStatus() {
         return new JSONObject()
-                .put("name", id)
-                .put("gameid", id)
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
                 .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL)
