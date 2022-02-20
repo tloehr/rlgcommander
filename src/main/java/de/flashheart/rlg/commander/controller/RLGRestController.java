@@ -90,12 +90,17 @@ public class RLGRestController {
 
     @GetMapping("/game/status")
     public ResponseEntity<?> status_game(@RequestParam(name = "id") int id) {
-        return new ResponseEntity<>(gamesService.getGame(id).get().getStatus().toString(4), HttpStatus.OK);
+        return new ResponseEntity<>(gamesService.getGameStatus(id).toString(4), HttpStatus.OK);
     }
 
     @GetMapping("/game/list_games")
     public ResponseEntity<?> list_games() {
         return new ResponseEntity(gamesService.get_games().toString(4), HttpStatus.OK);
+    }
+
+    @GetMapping("/system/get_max_number_of_games")
+    public ResponseEntity<?> max_number_of_games() {
+        return new ResponseEntity(new JSONObject().put("max_number_of_games", GamesService.MAX_NUMBER_OF_GAMES).toString(), HttpStatus.OK);
     }
 
     @GetMapping("/system/list_agents")

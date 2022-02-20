@@ -3,6 +3,7 @@ package de.flashheart.rlg.commander.service;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
+import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,7 +27,7 @@ public class GamesService {
     AgentsService agentsService;
     BuildProperties buildProperties;
     private final Optional<Game>[] loaded_games; // exactly n games are possible
-    private final int MAX_GAMES = 1;
+    public static final int MAX_NUMBER_OF_GAMES = 1;
 
     @Autowired
     public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties) {
@@ -52,12 +53,14 @@ public class GamesService {
     }
 
     public Game load_game(int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        if (id < 1 || id > MAX_NUMBER_OF_GAMES)
+            throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         //if (loaded_games[id-1].isPresent()) throw new IllegalAccessException("id "+id+" is in use. Unload first.");
         log.debug("\n _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
                 "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
                 "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
+        log.debug("\n"+ Tools.fignums[id]);
         JSONObject game_description = new JSONObject(json);
         loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
@@ -69,6 +72,11 @@ public class GamesService {
 
     public void unload_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
+        log.debug("\n _   _ _  _ _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
+                "| | | | \\| | |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
+                "| |_| | .` | |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
+                " \\___/|_|\\_|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
+        log.debug("\n"+ Tools.fignums[id]);
         agentsService.assign_gameid_to_agents(-1, loaded_games[id - 1].get().getAgents().keySet());
         loaded_games[id - 1].get().cleanup();
         loaded_games[id - 1] = Optional.empty();
@@ -79,6 +87,12 @@ public class GamesService {
     public Optional<Game> getGame(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
         return loaded_games[id - 1];
+    }
+
+    public JSONObject getGameStatus(int id) throws ArrayIndexOutOfBoundsException {
+        if (id < 1 || id > MAX_NUMBER_OF_GAMES)
+            throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
+        return loaded_games[id - 1].isEmpty() ? new JSONObject() : loaded_games[id - 1].get().getStatus();
     }
 
     public void start_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -115,7 +129,8 @@ public class GamesService {
 //    }
 
     private void check_id(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
-        if (id < 1 || id > MAX_GAMES) throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_GAMES);
+        if (id < 1 || id > MAX_NUMBER_OF_GAMES)
+            throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         if (loaded_games[id - 1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded.");
     }
 

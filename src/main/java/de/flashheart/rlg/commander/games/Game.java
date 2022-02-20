@@ -66,7 +66,7 @@ public abstract class Game {
      * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
      */
     public void react_to(String sender, String source, JSONObject event) throws IllegalStateException {
-        if (!is_match_running()) {
+        if (!isRunning()) {
             log.info("received event {} from {} but match is not running. ignoring.", event, sender);
             throw new IllegalStateException();
         }
@@ -90,7 +90,10 @@ public abstract class Game {
      */
     public void start() throws IllegalStateException {
         if (!prolog) throw new IllegalStateException("Can't start the match. Not in PROLOG.");
-
+        log.debug("\n ___ _   _ _  _\n" +
+                "| _ \\ | | | \\| |\n" +
+                "|   / |_| | .` |\n" +
+                "|_|_\\\\___/|_|\\_|");
         prolog = false;
         epilog = false;
     }
@@ -103,12 +106,19 @@ public abstract class Game {
     public void resume() throws IllegalStateException {
         if (prolog || epilog) throw new IllegalStateException("Can't resume the match. We are in PROLOG or EPILOG.");
         if (!isPausing()) throw new IllegalStateException("Can't resume the match. We are not PAUSING.");
-
+        log.debug("\n ___ ___ ___ _   _ __  __ ___\n" +
+                "| _ \\ __/ __| | | |  \\/  | __|\n" +
+                "|   / _|\\__ \\ |_| | |\\/| | _|\n" +
+                "|_|_\\___|___/\\___/|_|  |_|___|\n");
         pausing_since = Optional.empty();
         mqttOutbound.send("delpage", new JSONObject().put("page_handles", new JSONArray().put("pause")), agents.keySet());
     }
 
     public void game_over() {
+        log.debug("\n  ___   _   __  __ ___    _____   _____ ___\n" +
+                " / __| /_\\ |  \\/  | __|  / _ \\ \\ / / __| _ \\\n" +
+                "| (_ |/ _ \\| |\\/| | _|  | (_) \\ V /| _||   /\n" +
+                " \\___/_/ \\_\\_|  |_|___|  \\___/ \\_/ |___|_|_\\");
         prolog = false;
         epilog = true;
     }
@@ -121,7 +131,10 @@ public abstract class Game {
     public void pause() throws IllegalStateException {
         if (prolog || epilog) throw new IllegalStateException("Can't pause the match. We are in PROLOG or EPILOG.");
         if (isPausing()) throw new IllegalStateException("Can't pause the match. We are in PAUSING already.");
-
+        log.debug("\n ___  _  _   _ ___ ___\n" +
+                "| _ \\/_\\| | | / __| __|\n" +
+                "|  _/ _ \\ |_| \\__ \\ _|\n" +
+                "|_|/_/ \\_\\___/|___/___|\n");
         pausing_since = Optional.of(LocalDateTime.now());
         mqttOutbound.send("paged", MQTT.page("pause", "", "      PAUSE      ", "", ""), agents.keySet());
     }
@@ -130,7 +143,7 @@ public abstract class Game {
         return pausing_since.isPresent();
     }
 
-    public boolean is_match_running() {
+    public boolean isRunning() {
         return !isPausing() && !prolog && !epilog;
     }
 
@@ -140,14 +153,20 @@ public abstract class Game {
      * @return status information to be sent if we are asked for it
      */
     public JSONObject getStatus() {
+        String state = (prolog ? "prolog" : "")+
+                (epilog ? "epilog" : "")+
+                (isPausing() ? "pausing" : "")+
+                (isRunning() ? "running" : "");
+
         return new JSONObject()
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
                 .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL)
-                .put("prolog", Boolean.toString(prolog))
-                .put("epilog", Boolean.toString(epilog))
-                .put("pausing", Boolean.toString(isPausing()))
-                .put("match_running", Boolean.toString(is_match_running()));
+                .put("state", state)               ;
+//         .put("prolog", Boolean.toString(prolog))
+//                .put("epilog", Boolean.toString(epilog))
+//                .put("pausing", Boolean.toString(isPausing()))
+//                .put("running", Boolean.toString(isRunning()))
     }
 
     /**
@@ -164,6 +183,10 @@ public abstract class Game {
     }
 
     public void reset() {
+        log.debug("\n ___ ___ ___ ___ _____\n" +
+                "| _ \\ __/ __| __|_   _|\n" +
+                "|   / _|\\__ \\ _|  | |\n" +
+                "|_|_\\___|___/___| |_|\n");
         prolog = true;
         epilog = false;
         mqttOutbound.send("signals", MQTT.toJSON("all", "off"), agents.keySet());
