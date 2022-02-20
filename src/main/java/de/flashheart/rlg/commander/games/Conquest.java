@@ -361,11 +361,12 @@ public class Conquest extends Scheduled {
                 .put("ticket_price_for_respawn", ticket_price_for_respawn)
                 .put("not_bleeding_before_cps", not_bleeding_before_cps)
                 .put("end_bleed_interval", end_bleed_interval)
-                .put("starting_bleed_interval", start_bleed_interval)
+                .put("start_bleed_interval", start_bleed_interval)
                 .put("remaining_blue_tickets", remaining_blue_tickets)
                 .put("remaining_red_tickets", remaining_red_tickets)
                 .put("cps_held_by_blue", cps_held_by_blue)
                 .put("cps_held_by_red", cps_held_by_red);
+
         final JSONObject states = new JSONObject();
         agentFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
         statusObject.put("states", states);

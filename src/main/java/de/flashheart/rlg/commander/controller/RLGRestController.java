@@ -93,6 +93,15 @@ public class RLGRestController {
         return new ResponseEntity<>(gamesService.getGameStatus(id).toString(4), HttpStatus.OK);
     }
 
+    @GetMapping("/game/parameters")
+    public ResponseEntity<?> game_parameters(@RequestParam(name = "id") int id) {
+        try {
+            return new ResponseEntity<>(gamesService.getGame(id).orElseThrow().getGame_parameters().toString(4), HttpStatus.OK);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+    }
+
     @GetMapping("/game/list_games")
     public ResponseEntity<?> list_games() {
         return new ResponseEntity(gamesService.get_games().toString(4), HttpStatus.OK);

@@ -22,16 +22,16 @@ public abstract class Game {
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
     private final ArrayList<String> game_description;
+    private final JSONObject game_parameters;
     Optional<LocalDateTime> pausing_since;
     private boolean prolog, epilog;
     final UUID uuid;
-
     final Scheduler scheduler;
-
     final Multimap<String, String> agents, roles;
 
-    Game( JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         uuid = UUID.randomUUID();
+        this.game_parameters = game_parameters;
         prolog = true;
         epilog = false;
         this.scheduler = scheduler;
@@ -197,4 +197,7 @@ public abstract class Game {
         return agents.get(agent).contains(role);
     }
 
+    public JSONObject getGame_parameters() {
+        return game_parameters;
+    }
 }
