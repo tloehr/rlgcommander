@@ -93,9 +93,9 @@ public class MQTTInbound {
                     try {
                         gamesService.react_to(gameid, agentid, source, new JSONObject(payload));
                     } catch (IllegalStateException ise) {
-                        log.warn(ise);
+                        log.warn(ise.getMessage());
                     } catch (Exception e) {
-                        log.error(e);
+                        log.error(e.getMessage());
                     }
                 }
             }

@@ -182,7 +182,7 @@ public class Conquest extends Scheduled {
             });
 
             // switching back to NEUTRAL in case of misuse
-            fsm.setAction(new ArrayList<>(Arrays.asList("RED", "BLUE")), "TO_NEUTRAL", new FSMAction() {
+            fsm.setAction("TO_NEUTRAL", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent, curState, nextState);
@@ -315,7 +315,6 @@ public class Conquest extends Scheduled {
     public void game_over() {
         super.game_over();
         deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
-        // broadcast_score();
         log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
         String winner = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
@@ -346,7 +345,6 @@ public class Conquest extends Scheduled {
     @Override
     public void reset() {
         super.reset();
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "slow"), roles.get("capture_points"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "slow"), roles.get("red_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "slow"), roles.get("blue_spawn"));

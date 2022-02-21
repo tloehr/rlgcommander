@@ -67,8 +67,8 @@ public abstract class Game {
      */
     public void react_to(String sender, String source, JSONObject event) throws IllegalStateException {
         if (!isRunning()) {
-            log.info("received event {} from {} but match is not running. ignoring.", event, sender);
-            throw new IllegalStateException();
+            //log.info("received event {} from {} but match is not running. ignoring.", event, sender);
+            throw new IllegalStateException(String.format("received event %s from %s but match is not running. ignoring.", event, sender));
         }
     }
 
@@ -189,7 +189,7 @@ public abstract class Game {
                 "|_|_\\___|___/___| |_|\n");
         prolog = true;
         epilog = false;
-        mqttOutbound.send("signals", MQTT.toJSON("all", "off"), agents.keySet());
+        mqttOutbound.send("all/init", new JSONObject());
         mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
     }
 
