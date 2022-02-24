@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  FSM for a single MCom
+
+  https://github.com/Ankzz/easyfsm
+-->
+
+<FSM>
+    <STATE id="PROLOG" type="ID">
+        <MESSAGE id="start" nextState="DEFUSED"/>
+    </STATE>
+    <STATE id="DEFUSED">
+        <MESSAGE id="btn01" nextState="FUSED"/>
+        <MESSAGE id="out_of_tickets" nextState="DEFENDED"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="FUSED">
+        <MESSAGE id="btn01" nextState="DEFUSED"/>
+        <MESSAGE id="out_of_tickets" nextState="FUSED_OVERTIME"/>
+        <MESSAGE id="exploded" nextState="DESTROYED"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="FUSED_OVERTIME">
+        <MESSAGE id="btn01" nextState="DEFENDED"/>
+        <MESSAGE id="exploded" nextState="DESTROYED"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <!-- ENDING STATES -->
+    <STATE id="DEFENDED">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="DESTROYED">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+</FSM>
+
