@@ -1,42 +1,29 @@
 {
   "comment": "3x2 CPs, Rush",
   "class": "de.flashheart.rlg.commander.games.Rush",
+  "sectors": [
+    {
+      "mcom1": "ag01",
+      "mcom2": "ag02",
+      "siren": "ag08"
+    },
+    {
+      "mcom1": "ag03",
+      "mcom2": "ag04",
+      "siren": "ag11"
+    },
+    {
+      "mcom1": "ag05",
+      "mcom2": "ag09",
+      "siren": "ag11"
+    }
+  ],
   "agents": {
-    "sector1": [
-      "ag01",
-      "ag02"
-    ],
-    "sector2": [
-      "ag03",
-      "ag04"
-    ],
-    "sector3": [
-      "ag05",
-      "ag09"
-    ],
-    "red_spawn": [
+    "attacker_spawn": [
       "ag06"
     ],
-    "blue_spawn": [
+    "defender_spawn": [
       "ag07"
-    ],
-    "spawns": [
-      "ag06",
-      "ag07"
-    ],
-    "siren_zone1": [
-      "ag08"
-    ],
-    "siren_zone2": [
-      "ag11"
-    ],
-    "siren_zone3": [
-      "ag12"
-    ],
-    "sirens": [
-      "ag08",
-      "ag11",
-      "ag12"
     ]
   },
   "respawn_tickets": 75,

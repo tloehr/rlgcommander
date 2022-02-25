@@ -15,7 +15,7 @@ public class RespawnJob extends QuartzJobBean implements InterruptableJob {
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
         try {
             log.debug(jobExecutionContext.getJobDetail().getKey() + " executed");
-            String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("name_of_the_game");
+            String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("uuid");
             HasRespawn game = (HasRespawn) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
             game.respawn();
         } catch (SchedulerException e) {

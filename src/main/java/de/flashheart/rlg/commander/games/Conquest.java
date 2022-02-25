@@ -135,10 +135,10 @@ public class Conquest extends Scheduled {
     }
 
     @Override
-    public void react_to(String sender, String source, JSONObject event) throws IllegalStateException {
-        super.react_to(sender, source, event);
+    public void react_to(String sender, String item, JSONObject event) throws IllegalStateException {
+        super.react_to(sender, item, event);
 
-        if (!source.equalsIgnoreCase("btn01")) {
+        if (!item.equalsIgnoreCase("btn01")) {
             log.debug("no btn1 event. discarding.");
             return;
         }
@@ -159,7 +159,7 @@ public class Conquest extends Scheduled {
             blue_respawns++;
             broadcast_score();   // to make the respawn show up quicker.
         } else if (hasRole(sender, "capture_points")) {
-            agentFSMs.get(sender).ProcessFSM(source.toUpperCase());
+            agentFSMs.get(sender).ProcessFSM(item.toUpperCase());
         } else {
             log.debug("i don't care about this message.");
         }

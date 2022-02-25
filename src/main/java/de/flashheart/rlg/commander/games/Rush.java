@@ -3,9 +3,11 @@ package de.flashheart.rlg.commander.games;
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.jobs.MComJob;
 import de.flashheart.rlg.commander.jobs.OvertimeJob;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
+import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.xml.sax.SAXException;
@@ -17,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * see https://battlefield.fandom.com/wiki/Tickets#Rush
@@ -29,10 +32,11 @@ import java.util.Map;
 public class Rush extends Scheduled {
     private final int bomb_timer;
     private final int respawn_tickets;
-    final JobKey mcom1, mcom2;
+    // final JobKey mcom1, mcom2;
     private final Map<String, FSM> agentFSMs;
     private final ArrayList<FSM> sectors;
-    String active_sector = ""; // which sector is currently active.
+    int active_sector = -1; // which sector is currently active.
+    private final int MAX_NUMBER_OF_SECTORS;
 
     public Rush(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
@@ -44,25 +48,22 @@ public class Rush extends Scheduled {
 
         this.bomb_timer = game_parameters.getInt("bomb_timer"); // in seconds
         this.respawn_tickets = game_parameters.getInt("respawn_tickets");
+        this.agentFSMs = new HashMap<>();
+        this.sectors = new ArrayList<>();
+        this.MAX_NUMBER_OF_SECTORS = game_parameters.getJSONArray("sectors").length();
 
-        agentFSMs = new HashMap<>();
-        sectors = new ArrayList<>();
-
-        // timer job keys for both mcoms in a sector
-        mcom1 = new JobKey("mcom1", uuid.toString());
-        mcom2 = new JobKey("mcom2", uuid.toString());
-
+        // read sectors information
         // prepare FSMs
-        for (String sector : new String[]{"sector1", "sector2", "sector3"}) {
-            if (roles.containsKey(sector)) {
-                String agent1 = roles.get(sector).toArray()[0].toString();
-                String agent2 = roles.get(sector).toArray()[1].toString();
-                agentFSMs.put(agent1, createMCOM(agent1));
-                agentFSMs.put(agent2, createMCOM(agent2));
-                sectors.add(createSector(sector, agent1, agent2));
-            }
+        for (int iSector = 0; iSector < MAX_NUMBER_OF_SECTORS; iSector++) {
+            JSONObject sector = game_parameters.getJSONArray("sectors").getJSONObject(iSector);
+            agentFSMs.put(sector.getString("mcom1"), createMCOM(sector.getString("mcom1"), iSector + 1));
+            agentFSMs.put(sector.getString("mcom2"), createMCOM(sector.getString("mcom2"), iSector + 1));
+            sectors.add(createSector(iSector + 1, sector.getString("mcom1"), sector.getString("mcom2")));
+            // create functional group "mcom"
+            roles.put("mcom", sector.getString("mcom1"));
+            roles.put("mcom", sector.getString("mcom2"));
+            roles.put("sirens", sector.getString("siren"));
         }
-
     }
 
     /**
@@ -71,7 +72,13 @@ public class Rush extends Scheduled {
      * @param agent
      * @return
      */
-    private FSM createMCOM(final String agent) {
+    private FSM createMCOM(final String agent, int iSector) {
+        // timer job keys for both mcoms in a sector
+        final JobKey mcomJob = new JobKey(String.format("mcomJob-%s", agent), uuid.toString());
+        final JobDataMap jdm = new JobDataMap();
+        jdm.put("agent", agent);
+        jdm.put("sector", iSector);
+
         try {
             FSM mcom = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/mcom.xml"), null);
 
@@ -80,11 +87,12 @@ public class Rush extends Scheduled {
             });
             mcom.setStatesAfterTransition("DEFUSED", (state, o) -> {
                 log.info("=====> {}:{}", agent, state);
+                deleteJob(mcomJob);
             });
             mcom.setStatesAfterTransition("FUSED", (state, o) -> {
                 log.info("=====> {}:{}", agent, state);
                 LocalDateTime explosion_time = LocalDateTime.now().plusSeconds(bomb_timer);
-                create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);
+                create_job(mcomJob, explosion_time, MComJob.class, Optional.of(jdm));
             });
             mcom.setStatesAfterTransition("EXPLODED", (state, o) -> {
                 log.info("=====> {}:{}", agent, state);
@@ -103,55 +111,59 @@ public class Rush extends Scheduled {
     @Override
     public void reset() {
         super.reset();
-        active_sector = "";
+        active_sector = -1;
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
         sectors.forEach(fsm -> fsm.ProcessFSM("reset"));
     }
 
-    private FSM createSector(final String sector, final String agent1, final String agent2) {
+    private FSM createSector(final int iSector, final String mcom1, final String mcom2) {
         try {
-            FSM mcom = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/sector.xml"), null);
+            FSM sectorFSM = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/sector.xml"), null);
 
-            mcom.setStatesAfterTransition("PROLOG", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("PROLOG", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
             });
-            mcom.setAction("PROLOG", "start", new FSMAction() {
+            sectorFSM.setAction("PROLOG", "start", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", sector, curState, nextState);
-                    active_sector = sector;
+                    log.info("{}:{} =====> {}", iSector, curState, nextState);
+                    active_sector = iSector;
                     return true;
                 }
             });
-            mcom.setStatesAfterTransition("BOTH_DEFUSED", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("BOTH_DEFUSED", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
             });
-            mcom.setStatesAfterTransition("ONE_MCOM_FUSED", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("ONE_MCOM_FUSED", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
             });
-            mcom.setStatesAfterTransition("BOTH_MCOMS_FUSED", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("BOTH_MCOMS_FUSED", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
             });
-            mcom.setStatesAfterTransition("LAST_MCOM_FUSED", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("LAST_MCOM_FUSED", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
             });
-            mcom.setStatesAfterTransition("LAST_MCOM_DEFUSED", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("LAST_MCOM_DEFUSED", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
             });
-            mcom.setStatesAfterTransition("BOTH_MCOMS_OVERTIME", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("BOTH_MCOMS_OVERTIME", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
             });
-            mcom.setStatesAfterTransition("LAST_MCOM_OVERTIME", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("LAST_MCOM_OVERTIME", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
             });
-            mcom.setStatesAfterTransition("SECTOR_DEFENDED", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("SECTOR_DEFENDED", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
+                game_over();
             });
-            mcom.setStatesAfterTransition("SECTOR_TAKEN", (state, o) -> {
-                log.info("=====> {}:{}", sector, state);
+            sectorFSM.setStatesAfterTransition("SECTOR_TAKEN", (state, o) -> {
+                log.info("=====> Sector{}:{}", iSector, state);
+                active_sector = iSector + 1;
+                if (active_sector > MAX_NUMBER_OF_SECTORS) game_over();
+                else sectors.get(active_sector).ProcessFSM("start");
             });
 
-            return mcom;
+            return sectorFSM;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             log.error(ex);
             return null;
@@ -159,10 +171,10 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    public void react_to(String sender, String source, JSONObject event) throws IllegalStateException {
-        super.react_to(sender, source, event);
+    public void react_to(String sender, String item, JSONObject event) throws IllegalStateException {
+        super.react_to(sender, item, event);
 
-        if (!source.equalsIgnoreCase("btn01")) {
+        if (!item.equalsIgnoreCase("btn01")) {
             log.debug("no btn01 event. discarding.");
             return;
         }
@@ -173,9 +185,10 @@ public class Rush extends Scheduled {
 
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_internal")) {
-            farcryFSM.ProcessFSM(event.getString("message"));
-        } else if (hasRole(sender, "button") && event.getString("button").equalsIgnoreCase("up")) {
-            farcryFSM.ProcessFSM(event.getString("button_pressed").toUpperCase());
+            // this happens when the bomb time is up for a specific agent
+            agentFSMs.get(item).ProcessFSM(event.getString("message"));
+        } else if (hasRole(sender, "mcom") && event.getString("button").equalsIgnoreCase("up")) {
+            agentFSMs.get(item).ProcessFSM(event.getString("button"));
         } else {
             log.debug("message is not for me. ignoring.");
         }

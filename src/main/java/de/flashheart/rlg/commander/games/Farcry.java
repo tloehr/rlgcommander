@@ -211,9 +211,9 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    public void react_to(String sender, String source, JSONObject event) {
+    public void react_to(String sender, String item, JSONObject event) {
         try {
-            super.react_to(sender, source, event);
+            super.react_to(sender, item, event);
         } catch (IllegalStateException e) {
             return;
         }

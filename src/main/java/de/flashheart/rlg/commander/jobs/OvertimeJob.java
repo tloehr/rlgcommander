@@ -13,7 +13,7 @@ public class OvertimeJob extends QuartzJobBean implements InterruptableJob {
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
         try {
             log.debug(jobExecutionContext.getJobDetail().getKey() + " executed");
-            String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("name_of_the_game");
+            String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("uuid");
             Timed timedGame = (Timed) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
             timedGame.overtime();
         } catch (SchedulerException e) {

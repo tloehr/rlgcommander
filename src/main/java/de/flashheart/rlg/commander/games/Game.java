@@ -65,7 +65,7 @@ public abstract class Game {
      * @param event
      * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
      */
-    public void react_to(String sender, String source, JSONObject event) throws IllegalStateException {
+    public void react_to(String sender, String item, JSONObject event) throws IllegalStateException {
         if (!isRunning()) {
             //log.info("received event {} from {} but match is not running. ignoring.", event, sender);
             throw new IllegalStateException(String.format("received event %s from %s but match is not running. ignoring.", event, sender));

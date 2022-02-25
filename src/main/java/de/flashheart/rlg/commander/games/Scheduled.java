@@ -8,6 +8,7 @@ import org.quartz.*;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.quartz.JobBuilder.newJob;
@@ -18,9 +19,9 @@ import static org.quartz.TriggerBuilder.newTrigger;
  */
 @Log4j2
 public abstract class Scheduled extends Game {
-        final Set<JobKey> jobs;
+    final Set<JobKey> jobs;
 
-    public Scheduled( JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
 
         jobs = new HashSet<>();
@@ -44,12 +45,15 @@ public abstract class Scheduled extends Game {
     }
 
     void create_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz) {
+        create_job(jobKey, start_time, clazz, Optional.empty());
+    }
+
+    void create_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
         try {
             deleteJob(jobKey);
-            JobDetail job = newJob(clazz)
-                    .withIdentity(jobKey)
-                    .usingJobData("name_of_the_game", uuid.toString())
-                    .build();
+            JobBuilder jobBuilder = newJob(clazz).withIdentity(jobKey).withIdentity(jobKey)
+                    .usingJobData("uuid", uuid.toString());
+            if (jobDataMap.isPresent()) jobBuilder.usingJobData(jobDataMap.get());
 
             jobs.add(jobKey);
 
@@ -57,7 +61,7 @@ public abstract class Scheduled extends Game {
                     .withIdentity(jobKey.getName() + "-trigger", uuid.toString())
                     .startAt(JavaTimeConverter.toDate(start_time))
                     .build();
-            scheduler.scheduleJob(job, trigger);
+            scheduler.scheduleJob(jobBuilder.build(), trigger);
         } catch (SchedulerException e) {
             log.fatal(e);
         }
@@ -74,7 +78,7 @@ public abstract class Scheduled extends Game {
                 .withIdentity(jobKey.getName() + "-trigger", uuid.toString())
                 .startNow()
                 .withSchedule(ssb)
-                .usingJobData("name_of_the_game", uuid.toString()) // where we find the context later
+                .usingJobData("uuid", uuid.toString()) // where we find the context later
                 .build();
 
 

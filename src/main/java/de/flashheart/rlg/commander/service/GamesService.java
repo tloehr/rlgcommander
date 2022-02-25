@@ -115,9 +115,9 @@ public class GamesService {
         loaded_games[id - 1].get().pause();
     }
 
-    public void react_to(int id, String agentid, String source, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+    public void react_to(int id, String agentid, String item, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().react_to(agentid, source, payload);
+        loaded_games[id - 1].get().react_to(agentid, item, payload);
     }
 
     public JSONArray get_games() {
