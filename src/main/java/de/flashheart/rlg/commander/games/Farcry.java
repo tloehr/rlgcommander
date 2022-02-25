@@ -31,7 +31,7 @@ public class Farcry extends Timed implements HasRespawn {
     private FSM farcryFSM;
     final JobKey myRespawnJobKey;
 
-    public Farcry(String id, JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
         log.debug("\n   ____         _____\n" +
                 "  / __/__ _____/ ___/_____ __\n" +
@@ -40,7 +40,7 @@ public class Farcry extends Timed implements HasRespawn {
                 "                      /___/");
         this.flagcapturetime = game_parameters.getInt("flag_capture_time");
         this.respawn_period = game_parameters.getInt("respawn_period");
-        myRespawnJobKey = new JobKey("respawn", id);
+        myRespawnJobKey = new JobKey("respawn", uuid.toString());
         LocalDateTime ldtFlagTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(flagcapturetime), TimeZone.getTimeZone("UTC").toZoneId());
         LocalDateTime ldtRespawnTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(respawn_period), TimeZone.getTimeZone("UTC").toZoneId());
         LocalDateTime ldtTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(match_length), TimeZone.getTimeZone("UTC").toZoneId());
@@ -183,10 +183,8 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    public void start() throws IllegalStateException  {
-
-            super.start();
-
+    public void start() throws IllegalStateException {
+        super.start();
         // (re)start the respawn timer job.
         deleteJob(myRespawnJobKey);
         if (respawn_period > 0) { // respawn_period == 0 means we should not care about it

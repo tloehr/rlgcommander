@@ -12,25 +12,21 @@
     </STATE>
     <STATE id="DEFUSED">
         <MESSAGE id="btn01" nextState="FUSED"/>
-        <MESSAGE id="out_of_tickets" nextState="DEFENDED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="sector_defended" nextState="EPILOG"/>
     </STATE>
     <STATE id="FUSED">
         <MESSAGE id="btn01" nextState="DEFUSED"/>
-        <MESSAGE id="out_of_tickets" nextState="FUSED_OVERTIME"/>
-        <MESSAGE id="exploded" nextState="DESTROYED"/>
-        <MESSAGE id="reset" nextState="PROLOG"/>
-    </STATE>
-    <STATE id="FUSED_OVERTIME">
-        <MESSAGE id="btn01" nextState="DEFENDED"/>
-        <MESSAGE id="exploded" nextState="DESTROYED"/>
+        <MESSAGE id="bomb_time_up" nextState="EXPLODED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!-- ENDING STATES -->
-    <STATE id="DEFENDED">
+    <STATE id="EXPLODED">
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="sector_taken" nextState="EPILOG"/>
+        <MESSAGE id="sector_defended" nextState="EPILOG"/>
     </STATE>
-    <STATE id="DESTROYED">
+    <STATE id="EPILOG">
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
 </FSM>

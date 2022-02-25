@@ -85,12 +85,10 @@ public abstract class Timed extends Scheduled {
 
 
     @Override
-    public void start() {
-        try {
-            super.start();
-        } catch (IllegalStateException e) {
-            return;
-        }
+    public void start() throws IllegalStateException {
+
+        super.start();
+
         start_time = LocalDateTime.now();
         regular_end_time = start_time.plusSeconds(match_length);
         create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);

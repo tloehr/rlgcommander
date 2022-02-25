@@ -2,15 +2,15 @@
   "comment": "3x2 CPs, Rush",
   "class": "de.flashheart.rlg.commander.games.Rush",
   "agents": {
-    "zone1": [
+    "sector1": [
       "ag01",
       "ag02"
     ],
-    "zone2": [
+    "sector2": [
       "ag03",
       "ag04"
     ],
-    "zone3": [
+    "sector3": [
       "ag05",
       "ag09"
     ],
@@ -40,6 +40,6 @@
     ]
   },
   "respawn_tickets": 75,
-  "flag_capture_time": 15
+  "bomb_timer": 60
 }
 

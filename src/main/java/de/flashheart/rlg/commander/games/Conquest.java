@@ -352,6 +352,12 @@ public class Conquest extends Scheduled {
     }
 
     @Override
+    public void cleanup() {
+        super.cleanup();
+        agentFSMs.clear();
+    }
+
+    @Override
     public JSONObject getStatus() {
         final JSONObject statusObject = super.getStatus()
                 .put("mode", "conquest")
