@@ -38,6 +38,22 @@ public abstract class Game {
         this.mqttOutbound = mqttOutbound;
         agents = HashMultimap.create();
         roles = HashMultimap.create();
+        /*
+            game_parameters (as sent by the rlgrc) have a list of roles with arrays of agents
+            e.g.
+            "agents": {
+             "attacker_spawn": [
+               "ag06"
+             ],
+             "defender_spawn": [
+               "ag07"
+             ]
+            },
+            These json structures are parsed in to two collections, so we can ask about the role
+            of an agent and ask about all agents fulfilling a role.
+            if we deviate from this principle (see RUSH for example) we hava to parse it in the
+            corresponding subclass.
+        */
         JSONObject agts = game_parameters.getJSONObject("agents");
         Set<String> rls = agts.keySet();
         rls.forEach(role ->
@@ -47,9 +63,6 @@ public abstract class Game {
                         }
                 )
         );
-
-        log.debug(agents);
-        log.debug(roles);
 
         game_description = new ArrayList<>();
         pausing_since = Optional.empty();
@@ -153,16 +166,16 @@ public abstract class Game {
      * @return status information to be sent if we are asked for it
      */
     public JSONObject getStatus() {
-        String state = (prolog ? "prolog" : "")+
-                (epilog ? "epilog" : "")+
-                (isPausing() ? "pausing" : "")+
+        String state = (prolog ? "prolog" : "") +
+                (epilog ? "epilog" : "") +
+                (isPausing() ? "pausing" : "") +
                 (isRunning() ? "running" : "");
 
         return new JSONObject()
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
                 .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL)
-                .put("state", state)               ;
+                .put("state", state);
 //         .put("prolog", Boolean.toString(prolog))
 //                .put("epilog", Boolean.toString(epilog))
 //                .put("pausing", Boolean.toString(isPausing()))

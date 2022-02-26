@@ -10,7 +10,6 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 
 @Log4j2
 public class ConquestTicketBleedingJob extends QuartzJobBean implements InterruptableJob {
-//    public static final String name = "TicketBleedingJob";
 
     @Override
     protected void executeInternal(JobExecutionContext jobExecutionContext) {

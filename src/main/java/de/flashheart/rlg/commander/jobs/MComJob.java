@@ -12,19 +12,18 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 
 @Log4j2
 public class MComJob extends QuartzJobBean implements InterruptableJob {
-//    public static final String name = "TicketBleedingJob";
 
     @Override
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
         try {
             String uuid = jobExecutionContext.getMergedJobDataMap().getString("uuid");
             String agent = jobExecutionContext.getMergedJobDataMap().getString("agent");
-            String sector = jobExecutionContext.getMergedJobDataMap().getString("sector");
+            int sector_number = jobExecutionContext.getMergedJobDataMap().getInt("sector");
             Game game = (Game) jobExecutionContext.getScheduler().getContext().get(uuid);
             game.react_to("_internal", agent,
                     new JSONObject()
                             .put("message", "bomb_time_up")
-                            .put("sector", "")
+                            .put("sector", sector_number)
             );
         } catch (SchedulerException e) {
             log.error(e);

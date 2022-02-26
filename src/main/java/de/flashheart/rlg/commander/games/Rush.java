@@ -2,9 +2,9 @@ package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.MComJob;
-import de.flashheart.rlg.commander.jobs.OvertimeJob;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
@@ -14,7 +14,6 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +36,7 @@ public class Rush extends Scheduled {
     private final ArrayList<FSM> sectors;
     int active_sector = -1; // which sector is currently active.
     private final int MAX_NUMBER_OF_SECTORS;
+    private int remaining_tickets_for_this_zone;
 
     public Rush(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
         super(game_parameters, scheduler, mqttOutbound);
@@ -50,15 +50,19 @@ public class Rush extends Scheduled {
         this.respawn_tickets = game_parameters.getInt("respawn_tickets");
         this.agentFSMs = new HashMap<>();
         this.sectors = new ArrayList<>();
-        this.MAX_NUMBER_OF_SECTORS = game_parameters.getJSONArray("sectors").length();
 
-        // read sectors information
-        // prepare FSMs
-        for (int iSector = 0; iSector < MAX_NUMBER_OF_SECTORS; iSector++) {
-            JSONObject sector = game_parameters.getJSONArray("sectors").getJSONObject(iSector);
-            agentFSMs.put(sector.getString("mcom1"), createMCOM(sector.getString("mcom1"), iSector + 1));
-            agentFSMs.put(sector.getString("mcom2"), createMCOM(sector.getString("mcom2"), iSector + 1));
-            sectors.add(createSector(iSector + 1, sector.getString("mcom1"), sector.getString("mcom2")));
+        //dynmamically determine the number of zones by the game_paramters
+        this.MAX_NUMBER_OF_SECTORS = game_parameters.getJSONArray("sectors").length();
+        /*
+            we read the sectors information from the game_parameters and prepare the FSMs.
+            rush uses an own structure under the key "sectors". In addidtion to the generic
+            information listed under "agents", which are parsed in the GAME superclass.
+         */
+        for (int sector_number = 0; sector_number < MAX_NUMBER_OF_SECTORS; sector_number++) {
+            JSONObject sector = game_parameters.getJSONArray("sectors").getJSONObject(sector_number);
+            agentFSMs.put(sector.getString("mcom1"), createMCOM(sector.getString("mcom1"), sector_number));
+            agentFSMs.put(sector.getString("mcom2"), createMCOM(sector.getString("mcom2"), sector_number));
+            sectors.add(createSector(sector_number, sector.getString("mcom1"), sector.getString("mcom2")));
             // create functional group "mcom"
             roles.put("mcom", sector.getString("mcom1"));
             roles.put("mcom", sector.getString("mcom2"));
@@ -72,12 +76,12 @@ public class Rush extends Scheduled {
      * @param agent
      * @return
      */
-    private FSM createMCOM(final String agent, int iSector) {
+    private FSM createMCOM(final String agent, int sector_number) {
         // timer job keys for both mcoms in a sector
         final JobKey mcomJob = new JobKey(String.format("mcomJob-%s", agent), uuid.toString());
         final JobDataMap jdm = new JobDataMap();
         jdm.put("agent", agent);
-        jdm.put("sector", iSector);
+        jdm.put("sector", sector_number);
 
         try {
             FSM mcom = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/mcom.xml"), null);
@@ -116,49 +120,56 @@ public class Rush extends Scheduled {
         sectors.forEach(fsm -> fsm.ProcessFSM("reset"));
     }
 
-    private FSM createSector(final int iSector, final String mcom1, final String mcom2) {
+    /**
+     * @param sector_number
+     * @param mcom1         contains the agent for mcom1
+     * @param mcom2         contains the agent for mcom2
+     * @return
+     */
+    private FSM createSector(final int sector_number, final String mcom1, final String mcom2) {
         try {
             FSM sectorFSM = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/sector.xml"), null);
 
             sectorFSM.setStatesAfterTransition("PROLOG", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
+                remaining_tickets_for_this_zone = respawn_tickets;
             });
             sectorFSM.setAction("PROLOG", "start", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", iSector, curState, nextState);
-                    active_sector = iSector;
+                    log.info("{}:{} =====> {}", sector_number, curState, nextState);
+                    active_sector = sector_number;
                     return true;
                 }
             });
             sectorFSM.setStatesAfterTransition("BOTH_DEFUSED", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
             });
             sectorFSM.setStatesAfterTransition("ONE_MCOM_FUSED", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
             });
             sectorFSM.setStatesAfterTransition("BOTH_MCOMS_FUSED", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
             });
             sectorFSM.setStatesAfterTransition("LAST_MCOM_FUSED", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
             });
             sectorFSM.setStatesAfterTransition("LAST_MCOM_DEFUSED", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
             });
             sectorFSM.setStatesAfterTransition("BOTH_MCOMS_OVERTIME", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
             });
             sectorFSM.setStatesAfterTransition("LAST_MCOM_OVERTIME", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
             });
             sectorFSM.setStatesAfterTransition("SECTOR_DEFENDED", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
+                log.info("=====> Sector{}:{}", sector_number, state);
                 game_over();
             });
             sectorFSM.setStatesAfterTransition("SECTOR_TAKEN", (state, o) -> {
-                log.info("=====> Sector{}:{}", iSector, state);
-                active_sector = iSector + 1;
+                log.info("=====> Sector{}:{}", sector_number, state);
+                active_sector = sector_number + 1;
                 if (active_sector > MAX_NUMBER_OF_SECTORS) game_over();
                 else sectors.get(active_sector).ProcessFSM("start");
             });
@@ -174,26 +185,37 @@ public class Rush extends Scheduled {
     public void react_to(String sender, String item, JSONObject event) throws IllegalStateException {
         super.react_to(sender, item, event);
 
-        if (!item.equalsIgnoreCase("btn01")) {
-            log.debug("no btn01 event. discarding.");
-            return;
-        }
-        if (!event.getString("button").equalsIgnoreCase("up")) {
-            log.debug("only reacting on button UP. discarding.");
-            return;
-        }
-
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_internal")) {
-            // this happens when the bomb time is up for a specific agent
+            // for BOMB_TIME_UP messages - we notify the agent (m-com) here
+            // item contains the agent name
             agentFSMs.get(item).ProcessFSM(event.getString("message"));
         } else if (hasRole(sender, "mcom") && event.getString("button").equalsIgnoreCase("up")) {
-            agentFSMs.get(item).ProcessFSM(event.getString("button"));
+            agentFSMs.get(sender).ProcessFSM(event.getString("button"));
+        } else if (hasRole(sender, "attacker_spawn") && event.getString("button").equalsIgnoreCase("up")) {
+            // red respawn button was pressed
+            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), sender);
+            remaining_tickets_for_this_zone--;
+            broadcast_score();
         } else {
             log.debug("message is not for me. ignoring.");
         }
     }
 
+    private void broadcast_score() {
+        mqttOutbound.send("vars",
+                MQTT.toJSON("tickets", Integer.toString(remaining_tickets_for_this_zone.intValue()),
+                        "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
+                        "red_flags", Integer.toString(cps_held_by_red.size()),
+                        "blue_flags", Integer.toString(cps_held_by_blue.size())),
+                roles.get("spawns"));
+
+        log.debug("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
+        log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+
+        log.debug(" Red: {}", cps_held_by_red);
+        log.debug("Blue: {}", cps_held_by_blue);
+    }
 
     @Override
     public void cleanup() {

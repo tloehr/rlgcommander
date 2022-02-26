@@ -24,6 +24,10 @@
     ],
     "defender_spawn": [
       "ag07"
+    ],
+    "spawns": [
+      "ag06",
+      "ag07"
     ]
   },
   "respawn_tickets": 75,
