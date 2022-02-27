@@ -17,7 +17,7 @@
     </STATE>
     <STATE id="FUSED">
         <MESSAGE id="btn01" nextState="DEFUSED"/>
-        <MESSAGE id="bomb_time_up" nextState="EXPLODED"/>
+        <MESSAGE id="bomb_timer_up" nextState="EXPLODED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!-- ENDING STATES -->

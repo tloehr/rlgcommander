@@ -11,44 +11,47 @@
         <MESSAGE id="start" nextState="BOTH_DEFUSED"/>
     </STATE>
     <!-- In Game States-->
-    <STATE id="BOTH_DEFUSED">
-        <MESSAGE id="mcom_fused" nextState="ONE_MCOM_FUSED"/>
+    <STATE id="BOTH_MCOMS_DEFUSED">
+        <MESSAGE id="fused" nextState="ONE_MCOMS_FUSED"/>
         <MESSAGE id="out_of_tickets" nextState="SECTOR_DEFENDED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
+
     <STATE id="ONE_MCOM_FUSED">
-        <MESSAGE id="mcom_fused" nextState="BOTH_MCOMS_FUSED"/>
-        <MESSAGE id="mcom_defused" nextState="BOTH_DEFUSED"/>
+        <MESSAGE id="fused" nextState="BOTH_MCOMS_FUSED"/>
+        <MESSAGE id="defused" nextState="BOTH_MCOMS_DEFUSED"/>
         <MESSAGE id="out_of_tickets" nextState="SECTOR_DEFENDED"/>
         <MESSAGE id="exploded" nextState="LAST_MCOM_DEFUSED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="BOTH_MCOMS_FUSED">
-        <MESSAGE id="mcom_defused" nextState="ONE_MCOM_FUSED"/>
+        <MESSAGE id="defused" nextState="ONE_MCOM_FUSED"/>
         <MESSAGE id="exploded" nextState="LAST_MCOM_FUSED"/>
-        <MESSAGE id="out_of_tickets" nextState="BOTH_MCOMS_OVERTIME"/>
+        <MESSAGE id="out_of_tickets" nextState="BOTH_MCOMS_FUSED_OVERTIME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
+
     <STATE id="LAST_MCOM_DEFUSED">
-        <MESSAGE id="mcom_fused" nextState="LAST_MCOM_FUSED"/>
+        <MESSAGE id="fused" nextState="LAST_MCOM_FUSED"/>
         <MESSAGE id="out_of_tickets" nextState="SECTOR_DEFENDED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
+
     <STATE id="LAST_MCOM_FUSED">
-        <MESSAGE id="mcom_defused" nextState="LAST_MCOM_DEFUSED"/>
+        <MESSAGE id="defused" nextState="LAST_MCOM_DEFUSED"/>
         <MESSAGE id="exploded" nextState="SECTOR_TAKEN"/>
-        <MESSAGE id="out_of_tickets" nextState="LAST_MCOM_OVERTIME"/>
+        <MESSAGE id="out_of_tickets" nextState="LAST_MCOM_FUSED_OVERTIME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!-- Overtime-->
-    <STATE id="BOTH_MCOMS_OVERTIME">
-        <MESSAGE id="mcom_defused" nextState="LAST_MCOM_OVERTIME"/>
-        <MESSAGE id="exploded" nextState="LAST_MCOM_OVERTIME"/>
+    <!-- GREEN -->
+    <STATE id="BOTH_MCOMS_FUSED_OVERTIME">
+        <MESSAGE id="defused" nextState="SECTOR_DEFENDED"/>
+        <MESSAGE id="exploded" nextState="LAST_MCOM_FUSED_OVERTIME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="LAST_MCOM_OVERTIME">
-        <MESSAGE id="mcom_defused" nextState="SECTOR_DEFENDED"/>
-        <MESSAGE id="mcom_fused" nextState="BOTH_MCOMS_OVERTIME"/>
+    <STATE id="LAST_MCOM_FUSED_OVERTIME">
+        <MESSAGE id="defused" nextState="SECTOR_DEFENDED"/>
         <MESSAGE id="exploded" nextState="SECTOR_TAKEN"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
