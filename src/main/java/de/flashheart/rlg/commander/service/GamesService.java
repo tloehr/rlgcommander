@@ -38,19 +38,19 @@ public class GamesService {
         this.loaded_games = new Optional[]{Optional.empty()};
     }
 
-    /**
-     * start behavior for all agents when the server starts
-     */
-    @EventListener(ApplicationReadyEvent.class)
-    public void welcome() {
-        mqttOutbound.send("all/init", new JSONObject());
-        mqttOutbound.send("all/signals", MQTT.toJSON("led_wht", "∞:on,500;off,500", "led_ylw", "∞:on,500;off,500", "led_blu", "∞:on,500;off,500",
-                "led_red", "∞:off,500;on,500", "led_grn", "∞:off,500;on,500"));
-        mqttOutbound.send("all/paged", MQTT.page("page0", "Waiting for a game",
-                "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
-                "agnt ${agversion}.${agbuild}",
-                "RLGS2 @flashheart.de"));
-    }
+//    /**
+//     * start behavior for all agents when the server starts
+//     */
+//    @EventListener(ApplicationReadyEvent.class)
+//    public void welcome() {
+//        mqttOutbound.send("all/init", new JSONObject());
+//        mqttOutbound.send("all/signals", MQTT.toJSON("led_wht", "infty:on,500;off,500", "led_ylw", "infty:on,500;off,500", "led_blu", "infty:on,500;off,500",
+//                "led_red", "infty:off,500;on,500", "led_grn", "infty:off,500;on,500"));
+//        mqttOutbound.send("all/paged", MQTT.page("page0", "Waiting for a game",
+//                "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
+//                "agnt ${agversion}.${agbuild}",
+//                "RLGS2 @flashheart.de"));
+//    }
 
     public Game load_game(int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
@@ -60,7 +60,7 @@ public class GamesService {
                 "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
                 "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
-        log.debug("\n"+ Tools.fignums[id]);
+        log.debug("\n" + Tools.fignums[id]);
         JSONObject game_description = new JSONObject(json);
         loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
@@ -76,11 +76,11 @@ public class GamesService {
                 "| | | | \\| | |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
                 "| |_| | .` | |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
                 " \\___/|_|\\_|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
-        log.debug("\n"+ Tools.fignums[id]);
+        log.debug("\n" + Tools.fignums[id]);
         agentsService.assign_gameid_to_agents(-1, loaded_games[id - 1].get().getAgents().keySet());
         loaded_games[id - 1].get().cleanup();
         loaded_games[id - 1] = Optional.empty();
-        welcome();
+
     }
 
 
@@ -102,7 +102,13 @@ public class GamesService {
 
     public void reset_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().reset();
+        Game game = loaded_games[id - 1].get();
+        game.reset();
+        game.getAgents().keySet().forEach(agent -> {
+            mqttOutbound.send("init", agent);
+            mqttOutbound.send("paged", MQTT.page("page0", game.getGame_description()), agent);
+        });
+
     }
 
     public void resume_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -123,10 +129,10 @@ public class GamesService {
     public JSONArray get_games() {
         return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game.get().getStatus()).collect(Collectors.toList()));
     }
-//
-//    public void shutdown_agents() {
-//        mqttOutbound.send("shutdown", "all");
-//    }
+
+    public void shutdown_agents() {
+        mqttOutbound.send("shutdown", "all");
+    }
 
     private void check_id(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)

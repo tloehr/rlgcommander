@@ -192,7 +192,10 @@ public abstract class Game {
         game_description.clear();
         game_description.addAll(Arrays.asList(lines));
         log.debug(game_description);
+    }
 
+    public ArrayList<String> getGame_description() {
+        return game_description;
     }
 
     public void reset() {
@@ -202,8 +205,6 @@ public abstract class Game {
                 "|_|_\\___|___/___| |_|\n");
         prolog = true;
         epilog = false;
-        mqttOutbound.send("all/init", new JSONObject());
-        mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
     }
 
     public boolean hasRole(String agent, String role) {

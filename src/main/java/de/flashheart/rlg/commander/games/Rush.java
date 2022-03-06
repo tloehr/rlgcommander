@@ -203,18 +203,18 @@ public class Rush extends Scheduled {
     }
 
     private void broadcast_score() {
-        mqttOutbound.send("vars",
-                MQTT.toJSON("tickets", Integer.toString(remaining_tickets_for_this_zone.intValue()),
-                        "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
-                        "red_flags", Integer.toString(cps_held_by_red.size()),
-                        "blue_flags", Integer.toString(cps_held_by_blue.size())),
-                roles.get("spawns"));
-
-        log.debug("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
-        log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
-
-        log.debug(" Red: {}", cps_held_by_red);
-        log.debug("Blue: {}", cps_held_by_blue);
+//        mqttOutbound.send("vars",
+//                MQTT.toJSON("tickets", Integer.toString(remaining_tickets_for_this_zone.intValue()),
+//                        "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
+//                        "red_flags", Integer.toString(cps_held_by_red.size()),
+//                        "blue_flags", Integer.toString(cps_held_by_blue.size())),
+//                roles.get("spawns"));
+//
+//        log.debug("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
+//        log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+//
+//        log.debug(" Red: {}", cps_held_by_red);
+//        log.debug("Blue: {}", cps_held_by_blue);
     }
 
     @Override

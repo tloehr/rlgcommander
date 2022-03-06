@@ -102,6 +102,12 @@ public class RLGRestController {
         }
     }
 
+    @PostMapping("/system/shutdown")
+    public ResponseEntity<?> system_shutdown() {
+        gamesService.shutdown_agents();
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
+    }
+
     @GetMapping("/game/list_games")
     public ResponseEntity<?> list_games() {
         return new ResponseEntity(gamesService.get_games().toString(4), HttpStatus.OK);

@@ -259,7 +259,7 @@ public class Conquest extends Scheduled {
         cps_held_by_blue.clear();
         cps_held_by_red.clear();
 
-        mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
+        mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
         // add a screen in the spawns for the state of all CPs
 //        mqttOutbound.sendCMDto("spawns", MQTT.add_pages("cpstates")); // the agent ignores duplicate adds.
@@ -278,6 +278,7 @@ public class Conquest extends Scheduled {
                         "Blue: ${blue_tickets} Tickets",
                         "${blue_flags} flag(s)"),
                 roles.get("spawns"));
+
 
         // setup and start bleeding job
         long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
@@ -323,7 +324,7 @@ public class Conquest extends Scheduled {
                 MQTT.page("page0",
                         "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome),
                 roles.get("spawns"));
-        mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
+        mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
     }
 
