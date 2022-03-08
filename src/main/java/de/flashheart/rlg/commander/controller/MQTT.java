@@ -77,11 +77,11 @@ public class MQTT {
 //                .put("sir3", "off");
 //    }
 //
-//    public static JSONObject merge(JSONObject... jsons) {
-//        HashMap<String, Object> map = new HashMap<>();
-//        Arrays.stream(jsons).forEach(json -> map.putAll(json.toMap()));
-//        return new JSONObject(map);
-//    }
+    public static JSONObject merge(JSONObject... jsons) {
+        HashMap<String, Object> map = new HashMap<>();
+        Arrays.stream(jsons).forEach(json -> map.putAll(json.toMap()));
+        return new JSONObject(map);
+    }
 
 //    public static JSONObject VARS(String... vars) {
 //           return toJSON("vars", vars);

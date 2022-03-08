@@ -1,6 +1,5 @@
 package de.flashheart.rlg.commander.controller;
 
-import de.flashheart.rlg.commander.service.AgentsService;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -21,7 +20,6 @@ import org.springframework.messaging.MessageHandler;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.UUID;
 
 @Configuration
 @Log4j2
@@ -41,13 +39,11 @@ public class MQTTOutbound {
     public int max_inflight;
 
     ApplicationContext applicationContext;
-    AgentsService agentsService;
     MyGateway gateway;
 
     @Autowired
-    public MQTTOutbound(ApplicationContext applicationContext, AgentsService agentsService) {
+    public MQTTOutbound(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
-        this.agentsService = agentsService;
         gateway = applicationContext.getBean(MyGateway.class);
     }
 
@@ -66,7 +62,7 @@ public class MQTTOutbound {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {  // for outbound only
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(String.format("%s-%s-outbound", clientid, UUID.randomUUID()), mqttClientFactory());
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(String.format("%s-outbound", clientid), mqttClientFactory());
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(prefix);
         messageHandler.setDefaultQos(qos);

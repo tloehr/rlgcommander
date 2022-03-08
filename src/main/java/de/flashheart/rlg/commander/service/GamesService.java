@@ -9,9 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
@@ -77,8 +75,9 @@ public class GamesService {
                 "| |_| | .` | |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
                 " \\___/|_|\\_|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         log.debug("\n" + Tools.fignums[id]);
-        agentsService.assign_gameid_to_agents(-1, loaded_games[id - 1].get().getAgents().keySet());
-        loaded_games[id - 1].get().cleanup();
+        Game game_to_unload = loaded_games[id - 1].get();
+        agentsService.assign_gameid_to_agents(-1, game_to_unload.getAgents().keySet()); // remove gameid assignment
+        game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
 
     }

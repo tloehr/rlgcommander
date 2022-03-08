@@ -59,7 +59,7 @@ public class MQTTInbound {
 
     @Bean
     public MessageProducer inbound() {
-        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(mqtturl, String.format("%s-%s-inbound", clientid, UUID.randomUUID()), inbound_topic);
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(mqtturl, String.format("%s-inbound", clientid), inbound_topic);
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
         adapter.setQos(qos);
@@ -83,7 +83,7 @@ public class MQTTInbound {
             if (source.equalsIgnoreCase("status")) {
                 try {
                     JSONObject status = new JSONObject(message.getPayload().toString());
-                    agentsService.store_status_from_agent(agentid, status);
+                    agentsService.agent_reported_status(agentid, status);
                 } catch (JSONException e) {
                     //agentsService.remove(agentid);
                 }

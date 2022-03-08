@@ -20,6 +20,7 @@
         <json.version>20211205</json.version>
         <collections4.version>4.4</collections4.version>
         <guava.version>31.0.1-jre</guava.version>
+        <commons.text.version>1.9</commons.text.version>
         <dynamicfsm.version>0.01</dynamicfsm.version>
     </properties>
     <dependencies>
@@ -57,6 +58,13 @@
             <artifactId>commons-collections4</artifactId>
             <version>${collections4.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-text -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>${commons.text.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
