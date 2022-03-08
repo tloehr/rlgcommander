@@ -102,16 +102,6 @@ public class MQTTOutbound {
         });
     }
 
-//    public void clear(Collection<String> cmds, Collection<String> agents) {
-//        if (agents.isEmpty()) return;
-//        agents.forEach(agent -> {
-//            cmds.forEach(cmd -> {
-//                gateway.sendToMqtt("{}", prefix + agent + "/" + cmd);
-//            });
-//
-//        });
-//    }
-
     public void send(String topic, JSONObject payload) {
         gateway.sendToMqtt(payload.toString(), prefix + topic);
     }

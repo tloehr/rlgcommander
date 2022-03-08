@@ -21,7 +21,7 @@ public abstract class Game {
     //final Multimap<String, Agent> function_to_agents;
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
-    private final ArrayList<String> game_description;
+    protected final ArrayList<String> game_description;
     private final JSONObject game_parameters;
     Optional<LocalDateTime> pausing_since;
     private boolean prolog, epilog;
@@ -192,10 +192,6 @@ public abstract class Game {
         game_description.clear();
         game_description.addAll(Arrays.asList(lines));
         log.debug(game_description);
-    }
-
-    public ArrayList<String> getGame_description() {
-        return game_description;
     }
 
     public void reset() {

@@ -173,61 +173,38 @@ public class Conquest extends Scheduled {
     private FSM createFSM(String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest.xml"), null);
-            /**
-             * PROLOG => NEUTRAL
-             */
-            fsm.setAction("PROLOG", "START", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent, curState, nextState);
-                    agent_to_neutral(agent);
-                    broadcast_score();
-                    return true;
-                }
+            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
+                log.debug("FSM State: {}:{}", agent, state);
+                cp_to_neutral(agent);
             });
-
-            // switching back to NEUTRAL in case of misuse
-            fsm.setAction("TO_NEUTRAL", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent, curState, nextState);
-                    agent_to_neutral(agent);
-                    return true;
-                }
+            fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
+                log.debug("FSM State: {}:{}", agent, state);
+                cp_to_neutral(agent);
+                broadcast_score();
             });
-
-            /**
-             * NEUTRAL => BLUE
-             */
             fsm.setAction("NEUTRAL", "BTN01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent, curState, nextState);
-                    agent_to_blue(agent);
+                    cp_to_blue(agent);
                     broadcast_score();
                     return true;
                 }
             });
-            /**
-             * BLUE => RED
-             */
             fsm.setAction("BLUE", "BTN01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent, curState, nextState);
-                    agent_to_red(agent);
+                    cp_to_red(agent);
                     broadcast_score();
                     return true;
                 }
             });
-            /**
-             * RED => BLUE
-             */
             fsm.setAction("RED", "BTN01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent, curState, nextState);
-                    agent_to_blue(agent);
+                    cp_to_blue(agent);
                     broadcast_score();
                     return true;
                 }
@@ -240,15 +217,15 @@ public class Conquest extends Scheduled {
         }
     }
 
-    private void agent_to_neutral(String agent) {
+    private void cp_to_neutral(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "normal"), agent);
     }
 
-    private void agent_to_blue(String agent) {
+    private void cp_to_blue(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
     }
 
-    private void agent_to_red(String agent) {
+    private void cp_to_red(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
     }
 
@@ -266,9 +243,6 @@ public class Conquest extends Scheduled {
 
         mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
-        // add a screen in the spawns for the state of all CPs
-//        mqttOutbound.sendCMDto("spawns", MQTT.add_pages("cpstates")); // the agent ignores duplicate adds.
-//        mqttOutbound.sendCMDto("spawns", MQTT.page_content("cpstates", "RED CPs", "", "BLUE CPs", ""));
 
         mqttOutbound.send("vars",
                 MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
@@ -341,13 +315,13 @@ public class Conquest extends Scheduled {
         deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
         log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
-        String winner = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", winner, "normal"), roles.get("capture_points"));
+        //String winner = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "led_red" : "led_blu";
+        //mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", winner, "normal"), roles.get("capture_points"));
         mqttOutbound.send("paged",
                 MQTT.page("page0",
                         "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome),
                 roles.get("spawns"));
-        mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
+        mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
     }
 
@@ -395,12 +369,11 @@ public class Conquest extends Scheduled {
     @Override
     public void reset() {
         super.reset();
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "slow"), roles.get("capture_points"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "slow"), roles.get("red_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "slow"), roles.get("blue_spawn"));
-
-        mqttOutbound.send("delpage", new JSONObject().put("page_handles", new JSONArray().put("redflags").put("blueflags")), agents.keySet());
-
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
+        mqttOutbound.send("delpage", MQTT.pages("redflags","blueflags"), agents.keySet());
+        mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("RESET"));
     }
 

@@ -61,7 +61,7 @@ public class MQTT {
         return template;
     }
 
-//    public static JSONObject LED_ALL_OFF() {
+    //    public static JSONObject LED_ALL_OFF() {
 //        return new JSONObject()
 //                .put("led_wht", "off")
 //                .put("led_red", "off")
@@ -81,6 +81,10 @@ public class MQTT {
         HashMap<String, Object> map = new HashMap<>();
         Arrays.stream(jsons).forEach(json -> map.putAll(json.toMap()));
         return new JSONObject(map);
+    }
+
+    public static JSONObject pages(String... pages) {
+        return new JSONObject().put("page_handles", new JSONArray(pages));
     }
 
 //    public static JSONObject VARS(String... vars) {

@@ -1,6 +1,5 @@
 package de.flashheart.rlg.commander.service;
 
-import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.misc.Tools;
@@ -36,20 +35,6 @@ public class GamesService {
         this.loaded_games = new Optional[]{Optional.empty()};
     }
 
-//    /**
-//     * start behavior for all agents when the server starts
-//     */
-//    @EventListener(ApplicationReadyEvent.class)
-//    public void welcome() {
-//        mqttOutbound.send("all/init", new JSONObject());
-//        mqttOutbound.send("all/signals", MQTT.toJSON("led_wht", "infty:on,500;off,500", "led_ylw", "infty:on,500;off,500", "led_blu", "infty:on,500;off,500",
-//                "led_red", "infty:off,500;on,500", "led_grn", "infty:off,500;on,500"));
-//        mqttOutbound.send("all/paged", MQTT.page("page0", "Waiting for a game",
-//                "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
-//                "agnt ${agversion}.${agbuild}",
-//                "RLGS2 @flashheart.de"));
-//    }
-
     public Game load_game(int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
@@ -79,7 +64,6 @@ public class GamesService {
         agentsService.assign_gameid_to_agents(-1, game_to_unload.getAgents().keySet()); // remove gameid assignment
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
-
     }
 
 
@@ -103,11 +87,6 @@ public class GamesService {
         check_id(id);
         Game game = loaded_games[id - 1].get();
         game.reset();
-        game.getAgents().keySet().forEach(agent -> {
-            mqttOutbound.send("init", agent);
-            mqttOutbound.send("paged", MQTT.page("page0", game.getGame_description()), agent);
-        });
-
     }
 
     public void resume_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
