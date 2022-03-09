@@ -42,8 +42,6 @@ public class Conquest extends Scheduled {
     private JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
 
-    //todo: siren should empty leds when loading the game, reset should go to prolog. wrong blinking and Screens. after game - flags should keep their colors not switching to winner
-
     /**
      * This class creates a conquest style game as known from Battlefield.
      * <p>
@@ -131,9 +129,9 @@ public class Conquest extends Scheduled {
         ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
         agentFSMs = new HashMap<>();
         setGameDescription(game_parameters.getString("comment"),
-                String.format("Respawn Tickets: %s", respawn_tickets.intValue()),
+                String.format("Tickets: %s", respawn_tickets.intValue()),
                 String.format("Bleed starts @%sCPs", not_bleeding_before_cps),
-                String.format("Time≈%s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
+                String.format("Time: %s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         roles.get("capture_points").forEach(agent -> agentFSMs.put(agent, createFSM(agent)));
         reset();
@@ -269,7 +267,7 @@ public class Conquest extends Scheduled {
                 roles.get("spawns"));
 
         mqttOutbound.send("paged",
-                MQTT.page("blue",
+                MQTT.page("blueflags",
                         ">> Blue Flags <<",
                         "${blue_l1}",
                         "${blue_l2}",
@@ -372,7 +370,7 @@ public class Conquest extends Scheduled {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "slow"), roles.get("red_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "slow"), roles.get("blue_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
-        mqttOutbound.send("delpage", MQTT.pages("redflags","blueflags"), agents.keySet());
+        mqttOutbound.send("delpage", MQTT.pages("redflags","blueflags"), roles.get("spawns"));
         mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("RESET"));
     }
@@ -395,7 +393,9 @@ public class Conquest extends Scheduled {
                 .put("remaining_blue_tickets", remaining_blue_tickets)
                 .put("remaining_red_tickets", remaining_red_tickets)
                 .put("cps_held_by_blue", cps_held_by_blue)
-                .put("cps_held_by_red", cps_held_by_red);
+                .put("cps_held_by_red", cps_held_by_red)
+                .put("red_respawns", red_respawns)
+                .put("blue_respawns", blue_respawns);
 
         final JSONObject states = new JSONObject();
         agentFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));

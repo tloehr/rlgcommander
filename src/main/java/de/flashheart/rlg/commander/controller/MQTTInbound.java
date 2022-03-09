@@ -23,7 +23,6 @@ import org.springframework.messaging.MessageHandler;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -77,10 +76,9 @@ public class MQTTInbound {
             String source = tokens.get(tokens.size() - 1);
             String payload = message.getPayload().toString();
 
-            log.debug(message.toString());
-            log.debug(message.getPayload().toString());
-
             if (source.equalsIgnoreCase("status")) {
+                log.trace(message.toString());
+                log.trace(message.getPayload().toString());
                 try {
                     JSONObject status = new JSONObject(message.getPayload().toString());
                     agentsService.agent_reported_status(agentid, status);
@@ -88,6 +86,8 @@ public class MQTTInbound {
                     //agentsService.remove(agentid);
                 }
             } else {
+                log.debug(message.toString());
+                log.debug(message.getPayload().toString());
                 int gameid = agentsService.getLive_agents().getOrDefault(agentid, new Agent()).getGameid();
                 if (gameid > 0) {
                     try {
