@@ -8,7 +8,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
@@ -25,6 +27,11 @@ public class GamesService {
     BuildProperties buildProperties;
     private final Optional<Game>[] loaded_games; // exactly n games are possible
     public static final int MAX_NUMBER_OF_GAMES = 1;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void welcome() {
+        log.info("RLG-Commander {}.{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
+    }
 
     @Autowired
     public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties) {

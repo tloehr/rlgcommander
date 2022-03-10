@@ -250,28 +250,30 @@ public class Conquest extends Scheduled {
                         "red_l1", "", "red_l2", "", "red_l3", "", "blue_l1", "", "blue_l2", "", "blue_l3", ""),
                 roles.get("spawns"));
 
+//        mqttOutbound.send("paged",
+//                MQTT.page("page0",
+//                        "Red: ${red_tickets} Tickets",
+//                        "${red_flags} flag(s)",
+//                        "Blue: ${blue_tickets} Tickets",
+//                        "${blue_flags} flag(s)"),
+//                roles.get("spawns"));
+
+        // Red->2000:2000<-Blue
+        // Red->${red_tickets}:${blue_tickets}<-Blue
         mqttOutbound.send("paged",
                 MQTT.page("page0",
-                        "Red: ${red_tickets} Tickets",
-                        "${red_flags} flag(s)",
-                        "Blue: ${blue_tickets} Tickets",
-                        "${blue_flags} flag(s)"),
-                roles.get("spawns"));
-
-        mqttOutbound.send("paged",
-                MQTT.page("redflags",
-                        ">> RED Flags <<",
+                        "  >> RED Flags <<  ",
                         "${red_l1}",
                         "${red_l2}",
-                        "${red_l3}"),
+                        "Red->${red_tickets}:${blue_tickets}<-Blue"),
                 roles.get("spawns"));
 
         mqttOutbound.send("paged",
                 MQTT.page("blueflags",
-                        ">> Blue Flags <<",
+                        "  >> Blue Flags <<  ",
                         "${blue_l1}",
                         "${blue_l2}",
-                        "${blue_l3}"),
+                        "Red->${red_tickets}:${blue_tickets}<-Blue"),
                 roles.get("spawns"));
 
 
@@ -332,12 +334,12 @@ public class Conquest extends Scheduled {
         String[] red_flags = get_flag_list(20, cps_held_by_red);
         vars.put("red_l1", red_flags[0]);
         vars.put("red_l2", red_flags[1]);
-        vars.put("red_l3", red_flags[2]);
+        //vars.put("red_l3", red_flags[2]);
 
         String[] blue_flags = get_flag_list(20, cps_held_by_blue);
         vars.put("blue_l1", blue_flags[0]);
         vars.put("blue_l2", blue_flags[1]);
-        vars.put("blue_l3", blue_flags[2]);
+        //vars.put("blue_l3", blue_flags[2]);
 
         mqttOutbound.send("vars", vars, roles.get("spawns"));
 
@@ -370,7 +372,7 @@ public class Conquest extends Scheduled {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "slow"), roles.get("red_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "slow"), roles.get("blue_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
-        mqttOutbound.send("delpage", MQTT.pages("redflags","blueflags"), roles.get("spawns"));
+        mqttOutbound.send("delpage", MQTT.pages("blueflags"), roles.get("spawns"));
         mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("RESET"));
     }
