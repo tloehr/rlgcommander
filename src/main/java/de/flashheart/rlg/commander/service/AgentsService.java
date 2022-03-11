@@ -33,14 +33,15 @@ public class AgentsService {
             Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
             my_agent.setGameid(gameid);
             live_agents.put(agentid, my_agent);
-            if (my_agent.getGameid() == -1) welcome(agentid);
+            welcome(my_agent);
         });
     }
 
     public void agent_reported_status(String agentid, JSONObject status) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
         my_agent.setLast_state(status);
-        if (!live_agents.containsKey(agentid)) welcome(agentid); // new agenta receive a default signal setting
+        if (!live_agents.containsKey(agentid) || status.getInt("netmonitor_cycle") == 0)
+            welcome(my_agent); // new agenta receive a default signal setting, so do reconnecting agents
         live_agents.put(agentid, my_agent);
     }
 
@@ -51,6 +52,7 @@ public class AgentsService {
 
     /**
      * return a list of all agents that are not DUMMIES and have reported their status at least once
+     *
      * @return
      */
     public JSONObject get_all_agent_states() {
@@ -59,15 +61,16 @@ public class AgentsService {
         return jsonObject;
     }
 
-    public void welcome(String agentid) {
-        log.info("Sending welcome message to newly attached agent {}", agentid);
-        mqttOutbound.send("init", agentid);
-        mqttOutbound.send("signals", MQTT.toJSON("led_wht", "infty:on,500;off,500", "led_ylw", "infty:on,500;off,500", "led_blu", "infty:on,500;off,500",
-                "led_red", "infty:off,500;on,500", "led_grn", "infty:off,500;on,500"), agentid);
-        mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + agentid,
+    public void welcome(Agent my_agent) {
+        if (my_agent.getGameid() > -1) return; // only when not in game
+        log.info("Sending welcome message to newly attached agent {}", my_agent.getId());
+        //mqttOutbound.send("init", agentid);
+        mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off", "led_wht", "infty:on,500;off,500", "led_ylw", "infty:on,500;off,500", "led_blu", "infty:on,500;off,500",
+                "led_red", "infty:off,500;on,500", "led_grn", "infty:off,500;on,500"), my_agent.getId());
+        mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
                 "cmdr " + buildProperties.getVersion() + "." + buildProperties.get("buildNumber"),
                 "agnt ${agversion}.${agbuild}",
-                "2me@flashheart.de"), agentid);
+                "2me@flashheart.de"), my_agent.getId());
     }
 
 }

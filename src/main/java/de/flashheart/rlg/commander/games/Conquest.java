@@ -7,7 +7,6 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.text.WordUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -245,37 +244,25 @@ public class Conquest extends Scheduled {
         mqttOutbound.send("vars",
                 MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
                         "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
-                        "red_flags", Integer.toString(cps_held_by_red.size()),
-                        "blue_flags", Integer.toString(cps_held_by_blue.size()),
-                        "red_l1", "", "red_l2", "", "red_l3", "", "blue_l1", "", "blue_l2", "", "blue_l3", ""),
-                roles.get("spawns"));
-
-//        mqttOutbound.send("paged",
-//                MQTT.page("page0",
-//                        "Red: ${red_tickets} Tickets",
-//                        "${red_flags} flag(s)",
-//                        "Blue: ${blue_tickets} Tickets",
-//                        "${blue_flags} flag(s)"),
-//                roles.get("spawns"));
-
-        // Red->2000:2000<-Blue
-        // Red->${red_tickets}:${blue_tickets}<-Blue
-        mqttOutbound.send("paged",
-                MQTT.page("page0",
-                        "  >> RED Flags <<  ",
-                        "${red_l1}",
-                        "${red_l2}",
-                        "Red->${red_tickets}:${blue_tickets}<-Blue"),
+//                        "red_flags", Integer.toString(cps_held_by_red.size()),
+//                        "blue_flags", Integer.toString(cps_held_by_blue.size()),
+                        "red_l1", "", "red_l2", "", "blue_l1", "", "blue_l2", ""),
                 roles.get("spawns"));
 
         mqttOutbound.send("paged",
-                MQTT.page("blueflags",
-                        "  >> Blue Flags <<  ",
-                        "${blue_l1}",
-                        "${blue_l2}",
-                        "Red->${red_tickets}:${blue_tickets}<-Blue"),
+                MQTT.merge(
+                        MQTT.page("page0",
+                                 "   >>> RED   <<<   ",
+                                "${red_l1}",
+                                "${red_l2}",
+                                "Red->${red_tickets}:${blue_tickets}<-Blue"),
+                        MQTT.page("page1",
+                                "   >>> BLUE  <<<   ",
+                                "${blue_l1}",
+                                "${blue_l2}",
+                                "Red->${red_tickets}:${blue_tickets}<-Blue")
+                ),
                 roles.get("spawns"));
-
 
         // setup and start bleeding job
         long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
@@ -327,9 +314,9 @@ public class Conquest extends Scheduled {
 
     private void broadcast_score() {
         JSONObject vars = MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
-                "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
-                "red_flags", Integer.toString(cps_held_by_red.size()),
-                "blue_flags", Integer.toString(cps_held_by_blue.size()));
+                "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()));
+//                "red_flags", Integer.toString(cps_held_by_red.size()),
+//                "blue_flags", Integer.toString(cps_held_by_blue.size()));
 
         String[] red_flags = get_flag_list(20, cps_held_by_red);
         vars.put("red_l1", red_flags[0]);
@@ -345,9 +332,9 @@ public class Conquest extends Scheduled {
 
         log.debug("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
-
-        log.debug(" Red: {}", cps_held_by_red);
-        log.debug("Blue: {}", cps_held_by_blue);
+//
+//        log.debug(" Red: {}", cps_held_by_red);
+//        log.debug("Blue: {}", cps_held_by_blue);
     }
 
     /**
@@ -372,7 +359,7 @@ public class Conquest extends Scheduled {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "slow"), roles.get("red_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "slow"), roles.get("blue_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
-        mqttOutbound.send("delpage", MQTT.pages("blueflags"), roles.get("spawns"));
+//        mqttOutbound.send("delpage", MQTT.pages("blueflags"), roles.get("spawns"));
         mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("RESET"));
     }
