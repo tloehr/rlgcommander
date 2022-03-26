@@ -102,11 +102,11 @@ public class RLGRestController {
         }
     }
 
-    @PostMapping("/system/shutdown")
-    public ResponseEntity<?> system_shutdown() {
-        gamesService.shutdown_agents();
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
-    }
+//    @PostMapping("/system/shutdown")
+//    public ResponseEntity<?> system_shutdown() {
+//        gamesService.shutdown_agents();
+//        return new ResponseEntity<>(HttpStatus.ACCEPTED);
+//    }
 
     @GetMapping("/game/list_games")
     public ResponseEntity<?> list_games() {
@@ -123,4 +123,10 @@ public class RLGRestController {
         return new ResponseEntity<>(agentsService.get_all_agent_states().toString(), HttpStatus.OK);
     }
 
+    @PostMapping("/system/test_agent")
+    public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String agentid, @RequestParam(name = "deviceid") String deviceid) {
+        agentsService.test_agent(agentid, deviceid);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+    
 }

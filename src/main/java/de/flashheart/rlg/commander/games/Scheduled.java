@@ -5,7 +5,10 @@ import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.*;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Optional;
@@ -21,7 +24,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public abstract class Scheduled extends Game {
     final Set<JobKey> jobs;
 
-    public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
 
         jobs = new HashSet<>();
@@ -90,7 +93,7 @@ public abstract class Scheduled extends Game {
     }
 
     @Override
-    public void cleanup() {
+    public void on_cleanup() {
         jobs.forEach(job -> {
             try {
                 scheduler.interrupt(job);

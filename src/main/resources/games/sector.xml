@@ -44,7 +44,6 @@
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!-- Overtime-->
-    <!-- GREEN -->
     <STATE id="BOTH_MCOMS_FUSED_OVERTIME">
         <MESSAGE id="defused" nextState="SECTOR_DEFENDED"/>
         <MESSAGE id="exploded" nextState="LAST_MCOM_FUSED_OVERTIME"/>

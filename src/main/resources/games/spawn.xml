@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  FSM for a Spawn Agent.
+  With "teams to report in as ready" function.
+
+  https://github.com/Ankzz/easyfsm
+-->
+
+<FSM>
+    <STATE id="PROLOG" type="ID">
+        <MESSAGE id="btn01" nextState="TEAM_PREPARING"/>
+    </STATE>
+    <STATE id="TEAM_PREPARING">
+        <MESSAGE id="btn01" nextState="WAITING_FOR_TEAM"/>
+        <MESSAGE id="prepare_time_over" nextState="TEAM_READY"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="TEAM_READY">
+        <MESSAGE id="start" nextState="GAME_RUNNING"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="GAME_RUNNING">
+        <MESSAGE id="game_over" nextState="EPILOG"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <!-- ENDING STATES -->
+    <STATE id="EPILOG">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+</FSM>
+

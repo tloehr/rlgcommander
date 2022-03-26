@@ -70,7 +70,7 @@ public class Conquest extends Scheduled {
      * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore cannot use
      *                        DI.
      */
-    public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
 
         log.debug("   ______                                  __\n" +
@@ -133,15 +133,13 @@ public class Conquest extends Scheduled {
                 String.format("Time: %s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         roles.get("capture_points").forEach(agent -> agentFSMs.put(agent, createFSM(agent)));
-        reset();
+        on_reset();
     }
 
     @Override
     public void react_to(String sender, String item, JSONObject event) throws IllegalStateException {
-        super.react_to(sender, item, event);
-
         if (!item.equalsIgnoreCase("btn01")) {
-            log.debug("no btn1 event. discarding.");
+            log.debug("no btn01 event. discarding.");
             return;
         }
         if (!event.getString("button").equalsIgnoreCase("up")) {
@@ -161,7 +159,7 @@ public class Conquest extends Scheduled {
             blue_respawns++;
             broadcast_score();   // to make the respawn show up quicker.
         } else if (hasRole(sender, "capture_points")) {
-            agentFSMs.get(sender).ProcessFSM(item.toUpperCase());
+            agentFSMs.get(sender).ProcessFSM(item.toLowerCase());
         } else {
             log.debug("i don't care about this message.");
         }
@@ -169,7 +167,7 @@ public class Conquest extends Scheduled {
 
     private FSM createFSM(String agent) {
         try {
-            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest.xml"), null);
+            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
                 log.debug("FSM State: {}:{}", agent, state);
                 cp_to_neutral(agent);
@@ -179,7 +177,7 @@ public class Conquest extends Scheduled {
                 cp_to_neutral(agent);
                 broadcast_score();
             });
-            fsm.setAction("NEUTRAL", "BTN01", new FSMAction() {
+            fsm.setAction("NEUTRAL", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent, curState, nextState);
@@ -188,7 +186,7 @@ public class Conquest extends Scheduled {
                     return true;
                 }
             });
-            fsm.setAction("BLUE", "BTN01", new FSMAction() {
+            fsm.setAction("BLUE", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent, curState, nextState);
@@ -197,7 +195,7 @@ public class Conquest extends Scheduled {
                     return true;
                 }
             });
-            fsm.setAction("RED", "BTN01", new FSMAction() {
+            fsm.setAction("RED", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{}:{} =====> {}", agent, curState, nextState);
@@ -226,10 +224,10 @@ public class Conquest extends Scheduled {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
     }
 
-    @Override
-    public void start() throws IllegalStateException {
 
-        super.start();
+    public void on_start() throws IllegalStateException {
+
+
 
         blue_respawns = 0;
         red_respawns = 0;
@@ -239,7 +237,7 @@ public class Conquest extends Scheduled {
         cps_held_by_red.clear();
 
         mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
-        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("START"));
+        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("start"));
 
         mqttOutbound.send("vars",
                 MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
@@ -270,6 +268,16 @@ public class Conquest extends Scheduled {
         broadcast_cycle_counter = 0;
     }
 
+    @Override
+    protected void on_pause() {
+
+    }
+
+    @Override
+    protected void on_resume() {
+
+    }
+
     public void ticket_bleeding_cycle() {
         if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
 
@@ -291,14 +299,14 @@ public class Conquest extends Scheduled {
 
         if (remaining_blue_tickets.intValue() <= 0 || remaining_red_tickets.intValue() <= 0) {
             broadcast_score();
-            game_over();
+            on_game_over();
         }
 
     }
 
-    @Override
-    public void game_over() {
-        super.game_over();
+
+    public void on_game_over() {
+
         deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
         log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
         String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
@@ -309,7 +317,7 @@ public class Conquest extends Scheduled {
                         "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome),
                 roles.get("spawns"));
         mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
-        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("GAME_OVER"));
+        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("game_over"));
     }
 
     private void broadcast_score() {
@@ -353,20 +361,21 @@ public class Conquest extends Scheduled {
         return lines;
     }
 
+
     @Override
-    public void reset() {
-        super.reset();
+    public void on_reset() {
+
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "slow"), roles.get("red_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "slow"), roles.get("blue_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
 //        mqttOutbound.send("delpage", MQTT.pages("blueflags"), roles.get("spawns"));
         mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
-        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("RESET"));
+        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
     }
 
     @Override
-    public void cleanup() {
-        super.cleanup();
+    public void on_cleanup() {
+        super.on_cleanup();
         agentFSMs.clear();
     }
 

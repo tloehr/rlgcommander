@@ -8,7 +8,10 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -47,7 +50,7 @@ public abstract class Timed extends Scheduled {
 
     final JobKey gametimeJobKey, overtimeJobKey;
 
-    Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
         this.match_length = game_parameters.getInt("match_length");
         gametimeJobKey = new JobKey("gametime", uuid.toString());
@@ -57,23 +60,13 @@ public abstract class Timed extends Scheduled {
     }
 
     @Override
-    public void pause() {
-        try {
-            super.pause();
-        } catch (IllegalStateException e) {
-            return;
-        }
+    public void on_pause() {
         deleteJob(gametimeJobKey);
         deleteJob(overtimeJobKey);
     }
 
     @Override
-    public void resume() {
-        try {
-            super.resume();
-        } catch (IllegalStateException e) {
-            return;
-        }
+    public void on_resume() {
         // shift the start and end_time by the number of seconds the pause lasted
         long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
         start_time = start_time.plusSeconds(pause_length_in_seconds);
@@ -85,18 +78,15 @@ public abstract class Timed extends Scheduled {
 
 
     @Override
-    public void start() throws IllegalStateException {
-
-        super.start();
-
+    public void on_start() throws IllegalStateException {
         start_time = LocalDateTime.now();
         regular_end_time = start_time.plusSeconds(match_length);
         create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);
     }
 
     @Override
-    public void cleanup() {
-        super.cleanup();
+    public void on_cleanup() {
+        super.on_cleanup();
         start_time = null;
     }
 

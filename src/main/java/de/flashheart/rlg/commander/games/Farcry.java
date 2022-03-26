@@ -31,7 +31,7 @@ public class Farcry extends Timed implements HasRespawn {
     private FSM farcryFSM;
     final JobKey myRespawnJobKey;
 
-    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
         log.debug("\n   ____         _____\n" +
                 "  / __/__ _____/ ___/_____ __\n" +
@@ -49,7 +49,7 @@ public class Farcry extends Timed implements HasRespawn {
                 respawn_period == 0 ? "Respawns not handled" : String.format("Respawn-Time: %s", ldtRespawnTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
                 String.format("Spielzeit: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))));
         create_FSM();
-        reset();
+        on_reset();
     }
 
     public void create_FSM() {
@@ -183,8 +183,8 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    public void start() throws IllegalStateException {
-        super.start();
+    public void on_start() throws IllegalStateException {
+        super.on_start();
         // (re)start the respawn timer job.
         deleteJob(myRespawnJobKey);
         if (respawn_period > 0) { // respawn_period == 0 means we should not care about it
@@ -192,31 +192,27 @@ public class Farcry extends Timed implements HasRespawn {
         } else {
             mqttOutbound.send("paged", MQTT.page("page0", "", "Restspielzeit", "${remaining}", "", ""), roles.get("spawns"));
         }
-        trigger_internal_event("START");
+//        trigger_internal_event("START");
     }
 
-    @Override
-    public void game_over() {
-        super.game_over();
+
+    public void on_game_over() {
+
         deleteJob(myRespawnJobKey);
         mqttOutbound.send("signals", MQTT.toJSON("buzzer", "off"), roles.get("spawns"));
         mqttOutbound.send("timers", MQTT.toJSON("respawn", "-1"), roles.get("spawns"));
-        trigger_internal_event("GAME_OVER");
+//        trigger_internal_event("GAME_OVER");
     }
 
     @Override
     public void overtime() {
         log.debug("overtime");
-        trigger_internal_event("OVERTIME");
+//        trigger_internal_event("OVERTIME");
     }
 
     @Override
     public void react_to(String sender, String item, JSONObject event) {
-        try {
-            super.react_to(sender, item, event);
-        } catch (IllegalStateException e) {
-            return;
-        }
+
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_internal")) {
             farcryFSM.ProcessFSM(event.getString("message"));
@@ -228,12 +224,12 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    public void reset() {
-        super.reset();
+    protected void on_reset() {
+
         mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal", "led_blu", "normal"), roles.get("leds"));
         mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal"), roles.get("red_spawn"));
         mqttOutbound.send("signals", MQTT.toJSON("led_blu", "normal"), roles.get("blue_spawn"));
-        trigger_internal_event("RESET");
+//        trigger_internal_event("RESET");
     }
 
     @Override

@@ -52,7 +52,7 @@ public class GamesService {
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         log.debug("\n" + Tools.fignums[id]);
         JSONObject game_description = new JSONObject(json);
-        loaded_games[id - 1].ifPresent(game -> game.cleanup());
+        loaded_games[id - 1].ifPresent(game -> game.on_cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
         Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
         loaded_games[id - 1] = Optional.of(game);
@@ -69,7 +69,7 @@ public class GamesService {
         log.debug("\n" + Tools.fignums[id]);
         Game game_to_unload = loaded_games[id - 1].get();
         agentsService.assign_gameid_to_agents(-1, game_to_unload.getAgents().keySet()); // remove gameid assignment
-        game_to_unload.cleanup();
+        game_to_unload.on_cleanup();
         loaded_games[id - 1] = Optional.empty();
     }
 
@@ -87,23 +87,22 @@ public class GamesService {
 
     public void start_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().start();
+        loaded_games[id - 1].get().process_message("start");
     }
 
     public void reset_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        Game game = loaded_games[id - 1].get();
-        game.reset();
+        loaded_games[id - 1].get().process_message("reset");
     }
 
     public void resume_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().resume();
+        loaded_games[id - 1].get().process_message("resume");
     }
 
     public void pause_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().pause();
+        loaded_games[id - 1].get().process_message("pause");
     }
 
     public void react_to(int id, String agentid, String item, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {

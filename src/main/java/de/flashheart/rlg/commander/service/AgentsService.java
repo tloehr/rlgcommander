@@ -73,4 +73,15 @@ public class AgentsService {
                 "2me@flashheart.de"), my_agent.getId());
     }
 
+    /**
+     * sends a test signal to see if the agent is working properly
+     * @param agentid to be tested
+     * @param deviceid specific device like "led_red, sir1..."
+     */
+    public void test_agent(String agentid, String deviceid) {
+        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+        if (my_agent.getGameid() > -1) return; // only when not in game
+        mqttOutbound.send("signals", MQTT.toJSON(deviceid, "medium"), my_agent.getId());
+    }
+
 }

@@ -38,7 +38,7 @@ public class Rush extends Scheduled {
     private final int MAX_NUMBER_OF_SECTORS;
     private int remaining_tickets_for_this_zone;
 
-    public Rush(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) {
+    public Rush(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
         log.debug("    ____             __\n" +
                 "   / __ \\__  _______/ /_\n" +
@@ -112,9 +112,9 @@ public class Rush extends Scheduled {
         }
     }
 
-    @Override
-    public void reset() {
-        super.reset();
+
+    public void on_reset() {
+
         active_sector = -1;
         agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
         sectors.forEach(fsm -> fsm.ProcessFSM("reset"));
@@ -165,12 +165,12 @@ public class Rush extends Scheduled {
             });
             sectorFSM.setStatesAfterTransition("SECTOR_DEFENDED", (state, o) -> {
                 log.info("=====> Sector{}:{}", sector_number, state);
-                game_over();
+                process_message("game_over");
             });
             sectorFSM.setStatesAfterTransition("SECTOR_TAKEN", (state, o) -> {
                 log.info("=====> Sector{}:{}", sector_number, state);
                 active_sector = sector_number + 1;
-                if (active_sector > MAX_NUMBER_OF_SECTORS) game_over();
+                if (active_sector > MAX_NUMBER_OF_SECTORS) process_message("game_over");
                 else sectors.get(active_sector).ProcessFSM("start");
             });
 
@@ -183,10 +183,9 @@ public class Rush extends Scheduled {
 
     @Override
     public void react_to(String sender, String item, JSONObject event) throws IllegalStateException {
-        super.react_to(sender, item, event);
 
         // internal message OR message I am interested in
-        if (sender.equalsIgnoreCase("_internal")) {
+        if (sender.equalsIgnoreCase("_bombtimer_")) {
             // for BOMB_TIME_UP messages - we notify the agent (m-com) here
             // item contains the agent name
             agentFSMs.get(item).ProcessFSM(event.getString("message"));
@@ -218,9 +217,29 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    public void cleanup() {
-        super.cleanup();
+    public void on_cleanup() {
+        super.on_cleanup();
         agentFSMs.clear();
+    }
+
+    @Override
+    protected void on_start() {
+
+    }
+
+    @Override
+    protected void on_pause() {
+
+    }
+
+    @Override
+    protected void on_resume() {
+
+    }
+
+    @Override
+    protected void on_game_over() {
+
     }
 
     @Override
