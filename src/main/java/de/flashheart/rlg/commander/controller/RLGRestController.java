@@ -45,10 +45,9 @@ public class RLGRestController {
         return new ResponseEntity(new JSONObject().put("error", exc.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
     }
 
-    @SneakyThrows
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
-    public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) {
+    public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         return new ResponseEntity<>(gamesService.load_game(id, description).getStatus().toString(4), HttpStatus.CREATED);
     }
 
@@ -58,15 +57,9 @@ public class RLGRestController {
 //        return new ResponseEntity<>(gamesService.admin_set_values(id, description).orElseThrow().getStatus().toString(), HttpStatus.OK);
 //    }
 
-    @PostMapping("/game/start")
-    public ResponseEntity<?> start_game(@RequestParam(name = "id") int id) {
-        gamesService.start_game(id);
-        return new ResponseEntity(HttpStatus.ACCEPTED);
-    }
-
-    @PostMapping("/game/reset")
-    public ResponseEntity<?> reset_game(@RequestParam(name = "id") int id) {
-        gamesService.reset_game(id);
+    @PostMapping("/game/process")
+    public ResponseEntity<?> start_game(@RequestParam(name = "id") int id, @RequestParam(name = "message") String message) {
+        gamesService.process_message(id, message);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
@@ -76,17 +69,6 @@ public class RLGRestController {
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
-    @PostMapping("/game/pause")
-    public ResponseEntity<?> pause_game(@RequestParam(name = "id") int id) {
-        gamesService.pause_game(id);
-        return new ResponseEntity(HttpStatus.ACCEPTED);
-    }
-
-    @PostMapping("/game/resume")
-    public ResponseEntity<?> resume_game(@RequestParam(name = "id") int id) {
-        gamesService.resume_game(id);
-        return new ResponseEntity(HttpStatus.ACCEPTED);
-    }
 
     @GetMapping("/game/status")
     public ResponseEntity<?> status_game(@RequestParam(name = "id") int id) {

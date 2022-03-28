@@ -182,19 +182,6 @@ public class Farcry extends Timed implements HasRespawn {
         }
     }
 
-    @Override
-    public void on_start() throws IllegalStateException {
-        super.on_start();
-        // (re)start the respawn timer job.
-        deleteJob(myRespawnJobKey);
-        if (respawn_period > 0) { // respawn_period == 0 means we should not care about it
-            create_job(myRespawnJobKey, simpleSchedule().withIntervalInSeconds(respawn_period).repeatForever(), RespawnJob.class);
-        } else {
-            mqttOutbound.send("paged", MQTT.page("page0", "", "Restspielzeit", "${remaining}", "", ""), roles.get("spawns"));
-        }
-//        trigger_internal_event("START");
-    }
-
 
     public void on_game_over() {
 
@@ -222,6 +209,28 @@ public class Farcry extends Timed implements HasRespawn {
             log.debug("message is not for me. ignoring.");
         }
     }
+
+    @Override
+    protected void on_start() {
+
+    }
+
+    @Override
+    protected void on_ready() {
+
+    }
+
+    @Override
+    protected void on_run() {
+        super.on_run();
+        deleteJob(myRespawnJobKey);
+        if (respawn_period > 0) { // respawn_period == 0 means we should not care about it
+            create_job(myRespawnJobKey, simpleSchedule().withIntervalInSeconds(respawn_period).repeatForever(), RespawnJob.class);
+        } else {
+            mqttOutbound.send("paged", MQTT.page("page0", "", "Restspielzeit", "${remaining}", "", ""), roles.get("spawns"));
+        }
+    }
+
 
     @Override
     protected void on_reset() {

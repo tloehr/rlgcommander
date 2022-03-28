@@ -228,6 +228,16 @@ public class Rush extends Scheduled {
     }
 
     @Override
+    protected void on_ready() {
+
+    }
+
+    @Override
+    protected void on_run() {
+
+    }
+
+    @Override
     protected void on_pause() {
 
     }
@@ -241,6 +251,7 @@ public class Rush extends Scheduled {
     protected void on_game_over() {
 
     }
+
 
     @Override
     public JSONObject getStatus() {

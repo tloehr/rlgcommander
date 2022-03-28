@@ -76,9 +76,8 @@ public abstract class Timed extends Scheduled {
         monitorRemainingTime();
     }
 
-
     @Override
-    public void on_start() throws IllegalStateException {
+    protected void on_run() {
         start_time = LocalDateTime.now();
         regular_end_time = start_time.plusSeconds(match_length);
         create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);

@@ -51,41 +51,71 @@ public abstract class Game {
                 )
         );
         this.fsm = createFSM();
-
         game_description = new ArrayList<>();
         pausing_since = Optional.empty();
     }
 
-    public void process_message(String message) {
-        fsm.ProcessFSM(message);
+    public void process_message(String message) throws IllegalStateException {
+        if (fsm.ProcessFSM(message) == null) {
+            throw new IllegalStateException(String.format("message not processed. no transition in FSM from %s on message %s.", fsm.getCurrentState(), message));
+        }
     }
 
     private FSM createFSM() throws ParserConfigurationException, IOException, SAXException {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/game.xml"), null);
-        fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
-            log.debug(state);
-            on_reset();
-        });
-        fsm.setStatesAfterTransition("WAITING_FOR_TEAMS", (state, obj) -> {
-            log.debug(state);
-        });
-        fsm.setStatesAfterTransition("GAME_RUNNING", (state, obj) -> {
-            log.debug(state);
-            on_start();
-        });
-        fsm.setStatesAfterTransition("EPILOG", (state, obj) -> {
-            log.debug(state);
-            on_game_over();
-        });
-        fsm.setStatesAfterTransition("GAME_PAUSING", (state, obj) -> {
-            log.debug(state);
-            pausing_since = Optional.of(LocalDateTime.now());
-            mqttOutbound.send("paged", MQTT.page("pause", "", "      PAUSE      ", "", ""), agents.keySet());
-            on_pause();
+
+        fsm.setAction("reset", new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                on_reset();
+                return true;
+            }
         });
 
+        fsm.setAction("start", new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                on_start();
+                return true;
+            }
+        });
 
-        fsm.setAction("GAME_PAUSING", "resume", new FSMAction() {
+        fsm.setAction("run", new FSMAction() {
+            @Override
+            public boolean action(String s, String s1, String s2, Object o) {
+                log.debug("GOING TO RUN!!!!");
+                return true;
+            }
+        });
+
+        fsm.setAction("ready", new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                on_ready();
+                return true;
+            }
+        });
+
+        fsm.setAction("game_over", new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                on_game_over();
+                return true;
+            }
+        });
+
+        fsm.setAction("pause", new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                pausing_since = Optional.of(LocalDateTime.now());
+                //todo: klappt so nicht. Überschreibt alle seiten. muss man anders machen
+                mqttOutbound.send("paged", MQTT.page("pause", "", "      PAUSE      ", "", ""), agents.keySet());
+                on_pause();
+                return true;
+            }
+        });
+
+        fsm.setAction("resume", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 pausing_since = Optional.empty();
@@ -96,7 +126,6 @@ public abstract class Game {
         });
 
         return fsm;
-
     }
 
     public Multimap<String, String> getAgents() {
@@ -111,13 +140,16 @@ public abstract class Game {
      */
     public abstract void react_to(String sender, String item, JSONObject event);
 
-
     /**
      * before another game is loaded, cleanup first
      */
-    public abstract void on_cleanup();
+    protected abstract void on_cleanup();
 
     protected abstract void on_start();
+
+    protected abstract void on_ready();
+
+    protected abstract void on_run();
 
     protected abstract void on_pause();
 
@@ -126,6 +158,10 @@ public abstract class Game {
     protected abstract void on_game_over();
 
     protected abstract void on_reset();
+
+    public void cleanup() {
+        on_cleanup();
+    }
 
     /**
      * returns a JSON Object which describes the current game situation.
@@ -138,11 +174,7 @@ public abstract class Game {
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
                 .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL)
-                .put("state", fsm.getCurrentState());
-//         .put("prolog", Boolean.toString(prolog))
-//                .put("epilog", Boolean.toString(epilog))
-//                .put("pausing", Boolean.toString(isPausing()))
-//                .put("running", Boolean.toString(isRunning()))
+                .put("game_state", fsm.getCurrentState());
     }
 
     /**

@@ -8,24 +8,30 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="start" nextState="WAITING_FOR_TEAMS"/>
+        <MESSAGE id="start" nextState="PREPARE"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="WAITING_FOR_TEAMS">
+    <STATE id="PREPARE">
         <!-- Both teams have to report in as "ready". Then they have 10 seconds to revoke their decision. After that
         period the game will start. -->
-        <MESSAGE id="teams_ready" nextState="GAME_RUNNING"/>
+        <MESSAGE id="ready" nextState="READY"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="GAME_RUNNING">
+    <STATE id="READY">
+        <!-- Both teams have to report in as "ready". Then they have 10 seconds to revoke their decision. After that
+        period the game will start. -->
+        <MESSAGE id="run" nextState="RUNNING"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="RUNNING">
         <!-- As we have only one button it always starts with blue. red players have to push twice.-->
-        <MESSAGE id="pause" nextState="GAME_PAUSING"/>
+        <MESSAGE id="pause" nextState="PAUSING"/>
+        <MESSAGE id="game_over" nextState="EPILOG"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="GAME_PAUSING">
+    <STATE id="PAUSING">
         <!-- todo: a pausing game should be restarted with a countdown. for later.... -->
-        <MESSAGE id="resume" nextState="GAME_RUNNING"/>
-        <MESSAGE id="game_over" nextState="EPILOG"/>
+        <MESSAGE id="resume" nextState="RUNNING"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="EPILOG">
