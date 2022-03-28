@@ -135,7 +135,7 @@ public class Conquest extends Scheduled {
     }
 
     @Override
-    public void react_to(String sender, String item, JSONObject event) throws IllegalStateException {
+    public void react_to(String sender, String item, JSONObject event) {
         if (!item.equalsIgnoreCase("btn01")) {
             log.debug("no btn01 event. discarding.");
             return;
@@ -221,18 +221,6 @@ public class Conquest extends Scheduled {
     private void cp_to_red(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
     }
-
-
-    @Override
-    protected void on_pause() {
-
-    }
-
-    @Override
-    protected void on_resume() {
-
-    }
-
 
     public void ticket_bleeding_cycle() {
         if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
@@ -332,12 +320,14 @@ public class Conquest extends Scheduled {
     }
 
     @Override
-    protected void on_start() {
+    protected void at_prepare() {
+        super.at_prepare();
         process_message("ready");
     }
 
     @Override
-    protected void on_ready() {
+    protected void at_ready() {
+        super.at_ready();
         process_message("run");
     }
 

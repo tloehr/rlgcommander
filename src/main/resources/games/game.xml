@@ -30,8 +30,11 @@
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="PAUSING">
-        <!-- todo: a pausing game should be restarted with a countdown. for later.... -->
-        <MESSAGE id="resume" nextState="RUNNING"/>
+        <MESSAGE id="resume" nextState="RESUMING"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="RESUMING">
+        <MESSAGE id="continue" nextState="RUNNING"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="EPILOG">

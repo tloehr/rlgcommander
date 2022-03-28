@@ -182,7 +182,7 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    public void react_to(String sender, String item, JSONObject event) throws IllegalStateException {
+    public void react_to(String sender, String item, JSONObject event) {
 
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_bombtimer_")) {

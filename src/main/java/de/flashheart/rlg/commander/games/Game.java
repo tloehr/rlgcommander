@@ -2,6 +2,7 @@ package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
+import com.github.ankzz.dynamicfsm.states.FSMStateAction;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
@@ -67,6 +68,7 @@ public abstract class Game {
         fsm.setAction("reset", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: {}", message);
                 on_reset();
                 return true;
             }
@@ -75,6 +77,7 @@ public abstract class Game {
         fsm.setAction("start", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: {}", message);
                 on_start();
                 return true;
             }
@@ -82,8 +85,9 @@ public abstract class Game {
 
         fsm.setAction("run", new FSMAction() {
             @Override
-            public boolean action(String s, String s1, String s2, Object o) {
-                log.debug("GOING TO RUN!!!!");
+            public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: {}", message);
+                on_run();
                 return true;
             }
         });
@@ -91,6 +95,7 @@ public abstract class Game {
         fsm.setAction("ready", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: {}", message);
                 on_ready();
                 return true;
             }
@@ -99,6 +104,7 @@ public abstract class Game {
         fsm.setAction("game_over", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: {}", message);
                 on_game_over();
                 return true;
             }
@@ -107,6 +113,7 @@ public abstract class Game {
         fsm.setAction("pause", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: {}", message);
                 pausing_since = Optional.of(LocalDateTime.now());
                 //todo: klappt so nicht. Überschreibt alle seiten. muss man anders machen
                 mqttOutbound.send("paged", MQTT.page("pause", "", "      PAUSE      ", "", ""), agents.keySet());
@@ -118,11 +125,56 @@ public abstract class Game {
         fsm.setAction("resume", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: {}", message);
                 pausing_since = Optional.empty();
                 mqttOutbound.send("delpage", new JSONObject().put("page_handles", new JSONArray().put("pause")), agents.keySet());
                 on_resume();
                 return true;
             }
+        });
+
+        fsm.setAction("continue", new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: {}", message);
+                on_continue();
+                return true;
+            }
+        });
+
+        fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
+            log.debug("state: {}", state);
+            at_prolog();
+        });
+
+        fsm.setStatesAfterTransition("PREPARE", (state, obj) -> {
+            log.debug("state: {}", state);
+            at_prepare();
+        });
+
+        fsm.setStatesAfterTransition("READY", (state, obj) -> {
+            log.debug("state: {}", state);
+            at_ready();
+        });
+
+        fsm.setStatesAfterTransition("RUNNING", (state, obj) -> {
+            log.debug("state: {}", state);
+            at_running();
+        });
+
+        fsm.setStatesAfterTransition("PAUSING", (state, obj) -> {
+            log.debug("state: {}", state);
+            at_pausing();
+        });
+
+        fsm.setStatesAfterTransition("RESUMING", (state, obj) -> {
+            log.debug("state: {}", state);
+            at_resuming();
+        });
+
+        fsm.setStatesAfterTransition("EPILOG", (state, obj) -> {
+            log.debug("state: {}", state);
+            at_epilog();
         });
 
         return fsm;
@@ -145,19 +197,51 @@ public abstract class Game {
      */
     protected abstract void on_cleanup();
 
-    protected abstract void on_start();
 
-    protected abstract void on_ready();
+    protected void at_prolog() {
+    }
 
-    protected abstract void on_run();
+    protected void at_prepare() {
+    }
 
-    protected abstract void on_pause();
+    protected void at_ready() {
+    }
 
-    protected abstract void on_resume();
+    protected void at_running() {
+    }
 
-    protected abstract void on_game_over();
+    protected void at_pausing() {
+    }
 
-    protected abstract void on_reset();
+    protected void at_resuming() {
+    }
+
+    protected void at_epilog() {
+    }
+
+    protected void on_start() {
+    }
+
+    protected void on_ready() {
+    }
+
+    protected void on_run() {
+    }
+
+    protected void on_pause() {
+    }
+
+    protected void on_resume() {
+    }
+
+    protected void on_continue() {
+    }
+
+    protected void on_game_over() {
+    }
+
+    protected void on_reset() {
+    }
 
     public void cleanup() {
         on_cleanup();
@@ -169,7 +253,6 @@ public abstract class Game {
      * @return status information to be sent if we are asked for it
      */
     public JSONObject getStatus() {
-
         return new JSONObject()
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
