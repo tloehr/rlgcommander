@@ -89,7 +89,7 @@ public class MQTTOutbound {
     public void send(String cmd, JSONObject payload, Collection<String> agents) {
         if (agents.isEmpty()) return;
         agents.forEach(agent -> {
-            log.debug("sending {}", prefix + agent + "/" + cmd);
+            log.trace("sending {}", prefix + agent + "/" + cmd);
             send(agent + "/" + cmd, payload);
         });
     }

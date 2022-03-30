@@ -20,7 +20,7 @@ public class MComJob extends QuartzJobBean implements InterruptableJob {
             String agent = jobExecutionContext.getMergedJobDataMap().getString("agent");
             int sector_number = jobExecutionContext.getMergedJobDataMap().getInt("sector");
             Game game = (Game) jobExecutionContext.getScheduler().getContext().get(uuid);
-            game.react_to("_bombtimer_", agent,
+            game.process_message("_bombtimer_", agent,
                     new JSONObject()
                             .put("message", "bomb_time_up")
                             .put("sector", sector_number)

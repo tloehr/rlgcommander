@@ -2,7 +2,6 @@ package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
-import com.github.ankzz.dynamicfsm.states.FSMStateAction;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
@@ -30,10 +29,11 @@ public abstract class Game {
     protected final ArrayList<String> game_description;
     private final JSONObject game_parameters;
     Optional<LocalDateTime> pausing_since;
-    final UUID uuid;
-    final Scheduler scheduler;
-    final Multimap<String, String> agents, roles;
-    final FSM fsm;
+    protected final UUID uuid;
+    protected final Scheduler scheduler;
+    protected final Multimap<String, String> agents, roles;
+    // main FSM to control the basic states of every game
+    protected final FSM game_fsm;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         uuid = UUID.randomUUID();
@@ -51,16 +51,26 @@ public abstract class Game {
                         }
                 )
         );
-        this.fsm = createFSM();
+        this.game_fsm = createFSM();
         game_description = new ArrayList<>();
         pausing_since = Optional.empty();
     }
 
     public void process_message(String message) throws IllegalStateException {
-        if (fsm.ProcessFSM(message) == null) {
-            throw new IllegalStateException(String.format("message not processed. no transition in FSM from %s on message %s.", fsm.getCurrentState(), message));
+        if (game_fsm.ProcessFSM(message) == null) {
+            throw new IllegalStateException(String.format("message not processed. no transition in FSM from %s on message %s.", game_fsm.getCurrentState(), message));
         }
     }
+
+
+    /**
+     * when something happens, we need to react on it. Implement this method to tell us, WHAT we should do.
+     *
+     * @param message
+     * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
+     */
+    public abstract void process_message(String sender, String item, JSONObject message);
+
 
     private FSM createFSM() throws ParserConfigurationException, IOException, SAXException {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/game.xml"), null);
@@ -68,7 +78,7 @@ public abstract class Game {
         fsm.setAction("reset", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: {}", message);
+                log.debug("msg: reset");
                 on_reset();
                 return true;
             }
@@ -77,7 +87,7 @@ public abstract class Game {
         fsm.setAction("start", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: {}", message);
+                log.debug("msg: start");
                 on_start();
                 return true;
             }
@@ -86,7 +96,7 @@ public abstract class Game {
         fsm.setAction("run", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: {}", message);
+                log.debug("msg: run");
                 on_run();
                 return true;
             }
@@ -95,7 +105,7 @@ public abstract class Game {
         fsm.setAction("ready", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: {}", message);
+                log.debug("msg: ready");
                 on_ready();
                 return true;
             }
@@ -104,7 +114,7 @@ public abstract class Game {
         fsm.setAction("game_over", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: {}", message);
+                log.debug("msg: game_over");
                 on_game_over();
                 return true;
             }
@@ -113,10 +123,9 @@ public abstract class Game {
         fsm.setAction("pause", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: {}", message);
+                log.debug("msg: pause");
                 pausing_since = Optional.of(LocalDateTime.now());
-                //todo: klappt so nicht. Überschreibt alle seiten. muss man anders machen
-                mqttOutbound.send("paged", MQTT.page("pause", "", "      PAUSE      ", "", ""), agents.keySet());
+
                 on_pause();
                 return true;
             }
@@ -125,7 +134,7 @@ public abstract class Game {
         fsm.setAction("resume", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: {}", message);
+                log.debug("msg: resume");
                 pausing_since = Optional.empty();
                 mqttOutbound.send("delpage", new JSONObject().put("page_handles", new JSONArray().put("pause")), agents.keySet());
                 on_resume();
@@ -136,7 +145,7 @@ public abstract class Game {
         fsm.setAction("continue", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: {}", message);
+                log.debug("msg: continue");
                 on_continue();
                 return true;
             }
@@ -183,14 +192,6 @@ public abstract class Game {
     public Multimap<String, String> getAgents() {
         return agents;
     }
-
-    /**
-     * when something happens, we need to react on it. Implement this method to tell us, WHAT we should do.
-     *
-     * @param event
-     * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
-     */
-    public abstract void react_to(String sender, String item, JSONObject event);
 
     /**
      * before another game is loaded, cleanup first
@@ -257,7 +258,7 @@ public abstract class Game {
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
                 .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL)
-                .put("game_state", fsm.getCurrentState());
+                .put("game_state", game_fsm.getCurrentState());
     }
 
     /**
@@ -270,6 +271,14 @@ public abstract class Game {
         game_description.clear();
         game_description.addAll(Arrays.asList(lines));
         log.debug(game_description);
+    }
+
+    /**
+     * if a superclass has also a page to display, we can put it in here and inherit to the children.
+     * @return
+     */
+    protected JSONObject get_pages_to_display() {
+        return game_fsm.getCurrentState().equals("PAUSING") ? MQTT.page("pause", "", "      PAUSE      ", "", "") : new JSONObject();
     }
 
     public boolean hasRole(String agent, String role) {

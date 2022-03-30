@@ -182,16 +182,16 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    public void react_to(String sender, String item, JSONObject event) {
+    public void process_message(String sender, String item, JSONObject message) {
 
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_bombtimer_")) {
             // for BOMB_TIME_UP messages - we notify the agent (m-com) here
             // item contains the agent name
-            agentFSMs.get(item).ProcessFSM(event.getString("message"));
-        } else if (hasRole(sender, "mcom") && event.getString("button").equalsIgnoreCase("up")) {
-            agentFSMs.get(sender).ProcessFSM(event.getString("button"));
-        } else if (hasRole(sender, "attacker_spawn") && event.getString("button").equalsIgnoreCase("up")) {
+            agentFSMs.get(item).ProcessFSM(message.getString("message"));
+        } else if (hasRole(sender, "mcom") && message.getString("button").equalsIgnoreCase("up")) {
+            agentFSMs.get(sender).ProcessFSM(message.getString("button"));
+        } else if (hasRole(sender, "attacker_spawn") && message.getString("button").equalsIgnoreCase("up")) {
             // red respawn button was pressed
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), sender);
             remaining_tickets_for_this_zone--;

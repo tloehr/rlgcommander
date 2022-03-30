@@ -30,7 +30,7 @@ public class GamesService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
-        log.info("RLG-Commander {}.{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
+        log.info("RLG-Commander {} build {}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
     @Autowired
@@ -90,9 +90,9 @@ public class GamesService {
         loaded_games[id - 1].get().process_message(message);
     }
 
-    public void react_to(int id, String agentid, String item, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+    public void process_message(int id, String agentid, String item, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().react_to(agentid, item, payload);
+        loaded_games[id - 1].get().process_message(agentid, item, payload);
     }
 
     public JSONArray get_games() {

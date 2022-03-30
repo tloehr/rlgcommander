@@ -3,7 +3,6 @@ package de.flashheart.rlg.commander.controller;
 
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
-import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,7 +57,7 @@ public class RLGRestController {
 //    }
 
     @PostMapping("/game/process")
-    public ResponseEntity<?> start_game(@RequestParam(name = "id") int id, @RequestParam(name = "message") String message) {
+    public ResponseEntity<?> process_message(@RequestParam(name = "id") int id, @RequestParam(name = "message") String message) {
         gamesService.process_message(id, message);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
@@ -84,12 +83,6 @@ public class RLGRestController {
         }
     }
 
-//    @PostMapping("/system/shutdown")
-//    public ResponseEntity<?> system_shutdown() {
-//        gamesService.shutdown_agents();
-//        return new ResponseEntity<>(HttpStatus.ACCEPTED);
-//    }
-
     @GetMapping("/game/list_games")
     public ResponseEntity<?> list_games() {
         return new ResponseEntity(gamesService.get_games().toString(4), HttpStatus.OK);
@@ -110,5 +103,5 @@ public class RLGRestController {
         agentsService.test_agent(agentid, deviceid);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
-    
+
 }

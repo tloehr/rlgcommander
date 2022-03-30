@@ -84,7 +84,6 @@ public abstract class Scheduled extends Game {
                 .usingJobData("uuid", uuid.toString()) // where we find the context later
                 .build();
 
-
         try {
             scheduler.scheduleJob(job, trigger);
         } catch (SchedulerException e) {
@@ -93,7 +92,7 @@ public abstract class Scheduled extends Game {
     }
 
     @Override
-    public void on_cleanup() {
+    protected void on_cleanup() {
         jobs.forEach(job -> {
             try {
                 scheduler.interrupt(job);

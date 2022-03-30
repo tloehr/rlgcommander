@@ -8,7 +8,7 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="start" nextState="NEUTRAL"/>
+        <MESSAGE id="run" nextState="NEUTRAL"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="NEUTRAL">

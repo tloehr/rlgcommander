@@ -12,14 +12,10 @@
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="PREPARE">
-        <!-- Both teams have to report in as "ready". Then they have 10 seconds to revoke their decision. After that
-        period the game will start. -->
         <MESSAGE id="ready" nextState="READY"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="READY">
-        <!-- Both teams have to report in as "ready". Then they have 10 seconds to revoke their decision. After that
-        period the game will start. -->
         <MESSAGE id="run" nextState="RUNNING"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>

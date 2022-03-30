@@ -91,7 +91,7 @@ public class MQTTInbound {
                 int gameid = agentsService.getLive_agents().getOrDefault(agentid, new Agent()).getGameid();
                 if (gameid > 0) {
                     try {
-                        gamesService.react_to(gameid, agentid, source, new JSONObject(payload));
+                        gamesService.process_message(gameid, agentid, source, new JSONObject(payload));
                     } catch (IllegalStateException ise) {
                         log.warn(ise.getMessage());
                     } catch (Exception e) {

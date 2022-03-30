@@ -198,13 +198,13 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    public void react_to(String sender, String item, JSONObject event) {
+    public void process_message(String sender, String item, JSONObject message) {
 
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_internal")) {
-            farcryFSM.ProcessFSM(event.getString("message"));
-        } else if (hasRole(sender, "button") && event.getString("button").equalsIgnoreCase("up")) {
-            farcryFSM.ProcessFSM(event.getString("button_pressed").toUpperCase());
+            farcryFSM.ProcessFSM(message.getString("message"));
+        } else if (hasRole(sender, "button") && message.getString("button").equalsIgnoreCase("up")) {
+            farcryFSM.ProcessFSM(message.getString("button_pressed").toUpperCase());
         } else {
             log.debug("message is not for me. ignoring.");
         }
