@@ -44,6 +44,7 @@ public class Conquest extends Scheduled {
     private HashSet<String> cps_held_by_blue, cps_held_by_red;
     private JobKey ticketBleedingJobkey, runGameJob;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
+    private long COUNTDOWN_TIME = 10;
 
     /**
      * This class creates a conquest style game as known from Battlefield.
@@ -177,19 +178,41 @@ public class Conquest extends Scheduled {
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
                 String led = hasRole(agent, "blue_spawn") ? "led_blu" : "led_red";
                 mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", led, "slow"), agent);
+                mqttOutbound.send("paged", MQTT.page("page0", game_description), agent);
             });
-            fsm.setStatesAfterTransition("TEAM_PREPARE", (state, obj) -> {
-                mqttOutbound.send("paged", MQTT.page("page0", " !! GET READY !! ", "Press button", "when Your team", "is ready"), agent);
+            fsm.setStatesAfterTransition("WE_ARE_PREPARING", (state, obj) -> {
+                mqttOutbound.send("paged", MQTT.page("page0", " !! NOT READY !! ", "Press button", "when Your team", "is ready"), agent);
             });
-            fsm.setStatesAfterTransition("TEAM_READY", (state, obj) -> {
+            fsm.setStatesAfterTransition("WE_ARE_READY", (state, obj) -> {
+                FSM other_team = hasRole(agent, "red_spawn") ? blue_spawn : red_spawn;
                 // if the other team is also ready, the GAME is ready to start
-                if (hasRole(agent, "red_spawn") && blue_spawn.getCurrentState().equals("TEAM_READY"))
-                    game_fsm.ProcessFSM("ready");
-                if (hasRole(agent, "blue_spawn") && red_spawn.getCurrentState().equals("TEAM_READY"))
-                    game_fsm.ProcessFSM("ready");
+                if (other_team.getCurrentState().equals("WE_ARE_READY")) game_fsm.ProcessFSM("ready");
                 if (game_fsm.getCurrentState().equals("PREPARE"))
-                    mqttOutbound.send("paged", MQTT.page("page0", " !! STAND-BY !! ", "Waiting for", "the other team", "to get ready"), agent);
+                    mqttOutbound.send("paged", MQTT.page("page0", " !! WE ARE READY !! ", "Waiting for others", "If NOT ready:", "Press button again"), agent);
             });
+            fsm.setAction("WE_ARE_READY", "btn01", new FSMAction() {
+                @Override
+                public boolean action(String curState, String message, String nextState, Object args) {
+                    // oh hey wait, we NOT ready. HOLD IT - HOLD IT
+                    game_fsm.ProcessFSM("prepare");
+                    return true;
+                }
+            });
+            fsm.setAction("COUNTDOWN_RUNNING", "btn01", new FSMAction() {
+                @Override
+                public boolean action(String curState, String message, String nextState, Object args) {
+                    // oh hey wait, we NOT ready. HOLD IT - HOLD IT
+                    game_fsm.ProcessFSM("prepare");
+                    FSM other_team = hasRole(agent, "red_spawn") ? blue_spawn : red_spawn;
+                    other_team.ProcessFSM("other_team_not_ready");
+                    return true;
+                }
+            });
+            fsm.setStatesAfterTransition("COUNTDOWN_RUNNING", (state, obj) -> {
+                mqttOutbound.send("timers", MQTT.toJSON("countdown", Long.toString(COUNTDOWN_TIME)), agent); // sending to everyone
+                mqttOutbound.send("paged", MQTT.page("page0", " GAME STARTS ", "   in    ", "${countdown}", ""), agent);
+            });
+
             fsm.setStatesAfterTransition("EPILOG", (state, obj) -> {
                 String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
                 mqttOutbound.send("paged",
@@ -198,6 +221,7 @@ public class Conquest extends Scheduled {
                         agent);
             });
             fsm.setStatesAfterTransition("GAME_RUNNING", (state, obj) -> {
+                log.debug("ENTERED STATE GAME_RUNNING {}", agent);
                 mqttOutbound.send("paged", MQTT.merge(
                         MQTT.page("page0",
                                 "   >>> RED   <<<   ",
@@ -275,6 +299,10 @@ public class Conquest extends Scheduled {
     }
 
     private void cp_to_neutral(String agent) {
+        mqttOutbound.send("paged",
+                MQTT.page("page0",
+                        "I am " + agent, "", "I will be a", "Capture Point"),
+                agent);
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "normal"), agent);
     }
 
@@ -361,24 +389,27 @@ public class Conquest extends Scheduled {
     @Override
     protected void at_prolog() {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
-        mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
+        // mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
+        mqttOutbound.send("paged",
+                MQTT.page("page0",
+                        "", "", "I will be a", "Siren"), roles.get("sirens"));
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
         red_spawn.ProcessFSM("reset");
         blue_spawn.ProcessFSM("reset");
     }
 
-
     @Override
-    protected void at_ready() {
-        super.at_ready();
-        mqttOutbound.send("timers", MQTT.toJSON("countdown", Long.toString(10)), agents.keySet()); // sending to everyone
-        mqttOutbound.send("paged", MQTT.page("page0", " GAME STARTS ", "   in    ", " ${countdown}", ""), roles.get("spawn"));
-        create_job(runGameJob, LocalDateTime.now().plusSeconds(10), RunGameJob.class);
+    protected void at_teams_not_ready() {
+        super.at_teams_not_ready();
+        deleteJob(runGameJob);
     }
 
     @Override
-    protected void at_running() {
-        super.at_running();
+    protected void at_teams_ready() {
+        super.at_teams_ready();
+        red_spawn.ProcessFSM("countdown");
+        blue_spawn.ProcessFSM("countdown");
+        create_job(runGameJob, LocalDateTime.now().plusSeconds(COUNTDOWN_TIME), RunGameJob.class);
     }
 
 

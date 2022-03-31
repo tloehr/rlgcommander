@@ -19,10 +19,10 @@ import java.util.NoSuchElementException;
 @RequestMapping("api")
 @Log4j2
 public class RLGRestController {
-
     GamesService gamesService;
     AgentsService agentsService;
     ApplicationContext applicationContext;
+
 
     public RLGRestController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext) {
         this.gamesService = gamesService;

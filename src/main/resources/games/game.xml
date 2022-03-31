@@ -8,15 +8,21 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="start" nextState="PREPARE"/>
+        <MESSAGE id="prepare" nextState="TEAMS_NOT_READY"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
-    </STATE>
-    <STATE id="PREPARE">
-        <MESSAGE id="ready" nextState="READY"/>
-        <MESSAGE id="reset" nextState="PROLOG"/>
-    </STATE>
-    <STATE id="READY">
+        <MESSAGE id="ready" nextState="TEAMS_READY"/>
         <MESSAGE id="run" nextState="RUNNING"/>
+    </STATE>
+    <STATE id="TEAMS_NOT_READY">
+        <!-- we are waiting for all teams to get ready -->
+        <MESSAGE id="ready" nextState="TEAMS_READY"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="TEAMS_READY">
+        <!--countdown then run -->
+        <MESSAGE id="run" nextState="RUNNING"/>
+        <!-- unless somebody is still not ready-->
+        <MESSAGE id="prepare" nextState="TEAMS_NOT_READY"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="RUNNING">

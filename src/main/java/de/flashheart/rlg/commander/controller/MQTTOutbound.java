@@ -1,7 +1,9 @@
 package de.flashheart.rlg.commander.controller;
 
+import de.flashheart.rlg.commander.entity.Agent;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,7 +21,9 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 @Log4j2
@@ -40,11 +44,13 @@ public class MQTTOutbound {
 
     ApplicationContext applicationContext;
     MyGateway gateway;
-
+    ConcurrentHashMap<String, String> most_recent_messages_to_agents; // see MyConfiguration.java
+    
     @Autowired
-    public MQTTOutbound(ApplicationContext applicationContext) {
+    public MQTTOutbound(ApplicationContext applicationContext, ConcurrentHashMap<String, String> most_recent_messages_to_agents) {
         this.applicationContext = applicationContext;
-        gateway = applicationContext.getBean(MyGateway.class);
+        this.gateway = applicationContext.getBean(MyGateway.class);
+        this.most_recent_messages_to_agents = most_recent_messages_to_agents; // todo: for later use
     }
 
     @Bean
@@ -103,16 +109,19 @@ public class MQTTOutbound {
     }
 
     public void send(String topic, JSONObject payload) {
+        most_recent_messages_to_agents.put(prefix+topic, payload.toString());
         gateway.sendToMqtt(payload.toString(), prefix + topic);
     }
 
     public void send(String topic, JSONArray payload) {
+        most_recent_messages_to_agents.put(prefix+topic, payload.toString());
         gateway.sendToMqtt(payload.toString(), prefix + topic);
     }
 
-    public void send(String topic, JSONObject payload, boolean retained) {
-        gateway.sendToMqtt(payload.toString(), retained, prefix + topic);
-    }
+//    public void send(String topic, JSONObject payload, boolean retained) {
+//        most_recent_messages_to_agents.put(prefix+topic, payload.toString());
+//        gateway.sendToMqtt(payload.toString(), retained, prefix + topic);
+//    }
 
 
 }

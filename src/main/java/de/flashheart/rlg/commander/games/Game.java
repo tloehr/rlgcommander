@@ -105,8 +105,17 @@ public abstract class Game {
         fsm.setAction("ready", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: ready");
+                log.debug("msg: teams ready");
                 on_ready();
+                return true;
+            }
+        });
+
+        fsm.setAction("prepare", new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                log.debug("msg: teams not ready");
+                on_prepare();
                 return true;
             }
         });
@@ -125,7 +134,6 @@ public abstract class Game {
             public boolean action(String curState, String message, String nextState, Object args) {
                 log.debug("msg: pause");
                 pausing_since = Optional.of(LocalDateTime.now());
-
                 on_pause();
                 return true;
             }
@@ -136,7 +144,6 @@ public abstract class Game {
             public boolean action(String curState, String message, String nextState, Object args) {
                 log.debug("msg: resume");
                 pausing_since = Optional.empty();
-                mqttOutbound.send("delpage", new JSONObject().put("page_handles", new JSONArray().put("pause")), agents.keySet());
                 on_resume();
                 return true;
             }
@@ -156,14 +163,14 @@ public abstract class Game {
             at_prolog();
         });
 
-        fsm.setStatesAfterTransition("PREPARE", (state, obj) -> {
+        fsm.setStatesAfterTransition("TEAMS_NOT_READY", (state, obj) -> {
             log.debug("state: {}", state);
-            at_prepare();
+            at_teams_not_ready();
         });
 
-        fsm.setStatesAfterTransition("READY", (state, obj) -> {
+        fsm.setStatesAfterTransition("TEAMS_READY", (state, obj) -> {
             log.debug("state: {}", state);
-            at_ready();
+            at_teams_ready();
         });
 
         fsm.setStatesAfterTransition("RUNNING", (state, obj) -> {
@@ -189,6 +196,10 @@ public abstract class Game {
         return fsm;
     }
 
+    protected void on_prepare() {
+
+    }
+
     public Multimap<String, String> getAgents() {
         return agents;
     }
@@ -202,10 +213,10 @@ public abstract class Game {
     protected void at_prolog() {
     }
 
-    protected void at_prepare() {
+    protected void at_teams_not_ready() {
     }
 
-    protected void at_ready() {
+    protected void at_teams_ready() {
     }
 
     protected void at_running() {
@@ -275,6 +286,7 @@ public abstract class Game {
 
     /**
      * if a superclass has also a page to display, we can put it in here and inherit to the children.
+     *
      * @return
      */
     protected JSONObject get_pages_to_display() {

@@ -10,23 +10,21 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Log4j2
 @Service
 public class AgentsService {
-    private final HashMap<String, Agent> live_agents;
+    ConcurrentHashMap<String, Agent> live_agents; // see MyConfiguration.java
     MQTTOutbound mqttOutbound;
     BuildProperties buildProperties;
 
-    public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties) {
+    public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents) {
         this.mqttOutbound = mqttOutbound;
         this.buildProperties = buildProperties;
-        live_agents = new HashMap<>();
+        this.live_agents = live_agents;
     }
 
-    public HashMap<String, Agent> getLive_agents() {
-        return live_agents;
-    }
 
     public void assign_gameid_to_agents(int gameid, Set<String> agentids) {
         agentids.forEach(agentid -> {
@@ -62,7 +60,7 @@ public class AgentsService {
     }
 
     public void welcome(Agent my_agent) {
-        if (my_agent.getGameid() > -1) return; // only when not in game
+        if (my_agent.getGameid() > -1) return; //  todo: access "most_recent_messages" instead
         log.info("Sending welcome message to newly attached agent {}", my_agent.getId());
         //mqttOutbound.send("init", agentid);
         mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off", "led_wht", "infty:on,500;off,500", "led_ylw", "infty:on,500;off,500", "led_blu", "infty:on,500;off,500",

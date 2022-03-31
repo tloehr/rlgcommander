@@ -23,6 +23,7 @@ import org.springframework.messaging.MessageHandler;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -43,12 +44,14 @@ public class MQTTInbound {
     MQTTOutbound mqttOutbound;
     AgentsService agentsService;
     GamesService gamesService;
+    ConcurrentHashMap<String, Agent> live_agents; // see MyConfiguration.java
 
     @Autowired
-    public MQTTInbound(AgentsService agentsService, GamesService gamesService, MQTTOutbound mqttOutbound) {
+    public MQTTInbound(AgentsService agentsService, GamesService gamesService, MQTTOutbound mqttOutbound, ConcurrentHashMap<String, Agent> live_agents) {
         this.agentsService = agentsService;
         this.gamesService = gamesService;
         this.mqttOutbound = mqttOutbound;
+        this.live_agents = live_agents;
     }
 
     @Bean
@@ -88,7 +91,7 @@ public class MQTTInbound {
             } else {
                 log.debug(message.toString());
                 log.debug(message.getPayload().toString());
-                int gameid = agentsService.getLive_agents().getOrDefault(agentid, new Agent()).getGameid();
+                int gameid = live_agents.getOrDefault(agentid, new Agent()).getGameid();
                 if (gameid > 0) {
                     try {
                         gamesService.process_message(gameid, agentid, source, new JSONObject(payload));
