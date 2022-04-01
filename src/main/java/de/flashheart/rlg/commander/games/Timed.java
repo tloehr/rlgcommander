@@ -60,28 +60,29 @@ public abstract class Timed extends Scheduled {
     }
 
     @Override
-    public void on_pause() {
-        deleteJob(gametimeJobKey);
-        deleteJob(overtimeJobKey);
+    protected void on_transistion(String old_state, String message, String new_state) {
+        if (message.equals("pause")){
+            deleteJob(gametimeJobKey);
+            deleteJob(overtimeJobKey);
+        }
+
+        if (message.equals("resume")){
+            // shift the start and end_time by the number of seconds the pause lasted
+            long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
+            start_time = start_time.plusSeconds(pause_length_in_seconds);
+            estimated_end_time = start_time.plusSeconds(match_length);
+            regular_end_time = estimated_end_time;
+            create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);
+            monitorRemainingTime();
+        }
+
+        if (message.equals("run")){
+            start_time = LocalDateTime.now();
+            regular_end_time = start_time.plusSeconds(match_length);
+            create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);
+        }
     }
 
-    @Override
-    public void on_resume() {
-        // shift the start and end_time by the number of seconds the pause lasted
-        long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
-        start_time = start_time.plusSeconds(pause_length_in_seconds);
-        estimated_end_time = start_time.plusSeconds(match_length);
-        regular_end_time = estimated_end_time;
-        create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);
-        monitorRemainingTime();
-    }
-
-    @Override
-    protected void on_run() {
-        start_time = LocalDateTime.now();
-        regular_end_time = start_time.plusSeconds(match_length);
-        create_job(overtimeJobKey, regular_end_time, OvertimeJob.class);
-    }
 
     @Override
     public void on_cleanup() {

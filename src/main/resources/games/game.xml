@@ -18,6 +18,7 @@
         <!-- we are waiting for all teams to get ready -->
         <MESSAGE id="ready" nextState="TEAMS_READY"/>
         <!-- Admin shortcuts -->
+        <MESSAGE id="run" nextState="RUNNING"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="TEAMS_READY">

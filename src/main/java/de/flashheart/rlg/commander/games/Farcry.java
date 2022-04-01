@@ -49,7 +49,21 @@ public class Farcry extends Timed implements HasRespawn {
                 respawn_period == 0 ? "Respawns not handled" : String.format("Respawn-Time: %s", ldtRespawnTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
                 String.format("Spielzeit: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))));
         create_FSM();
-        on_reset();
+
+    }
+
+    @Override
+    protected void at_state(String state) {
+
+    }
+
+    @Override
+    protected void on_transistion(String old_state, String message, String new_state) {
+        if (message.equals("reset")) {
+            mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal", "led_blu", "normal"), roles.get("leds"));
+            mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal"), roles.get("red_spawn"));
+            mqttOutbound.send("signals", MQTT.toJSON("led_blu", "normal"), roles.get("blue_spawn"));
+        }
     }
 
     public void create_FSM() {
@@ -210,25 +224,15 @@ public class Farcry extends Timed implements HasRespawn {
         }
     }
 
-    @Override
+
     protected void on_run() {
-        super.on_run();
+        
         deleteJob(myRespawnJobKey);
         if (respawn_period > 0) { // respawn_period == 0 means we should not care about it
             create_job(myRespawnJobKey, simpleSchedule().withIntervalInSeconds(respawn_period).repeatForever(), RespawnJob.class);
         } else {
             mqttOutbound.send("paged", MQTT.page("page0", "", "Restspielzeit", "${remaining}", "", ""), roles.get("spawns"));
         }
-    }
-
-
-    @Override
-    protected void on_reset() {
-
-        mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal", "led_blu", "normal"), roles.get("leds"));
-        mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal"), roles.get("red_spawn"));
-        mqttOutbound.send("signals", MQTT.toJSON("led_blu", "normal"), roles.get("blue_spawn"));
-//        trigger_internal_event("RESET");
     }
 
     @Override

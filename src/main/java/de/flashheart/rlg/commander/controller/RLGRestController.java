@@ -29,7 +29,6 @@ public class RLGRestController {
     AgentsService agentsService;
     ApplicationContext applicationContext;
 
-
     public RLGRestController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext) {
         this.gamesService = gamesService;
         this.agentsService = agentsService;
@@ -50,54 +49,53 @@ public class RLGRestController {
         return new ResponseEntity(new JSONObject().put("error", exc.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
     }
 
-    @GetMapping("/game_state_event_emitter")
+    @GetMapping("/game_state_emitter")
     public SseEmitter game_state_event_emitter() {
         SseEmitter emitter = new SseEmitter(-1l);
         ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
         sseMvcExecutor.execute(() -> {
-            try {
-                gamesService.getGame(1).get().addStateTransistionListener(sc_event -> {
+            gamesService.addGameStateListener(state_event -> {
+                try {
+                    JSONObject myevent = new JSONObject()
+                            .put("gameid", state_event.getGameid())
+                            .put("state", gamesService.getGameStatus(state_event.getGameid()));
                     SseEmitter.SseEventBuilder event = SseEmitter.event().
-                            data(sc_event.toString()).
-                            id(UUID.randomUUID().toString()).
-                            name("GameStateChangeEvent");
-                    try {
-                        emitter.send(event);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
-            } catch (Exception ex) {
-                emitter.completeWithError(ex);
-            }
-        });
-        return emitter;
-    }
-
-    @GetMapping("/stream-sse-mvc")
-    public SseEmitter streamSseMvc() {
-        SseEmitter emitter = new SseEmitter(-1l);
-        ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
-        sseMvcExecutor.execute(() -> {
-            try {
-                for (int i = 0; true; i++) {
-                    SseEmitter.SseEventBuilder event = SseEmitter.event().
-                            data("SSE MVC - " + LocalTime.now().toString()).
-                            id(String.valueOf(i)).
-                            name("sse event - mvc");
+                            data(myevent.toString()).
+                            id(Long.toString(System.currentTimeMillis())).
+                            name("GameStateEvent");
                     emitter.send(event);
-                    Thread.sleep(1000);
+                } catch (Exception ex) {
+                    emitter.completeWithError(ex);
                 }
-            } catch (Exception ex) {
-                emitter.completeWithError(ex);
-            }
+            });
         });
         return emitter;
     }
 
+//    @GetMapping("/stream-sse-mvc")
+//    public SseEmitter streamSseMvc() {
+//        SseEmitter emitter = new SseEmitter(-1l);
+//        ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
+//        sseMvcExecutor.execute(() -> {
+//            try {
+//                for (int i = 0; true; i++) {
+//                    SseEmitter.SseEventBuilder event = SseEmitter.event().
+//                            data("SSE MVC - " + LocalTime.now().toString()).
+//                            id(String.valueOf(i)).
+//                            name("sse event - mvc");
+//                    emitter.send(event);
+//                    Thread.sleep(1000);
+//                }
+//            } catch (Exception ex) {
+//                emitter.completeWithError(ex);
+//            }
+//        });
+//        return emitter;
+//    }
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
-    public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) throws
+            ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         return new ResponseEntity<>(gamesService.load_game(id, description).getStatus().toString(4), HttpStatus.CREATED);
     }
 
@@ -108,7 +106,8 @@ public class RLGRestController {
 //    }
 
     @PostMapping("/game/process")
-    public ResponseEntity<?> process_message(@RequestParam(name = "id") int id, @RequestParam(name = "message") String message) {
+    public ResponseEntity<?> process_message(@RequestParam(name = "id") int id,
+                                             @RequestParam(name = "message") String message) {
         gamesService.process_message(id, message);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
@@ -150,7 +149,8 @@ public class RLGRestController {
     }
 
     @PostMapping("/system/test_agent")
-    public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String agentid, @RequestParam(name = "deviceid") String deviceid) {
+    public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String
+                                                agentid, @RequestParam(name = "deviceid") String deviceid) {
         agentsService.test_agent(agentid, deviceid);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }

@@ -4,8 +4,6 @@ import lombok.ToString;
 
 @ToString
 public class StateTransitionEvent {
-
-
     protected final String oldState;
     protected final String message;
     protected final String newState;

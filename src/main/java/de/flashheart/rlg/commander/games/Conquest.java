@@ -345,16 +345,74 @@ public class Conquest extends Scheduled {
         }
     }
 
-    public void on_game_over() {
-        super.on_game_over();
-        deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
-        log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
-        mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
-        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("game_over"));
-        red_spawn.ProcessFSM("game_over");
-        blue_spawn.ProcessFSM("game_over");
+    @Override
+    protected void on_transistion(String old_state, String message, String new_state) {
+        if (message.equals("game_over")) {
+            deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
+            log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
+            mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("game_over"));
+            red_spawn.ProcessFSM("game_over");
+            blue_spawn.ProcessFSM("game_over");
+        }
+        if (message.equals("prepare")) {
+            red_spawn.ProcessFSM("prepare");
+            blue_spawn.ProcessFSM("prepare");
+        }
+        if (message.equals("run")) {
+            deleteJob(runGameJob);
+
+            blue_respawns = 0;
+            red_respawns = 0;
+            remaining_blue_tickets = respawn_tickets;
+            remaining_red_tickets = respawn_tickets;
+            cps_held_by_blue.clear();
+            cps_held_by_red.clear();
+
+            mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("run"));
+            red_spawn.ProcessFSM("run");
+            blue_spawn.ProcessFSM("run");
+
+            // setup and start bleeding job
+            long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
+            create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
+            broadcast_cycle_counter = 0;
+        }
     }
 
+    @Override
+    protected void at_state(String state) {
+        if (state.equals("PROLOG")) {
+            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
+            // mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
+            mqttOutbound.send("paged",
+                    MQTT.page("page0",
+                            "I am ${agentname}", "", "I will be a", "Siren"), roles.get("sirens"));
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
+            red_spawn.ProcessFSM("reset");
+            blue_spawn.ProcessFSM("reset");
+        }
+
+        if (state.equals("TEAMS_NOT_READY")) {
+            deleteJob(runGameJob);
+        }
+
+        if (state.equals("TEAMS_READY")) {
+            red_spawn.ProcessFSM("countdown");
+            blue_spawn.ProcessFSM("countdown");
+            // always one second less. so the spawns are closer to the siren when it comes to the game start.
+            create_job(runGameJob, LocalDateTime.now().plusSeconds(COUNTDOWN_TIME - 1), RunGameJob.class);
+        }
+
+        if (state.equals("PAUSING")) {
+            mqttOutbound.send("paged", get_pages_to_display(), roles.get("spawns"));
+        }
+
+        if (state.equals("RESUMING")) {
+            process_message("continue");
+        }
+    }
 
     private void broadcast_score() {
         JSONObject vars = MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
@@ -371,7 +429,7 @@ public class Conquest extends Scheduled {
         mqttOutbound.send("vars", vars, roles.get("spawns"));
 
         log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
-        log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+        log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
 
     }
 
@@ -391,72 +449,6 @@ public class Conquest extends Scheduled {
         return lines;
     }
 
-
-    @Override
-    protected void at_prolog() {
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
-        // mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
-        mqttOutbound.send("paged",
-                MQTT.page("page0",
-                        "I am ${agentname}", "", "I will be a", "Siren"), roles.get("sirens"));
-        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
-        red_spawn.ProcessFSM("reset");
-        blue_spawn.ProcessFSM("reset");
-    }
-
-    @Override
-    protected void at_teams_not_ready() {
-        super.at_teams_not_ready();
-        deleteJob(runGameJob);
-    }
-
-    @Override
-    protected void at_teams_ready() {
-        super.at_teams_ready();
-        red_spawn.ProcessFSM("countdown");
-        blue_spawn.ProcessFSM("countdown");
-        create_job(runGameJob, LocalDateTime.now().plusSeconds(COUNTDOWN_TIME), RunGameJob.class);
-    }
-
-
-    @Override
-    protected void at_pausing() {
-        super.at_pausing();
-        mqttOutbound.send("paged", get_pages_to_display(), roles.get("spawns"));
-    }
-
-    @Override
-    protected void at_resuming() {
-        super.at_resuming();
-        process_message("continue");
-    }
-
-    @Override
-    protected void on_prepare() {
-        super.on_prepare();
-        red_spawn.ProcessFSM("prepare");
-        blue_spawn.ProcessFSM("prepare");
-    }
-
-    @Override
-    protected void on_run() {
-        blue_respawns = 0;
-        red_respawns = 0;
-        remaining_blue_tickets = respawn_tickets;
-        remaining_red_tickets = respawn_tickets;
-        cps_held_by_blue.clear();
-        cps_held_by_red.clear();
-
-        mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
-        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("run"));
-        red_spawn.ProcessFSM("run");
-        blue_spawn.ProcessFSM("run");
-
-        // setup and start bleeding job
-        long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
-        create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
-        broadcast_cycle_counter = 0;
-    }
 
     @Override
     public JSONObject getStatus() {

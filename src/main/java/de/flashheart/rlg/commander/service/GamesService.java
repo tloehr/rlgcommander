@@ -4,6 +4,7 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.Bag;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
@@ -14,19 +15,22 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @Log4j2
-public class GamesService implements StateReachedListener, StateTransitionListener {
+public class GamesService {
     MQTTOutbound mqttOutbound;
     Scheduler scheduler;
     AgentsService agentsService;
     BuildProperties buildProperties;
     private final Optional<Game>[] loaded_games; // exactly n games are possible
     public static final int MAX_NUMBER_OF_GAMES = 1;
+    private List<GameStateListener> gameStateListeners;
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
@@ -40,9 +44,10 @@ public class GamesService implements StateReachedListener, StateTransitionListen
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
         this.loaded_games = new Optional[]{Optional.empty()};
+        this.gameStateListeners = new ArrayList<>();
     }
 
-    public Game load_game(int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         //if (loaded_games[id-1].isPresent()) throw new IllegalAccessException("id "+id+" is in use. Unload first.");
@@ -55,8 +60,11 @@ public class GamesService implements StateReachedListener, StateTransitionListen
         loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
         Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
-        game.addStateReachedListener(this);
-        game.addStateTransistionListener(this);
+        game.addStateReachedListener(event -> {
+            log.debug("gameid #{} -> {}", id, event.getState());
+            fireGameStateChange(new GameStateEvent(event.getState(), id));
+        });
+
         loaded_games[id - 1] = Optional.of(game);
         agentsService.assign_gameid_to_agents(id, game.getAgents().keySet());
         game.process_message("reset");
@@ -97,8 +105,6 @@ public class GamesService implements StateReachedListener, StateTransitionListen
         loaded_games[id - 1].get().process_message(agentid, item, payload);
     }
 
-
-
     public JSONArray get_games() {
         return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game.get().getStatus()).collect(Collectors.toList()));
     }
@@ -109,16 +115,13 @@ public class GamesService implements StateReachedListener, StateTransitionListen
         if (loaded_games[id - 1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded.");
     }
 
-    @Override
-    public void onStateReached(StateReachedEvent event) {
-        log.debug(event);
+    private void fireGameStateChange(GameStateEvent event) {
+        gameStateListeners.forEach(gameStateListener -> gameStateListener.onStateChange(event));
     }
 
-    @Override
-    public void onStateTransition(StateTransitionEvent event) {
-        log.debug(event);
+    public void addGameStateListener(GameStateListener toAdd) {
+        gameStateListeners.add(toAdd);
     }
-
 //    public Optional<Game> admin_set_values(String id, String description) {
 //        //loaded_game.ifPresent(game -> game.reset());
 //        Optional<Game> loaded_game = Optional.ofNullable(loaded_games.get(id));

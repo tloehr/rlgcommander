@@ -70,6 +70,16 @@ public class Rush extends Scheduled {
         }
     }
 
+    @Override
+    protected void at_state(String state) {
+
+    }
+
+    @Override
+    protected void on_transistion(String old_state, String message, String new_state) {
+
+    }
+
     /**
      * FSMs for every M-Com in the game
      *
