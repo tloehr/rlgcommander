@@ -6,8 +6,11 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.misc.StateReachedEvent;
+import de.flashheart.rlg.commander.misc.StateReachedListener;
+import de.flashheart.rlg.commander.misc.StateTransitionEvent;
+import de.flashheart.rlg.commander.misc.StateTransitionListener;
 import lombok.extern.log4j.Log4j2;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.xml.sax.SAXException;
@@ -21,6 +24,9 @@ import java.util.*;
 
 @Log4j2
 public abstract class Game {
+
+    private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
+    private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
 
     final MQTTOutbound mqttOutbound;
     //final Multimap<String, Agent> function_to_agents;
@@ -56,6 +62,23 @@ public abstract class Game {
         pausing_since = Optional.empty();
     }
 
+    public void addStateTransistionListener(StateTransitionListener toAdd) {
+        stateTransitionListeners.add(toAdd);
+    }
+
+    public void addStateReachedListener(StateReachedListener toAdd) {
+        stateReachedListeners.add(toAdd);
+    }
+
+
+    private void fireStateTransition(StateTransitionEvent event) {
+        stateTransitionListeners.forEach(stateTransitionListener -> stateTransitionListener.onStateTransition(event));
+    }
+
+    private void fireStateReached(StateReachedEvent event) {
+        stateReachedListeners.forEach(stateReachedListener -> stateReachedListener.onStateReached(event));
+    }
+
     public void process_message(String message) throws IllegalStateException {
         if (game_fsm.ProcessFSM(message) == null) {
             throw new IllegalStateException(String.format("message not processed. no transition in FSM from %s on message %s.", game_fsm.getCurrentState(), message));
@@ -74,21 +97,12 @@ public abstract class Game {
 
     private FSM createFSM() throws ParserConfigurationException, IOException, SAXException {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/game.xml"), null);
-
         fsm.setAction("reset", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 log.debug("msg: reset");
+                fireStateTransition(new StateTransitionEvent(curState, "reset", nextState));
                 on_reset();
-                return true;
-            }
-        });
-
-        fsm.setAction("start", new FSMAction() {
-            @Override
-            public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: start");
-                on_start();
                 return true;
             }
         });
@@ -97,6 +111,7 @@ public abstract class Game {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 log.debug("msg: run");
+                fireStateTransition(new StateTransitionEvent(curState, "run", nextState));
                 on_run();
                 return true;
             }
@@ -106,6 +121,7 @@ public abstract class Game {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 log.debug("msg: teams ready");
+                fireStateTransition(new StateTransitionEvent(curState, "ready", nextState));
                 on_ready();
                 return true;
             }
@@ -114,7 +130,8 @@ public abstract class Game {
         fsm.setAction("prepare", new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                log.debug("msg: teams not ready");
+                fireStateTransition(new StateTransitionEvent(curState, "prepare", nextState));
+                log.debug("msg: prepare => teams not ready");
                 on_prepare();
                 return true;
             }
@@ -124,6 +141,7 @@ public abstract class Game {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 log.debug("msg: game_over");
+                fireStateTransition(new StateTransitionEvent(curState, "game_over", nextState));
                 on_game_over();
                 return true;
             }
@@ -160,36 +178,43 @@ public abstract class Game {
 
         fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
             log.debug("state: {}", state);
+            fireStateReached(new StateReachedEvent(state));
             at_prolog();
         });
 
         fsm.setStatesAfterTransition("TEAMS_NOT_READY", (state, obj) -> {
             log.debug("state: {}", state);
+            fireStateReached(new StateReachedEvent(state));
             at_teams_not_ready();
         });
 
         fsm.setStatesAfterTransition("TEAMS_READY", (state, obj) -> {
             log.debug("state: {}", state);
+            fireStateReached(new StateReachedEvent(state));
             at_teams_ready();
         });
 
         fsm.setStatesAfterTransition("RUNNING", (state, obj) -> {
             log.debug("state: {}", state);
+            fireStateReached(new StateReachedEvent(state));
             at_running();
         });
 
         fsm.setStatesAfterTransition("PAUSING", (state, obj) -> {
             log.debug("state: {}", state);
+            fireStateReached(new StateReachedEvent(state));
             at_pausing();
         });
 
         fsm.setStatesAfterTransition("RESUMING", (state, obj) -> {
             log.debug("state: {}", state);
+            fireStateReached(new StateReachedEvent(state));
             at_resuming();
         });
 
         fsm.setStatesAfterTransition("EPILOG", (state, obj) -> {
             log.debug("state: {}", state);
+            fireStateReached(new StateReachedEvent(state));
             at_epilog();
         });
 
@@ -197,7 +222,6 @@ public abstract class Game {
     }
 
     protected void on_prepare() {
-
     }
 
     public Multimap<String, String> getAgents() {
@@ -231,9 +255,6 @@ public abstract class Game {
     protected void at_epilog() {
     }
 
-    protected void on_start() {
-    }
-
     protected void on_ready() {
     }
 
@@ -256,6 +277,8 @@ public abstract class Game {
     }
 
     public void cleanup() {
+        stateReachedListeners.clear();
+        stateTransitionListeners.clear();
         on_cleanup();
     }
 

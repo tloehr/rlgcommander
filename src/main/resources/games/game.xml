@@ -9,6 +9,7 @@
 <FSM>
     <STATE id="PROLOG" type="ID">
         <MESSAGE id="prepare" nextState="TEAMS_NOT_READY"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
         <MESSAGE id="ready" nextState="TEAMS_READY"/>
         <MESSAGE id="run" nextState="RUNNING"/>
@@ -16,6 +17,7 @@
     <STATE id="TEAMS_NOT_READY">
         <!-- we are waiting for all teams to get ready -->
         <MESSAGE id="ready" nextState="TEAMS_READY"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="TEAMS_READY">
@@ -23,20 +25,24 @@
         <MESSAGE id="run" nextState="RUNNING"/>
         <!-- unless somebody is still not ready-->
         <MESSAGE id="prepare" nextState="TEAMS_NOT_READY"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="RUNNING">
         <!-- As we have only one button it always starts with blue. red players have to push twice.-->
         <MESSAGE id="pause" nextState="PAUSING"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="PAUSING">
         <MESSAGE id="resume" nextState="RESUMING"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="RESUMING">
         <MESSAGE id="continue" nextState="RUNNING"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="EPILOG">

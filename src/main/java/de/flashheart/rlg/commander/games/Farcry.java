@@ -211,16 +211,6 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    protected void on_start() {
-
-    }
-
-    @Override
-    protected void on_ready() {
-
-    }
-
-    @Override
     protected void on_run() {
         super.on_run();
         deleteJob(myRespawnJobKey);

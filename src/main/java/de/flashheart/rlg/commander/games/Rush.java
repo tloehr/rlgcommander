@@ -222,35 +222,6 @@ public class Rush extends Scheduled {
         agentFSMs.clear();
     }
 
-    @Override
-    protected void on_start() {
-
-    }
-
-    @Override
-    protected void on_ready() {
-
-    }
-
-    @Override
-    protected void on_run() {
-
-    }
-
-    @Override
-    protected void on_pause() {
-
-    }
-
-    @Override
-    protected void on_resume() {
-
-    }
-
-    @Override
-    protected void on_game_over() {
-
-    }
 
 
     @Override

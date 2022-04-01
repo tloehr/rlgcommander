@@ -2,7 +2,7 @@ package de.flashheart.rlg.commander.service;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
-import de.flashheart.rlg.commander.misc.Tools;
+import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Log4j2
-public class GamesService {
+public class GamesService implements StateReachedListener, StateTransitionListener {
     MQTTOutbound mqttOutbound;
     Scheduler scheduler;
     AgentsService agentsService;
@@ -55,6 +55,8 @@ public class GamesService {
         loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
         Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
+        game.addStateReachedListener(this);
+        game.addStateTransistionListener(this);
         loaded_games[id - 1] = Optional.of(game);
         agentsService.assign_gameid_to_agents(id, game.getAgents().keySet());
         game.process_message("reset");
@@ -95,6 +97,8 @@ public class GamesService {
         loaded_games[id - 1].get().process_message(agentid, item, payload);
     }
 
+
+
     public JSONArray get_games() {
         return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game.get().getStatus()).collect(Collectors.toList()));
     }
@@ -103,6 +107,16 @@ public class GamesService {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         if (loaded_games[id - 1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded.");
+    }
+
+    @Override
+    public void onStateReached(StateReachedEvent event) {
+        log.debug(event);
+    }
+
+    @Override
+    public void onStateTransition(StateTransitionEvent event) {
+        log.debug(event);
     }
 
 //    public Optional<Game> admin_set_values(String id, String description) {

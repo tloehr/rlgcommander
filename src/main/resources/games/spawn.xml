@@ -9,25 +9,33 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="start" nextState="TEAM_NOT_READY"/>
+        <MESSAGE id="prepare" nextState="WE_ARE_PREPARING"/>
+        <!-- Admin shortcuts -->
+        <MESSAGE id="countdown" nextState="COUNTDOWN_RUNNING"/>
+        <MESSAGE id="run" nextState="GAME_RUNNING"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!--    we are preparing - not ready yet-->
     <STATE id="WE_ARE_PREPARING">
         <MESSAGE id="btn01" nextState="WE_ARE_READY"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="countdown" nextState="COUNTDOWN_RUNNING"/>
+        <MESSAGE id="run" nextState="GAME_RUNNING"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!--    we are ready - waiting for the others -->
     <STATE id="WE_ARE_READY">
         <MESSAGE id="btn01" nextState="WE_ARE_PREPARING"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="countdown" nextState="COUNTDOWN_RUNNING"/>
+        <MESSAGE id="run" nextState="GAME_RUNNING"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!--    everybody is ready - countdown -->
     <STATE id="COUNTDOWN_RUNNING">
         <MESSAGE id="btn01" nextState="WE_ARE_PREPARING"/>
         <MESSAGE id="other_team_not_ready" nextState="WE_ARE_READY"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="run" nextState="GAME_RUNNING"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
@@ -35,6 +43,7 @@
     <STATE id="GAME_RUNNING">
         <MESSAGE id="btn01" nextState="GAME_RUNNING"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
+        <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!-- ENDING STATES -->

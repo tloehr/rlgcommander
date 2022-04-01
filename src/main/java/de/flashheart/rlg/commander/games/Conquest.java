@@ -7,6 +7,7 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.jobs.RunGameJob;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONObject;
 import org.quartz.JobKey;
@@ -44,7 +45,7 @@ public class Conquest extends Scheduled {
     private HashSet<String> cps_held_by_blue, cps_held_by_red;
     private JobKey ticketBleedingJobkey, runGameJob;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
-    private long COUNTDOWN_TIME = 10;
+    private long COUNTDOWN_TIME = 60;
 
     /**
      * This class creates a conquest style game as known from Battlefield.
@@ -145,11 +146,11 @@ public class Conquest extends Scheduled {
     @Override
     public void process_message(String sender, String item, JSONObject message) {
         if (!item.equalsIgnoreCase("btn01")) {
-            log.debug("no btn01 message. discarding.");
+            log.trace("no btn01 message. discarding.");
             return;
         }
         if (!message.getString("button").equalsIgnoreCase("up")) {
-            log.debug("only reacting on button UP. discarding.");
+            log.trace("only reacting on button UP. discarding.");
             return;
         }
         if (hasRole(sender, "red_spawn")) red_spawn.ProcessFSM(item.toLowerCase());
@@ -177,8 +178,13 @@ public class Conquest extends Scheduled {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
                 String led = hasRole(agent, "blue_spawn") ? "led_blu" : "led_red";
+                String team = hasRole(agent, "blue_spawn") ? "Team Blue" : "Team Red";
                 mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", led, "slow"), agent);
-                mqttOutbound.send("paged", MQTT.page("page0", game_description), agent);
+                mqttOutbound.send("paged", MQTT.merge(
+                        MQTT.page("page0",
+                                "I am ${agentname} and will", "be Your spawn.", "You are " + team, "!! Standby !!"),
+                        MQTT.page("page1", game_description)), agent
+                );
             });
             fsm.setStatesAfterTransition("WE_ARE_PREPARING", (state, obj) -> {
                 mqttOutbound.send("paged", MQTT.page("page0", " !! NOT READY !! ", "Press button", "when Your team", "is ready"), agent);
@@ -187,7 +193,7 @@ public class Conquest extends Scheduled {
                 FSM other_team = hasRole(agent, "red_spawn") ? blue_spawn : red_spawn;
                 // if the other team is also ready, the GAME is ready to start
                 if (other_team.getCurrentState().equals("WE_ARE_READY")) game_fsm.ProcessFSM("ready");
-                if (game_fsm.getCurrentState().equals("PREPARE"))
+                if (game_fsm.getCurrentState().equals("TEAMS_NOT_READY"))
                     mqttOutbound.send("paged", MQTT.page("page0", " !! WE ARE READY !! ", "Waiting for others", "If NOT ready:", "Press button again"), agent);
             });
             fsm.setAction("WE_ARE_READY", "btn01", new FSMAction() {
@@ -210,7 +216,7 @@ public class Conquest extends Scheduled {
             });
             fsm.setStatesAfterTransition("COUNTDOWN_RUNNING", (state, obj) -> {
                 mqttOutbound.send("timers", MQTT.toJSON("countdown", Long.toString(COUNTDOWN_TIME)), agent); // sending to everyone
-                mqttOutbound.send("paged", MQTT.page("page0", " GAME STARTS ", "   in    ", "${countdown}", ""), agent);
+                mqttOutbound.send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
             });
 
             fsm.setStatesAfterTransition("EPILOG", (state, obj) -> {
@@ -301,7 +307,7 @@ public class Conquest extends Scheduled {
     private void cp_to_neutral(String agent) {
         mqttOutbound.send("paged",
                 MQTT.page("page0",
-                        "I am " + agent, "", "I will be a", "Capture Point"),
+                        "I am ${agentname}", "", "I will be a", "Capture Point"),
                 agent);
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "normal"), agent);
     }
@@ -392,7 +398,7 @@ public class Conquest extends Scheduled {
         // mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
         mqttOutbound.send("paged",
                 MQTT.page("page0",
-                        "", "", "I will be a", "Siren"), roles.get("sirens"));
+                        "I am ${agentname}", "", "I will be a", "Siren"), roles.get("sirens"));
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
         red_spawn.ProcessFSM("reset");
         blue_spawn.ProcessFSM("reset");
@@ -423,14 +429,13 @@ public class Conquest extends Scheduled {
     protected void at_resuming() {
         super.at_resuming();
         process_message("continue");
-        //mqttOutbound.send("paged", get_pages_to_display(), roles.get("spawns"));
     }
 
     @Override
-    protected void on_start() {
-        super.on_start();
-        red_spawn.ProcessFSM("start");
-        blue_spawn.ProcessFSM("start");
+    protected void on_prepare() {
+        super.on_prepare();
+        red_spawn.ProcessFSM("prepare");
+        blue_spawn.ProcessFSM("prepare");
     }
 
     @Override
@@ -451,8 +456,6 @@ public class Conquest extends Scheduled {
         long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
         create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
         broadcast_cycle_counter = 0;
-
-
     }
 
     @Override
@@ -473,6 +476,8 @@ public class Conquest extends Scheduled {
 
         final JSONObject states = new JSONObject();
         cpFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
+        states.put(roles.get("red_spawn").stream().findFirst().get(), red_spawn.getCurrentState());
+        states.put(roles.get("blue_spawn").stream().findFirst().get(), blue_spawn.getCurrentState());
         statusObject.put("agent_states", states);
         return statusObject;
     }
