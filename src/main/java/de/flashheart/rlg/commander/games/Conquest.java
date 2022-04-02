@@ -7,7 +7,6 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.jobs.RunGameJob;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONObject;
 import org.quartz.JobKey;
@@ -193,14 +192,14 @@ public class Conquest extends Scheduled {
                 FSM other_team = hasRole(agent, "red_spawn") ? blue_spawn : red_spawn;
                 // if the other team is also ready, the GAME is ready to start
                 if (other_team.getCurrentState().equals("WE_ARE_READY")) game_fsm.ProcessFSM("ready");
-                if (game_fsm.getCurrentState().equals("TEAMS_NOT_READY"))
+                if (game_fsm.getCurrentState().equals(_state_TEAMS_NOT_READY))
                     mqttOutbound.send("paged", MQTT.page("page0", " !! WE ARE READY !! ", "Waiting for others", "If NOT ready:", "Press button again"), agent);
             });
             fsm.setAction("WE_ARE_READY", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // oh hey wait, we NOT ready. HOLD IT - HOLD IT
-                    game_fsm.ProcessFSM("prepare");
+                    game_fsm.ProcessFSM(_msg_PREPARE);
                     return true;
                 }
             });
@@ -208,7 +207,7 @@ public class Conquest extends Scheduled {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // oh hey wait, we NOT ready. HOLD IT - HOLD IT
-                    game_fsm.ProcessFSM("prepare");
+                    game_fsm.ProcessFSM(_msg_PREPARE);
                     FSM other_team = hasRole(agent, "red_spawn") ? blue_spawn : red_spawn;
                     other_team.ProcessFSM("other_team_not_ready");
                     return true;
@@ -261,18 +260,18 @@ public class Conquest extends Scheduled {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
-                log.debug("CP_State: {}:{}", agent, state);
+                log.trace("CP_State: {}:{}", agent, state);
                 cp_to_neutral(agent);
             });
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
-                log.debug("CP_State: {}:{}", agent, state);
+                log.trace("CP_State: {}:{}", agent, state);
                 cp_to_neutral(agent);
                 broadcast_score();
             });
             fsm.setAction("NEUTRAL", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent, curState, nextState);
+                    log.trace("{}:{} =====> {}", agent, curState, nextState);
                     cp_to_blue(agent);
                     broadcast_score();
                     return true;
@@ -281,7 +280,7 @@ public class Conquest extends Scheduled {
             fsm.setAction("BLUE", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent, curState, nextState);
+                    log.trace("{}:{} =====> {}", agent, curState, nextState);
                     cp_to_red(agent);
                     broadcast_score();
                     return true;
@@ -290,7 +289,7 @@ public class Conquest extends Scheduled {
             fsm.setAction("RED", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{}:{} =====> {}", agent, curState, nextState);
+                    log.trace("{}:{} =====> {}", agent, curState, nextState);
                     cp_to_blue(agent);
                     broadcast_score();
                     return true;
@@ -341,12 +340,12 @@ public class Conquest extends Scheduled {
 
         if (remaining_blue_tickets.intValue() <= 0 || remaining_red_tickets.intValue() <= 0) {
             broadcast_score();
-            process_message("game_over");
+            process_message(_msg_GAME_OVER);
         }
     }
 
     @Override
-    protected void on_transistion(String old_state, String message, String new_state) {
+    protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals("game_over")) {
             deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
             log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
@@ -410,7 +409,7 @@ public class Conquest extends Scheduled {
         }
 
         if (state.equals("RESUMING")) {
-            process_message("continue");
+            process_message(_msg_CONTINUE);
         }
     }
 

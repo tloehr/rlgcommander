@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.jobs;
 
 import de.flashheart.rlg.commander.games.Conquest;
+import de.flashheart.rlg.commander.games.Game;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;
@@ -20,7 +21,7 @@ public class RunGameJob extends QuartzJobBean implements InterruptableJob {
         try {
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("uuid");
             Conquest game = (Conquest) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
-            game.process_message("run");
+            game.process_message(Game._msg_RUN);
         } catch (SchedulerException e) {
             log.error(e);
         }

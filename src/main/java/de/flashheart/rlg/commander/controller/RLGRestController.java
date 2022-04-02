@@ -72,26 +72,26 @@ public class RLGRestController {
         return emitter;
     }
 
-//    @GetMapping("/stream-sse-mvc")
-//    public SseEmitter streamSseMvc() {
-//        SseEmitter emitter = new SseEmitter(-1l);
-//        ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
-//        sseMvcExecutor.execute(() -> {
-//            try {
-//                for (int i = 0; true; i++) {
-//                    SseEmitter.SseEventBuilder event = SseEmitter.event().
-//                            data("SSE MVC - " + LocalTime.now().toString()).
-//                            id(String.valueOf(i)).
-//                            name("sse event - mvc");
-//                    emitter.send(event);
-//                    Thread.sleep(1000);
-//                }
-//            } catch (Exception ex) {
-//                emitter.completeWithError(ex);
-//            }
-//        });
-//        return emitter;
-//    }
+    @GetMapping("/stream-sse-mvc")
+    public SseEmitter streamSseMvc() {
+        SseEmitter emitter = new SseEmitter(-1l);
+        ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
+        sseMvcExecutor.execute(() -> {
+            try {
+                for (int i = 0; true; i++) {
+                    SseEmitter.SseEventBuilder event = SseEmitter.event().
+                            data("SSE MVC - " + LocalTime.now().toString()).
+                            id(String.valueOf(i)).
+                            name("sse event - mvc");
+                    emitter.send(event);
+                    Thread.sleep(1000);
+                }
+            } catch (Exception ex) {
+                emitter.completeWithError(ex);
+            }
+        });
+        return emitter;
+    }
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
     public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) throws

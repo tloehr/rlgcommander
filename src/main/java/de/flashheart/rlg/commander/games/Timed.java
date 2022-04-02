@@ -60,7 +60,7 @@ public abstract class Timed extends Scheduled {
     }
 
     @Override
-    protected void on_transistion(String old_state, String message, String new_state) {
+    protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals("pause")){
             deleteJob(gametimeJobKey);
             deleteJob(overtimeJobKey);

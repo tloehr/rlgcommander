@@ -18,7 +18,7 @@ public class GameTimeIsUpJob extends QuartzJobBean implements InterruptableJob {
             log.debug(jobExecutionContext.getJobDetail().getKey() + " executed");
             String uuid = jobExecutionContext.getMergedJobDataMap().getString("uuid");
             Game rushGame = (Game) jobExecutionContext.getScheduler().getContext().get(uuid);
-            rushGame.process_message("game_over");
+            rushGame.process_message(Game._msg_GAME_OVER);
         } catch (SchedulerException e) {
             log.fatal(e);
         }

@@ -67,7 +67,7 @@ public class GamesService {
 
         loaded_games[id - 1] = Optional.of(game);
         agentsService.assign_gameid_to_agents(id, game.getAgents().keySet());
-        game.process_message("reset");
+        game.process_message(Game._msg_RESET);
         return game;
     }
 

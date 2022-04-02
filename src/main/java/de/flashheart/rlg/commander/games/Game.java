@@ -24,7 +24,21 @@ import java.util.*;
 
 @Log4j2
 public abstract class Game {
-
+    public static final String _msg_RESET = "reset";
+    public static final String _msg_PREPARE = "prepare";
+    public static final String _msg_READY = "ready";
+    public static final String _msg_RUN = "run";
+    public static final String _msg_PAUSE = "pause";
+    public static final String _msg_RESUME = "resume";
+    public static final String _msg_CONTINUE = "continue";
+    public static final String _msg_GAME_OVER = "game_over";
+    public static final String _state_PROLOG = "PROLOG";
+    public static final String _state_TEAMS_NOT_READY = "TEAMS_NOT_READY";
+    public static final String _state_TEAMS_READY = "TEAMS_READY";
+    public static final String _state_RUNNING = "RUNNING";
+    public static final String _state_PAUSING = "PAUSING";
+    public static final String _state_RESUMING = "RESUMING";
+    public static final String _state_EPILOG = "EPILOG";
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
     private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
 
@@ -62,10 +76,18 @@ public abstract class Game {
         pausing_since = Optional.empty();
     }
 
+    /**
+     * adds a listener for state transitions
+     * @param toAdd
+     */
     public void addStateTransistionListener(StateTransitionListener toAdd) {
         stateTransitionListeners.add(toAdd);
     }
 
+    /**
+     * adds a listener when reaching a new state
+     * @param toAdd
+     */
     public void addStateReachedListener(StateReachedListener toAdd) {
         stateReachedListeners.add(toAdd);
     }
@@ -74,7 +96,7 @@ public abstract class Game {
     private void fireStateTransition(StateTransitionEvent event) {
         stateTransitionListeners.forEach(stateTransitionListener -> stateTransitionListener.onStateTransition(event));
         log.debug("transition {}:{} == > {}", event.getOldState(), event.getMessage(), event.getNewState());
-        on_transistion(event.getOldState(), event.getMessage(), event.getNewState());
+        on_transition(event.getOldState(), event.getMessage(), event.getNewState());
     }
 
     private void fireStateReached(StateReachedEvent event) {
@@ -83,9 +105,21 @@ public abstract class Game {
         at_state(event.getState());
     }
 
+    /**
+     * called whenever a new state of the game_fsm is reached.
+     *
+     * @param state the reached state
+     */
     protected abstract void at_state(String state);
 
-    protected abstract void on_transistion(String old_state, String message, String new_state);
+    /**
+     * called on a new transistion within the game_fsm
+     *
+     * @param old_state before the transition
+     * @param message message triggering the transition
+     * @param new_state after the transition
+     */
+    protected abstract void on_transition(String old_state, String message, String new_state);
 
     public void process_message(String message) throws IllegalStateException {
         if (game_fsm.ProcessFSM(message) == null) {
@@ -93,9 +127,10 @@ public abstract class Game {
         }
     }
 
-
     /**
      * when something happens, we need to react on it. Implement this method to tell us, WHAT we should do.
+     * these messages are usually sent from outside the Game hierarchy. A sender can also be the
+     * quartz scheduler.
      *
      * @param message
      * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
@@ -103,99 +138,101 @@ public abstract class Game {
     public abstract void process_message(String sender, String item, JSONObject message);
 
 
+    /**
+     * mainly boilerplate code to create the game_fsm
+     * @return the created FSM
+     * @throws ParserConfigurationException
+     * @throws IOException
+     * @throws SAXException
+     */
     private FSM createFSM() throws ParserConfigurationException, IOException, SAXException {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/game.xml"), null);
-        fsm.setAction("reset", new FSMAction() {
+        // Transitions
+        fsm.setAction(_msg_RESET, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                fireStateTransition(new StateTransitionEvent(curState, "reset", nextState));
+                fireStateTransition(new StateTransitionEvent(curState, _msg_RESET, nextState));
                 return true;
             }
         });
-
-        fsm.setAction("run", new FSMAction() {
+        fsm.setAction(_msg_RUN, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                fireStateTransition(new StateTransitionEvent(curState, "run", nextState));
+                fireStateTransition(new StateTransitionEvent(curState, _msg_RUN, nextState));
                 return true;
             }
         });
-
-        fsm.setAction("ready", new FSMAction() {
+        fsm.setAction(_msg_READY, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                fireStateTransition(new StateTransitionEvent(curState, "ready", nextState));
+                fireStateTransition(new StateTransitionEvent(curState, _msg_READY, nextState));
                 return true;
             }
         });
-
-        fsm.setAction("prepare", new FSMAction() {
+        fsm.setAction(_msg_PREPARE, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                fireStateTransition(new StateTransitionEvent(curState, "prepare", nextState));
+                fireStateTransition(new StateTransitionEvent(curState, _msg_PREPARE, nextState));
                 return true;
             }
         });
-
-        fsm.setAction("game_over", new FSMAction() {
+        fsm.setAction(_msg_GAME_OVER, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                fireStateTransition(new StateTransitionEvent(curState, "game_over", nextState));
+                fireStateTransition(new StateTransitionEvent(curState, _msg_GAME_OVER, nextState));
                 return true;
             }
         });
-
-        fsm.setAction("pause", new FSMAction() {
+        fsm.setAction(_msg_PAUSE, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 pausing_since = Optional.of(LocalDateTime.now());
-                fireStateTransition(new StateTransitionEvent(curState, "pause", nextState));
+                fireStateTransition(new StateTransitionEvent(curState, _msg_PAUSE, nextState));
                 return true;
             }
         });
-
-        fsm.setAction("resume", new FSMAction() {
+        fsm.setAction(_msg_RESUME, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 pausing_since = Optional.empty();
-                fireStateTransition(new StateTransitionEvent(curState, "resume", nextState));
+                fireStateTransition(new StateTransitionEvent(curState, _msg_RESUME, nextState));
                 return true;
             }
         });
-
-        fsm.setAction("continue", new FSMAction() {
+        fsm.setAction(_msg_CONTINUE, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                fireStateTransition(new StateTransitionEvent(curState, "continue", nextState));
+                fireStateTransition(new StateTransitionEvent(curState, _msg_CONTINUE, nextState));
                 return true;
             }
         });
 
-        fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
+        // States
+        fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
 
-        fsm.setStatesAfterTransition("TEAMS_NOT_READY", (state, obj) -> {
+        fsm.setStatesAfterTransition(_state_TEAMS_NOT_READY, (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
 
-        fsm.setStatesAfterTransition("TEAMS_READY", (state, obj) -> {
+        fsm.setStatesAfterTransition(_state_TEAMS_READY, (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
 
-        fsm.setStatesAfterTransition("RUNNING", (state, obj) -> {
+        fsm.setStatesAfterTransition(_state_RUNNING, (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
 
-        fsm.setStatesAfterTransition("PAUSING", (state, obj) -> {
+        fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
 
-        fsm.setStatesAfterTransition("RESUMING", (state, obj) -> {
+        fsm.setStatesAfterTransition(_state_RESUMING, (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
 
-        fsm.setStatesAfterTransition("EPILOG", (state, obj) -> {
+        fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
 
@@ -207,10 +244,13 @@ public abstract class Game {
     }
 
     /**
-     * before another game is loaded, cleanup first
+     * called whenever cleanup() is called from outside
      */
     protected abstract void on_cleanup();
 
+    /**
+     * call this to initiate the cleanup process before You destroy a loaded game.
+     */
     public void cleanup() {
         stateReachedListeners.clear();
         stateTransitionListeners.clear();
@@ -251,6 +291,12 @@ public abstract class Game {
         return game_fsm.getCurrentState().equals("PAUSING") ? MQTT.page("pause", "", "      PAUSE      ", "", "") : new JSONObject();
     }
 
+    /**
+     * pretty self explanatory
+     * @param agent
+     * @param role
+     * @return
+     */
     public boolean hasRole(String agent, String role) {
         return agents.get(agent).contains(role);
     }

@@ -58,7 +58,7 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    protected void on_transistion(String old_state, String message, String new_state) {
+    protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals("reset")) {
             mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal", "led_blu", "normal"), roles.get("leds"));
             mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal"), roles.get("red_spawn"));

@@ -76,7 +76,7 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    protected void on_transistion(String old_state, String message, String new_state) {
+    protected void on_transition(String old_state, String message, String new_state) {
 
     }
 
@@ -175,12 +175,12 @@ public class Rush extends Scheduled {
             });
             sectorFSM.setStatesAfterTransition("SECTOR_DEFENDED", (state, o) -> {
                 log.info("=====> Sector{}:{}", sector_number, state);
-                process_message("game_over");
+                process_message(_msg_GAME_OVER);
             });
             sectorFSM.setStatesAfterTransition("SECTOR_TAKEN", (state, o) -> {
                 log.info("=====> Sector{}:{}", sector_number, state);
                 active_sector = sector_number + 1;
-                if (active_sector > MAX_NUMBER_OF_SECTORS) process_message("game_over");
+                if (active_sector > MAX_NUMBER_OF_SECTORS) process_message(_msg_GAME_OVER);
                 else sectors.get(active_sector).ProcessFSM("start");
             });
 
