@@ -40,11 +40,12 @@ public class Conquest extends Scheduled {
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
 
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
+    private boolean wait4teams2B_ready;
     private int blue_respawns, red_respawns;
     private HashSet<String> cps_held_by_blue, cps_held_by_red;
     private JobKey ticketBleedingJobkey, runGameJob;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
-    private long COUNTDOWN_TIME = 60;
+    private int countdown_time;
 
     /**
      * This class creates a conquest style game as known from Battlefield.
@@ -89,6 +90,8 @@ public class Conquest extends Scheduled {
         this.start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
         this.end_bleed_interval = game_parameters.getBigDecimal("end_bleed_interval");
         this.ticket_price_for_respawn = game_parameters.getBigDecimal("ticket_price_for_respawn");
+        this.wait4teams2B_ready = game_parameters.getBoolean("wait4teams2B_ready");
+        this.countdown_time = game_parameters.getInt("countdown_time");
 
         cps_held_by_blue = new HashSet<>();
         cps_held_by_red = new HashSet<>();
@@ -203,7 +206,7 @@ public class Conquest extends Scheduled {
                     return true;
                 }
             });
-            fsm.setAction("COUNTDOWN_RUNNING", "btn01", new FSMAction() {
+            fsm.setAction("COUNTDOWN", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // oh hey wait, we NOT ready. HOLD IT - HOLD IT
@@ -213,8 +216,8 @@ public class Conquest extends Scheduled {
                     return true;
                 }
             });
-            fsm.setStatesAfterTransition("COUNTDOWN_RUNNING", (state, obj) -> {
-                mqttOutbound.send("timers", MQTT.toJSON("countdown", Long.toString(COUNTDOWN_TIME)), agent); // sending to everyone
+            fsm.setStatesAfterTransition("COUNTDOWN", (state, obj) -> {
+                mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(countdown_time)), agent); // sending to everyone
                 mqttOutbound.send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
             });
 
@@ -225,7 +228,14 @@ public class Conquest extends Scheduled {
                                 "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome),
                         agent);
             });
-            fsm.setStatesAfterTransition("GAME_RUNNING", (state, obj) -> {
+            fsm.setStatesAfterTransition("WE_ARE_PREPARING", (state, obj) -> {
+                String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
+                mqttOutbound.send("paged",
+                        MQTT.page("page0",
+                                "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome),
+                        agent);
+            });
+            fsm.setStatesAfterTransition("IN_GAME", (state, obj) -> {
                 log.debug("ENTERED STATE GAME_RUNNING {}", agent);
                 mqttOutbound.send("paged", MQTT.merge(
                         MQTT.page("page0",
@@ -240,7 +250,7 @@ public class Conquest extends Scheduled {
                                 "Red->${red_tickets}:${blue_tickets}<-Blue"),
                         get_pages_to_display()), agent);
             });
-            fsm.setAction("GAME_RUNNING", "btn01", new FSMAction() {
+            fsm.setAction("IN_GAME", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (hasRole(agent, "blue_spawn")) respawn_blue(agent);
@@ -401,7 +411,7 @@ public class Conquest extends Scheduled {
             red_spawn.ProcessFSM("countdown");
             blue_spawn.ProcessFSM("countdown");
             // always one second less. so the spawns are closer to the siren when it comes to the game start.
-            create_job(runGameJob, LocalDateTime.now().plusSeconds(COUNTDOWN_TIME - 1), RunGameJob.class);
+            create_job(runGameJob, LocalDateTime.now().plusSeconds(countdown_time - 1), RunGameJob.class);
         }
 
         if (state.equals("PAUSING")) {
