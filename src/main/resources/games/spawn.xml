@@ -11,15 +11,15 @@
     <STATE id="PROLOG" type="ID">
         <MESSAGE id="prepare" nextState="WE_ARE_PREPARING"/>
         <!-- Admin shortcuts -->
-        <MESSAGE id="start_countdown" nextState="start_countdown"/>
+        <MESSAGE id="start_countdown" nextState="COUNTDOWN_TO_START"/>
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!--    we are preparing - not ready yet-->
     <STATE id="WE_ARE_PREPARING">
         <MESSAGE id="btn01" nextState="WE_ARE_READY"/>
+        <MESSAGE id="ready" nextState="WE_ARE_READY"/>
         <!-- Admin shortcuts -->
-        <MESSAGE id="start_countdown" nextState="start_countdown"/>
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
@@ -27,22 +27,34 @@
     <STATE id="WE_ARE_READY">
         <MESSAGE id="btn01" nextState="WE_ARE_PREPARING"/>
         <!-- Admin shortcuts -->
-        <MESSAGE id="start_countdown" nextState="start_countdown"/>
+        <MESSAGE id="start_countdown" nextState="COUNTDOWN_TO_START"/>
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!--    everybody is ready - countdown -->
-    <STATE id="start_countdown">
-        <MESSAGE id="btn01" nextState="WE_ARE_PREPARING"/>
-        <MESSAGE id="other_team_not_ready" nextState="WE_ARE_READY"/>
+    <STATE id="COUNTDOWN_TO_START">
+        <!--        <MESSAGE id="btn01" nextState="WE_ARE_PREPARING"/>-->
+        <!--        <MESSAGE id="other_team_not_ready" nextState="WE_ARE_READY"/>-->
         <!-- Admin shortcuts -->
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!--  finally running -->
     <STATE id="IN_GAME">
-        <MESSAGE id="btn01" nextState="GAME_RUNNING"/>
+        <MESSAGE id="btn01" nextState="IN_GAME"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
+        <MESSAGE id="pause" nextState="PAUSING"/>
+        <!-- Admin shortcuts -->
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="PAUSING">
+        <MESSAGE id="resume" nextState="COUNTDOWN_TO_RESUME"/>
+        <MESSAGE id="continue" nextState="IN_GAME"/>
+        <!-- Admin shortcuts -->
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="COUNTDOWN_TO_RESUME">
+        <MESSAGE id="continue" nextState="IN_GAME"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
