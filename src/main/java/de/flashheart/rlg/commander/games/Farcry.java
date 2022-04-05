@@ -226,7 +226,7 @@ public class Farcry extends Timed implements HasRespawn {
 
 
     protected void on_run() {
-        
+
         deleteJob(myRespawnJobKey);
         if (respawn_period > 0) { // respawn_period == 0 means we should not care about it
             create_job(myRespawnJobKey, simpleSchedule().withIntervalInSeconds(respawn_period).repeatForever(), RespawnJob.class);
@@ -241,6 +241,11 @@ public class Farcry extends Timed implements HasRespawn {
                 .put("flag_capture_time", flagcapturetime)
                 .put("respawn_period", respawn_period)
                 .put("current_state", farcryFSM.getCurrentState());
+    }
+
+    @Override
+    protected JSONObject getPages() {
+        return MQTT.page("page0", game_description);
     }
 
     @Override

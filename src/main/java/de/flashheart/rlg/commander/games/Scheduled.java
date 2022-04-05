@@ -3,6 +3,7 @@ package de.flashheart.rlg.commander.games;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.*;
 import org.xml.sax.SAXException;
@@ -24,7 +25,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public abstract class Scheduled extends Game {
     final Set<JobKey> jobs;
 
-    public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
+    public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
 
         jobs = new HashSet<>();
@@ -38,7 +39,7 @@ public abstract class Scheduled extends Game {
     protected void deleteJob(JobKey jobKey) {
         if (jobKey == null) return;
         try {
-            log.debug("deleting Job {}", jobKey);
+            log.trace("deleting Job {}", jobKey);
             scheduler.interrupt(jobKey);
             scheduler.deleteJob(jobKey);
             jobs.remove(jobKey);

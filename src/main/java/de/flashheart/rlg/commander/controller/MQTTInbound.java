@@ -89,8 +89,8 @@ public class MQTTInbound {
                     //agentsService.remove(agentid);
                 }
             } else {
-                log.debug(message.toString());
-                log.debug(message.getPayload().toString());
+                log.trace(message.toString());
+                log.trace(message.getPayload().toString());
                 int gameid = live_agents.getOrDefault(agentid, new Agent()).getGameid();
                 if (gameid > 0) {
                     try {

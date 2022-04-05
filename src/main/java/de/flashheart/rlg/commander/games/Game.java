@@ -10,6 +10,7 @@ import de.flashheart.rlg.commander.misc.StateReachedListener;
 import de.flashheart.rlg.commander.misc.StateTransitionEvent;
 import de.flashheart.rlg.commander.misc.StateTransitionListener;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.xml.sax.SAXException;
@@ -38,7 +39,9 @@ public abstract class Game {
     public static final String _state_PAUSING = "PAUSING";
     public static final String _state_RESUMING = "RESUMING";
     public static final String _state_EPILOG = "EPILOG";
-    public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RESUMING, _state_EPILOG};
+    public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG};
+    public String _signal_AIRSIREN_START = "very_long";
+    public String _signal_AIRSIREN_STOP = "3:on,1500;off,750";
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
     private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
 
@@ -48,14 +51,13 @@ public abstract class Game {
     // can be displayed on the LCDs
     protected final ArrayList<String> game_description;
     private final JSONObject game_parameters;
-    Optional<LocalDateTime> pausing_since;
     protected final UUID uuid;
     protected final Scheduler scheduler;
     protected final Multimap<String, String> agents, roles;
     // main FSM to control the basic states of every game
     protected final FSM game_fsm;
 
-    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
+    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         uuid = UUID.randomUUID();
         this.game_parameters = game_parameters;
         this.scheduler = scheduler;
@@ -73,11 +75,6 @@ public abstract class Game {
         );
         this.game_fsm = createFSM();
         game_description = new ArrayList<>();
-        pausing_since = Optional.empty();
-        addStateTransistionListener(event -> {
-            if (event.getMessage().equals(_msg_PAUSE)) pausing_since = Optional.of(LocalDateTime.now());
-            if (event.getMessage().equals(_msg_CONTINUE)) pausing_since = Optional.empty();
-        });
     }
 
     /**
@@ -215,28 +212,6 @@ public abstract class Game {
         fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList(_state_ALL_STATES)), (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
-//        // States
-//        fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
-//            fireStateReached(new StateReachedEvent(state));
-//        });
-//        fsm.setStatesAfterTransition(_state_TEAMS_NOT_READY, (state, obj) -> {
-//            fireStateReached(new StateReachedEvent(state));
-//        });
-//        fsm.setStatesAfterTransition(_state_TEAMS_READY, (state, obj) -> {
-//            fireStateReached(new StateReachedEvent(state));
-//        });
-//        fsm.setStatesAfterTransition(_state_RUNNING, (state, obj) -> {
-//            fireStateReached(new StateReachedEvent(state));
-//        });
-//        fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> {
-//            fireStateReached(new StateReachedEvent(state));
-//        });
-//        fsm.setStatesAfterTransition(_state_RESUMING, (state, obj) -> {
-//            fireStateReached(new StateReachedEvent(state));
-//        });
-//        fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> {
-//            fireStateReached(new StateReachedEvent(state));
-//        });
 
         return fsm;
     }
@@ -268,7 +243,6 @@ public abstract class Game {
         return new JSONObject()
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
-                .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL)
                 .put("game_state", game_fsm.getCurrentState());
     }
 
@@ -298,4 +272,6 @@ public abstract class Game {
     public JSONObject getGame_parameters() {
         return game_parameters;
     }
+
+    protected abstract JSONObject getPages();
 }

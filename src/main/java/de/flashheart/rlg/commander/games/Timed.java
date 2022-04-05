@@ -5,6 +5,7 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.GameTimeIsUpJob;
 import de.flashheart.rlg.commander.jobs.OvertimeJob;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -21,7 +22,7 @@ import java.time.temporal.ChronoUnit;
  * time, NOT about END-SCORES or RUNNING OUT OF RESOURCES.
  */
 @Log4j2
-public abstract class Timed extends Scheduled {
+public abstract class Timed extends Pausable {
 
     /**
      * the length of the match in seconds. Due to the nature of certain gamemodes (like farcry) this value is rather a
@@ -50,7 +51,7 @@ public abstract class Timed extends Scheduled {
 
     final JobKey gametimeJobKey, overtimeJobKey;
 
-    Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
+    Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         this.match_length = game_parameters.getInt("match_length");
         gametimeJobKey = new JobKey("gametime", uuid.toString());

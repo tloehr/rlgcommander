@@ -233,7 +233,6 @@ public class Rush extends Scheduled {
     }
 
 
-
     @Override
     public JSONObject getStatus() {
         final JSONObject statusObject = super.getStatus()
@@ -245,4 +244,8 @@ public class Rush extends Scheduled {
         return statusObject;
     }
 
+    @Override
+    protected JSONObject getPages() {
+        return MQTT.page("page0", game_description);
+    }
 }

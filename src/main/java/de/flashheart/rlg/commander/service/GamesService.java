@@ -61,7 +61,7 @@ public class GamesService {
         // todo: check for agent conflicts when loading. reject if necessary
         Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
         game.addStateReachedListener(event -> {
-            log.debug("gameid #{} -> {}", id, event.getState());
+            log.debug("gameid #{} new state: {}", id, event.getState());
             fireGameStateChange(new GameStateEvent(event.getState(), id));
         });
 

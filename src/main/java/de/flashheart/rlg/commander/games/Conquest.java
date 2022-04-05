@@ -5,10 +5,9 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
-import de.flashheart.rlg.commander.jobs.ContinueGameJob;
-import de.flashheart.rlg.commander.jobs.RunGameJob;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.text.WordUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -18,7 +17,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -30,24 +28,20 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * lifecycle cleanup before new game is laoded (by GameService)
  */
 @Log4j2
-public class Conquest extends Scheduled {
+public class Conquest extends WithRespawns {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
     private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
     private final Map<String, FSM> cpFSMs;
-    private final FSM red_spawn;
-    private final FSM blue_spawn;
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
 
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
-    private boolean wait4teams2B_ready;
     private int blue_respawns, red_respawns;
     private HashSet<String> cps_held_by_blue, cps_held_by_red;
-    private final JobKey ticketBleedingJobkey, runGameJob, continueGameJob;
+    private final JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
-    private int starter_countdown;
-    private int resume_countdown;
+
 
     /**
      * This class creates a conquest style game as known from Battlefield.
@@ -78,7 +72,7 @@ public class Conquest extends Scheduled {
      * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore cannot use
      *                        DI.
      */
-    public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
+    public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         log.debug("   ______                                  __\n" +
                 "  / ____/___  ____  ____ ___  _____  _____/ /_\n" +
@@ -92,9 +86,6 @@ public class Conquest extends Scheduled {
         this.start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
         this.end_bleed_interval = game_parameters.getBigDecimal("end_bleed_interval");
         this.ticket_price_for_respawn = game_parameters.getBigDecimal("ticket_price_for_respawn");
-        this.wait4teams2B_ready = game_parameters.getBoolean("wait4teams2B_ready");
-        this.starter_countdown = game_parameters.getInt("starter_countdown");
-        this.resume_countdown = game_parameters.getInt("resume_countdown");
 
         cps_held_by_blue = new HashSet<>();
         cps_held_by_red = new HashSet<>();
@@ -136,8 +127,6 @@ public class Conquest extends Scheduled {
         log.debug("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
         this.ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
-        this.runGameJob = new JobKey("run_the_game", uuid.toString());
-        this.continueGameJob = new JobKey("continue_the_game", uuid.toString());
 
         cpFSMs = new HashMap<>();
         setGameDescription(game_parameters.getString("comment"),
@@ -146,8 +135,25 @@ public class Conquest extends Scheduled {
                 String.format("Time: %s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-        red_spawn = create_Spawn_FSM(roles.get("red_spawn").stream().findFirst().get());
-        blue_spawn = create_Spawn_FSM(roles.get("blue_spawn").stream().findFirst().get());
+        add_spawn_for("red_spawn", "led_red", "Team Red");
+        add_spawn_for("blue_spawn", "led_blu", "Team Blue");
+    }
+
+    @Override
+    protected void respawn(String role, String agent) {
+        if (role.equals("red_spawn")) {
+            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
+            remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
+            red_respawns++;
+            broadcast_score();
+        }
+
+        if (role.equals("blue_spawn")) {
+            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
+            remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
+            blue_respawns++;
+            broadcast_score();
+        }
     }
 
     @Override
@@ -160,137 +166,25 @@ public class Conquest extends Scheduled {
             log.trace("only reacting on button UP. discarding.");
             return;
         }
-        if (hasRole(sender, "red_spawn")) red_spawn.ProcessFSM(item.toLowerCase());
-        if (hasRole(sender, "blue_spawn")) blue_spawn.ProcessFSM(item.toLowerCase());
+        super.process_message(sender, item, message);
         if (hasRole(sender, "capture_points")) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
-
     }
 
-    void respawn_red(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
-        remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
-        red_respawns++;
-        broadcast_score();
-    }
-
-    void respawn_blue(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
-        remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
-        blue_respawns++;
-        broadcast_score();
-    }
-
-    private FSM create_Spawn_FSM(final String agent) {
-        try {
-            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
-            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
-                String led = hasRole(agent, "blue_spawn") ? "led_blu" : "led_red";
-                String team = hasRole(agent, "blue_spawn") ? "Team Blue" : "Team Red";
-                mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", led, "slow"), agent);
-                mqttOutbound.send("paged", MQTT.merge(
-                        MQTT.page("page0",
-                                "I am ${agentname} and will", "be Your spawn.", "You are " + team, "!! Standby !!"),
-                        MQTT.page("page1", game_description)), agent
-                );
-            });
-            fsm.setStatesAfterTransition("WE_ARE_PREPARING", (state, obj) -> {
-                mqttOutbound.send("paged", MQTT.page("page0", " !! NOT READY !! ", "Press button", "when Your team", "is ready"), agent);
-            });
-            fsm.setStatesAfterTransition("WE_ARE_READY", (state, obj) -> {
-                FSM other_team = hasRole(agent, "red_spawn") ? blue_spawn : red_spawn;
-                // if the other team is also ready, the GAME is ready to start
-                if (other_team.getCurrentState().equals("WE_ARE_READY")) game_fsm.ProcessFSM("ready");
-                if (game_fsm.getCurrentState().equals(_state_TEAMS_NOT_READY))
-                    mqttOutbound.send("paged", MQTT.page("page0", " !! WE ARE READY !! ", "Waiting for others", "If NOT ready:", "Press button again"), agent);
-            });
-            fsm.setAction("WE_ARE_READY", "btn01", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    // oh hey wait, we NOT ready. HOLD IT - HOLD IT
-                    game_fsm.ProcessFSM(_msg_PREPARE);
-                    return true;
-                }
-            });
-            fsm.setStatesAfterTransition("COUNTDOWN_TO_START", (state, obj) -> {
-                if (starter_countdown > 0) {
-                    mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent); // sending to everyone
-                    mqttOutbound.send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
-                }
-            });
-            fsm.setStatesAfterTransition("COUNTDOWN_TO_RESUME", (state, obj) -> {
-                if (resume_countdown > 0) {
-                    mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
-                    mqttOutbound.send("paged", MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
-                }
-            });
-            fsm.setStatesAfterTransition("EPILOG", (state, obj) -> {
-                String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
-                mqttOutbound.send("paged",
-                        MQTT.page("page0",
-                                "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome),
-                        agent);
-            });
-            fsm.setStatesAfterTransition("PAUSING", (state, obj) -> {
-                mqttOutbound.send("paged", MQTT.merge(
-                                MQTT.page("page0",
-                                        "   >>> RED   <<<   ",
-                                        "${red_l1}",
-                                        "${red_l2}",
-                                        "Red->${red_tickets}:${blue_tickets}<-Blue"),
-                                MQTT.page("page1",
-                                        "   >>> BLUE  <<<   ",
-                                        "${blue_l1}",
-                                        "${blue_l2}",
-                                        "Red->${red_tickets}:${blue_tickets}<-Blue"),
-                                MQTT.page("pause", "", "      PAUSE      ", "", "")),
-                        agent);
-            });
-            fsm.setStatesAfterTransition("IN_GAME", (state, obj) -> {
-                mqttOutbound.send("paged", MQTT.merge(
-                        MQTT.page("page0",
-                                "   >>> RED   <<<   ",
-                                "${red_l1}",
-                                "${red_l2}",
-                                "Red->${red_tickets}:${blue_tickets}<-Blue"),
-                        MQTT.page("page1",
-                                "   >>> BLUE  <<<   ",
-                                "${blue_l1}",
-                                "${blue_l2}",
-                                "Red->${red_tickets}:${blue_tickets}<-Blue")), agent);
-            });
-            fsm.setAction("IN_GAME", "btn01", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    if (hasRole(agent, "blue_spawn")) respawn_blue(agent);
-                    if (hasRole(agent, "red_spawn")) respawn_red(agent);
-                    return true;
-                }
-            });
-
-
-            return fsm;
-        } catch (ParserConfigurationException | SAXException | IOException ex) {
-            log.error(ex);
-            return null;
-        }
-    }
 
     private FSM create_CP_FSM(String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
-                log.trace("CP_State: {}:{}", agent, state);
                 cp_to_neutral(agent);
             });
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
-                log.trace("CP_State: {}:{}", agent, state);
                 cp_to_neutral(agent);
                 broadcast_score();
             });
             fsm.setAction("NEUTRAL", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.trace("{}:{} =====> {}", agent, curState, nextState);
+                    if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
                     cp_to_blue(agent);
                     broadcast_score();
                     return true;
@@ -299,7 +193,7 @@ public class Conquest extends Scheduled {
             fsm.setAction("BLUE", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.trace("{}:{} =====> {}", agent, curState, nextState);
+                    if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
                     cp_to_red(agent);
                     broadcast_score();
                     return true;
@@ -308,7 +202,7 @@ public class Conquest extends Scheduled {
             fsm.setAction("RED", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    log.trace("{}:{} =====> {}", agent, curState, nextState);
+                    if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
                     cp_to_blue(agent);
                     broadcast_score();
                     return true;
@@ -365,25 +259,15 @@ public class Conquest extends Scheduled {
 
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
-        if (message.equals(_msg_CONTINUE)) {
-            red_spawn.ProcessFSM("continue");
-            blue_spawn.ProcessFSM("continue");
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
-        }
+        super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
-            deleteJob(runGameJob);
-            deleteJob(continueGameJob);
             blue_respawns = 0;
             red_respawns = 0;
             remaining_blue_tickets = respawn_tickets;
             remaining_red_tickets = respawn_tickets;
             cps_held_by_blue.clear();
             cps_held_by_red.clear();
-
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long", "led_all", "off"), roles.get("sirens"));
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("run"));
-            red_spawn.ProcessFSM("run");
-            blue_spawn.ProcessFSM("run");
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
 
             // setup and start bleeding job
             long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
@@ -394,53 +278,16 @@ public class Conquest extends Scheduled {
 
     @Override
     protected void at_state(String state) {
+        super.at_state(state);
         if (state.equals(_state_PROLOG)) {
-            deleteJob(continueGameJob);
-            deleteJob(runGameJob);
             deleteJob(ticketBleedingJobkey);
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
+        }
 
-            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
-            // mqttOutbound.send("paged", MQTT.page("page0", game_description), agents.keySet());
-            mqttOutbound.send("paged",
-                    MQTT.page("page0",
-                            "I am ${agentname}", "", "I will be a", "Siren"), roles.get("sirens"));
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
-            red_spawn.ProcessFSM("reset");
-            blue_spawn.ProcessFSM("reset");
-        }
-        if (state.equals(_state_TEAMS_NOT_READY)) {
-            red_spawn.ProcessFSM(wait4teams2B_ready ? "prepare" : "ready");
-            blue_spawn.ProcessFSM(wait4teams2B_ready ? "prepare" : "ready");
-        }
-        if (state.equals(_state_TEAMS_READY)) {
-            if (starter_countdown > 0) {
-                red_spawn.ProcessFSM("start_countdown");
-                blue_spawn.ProcessFSM("start_countdown");
-                // always one second less. so the spawns are closer to the siren when it comes to the game start.
-                create_job(runGameJob, LocalDateTime.now().plusSeconds(starter_countdown - 1), RunGameJob.class);
-            } else {
-                process_message(_msg_RUN);
-            }
-        }
-        if (state.equals(_state_PAUSING)) {
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", "3:on,1500;off,1500"), roles.get("sirens"));
-            red_spawn.ProcessFSM("pause");
-            blue_spawn.ProcessFSM("pause");
-        }
-        if (state.equals(_state_RESUMING)) {
-            if (resume_countdown > 0) {
-                create_job(continueGameJob, LocalDateTime.now().plusSeconds(resume_countdown - 1), ContinueGameJob.class);
-            } else {
-                process_message(_msg_CONTINUE);
-            }
-        }
         if (state.equals(_state_EPILOG)) {
             deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
             log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", "3:on,1500;off,1500"), roles.get("sirens"));
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("game_over"));
-            red_spawn.ProcessFSM("game_over");
-            blue_spawn.ProcessFSM("game_over");
         }
     }
 
@@ -460,7 +307,6 @@ public class Conquest extends Scheduled {
 
         log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
-
     }
 
     /**
@@ -479,6 +325,28 @@ public class Conquest extends Scheduled {
         return lines;
     }
 
+    @Override
+    protected JSONObject getPages() {
+        log.debug(game_fsm.getCurrentState());
+        if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
+            String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
+            return MQTT.page("page0", "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome);
+        }
+        if (game_fsm.getCurrentState().equals(_state_RUNNING)) {
+            return MQTT.merge(
+                    MQTT.page("page0",
+                            "   >>> RED   <<<   ",
+                            "${red_l1}",
+                            "${red_l2}",
+                            "Red->${red_tickets}:${blue_tickets}<-Blue"),
+                    MQTT.page("page1",
+                            "   >>> BLUE  <<<   ",
+                            "${blue_l1}",
+                            "${blue_l2}",
+                            "Red->${red_tickets}:${blue_tickets}<-Blue"));
+        }
+        return MQTT.page("page0", game_description);
+    }
 
     @Override
     public JSONObject getStatus() {
@@ -494,15 +362,10 @@ public class Conquest extends Scheduled {
                 .put("cps_held_by_blue", cps_held_by_blue)
                 .put("cps_held_by_red", cps_held_by_red)
                 .put("red_respawns", red_respawns)
-                .put("blue_respawns", blue_respawns)
-                .put("wait4teams2B_ready", wait4teams2B_ready)
-                .put("starter_countdown", starter_countdown)
-                .put("resume_countdown", resume_countdown);
+                .put("blue_respawns", blue_respawns);
 
         final JSONObject states = new JSONObject();
         cpFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
-        states.put(roles.get("red_spawn").stream().findFirst().get(), red_spawn.getCurrentState());
-        states.put(roles.get("blue_spawn").stream().findFirst().get(), blue_spawn.getCurrentState());
         statusObject.put("agent_states", states);
         return statusObject;
     }

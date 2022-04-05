@@ -45,8 +45,11 @@ public class RLGRestController {
             IllegalAccessException.class,
             IllegalStateException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception exc) {
-        log.warn(exc.getMessage());
-        return new ResponseEntity(new JSONObject().put("error", exc.getMessage()).toString(), HttpStatus.NOT_ACCEPTABLE);
+//        String message = "";
+//        if (exc instanceof InvocationTargetException) message += ((InvocationTargetException) exc).getTargetException().getMessage();
+//        if (exc.getMessage() != null) message += exc.getMessage(); else message += exc.toString();
+        log.warn(exc);
+        return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
     }
 
     @GetMapping("/game_state_emitter")
