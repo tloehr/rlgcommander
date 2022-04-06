@@ -19,7 +19,7 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 /**
- * an abstract superclass for handling any game mode that needs an scheduler
+ * an abstract superclass for handling any game mode that needs a scheduler
  */
 @Log4j2
 public abstract class Scheduled extends Game {
@@ -48,11 +48,11 @@ public abstract class Scheduled extends Game {
         }
     }
 
-    void create_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz) {
+    protected void create_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz) {
         create_job(jobKey, start_time, clazz, Optional.empty());
     }
 
-    void create_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
+    protected void create_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
         try {
             deleteJob(jobKey);
             JobBuilder jobBuilder = newJob(clazz).withIdentity(jobKey).withIdentity(jobKey)
@@ -71,7 +71,7 @@ public abstract class Scheduled extends Game {
         }
     }
 
-    void create_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz) {
+    protected void create_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz) {
         deleteJob(jobKey);
         JobDetail job = newJob(clazz)
                 .withIdentity(jobKey)

@@ -25,6 +25,7 @@ public abstract class Pausable extends Scheduled {
     protected Optional<LocalDateTime> pausing_since;
 
     /**
+     * games deriving from this class will be able to pause and resume during game
      * @param game_parameters - requires int "resume_countdown" in game_parameters. if >0 a countdown is provided before
      *                        resuming after PAUSING
      * @param scheduler
