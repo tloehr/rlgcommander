@@ -53,12 +53,7 @@ public abstract class Pausable extends Scheduled {
             pausing_since = Optional.empty();
             mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START, "led_all", "off"), roles.get("sirens"));
         }
-        if (message.equals(_msg_CONTINUE)) {
-
-
-        }
     }
-
 
     @Override
     protected void at_state(String state) {

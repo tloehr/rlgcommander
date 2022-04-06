@@ -25,7 +25,7 @@
         <!--countdown then run -->
         <MESSAGE id="run" nextState="RUNNING"/>
         <!-- unless somebody is still not ready-->
-        <MESSAGE id="prepare" nextState="TEAMS_NOT_READY"/>
+<!--        <MESSAGE id="prepare" nextState="TEAMS_NOT_READY"/>-->
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
