@@ -18,6 +18,9 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 
 @Log4j2
+/**
+ * Games deriving from this class will have team respawn agents with optional countdown functions.
+ */
 public abstract class WithRespawns extends Pausable {
     public static final String _state_WE_ARE_PREPARING = "WE_ARE_PREPARING";
     public static final String _state_WE_ARE_READY = "WE_ARE_READY";
@@ -41,6 +44,16 @@ public abstract class WithRespawns extends Pausable {
         this.agents_to_spawnrole = new HashMap<>();
     }
 
+    /**
+     * adds a spawnagent for a team
+     *
+     * @param role          spawn role name for this agent
+     * @param led_device_id led device to blink for this team (e.g. led_red for team red)
+     * @param teamname      Name of the team to show on the LCD
+     * @throws ParserConfigurationException
+     * @throws IOException
+     * @throws SAXException
+     */
     public void add_spawn_for(String role, String led_device_id, String teamname) throws ParserConfigurationException, IOException, SAXException {
         String agent = roles.get(role).stream().findFirst().get();
         all_spawns.put(role, create_Spawn_FSM(agent, role, led_device_id, teamname));
@@ -93,7 +106,6 @@ public abstract class WithRespawns extends Pausable {
         });
 
         return fsm;
-
     }
 
     @Override
@@ -141,7 +153,12 @@ public abstract class WithRespawns extends Pausable {
         respawn(agents_to_spawnrole.get(sender), sender);
     }
 
-
+    /**
+     * implement this method to react on button presses on a spawn agent
+     *
+     * @param role  spawn role for this agent
+     * @param agent agent id
+     */
     protected abstract void respawn(String role, String agent);
 
     @Override
