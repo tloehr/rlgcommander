@@ -25,7 +25,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * Implementation for the FarCry 1 (2004) Assault Game Mode.
  */
 @Log4j2
-public class Farcry extends Timed implements HasRespawn {
+public class Farcry extends Timed  {
     private final int flagcapturetime;
     private final int respawn_period;
     private FSM farcryFSM;
@@ -236,8 +236,8 @@ public class Farcry extends Timed implements HasRespawn {
     }
 
     @Override
-    public JSONObject getStatus() {
-        return super.getStatus()
+    public JSONObject getState() {
+        return super.getState()
                 .put("flag_capture_time", flagcapturetime)
                 .put("respawn_period", respawn_period)
                 .put("current_state", farcryFSM.getCurrentState());
@@ -248,7 +248,7 @@ public class Farcry extends Timed implements HasRespawn {
         return MQTT.page("page0", game_description);
     }
 
-    @Override
+
     public void respawn() {
         // the last part of this message is a delayed buzzer sound, so its end lines up with the end of the respawn period
         mqttOutbound.send("signals", MQTT.toJSON("buzzer", String.format("1:off,%d;on,75;off,500;on,75;off,500;on,75;off,500;on,1200;off,1", respawn_period * 1000 - 2925 - 100)), roles.get("spawns"));

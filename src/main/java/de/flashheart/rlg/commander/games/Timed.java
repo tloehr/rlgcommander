@@ -103,8 +103,8 @@ public abstract class Timed extends Pausable {
 
 
     @Override
-    public JSONObject getStatus() {
-        return super.getStatus()
+    public JSONObject getState() {
+        return super.getState()
                 .put("match_length", match_length)
                 .put("estimated_end_time", estimated_end_time != null ? estimated_end_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")
                 .put("remaining", remaining)

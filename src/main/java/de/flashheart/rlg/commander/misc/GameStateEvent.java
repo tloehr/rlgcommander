@@ -1,19 +1,19 @@
 package de.flashheart.rlg.commander.misc;
 
+import org.json.JSONObject;
+
 public class GameStateEvent {
-    protected final String state;
-    protected final int gameid;
+    protected final JSONObject state;
 
-    public GameStateEvent(String state, int gameid) {
+    public GameStateEvent(JSONObject state) {
         this.state = state;
-        this.gameid = gameid;
     }
 
-    public int getGameid() {
-        return gameid;
+    public GameStateEvent() {
+        this.state = new JSONObject();
     }
 
-    public String getState() {
+    public JSONObject getState() {
         return state;
     }
 }

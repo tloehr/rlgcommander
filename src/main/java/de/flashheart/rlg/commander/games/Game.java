@@ -239,7 +239,7 @@ public abstract class Game {
      *
      * @return status information to be sent if we are asked for it
      */
-    public JSONObject getStatus() {
+    public JSONObject getState() {
         return new JSONObject()
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())

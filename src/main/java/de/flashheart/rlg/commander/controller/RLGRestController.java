@@ -13,11 +13,9 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalTime;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -52,18 +50,20 @@ public class RLGRestController {
         return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
     }
 
-    @GetMapping("/game_state_emitter")
-    public SseEmitter game_state_event_emitter() {
+    /**
+     * emits server sent events on game state changes
+     *
+     * @return
+     */
+    @GetMapping("/game-sse")
+    public SseEmitter game_state_event_emitter(@RequestParam(name = "id") int id) {
         SseEmitter emitter = new SseEmitter(-1l);
         ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
         sseMvcExecutor.execute(() -> {
-            gamesService.addGameStateListener(state_event -> {
+            gamesService.addGameStateListener(id, state_event -> {
                 try {
-                    JSONObject myevent = new JSONObject()
-                            .put("gameid", state_event.getGameid())
-                            .put("state", gamesService.getGameStatus(state_event.getGameid()));
                     SseEmitter.SseEventBuilder event = SseEmitter.event().
-                            data(myevent.toString()).
+                            data(state_event.getState().toString(4)).
                             id(Long.toString(System.currentTimeMillis())).
                             name("GameStateEvent");
                     emitter.send(event);
@@ -95,11 +95,12 @@ public class RLGRestController {
         });
         return emitter;
     }
+
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
     public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) throws
             ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        return new ResponseEntity<>(gamesService.load_game(id, description).getStatus().toString(4), HttpStatus.CREATED);
+        return new ResponseEntity<>(gamesService.load_game(id, description).getState().toString(4), HttpStatus.CREATED);
     }
 
     // set values for a running game in pause mode
@@ -124,7 +125,7 @@ public class RLGRestController {
 
     @GetMapping("/game/status")
     public ResponseEntity<?> status_game(@RequestParam(name = "id") int id) {
-        return new ResponseEntity<>(gamesService.getGameStatus(id).toString(4), HttpStatus.OK);
+        return new ResponseEntity<>(gamesService.getGameState(id).toString(4), HttpStatus.OK);
     }
 
     @GetMapping("/game/parameters")

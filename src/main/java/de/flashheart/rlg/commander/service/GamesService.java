@@ -1,10 +1,13 @@
 package de.flashheart.rlg.commander.service;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
-import de.flashheart.rlg.commander.misc.*;
+import de.flashheart.rlg.commander.misc.GameStateEvent;
+import de.flashheart.rlg.commander.misc.GameStateListener;
+import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.Bag;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
@@ -15,9 +18,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -30,7 +31,7 @@ public class GamesService {
     BuildProperties buildProperties;
     private final Optional<Game>[] loaded_games; // exactly n games are possible
     public static final int MAX_NUMBER_OF_GAMES = 1;
-    private List<GameStateListener> gameStateListeners;
+    private Multimap<Integer, GameStateListener> gameStateListeners;
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
@@ -44,7 +45,7 @@ public class GamesService {
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
         this.loaded_games = new Optional[]{Optional.empty()};
-        this.gameStateListeners = new ArrayList<>();
+        this.gameStateListeners = HashMultimap.create();
     }
 
     public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
@@ -62,7 +63,7 @@ public class GamesService {
         Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
         game.addStateReachedListener(event -> {
             log.debug("gameid #{} new state: {}", id, event.getState());
-            fireGameStateChange(new GameStateEvent(event.getState(), id));
+            fireGameStateChange(id, new GameStateEvent(game.getState()));
         });
 
         loaded_games[id - 1] = Optional.of(game);
@@ -82,6 +83,7 @@ public class GamesService {
         agentsService.assign_gameid_to_agents(-1, game_to_unload.getAgents().keySet()); // remove gameid assignment
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
+        fireGameStateChange(id, new GameStateEvent());
     }
 
     public Optional<Game> getGame(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -89,10 +91,21 @@ public class GamesService {
         return loaded_games[id - 1];
     }
 
-    public JSONObject getGameStatus(int id) throws ArrayIndexOutOfBoundsException {
+    public JSONObject getGameState(int id) throws ArrayIndexOutOfBoundsException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
-        return loaded_games[id - 1].isEmpty() ? new JSONObject() : loaded_games[id - 1].get().getStatus();
+
+        return loaded_games[id - 1].isEmpty() ? new JSONObject() : loaded_games[id - 1].get().getState();
+    }
+
+    public JSONArray getGameStates() throws ArrayIndexOutOfBoundsException {
+        JSONArray jsonArray = new JSONArray();
+        for (int id = 1; id <= MAX_NUMBER_OF_GAMES; id++) {
+            JSONObject iGame = loaded_games[id - 1].isEmpty() ? new JSONObject() : loaded_games[id - 1].get().getState();
+            //iGame.put("gameid", id);
+            jsonArray.put(id, iGame);
+        }
+        return jsonArray;
     }
 
     public void process_message(int id, String message) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -106,7 +119,7 @@ public class GamesService {
     }
 
     public JSONArray get_games() {
-        return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game.get().getStatus()).collect(Collectors.toList()));
+        return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game.get().getState()).collect(Collectors.toList()));
     }
 
     private void check_id(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -115,12 +128,12 @@ public class GamesService {
         if (loaded_games[id - 1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded.");
     }
 
-    private void fireGameStateChange(GameStateEvent event) {
-        gameStateListeners.forEach(gameStateListener -> gameStateListener.onStateChange(event));
+    private void fireGameStateChange(int id, GameStateEvent event) {
+        gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateChange(event));
     }
 
-    public void addGameStateListener(GameStateListener toAdd) {
-        gameStateListeners.add(toAdd);
+    public void addGameStateListener(int id, GameStateListener toAdd) {
+        gameStateListeners.put(id, toAdd);
     }
 //    public Optional<Game> admin_set_values(String id, String description) {
 //        //loaded_game.ifPresent(game -> game.reset());

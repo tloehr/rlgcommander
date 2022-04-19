@@ -349,8 +349,8 @@ public class Conquest extends WithRespawns {
     }
 
     @Override
-    public JSONObject getStatus() {
-        final JSONObject statusObject = super.getStatus()
+    public JSONObject getState() {
+        final JSONObject statusObject = super.getState()
                 .put("mode", "conquest")
                 .put("respawn_tickets", respawn_tickets)
                 .put("ticket_price_for_respawn", ticket_price_for_respawn)

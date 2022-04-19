@@ -145,8 +145,8 @@ public abstract class WithRespawns extends Pausable {
     protected abstract void respawn(String role, String agent);
 
     @Override
-    public JSONObject getStatus() {
-        final JSONObject statusObject = super.getStatus()
+    public JSONObject getState() {
+        final JSONObject statusObject = super.getState()
                 .put("wait4teams2B_ready", wait4teams2B_ready)
                 .put("starter_countdown", starter_countdown);
 
