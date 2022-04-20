@@ -74,7 +74,7 @@ public class Conquest extends WithRespawns {
      */
     public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        log.debug("   ______                                  __\n" +
+        log.debug("\n   ______                                  __\n" +
                 "  / ____/___  ____  ____ ___  _____  _____/ /_\n" +
                 " / /   / __ \\/ __ \\/ __ `/ / / / _ \\/ ___/ __/\n" +
                 "/ /___/ /_/ / / / / /_/ / /_/ /  __(__  ) /_\n" +

@@ -8,6 +8,8 @@ import de.flashheart.rlg.commander.misc.GameStateEvent;
 import de.flashheart.rlg.commander.misc.GameStateListener;
 import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,6 +35,7 @@ public class GamesService {
     private final Optional<Game>[] loaded_games; // exactly n games are possible
     public static final int MAX_NUMBER_OF_GAMES = 1;
     private Multimap<Integer, GameStateListener> gameStateListeners;
+    private HashMap<String, Pair<Integer, GameStateListener>> listenersMap;
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
@@ -46,6 +50,7 @@ public class GamesService {
         this.buildProperties = buildProperties;
         this.loaded_games = new Optional[]{Optional.empty()};
         this.gameStateListeners = HashMultimap.create();
+        this.listenersMap = new HashMap<>();
     }
 
     public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
@@ -132,8 +137,15 @@ public class GamesService {
         gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateChange(event));
     }
 
-    public void addGameStateListener(int id, GameStateListener toAdd) {
-        gameStateListeners.put(id, toAdd);
+    public void addGameStateListener(String uuid, int gameid, GameStateListener toAdd) {
+        gameStateListeners.put(gameid, toAdd);
+        listenersMap.put(uuid, new ImmutablePair<>(gameid, toAdd));
+        log.debug("Number of Listeners {}", gameStateListeners.size());
+    }
+
+    public void removeGameStateListener(String uuid) {
+        gameStateListeners.remove(listenersMap.get(uuid).getKey(), listenersMap.get(uuid).getValue());
+        log.debug("Removing GameStateListener - Number of Listeners {}", gameStateListeners.size());
     }
 //    public Optional<Game> admin_set_values(String id, String description) {
 //        //loaded_game.ifPresent(game -> game.reset());

@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.controller;
 
 
+import de.flashheart.rlg.commander.misc.GameStateListener;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
@@ -13,9 +14,11 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalTime;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -60,17 +63,21 @@ public class RLGRestController {
         SseEmitter emitter = new SseEmitter(-1l);
         ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
         sseMvcExecutor.execute(() -> {
-            gamesService.addGameStateListener(id, state_event -> {
+            // trick to remove listeners from disconnected clients
+            final String uuid = UUID.randomUUID().toString();
+            gamesService.addGameStateListener(uuid, id, state_event -> {
                 try {
                     SseEmitter.SseEventBuilder event = SseEmitter.event().
                             data(state_event.getState().toString(4)).
                             id(Long.toString(System.currentTimeMillis())).
                             name("GameStateEvent");
                     emitter.send(event);
-                } catch (Exception ex) {
+                } catch (IOException ex) {
                     emitter.completeWithError(ex);
+                    gamesService.removeGameStateListener(uuid);
                 }
             });
+            // cleanup on disconnect
         });
         return emitter;
     }
