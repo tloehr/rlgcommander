@@ -23,8 +23,7 @@
       "ag51"
     ],
     "sirens": [
-      "ag52",
-      "ag53"
+      "ag52"
     ]
   },
   "respawn_tickets": 250,
@@ -32,7 +31,7 @@
   "start_bleed_interval": 5,
   "end_bleed_interval": 0.5,
   "ticket_price_for_respawn": 1,
-  "wait4teams2B_ready": true,
+  "wait4teams2B_ready": false,
   "starter_countdown": 0,
   "resume_countdown": 0
 }

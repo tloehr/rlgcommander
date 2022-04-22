@@ -41,7 +41,7 @@ public abstract class Game {
     public static final String _state_EPILOG = "EPILOG";
     public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG};
     public String _signal_AIRSIREN_START = "very_long";
-    public String _signal_AIRSIREN_STOP = "3:on,1500;off,750";
+    public String _signal_AIRSIREN_STOP = "1:on,1500;off,750;on,1500;off,750;on,5000;off,1";
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
     private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
 

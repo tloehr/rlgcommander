@@ -33,7 +33,7 @@ public abstract class WithRespawns extends Pausable {
     private final int starter_countdown;
     private final boolean wait4teams2B_ready;
     private final HashMap<String, FSM> all_spawns;
-    private final HashMap<String, String> agents_to_spawnrole;
+    private final HashMap<String, String> spawnrole_for_this_agent;
 
     public WithRespawns(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -41,7 +41,7 @@ public abstract class WithRespawns extends Pausable {
         this.starter_countdown = game_parameters.getInt("starter_countdown");
         this.runGameJob = new JobKey("run_the_game", uuid.toString());
         this.all_spawns = new HashMap<>();
-        this.agents_to_spawnrole = new HashMap<>();
+        this.spawnrole_for_this_agent = new HashMap<>();
     }
 
     /**
@@ -57,7 +57,7 @@ public abstract class WithRespawns extends Pausable {
     public void add_spawn_for(String role, String led_device_id, String teamname) throws ParserConfigurationException, IOException, SAXException {
         String agent = roles.get(role).stream().findFirst().get();
         all_spawns.put(role, create_Spawn_FSM(agent, role, led_device_id, teamname));
-        agents_to_spawnrole.put(agent, role);
+        spawnrole_for_this_agent.put(agent, role);
     }
 
     private FSM create_Spawn_FSM(final String agent, String role, final String led_device_id, final String teamname) throws ParserConfigurationException, IOException, SAXException {
@@ -127,10 +127,14 @@ public abstract class WithRespawns extends Pausable {
             deleteJob(runGameJob);
             all_spawns.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
         }
+        if (state.equals(_state_TEAMS_NOT_READY)) {
+            if (!wait4teams2B_ready) process_message(_msg_READY);
+            else all_spawns.values().forEach(fsm -> fsm.ProcessFSM(_msg_PREPARE));
+        }
         if (state.equals(_state_TEAMS_READY)) {
             if (starter_countdown > 0) {
                 all_spawns.values().forEach(fsm -> fsm.ProcessFSM(_msg_START_COUNTDOWN));
-                create_job(runGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class);
+                create_job(runGameJob, LocalDateTime.now().plusSeconds(starter_countdown-1), RunGameJob.class);
             } else {
                 process_message(_msg_RUN);
             }
@@ -143,14 +147,13 @@ public abstract class WithRespawns extends Pausable {
     @Override
     protected void on_cleanup() {
         super.on_cleanup();
-        agents_to_spawnrole.clear();
+        spawnrole_for_this_agent.clear();
         all_spawns.clear();
     }
 
     @Override
     public void process_message(String sender, String item, JSONObject message) {
-        if (!hasRole(sender, "spawns")) return;
-        respawn(agents_to_spawnrole.get(sender), sender);
+        if (hasRole(sender, "spawns")) all_spawns.get(spawnrole_for_this_agent.get(sender)).ProcessFSM(item);
     }
 
     /**
