@@ -240,7 +240,7 @@ public abstract class Game {
      * @return status information to be sent if we are asked for it
      */
     public JSONObject getState() {
-        return new JSONObject()
+        return new JSONObject(game_parameters.toString())
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
                 .put("game_state", game_fsm.getCurrentState());

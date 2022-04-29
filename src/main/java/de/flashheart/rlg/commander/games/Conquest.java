@@ -141,13 +141,13 @@ public class Conquest extends WithRespawns {
 
     @Override
     protected void respawn(String role, String agent) {
+        process_message("in_game_event");
         if (role.equals("red_spawn")) {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             red_respawns++;
             broadcast_score();
         }
-
         if (role.equals("blue_spawn")) {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
@@ -180,6 +180,7 @@ public class Conquest extends WithRespawns {
             });
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
                 cp_to_neutral(agent);
+                process_message("in_game_event");
                 broadcast_score();
             });
             fsm.setAction("NEUTRAL", "btn01", new FSMAction() {
@@ -196,6 +197,7 @@ public class Conquest extends WithRespawns {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
                     cp_to_red(agent);
+                    process_message("in_game_event");
                     broadcast_score();
                     return true;
                 }
@@ -205,6 +207,7 @@ public class Conquest extends WithRespawns {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
                     cp_to_blue(agent);
+                    process_message("in_game_event");
                     broadcast_score();
                     return true;
                 }
@@ -352,12 +355,6 @@ public class Conquest extends WithRespawns {
     @Override
     public JSONObject getState() {
         final JSONObject statusObject = super.getState()
-                .put("mode", "conquest")
-                .put("respawn_tickets", respawn_tickets)
-                .put("ticket_price_for_respawn", ticket_price_for_respawn)
-                .put("not_bleeding_before_cps", not_bleeding_before_cps)
-                .put("end_bleed_interval", end_bleed_interval)
-                .put("start_bleed_interval", start_bleed_interval)
                 .put("remaining_blue_tickets", remaining_blue_tickets)
                 .put("remaining_red_tickets", remaining_red_tickets)
                 .put("cps_held_by_blue", cps_held_by_blue)

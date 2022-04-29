@@ -32,6 +32,7 @@
     <STATE id="RUNNING">
         <!-- As we have only one button it always starts with blue. red players have to push twice.-->
         <MESSAGE id="pause" nextState="PAUSING"/>
+        <MESSAGE id="in_game_event" nextState="RUNNING"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>

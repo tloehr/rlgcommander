@@ -1,7 +1,5 @@
 package de.flashheart.rlg.commander.controller;
 
-
-import de.flashheart.rlg.commander.misc.GameStateListener;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
@@ -18,7 +16,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalTime;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,9 +43,6 @@ public class RLGRestController {
             IllegalAccessException.class,
             IllegalStateException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception exc) {
-//        String message = "";
-//        if (exc instanceof InvocationTargetException) message += ((InvocationTargetException) exc).getTargetException().getMessage();
-//        if (exc.getMessage() != null) message += exc.getMessage(); else message += exc.toString();
         log.warn(exc);
         return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
     }
@@ -63,18 +57,16 @@ public class RLGRestController {
         SseEmitter emitter = new SseEmitter(-1l);
         ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
         sseMvcExecutor.execute(() -> {
-            // trick to remove listeners from disconnected clients
-            final String uuid = UUID.randomUUID().toString();
-            gamesService.addGameStateListener(uuid, id, state_event -> {
+            gamesService.addGameStateListener(id, state_event -> {
                 try {
                     SseEmitter.SseEventBuilder event = SseEmitter.event().
-                            data(state_event.getState().toString(4)).
+                            data(state_event.getState().toString()).
                             id(Long.toString(System.currentTimeMillis())).
                             name("GameStateEvent");
                     emitter.send(event);
                 } catch (IOException ex) {
                     emitter.completeWithError(ex);
-                    gamesService.removeGameStateListener(uuid);
+                    throw new IOException(ex);
                 }
             });
             // cleanup on disconnect
@@ -129,7 +121,6 @@ public class RLGRestController {
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
-
     @GetMapping("/game/status")
     public ResponseEntity<?> status_game(@RequestParam(name = "id") int id) {
         return new ResponseEntity<>(gamesService.getGameState(id).toString(4), HttpStatus.OK);
@@ -165,5 +156,4 @@ public class RLGRestController {
         agentsService.test_agent(agentid, deviceid);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
-
 }
