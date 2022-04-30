@@ -5,11 +5,9 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.misc.StateReachedEvent;
-import de.flashheart.rlg.commander.misc.StateReachedListener;
-import de.flashheart.rlg.commander.misc.StateTransitionEvent;
-import de.flashheart.rlg.commander.misc.StateTransitionListener;
+import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
@@ -54,6 +52,8 @@ public abstract class Game {
     protected final UUID uuid;
     protected final Scheduler scheduler;
     protected final Multimap<String, String> agents, roles;
+    // what happened, and when ?
+    protected final JSONArray in_game_events;
     // main FSM to control the basic states of every game
     protected final FSM game_fsm;
 
@@ -62,8 +62,9 @@ public abstract class Game {
         this.game_parameters = game_parameters;
         this.scheduler = scheduler;
         this.mqttOutbound = mqttOutbound;
-        agents = HashMultimap.create();
-        roles = HashMultimap.create();
+        this.agents = HashMultimap.create();
+        this.roles = HashMultimap.create();
+        this.in_game_events = new JSONArray();
         JSONObject agts = game_parameters.getJSONObject("agents");
         Set<String> rls = agts.keySet();
         rls.forEach(role ->
@@ -74,7 +75,16 @@ public abstract class Game {
                 )
         );
         this.game_fsm = createFSM();
-        game_description = new ArrayList<>();
+        this.game_description = new ArrayList<>();
+        addStateTransistionListener(event -> addEvent(event.getMessage(), event.getNewState()));
+    }
+
+    protected void addEvent(String message, String new_state) {
+        in_game_events.put(new JSONObject()
+                .put("pit", JavaTimeConverter.to_iso8601())
+                .put("event", message)
+                .put("new_state", new_state)
+        );
     }
 
     /**
@@ -155,6 +165,7 @@ public abstract class Game {
         fsm.setAction(_msg_RESET, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
+                in_game_events.clear();
                 fireStateTransition(new StateTransitionEvent(curState, _msg_RESET, nextState));
                 return true;
             }
@@ -208,7 +219,6 @@ public abstract class Game {
                 return true;
             }
         });
-
         fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList(_state_ALL_STATES)), (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
@@ -243,7 +253,8 @@ public abstract class Game {
         return new JSONObject(game_parameters.toString())
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
-                .put("game_state", game_fsm.getCurrentState());
+                .put("game_state", game_fsm.getCurrentState())
+                .put("in_game_events", in_game_events);
     }
 
     /**
@@ -274,4 +285,6 @@ public abstract class Game {
     }
 
     protected abstract JSONObject getPages();
+
+
 }

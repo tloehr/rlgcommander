@@ -32,6 +32,9 @@ public class JavaTimeConverter {
         return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
     }
 
+    public static String to_iso8601() {
+        return to_iso8601(LocalDateTime.now());
+    }
 
 
     public static String to_iso8601(Date date) {

@@ -5,6 +5,7 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
+import de.flashheart.rlg.commander.misc.StateTransitionEvent;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONException;
@@ -141,17 +142,18 @@ public class Conquest extends WithRespawns {
 
     @Override
     protected void respawn(String role, String agent) {
-        process_message("in_game_event");
         if (role.equals("red_spawn")) {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             red_respawns++;
+            addEvent(String.format("RED Team Respawn #%s", red_respawns), game_fsm.getCurrentState());
             broadcast_score();
         }
         if (role.equals("blue_spawn")) {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             blue_respawns++;
+            addEvent(String.format("BLUE Team Respawn #%s", red_respawns), game_fsm.getCurrentState());
             broadcast_score();
         }
     }
@@ -180,7 +182,6 @@ public class Conquest extends WithRespawns {
             });
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
                 cp_to_neutral(agent);
-                process_message("in_game_event");
                 broadcast_score();
             });
             fsm.setAction("NEUTRAL", "btn01", new FSMAction() {
@@ -197,7 +198,6 @@ public class Conquest extends WithRespawns {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
                     cp_to_red(agent);
-                    process_message("in_game_event");
                     broadcast_score();
                     return true;
                 }
@@ -207,7 +207,6 @@ public class Conquest extends WithRespawns {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
                     cp_to_blue(agent);
-                    process_message("in_game_event");
                     broadcast_score();
                     return true;
                 }
@@ -229,10 +228,12 @@ public class Conquest extends WithRespawns {
     }
 
     private void cp_to_blue(String agent) {
+        addEvent(String.format("Agent %s switched to BLUE", agent), game_fsm.getCurrentState());
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
     }
 
     private void cp_to_red(String agent) {
+        addEvent(String.format("Agent %s switched to RED", agent), game_fsm.getCurrentState());
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
     }
 
@@ -264,13 +265,15 @@ public class Conquest extends WithRespawns {
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
+        if (message.equals(_msg_RESET)){
             blue_respawns = 0;
             red_respawns = 0;
             remaining_blue_tickets = respawn_tickets;
             remaining_red_tickets = respawn_tickets;
             cps_held_by_blue.clear();
             cps_held_by_red.clear();
+        }
+        if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
 
             // setup and start bleeding job
@@ -355,8 +358,8 @@ public class Conquest extends WithRespawns {
     @Override
     public JSONObject getState() {
         final JSONObject statusObject = super.getState()
-                .put("remaining_blue_tickets", remaining_blue_tickets)
-                .put("remaining_red_tickets", remaining_red_tickets)
+                .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
+                .put("remaining_red_tickets", remaining_red_tickets.intValue())
                 .put("cps_held_by_blue", cps_held_by_blue)
                 .put("cps_held_by_red", cps_held_by_red)
                 .put("red_respawns", red_respawns)
