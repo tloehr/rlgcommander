@@ -26,6 +26,8 @@ public abstract class Game {
     public static final String _msg_PREPARE = "prepare";
     public static final String _msg_READY = "ready";
     public static final String _msg_RUN = "run";
+    public static final String _msg_IN_GAME_EVENT_OCCURRED = "in_game_event_occurred";
+    public static final String _msg_EVENT_PROCESSED = "event_processed";
     public static final String _msg_PAUSE = "pause";
     public static final String _msg_RESUME = "resume";
     public static final String _msg_CONTINUE = "continue";
@@ -34,10 +36,11 @@ public abstract class Game {
     public static final String _state_TEAMS_NOT_READY = "TEAMS_NOT_READY";
     public static final String _state_TEAMS_READY = "TEAMS_READY";
     public static final String _state_RUNNING = "RUNNING";
+    public static final String _state_PROCESSING_IN_GAME_EVENT = "PROCESSING_IN_GAME_EVENT";
     public static final String _state_PAUSING = "PAUSING";
     public static final String _state_RESUMING = "RESUMING";
     public static final String _state_EPILOG = "EPILOG";
-    public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG};
+    public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_PROCESSING_IN_GAME_EVENT, _state_EPILOG};
     public String _signal_AIRSIREN_START = "very_long";
     public String _signal_AIRSIREN_STOP = "1:on,1500;off,750;on,1500;off,750;on,5000;off,1";
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
@@ -80,11 +83,13 @@ public abstract class Game {
     }
 
     protected void addEvent(String message, String new_state) {
+        if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
         in_game_events.put(new JSONObject()
                 .put("pit", JavaTimeConverter.to_iso8601())
                 .put("event", message)
                 .put("new_state", new_state)
         );
+        //process_message(_msg_IN_GAME_EVENT);
     }
 
     /**
@@ -115,7 +120,9 @@ public abstract class Game {
     private void fireStateReached(StateReachedEvent event) {
         stateReachedListeners.forEach(stateReachedListener -> stateReachedListener.onStateReached(event));
         log.debug("new state {}", event.getState());
+        if (event.getState().equals(_state_PROLOG)) in_game_events.clear();
         at_state(event.getState());
+        if (event.getState().equals(_state_PROCESSING_IN_GAME_EVENT)) process_message(_msg_EVENT_PROCESSED); // helper state to inform the rlgrc
     }
 
     /**
@@ -165,7 +172,6 @@ public abstract class Game {
         fsm.setAction(_msg_RESET, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                in_game_events.clear();
                 fireStateTransition(new StateTransitionEvent(curState, _msg_RESET, nextState));
                 return true;
             }
@@ -174,6 +180,20 @@ public abstract class Game {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 fireStateTransition(new StateTransitionEvent(curState, _msg_RUN, nextState));
+                return true;
+            }
+        });
+        fsm.setAction(_msg_EVENT_PROCESSED, new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                fireStateTransition(new StateTransitionEvent(curState, _msg_EVENT_PROCESSED, nextState));
+                return true;
+            }
+        });
+        fsm.setAction(_msg_IN_GAME_EVENT_OCCURRED, new FSMAction() {
+            @Override
+            public boolean action(String curState, String message, String nextState, Object args) {
+                fireStateTransition(new StateTransitionEvent(curState, _msg_IN_GAME_EVENT_OCCURRED, nextState));
                 return true;
             }
         });

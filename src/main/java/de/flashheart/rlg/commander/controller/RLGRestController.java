@@ -57,19 +57,17 @@ public class RLGRestController {
         SseEmitter emitter = new SseEmitter(-1l);
         ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
         sseMvcExecutor.execute(() -> {
-            gamesService.addGameStateListener(id, state_event -> {
+            gamesService.addGameStateListener(id, game_state_event -> {
                 try {
                     SseEmitter.SseEventBuilder event = SseEmitter.event().
-                            data(state_event.getState().toString()).
+                            data(game_state_event.getStatus().toString()). // gamesService.getGame(id).get().getState().toString()
                             id(Long.toString(System.currentTimeMillis())).
                             name("GameStateEvent");
                     emitter.send(event);
                 } catch (IOException ex) {
                     emitter.completeWithError(ex);
-                    throw new IOException(ex);
                 }
             });
-            // cleanup on disconnect
         });
         return emitter;
     }

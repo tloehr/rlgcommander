@@ -3,17 +3,17 @@ package de.flashheart.rlg.commander.misc;
 import org.json.JSONObject;
 
 public class GameStateEvent {
-    protected final JSONObject state;
+    protected final JSONObject status;
 
-    public GameStateEvent(JSONObject state) {
-        this.state = state;
+    public GameStateEvent(JSONObject status) {
+        this.status = status;
     }
 
     public GameStateEvent() {
-        this.state = new JSONObject();
+        this.status = new JSONObject();
     }
 
-    public JSONObject getState() {
-        return state;
+    public JSONObject getStatus() {
+        return status;
     }
 }

@@ -25,15 +25,19 @@
         <!--countdown then run -->
         <MESSAGE id="run" nextState="RUNNING"/>
         <!-- unless somebody is still not ready-->
-<!--        <MESSAGE id="prepare" nextState="TEAMS_NOT_READY"/>-->
+        <!--        <MESSAGE id="prepare" nextState="TEAMS_NOT_READY"/>-->
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="RUNNING">
         <MESSAGE id="pause" nextState="PAUSING"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
+        <MESSAGE id="in_game_event_occurred" nextState="PROCESSING_IN_GAME_EVENT"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="PROCESSING_IN_GAME_EVENT">
+        <MESSAGE id="event_processed" nextState="RUNNING"/>
     </STATE>
     <STATE id="PAUSING">
         <MESSAGE id="resume" nextState="RESUMING"/>

@@ -156,6 +156,7 @@ public class Conquest extends WithRespawns {
             addEvent(String.format("BLUE Team Respawn #%s", red_respawns), game_fsm.getCurrentState());
             broadcast_score();
         }
+        process_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
     @Override
@@ -170,7 +171,6 @@ public class Conquest extends WithRespawns {
         }
         if (hasRole(sender, "capture_points")) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
         else super.process_message(sender, item, message);
-
     }
 
 
@@ -181,15 +181,15 @@ public class Conquest extends WithRespawns {
                 cp_to_neutral(agent);
             });
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
-                cp_to_neutral(agent);
                 broadcast_score();
+                cp_to_neutral(agent);
             });
             fsm.setAction("NEUTRAL", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
-                    cp_to_blue(agent);
                     broadcast_score();
+                    cp_to_blue(agent);
                     return true;
                 }
             });
@@ -197,8 +197,8 @@ public class Conquest extends WithRespawns {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
-                    cp_to_red(agent);
                     broadcast_score();
+                    cp_to_red(agent);
                     return true;
                 }
             });
@@ -206,8 +206,8 @@ public class Conquest extends WithRespawns {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
-                    cp_to_blue(agent);
                     broadcast_score();
+                    cp_to_blue(agent);
                     return true;
                 }
             });
@@ -230,11 +230,13 @@ public class Conquest extends WithRespawns {
     private void cp_to_blue(String agent) {
         addEvent(String.format("Agent %s switched to BLUE", agent), game_fsm.getCurrentState());
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
+        process_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
     private void cp_to_red(String agent) {
         addEvent(String.format("Agent %s switched to RED", agent), game_fsm.getCurrentState());
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
+        process_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
     public void ticket_bleeding_cycle() {

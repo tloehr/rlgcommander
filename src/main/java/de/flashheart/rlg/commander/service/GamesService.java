@@ -4,9 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
-import de.flashheart.rlg.commander.misc.GameStateEvent;
-import de.flashheart.rlg.commander.misc.GameStateListener;
-import de.flashheart.rlg.commander.misc.Tools;
+import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,10 +15,8 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -33,7 +29,7 @@ public class GamesService {
     BuildProperties buildProperties;
     private final Optional<Game>[] loaded_games; // exactly n games are possible
     public static final int MAX_NUMBER_OF_GAMES = 1;
-    private Multimap<Integer, GameStateListener> gameStateListeners;
+    private final Multimap<Integer, GameStateListener> gameStateListeners;
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
@@ -63,6 +59,10 @@ public class GamesService {
         loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
         Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
+//        game.addStateTransistionListener(event -> {
+//            log.debug("gameid #{} Message {} caused transition {} => {}", id, event.getMessage(), event.getOldState(),  event.getNewState());
+//            fireGameStateTransition(id, event);
+//        });
         game.addStateReachedListener(event -> {
             log.debug("gameid #{} new state: {}", id, event.getState());
             fireGameStateChange(id, new GameStateEvent(game.getState()));
@@ -130,21 +130,11 @@ public class GamesService {
     }
 
     private void fireGameStateChange(int id, GameStateEvent event) {
-        Iterator<GameStateListener> iter = gameStateListeners.get(id).iterator();
-        while (iter.hasNext()) {
-            try {
-                GameStateListener listener = iter.next();
-                listener.onStateChange(event);
-            } catch (IOException e) {
-                iter.remove();
-                log.debug("Removing GameStateListener - Number of Listeners {}", gameStateListeners.get(id).size());
-            }
-        }
+        gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateChange(event));
     }
 
-    public void addGameStateListener(int gameid, GameStateListener toAdd) {
-        gameStateListeners.put(gameid, toAdd);
-        log.debug("Number of Listeners {}", gameStateListeners.size());
+    public void addGameStateListener(int id, GameStateListener toAdd) {
+        gameStateListeners.put(id, toAdd);
     }
 
 }
