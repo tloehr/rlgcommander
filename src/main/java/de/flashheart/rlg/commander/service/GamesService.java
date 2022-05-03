@@ -29,7 +29,7 @@ public class GamesService {
     BuildProperties buildProperties;
     private final Optional<Game>[] loaded_games; // exactly n games are possible
     public static final int MAX_NUMBER_OF_GAMES = 1;
-    private final Multimap<Integer, GameStateListener> gameStateListeners;
+    private final Multimap<Integer, StateReachedListener> gameStateListeners;
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
@@ -59,13 +59,9 @@ public class GamesService {
         loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
         Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
-//        game.addStateTransistionListener(event -> {
-//            log.debug("gameid #{} Message {} caused transition {} => {}", id, event.getMessage(), event.getOldState(),  event.getNewState());
-//            fireGameStateTransition(id, event);
-//        });
         game.addStateReachedListener(event -> {
-            log.debug("gameid #{} new state: {}", id, event.getState());
-            fireGameStateChange(id, new GameStateEvent(game.getState()));
+            log.trace("gameid #{} new state: {}", id, event.getState());
+            fireStateReached(id, event); // pass it on to the RestController
         });
 
         loaded_games[id - 1] = Optional.of(game);
@@ -86,7 +82,7 @@ public class GamesService {
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
         gameStateListeners.removeAll(id);
-        fireGameStateChange(id, new GameStateEvent());
+        fireStateReached(id, new StateReachedEvent(""));
     }
 
     public Optional<Game> getGame(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -129,11 +125,11 @@ public class GamesService {
         if (loaded_games[id - 1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded.");
     }
 
-    private void fireGameStateChange(int id, GameStateEvent event) {
-        gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateChange(event));
+    private void fireStateReached(int id, StateReachedEvent event) {
+        gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
     }
 
-    public void addGameStateListener(int id, GameStateListener toAdd) {
+    public void addStateReachedListener(int id, StateReachedListener toAdd) {
         gameStateListeners.put(id, toAdd);
     }
 

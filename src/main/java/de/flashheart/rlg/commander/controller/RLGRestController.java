@@ -43,7 +43,7 @@ public class RLGRestController {
             IllegalAccessException.class,
             IllegalStateException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception exc) {
-        log.warn(exc);
+        log.warn(exc.getMessage());
         return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
     }
 
@@ -57,12 +57,12 @@ public class RLGRestController {
         SseEmitter emitter = new SseEmitter(-1l);
         ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
         sseMvcExecutor.execute(() -> {
-            gamesService.addGameStateListener(id, game_state_event -> {
+            gamesService.addStateReachedListener(id, stateReachedEvent -> {
                 try {
                     SseEmitter.SseEventBuilder event = SseEmitter.event().
-                            data(game_state_event.getStatus().toString()). // gamesService.getGame(id).get().getState().toString()
+                            data(stateReachedEvent.getState()). // gamesService.getGame(id).get().getState().toString()
                             id(Long.toString(System.currentTimeMillis())).
-                            name("GameStateEvent");
+                            name("StateReachedEvent");
                     emitter.send(event);
                 } catch (IOException ex) {
                     emitter.completeWithError(ex);

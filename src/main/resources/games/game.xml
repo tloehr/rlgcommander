@@ -32,12 +32,9 @@
     <STATE id="RUNNING">
         <MESSAGE id="pause" nextState="PAUSING"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
-        <MESSAGE id="in_game_event_occurred" nextState="PROCESSING_IN_GAME_EVENT"/>
+        <MESSAGE id="in_game_event_occurred" nextState="RUNNING"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
-    </STATE>
-    <STATE id="PROCESSING_IN_GAME_EVENT">
-        <MESSAGE id="event_processed" nextState="RUNNING"/>
     </STATE>
     <STATE id="PAUSING">
         <MESSAGE id="resume" nextState="RESUMING"/>

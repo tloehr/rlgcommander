@@ -146,14 +146,14 @@ public class Conquest extends WithRespawns {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             red_respawns++;
-            addEvent(String.format("RED Team Respawn #%s", red_respawns), game_fsm.getCurrentState());
+            addEvent(String.format("RED Team Respawn #%s", red_respawns));
             broadcast_score();
         }
         if (role.equals("blue_spawn")) {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             blue_respawns++;
-            addEvent(String.format("BLUE Team Respawn #%s", red_respawns), game_fsm.getCurrentState());
+            addEvent(String.format("BLUE Team Respawn #%s", red_respawns));
             broadcast_score();
         }
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
@@ -228,15 +228,15 @@ public class Conquest extends WithRespawns {
     }
 
     private void cp_to_blue(String agent) {
-        addEvent(String.format("Agent %s switched to BLUE", agent), game_fsm.getCurrentState());
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
+        addEvent(String.format("Agent %s switched to BLUE", agent));
     }
 
     private void cp_to_red(String agent) {
-        addEvent(String.format("Agent %s switched to RED", agent), game_fsm.getCurrentState());
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
+        addEvent(String.format("Agent %s switched to RED", agent));
     }
 
     public void ticket_bleeding_cycle() {

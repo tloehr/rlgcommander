@@ -16,6 +16,8 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
@@ -27,7 +29,6 @@ public abstract class Game {
     public static final String _msg_READY = "ready";
     public static final String _msg_RUN = "run";
     public static final String _msg_IN_GAME_EVENT_OCCURRED = "in_game_event_occurred";
-    public static final String _msg_EVENT_PROCESSED = "event_processed";
     public static final String _msg_PAUSE = "pause";
     public static final String _msg_RESUME = "resume";
     public static final String _msg_CONTINUE = "continue";
@@ -36,11 +37,10 @@ public abstract class Game {
     public static final String _state_TEAMS_NOT_READY = "TEAMS_NOT_READY";
     public static final String _state_TEAMS_READY = "TEAMS_READY";
     public static final String _state_RUNNING = "RUNNING";
-    public static final String _state_PROCESSING_IN_GAME_EVENT = "PROCESSING_IN_GAME_EVENT";
     public static final String _state_PAUSING = "PAUSING";
     public static final String _state_RESUMING = "RESUMING";
     public static final String _state_EPILOG = "EPILOG";
-    public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_PROCESSING_IN_GAME_EVENT, _state_EPILOG};
+    public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG};
     public String _signal_AIRSIREN_START = "very_long";
     public String _signal_AIRSIREN_STOP = "1:on,1500;off,750;on,1500;off,750;on,5000;off,1";
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
@@ -56,7 +56,7 @@ public abstract class Game {
     protected final Scheduler scheduler;
     protected final Multimap<String, String> agents, roles;
     // what happened, and when ?
-    protected final JSONArray in_game_events;
+    protected final List<JSONObject> in_game_events;
     // main FSM to control the basic states of every game
     protected final FSM game_fsm;
 
@@ -67,7 +67,7 @@ public abstract class Game {
         this.mqttOutbound = mqttOutbound;
         this.agents = HashMultimap.create();
         this.roles = HashMultimap.create();
-        this.in_game_events = new JSONArray();
+        this.in_game_events = new ArrayList<>();
         JSONObject agts = game_parameters.getJSONObject("agents");
         Set<String> rls = agts.keySet();
         rls.forEach(role ->
@@ -79,17 +79,18 @@ public abstract class Game {
         );
         this.game_fsm = createFSM();
         this.game_description = new ArrayList<>();
-        addStateTransistionListener(event -> addEvent(event.getMessage(), event.getNewState()));
     }
 
-    protected void addEvent(String message, String new_state) {
-        if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
-        in_game_events.put(new JSONObject()
+    protected void addEvent(String message) {
+        addEvent(message, game_fsm.getCurrentState());
+    }
+
+    protected void addEvent(String message, String state) {
+        in_game_events.add(new JSONObject()
                 .put("pit", JavaTimeConverter.to_iso8601())
                 .put("event", message)
-                .put("new_state", new_state)
+                .put("new_state", state)
         );
-        //process_message(_msg_IN_GAME_EVENT);
     }
 
     /**
@@ -114,15 +115,15 @@ public abstract class Game {
     private void fireStateTransition(StateTransitionEvent event) {
         stateTransitionListeners.forEach(stateTransitionListener -> stateTransitionListener.onStateTransition(event));
         log.debug("transition {}:{} == > {}", event.getOldState(), event.getMessage(), event.getNewState());
+        if (!event.getMessage().equals(_msg_IN_GAME_EVENT_OCCURRED))
+            addEvent(event.getMessage(), event.getNewState());
         on_transition(event.getOldState(), event.getMessage(), event.getNewState());
     }
 
     private void fireStateReached(StateReachedEvent event) {
         stateReachedListeners.forEach(stateReachedListener -> stateReachedListener.onStateReached(event));
         log.debug("new state {}", event.getState());
-        if (event.getState().equals(_state_PROLOG)) in_game_events.clear();
         at_state(event.getState());
-        if (event.getState().equals(_state_PROCESSING_IN_GAME_EVENT)) process_message(_msg_EVENT_PROCESSED); // helper state to inform the rlgrc
     }
 
     /**
@@ -172,6 +173,7 @@ public abstract class Game {
         fsm.setAction(_msg_RESET, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
+                in_game_events.clear();
                 fireStateTransition(new StateTransitionEvent(curState, _msg_RESET, nextState));
                 return true;
             }
@@ -180,13 +182,6 @@ public abstract class Game {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 fireStateTransition(new StateTransitionEvent(curState, _msg_RUN, nextState));
-                return true;
-            }
-        });
-        fsm.setAction(_msg_EVENT_PROCESSED, new FSMAction() {
-            @Override
-            public boolean action(String curState, String message, String nextState, Object args) {
-                fireStateTransition(new StateTransitionEvent(curState, _msg_EVENT_PROCESSED, nextState));
                 return true;
             }
         });
@@ -274,7 +269,7 @@ public abstract class Game {
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
                 .put("game_state", game_fsm.getCurrentState())
-                .put("in_game_events", in_game_events);
+                .put("in_game_events", new JSONArray(in_game_events));
     }
 
     /**
