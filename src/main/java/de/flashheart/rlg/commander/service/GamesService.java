@@ -82,7 +82,7 @@ public class GamesService {
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
         gameStateListeners.removeAll(id);
-        fireStateReached(id, new StateReachedEvent(""));
+        //fireStateReached(id, new StateReachedEvent(""));
     }
 
     public Optional<Game> getGame(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {

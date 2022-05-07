@@ -1,11 +1,9 @@
 package de.flashheart.rlg.commander.games;
 
-import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
-import de.flashheart.rlg.commander.misc.StateTransitionEvent;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONException;
@@ -47,8 +45,9 @@ public class Conquest extends WithRespawns {
     /**
      * This class creates a conquest style game as known from Battlefield.
      * <p>
-     * for the whole issue of ticket arithmetics please refer to https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit#gid=457469542
-     * for explanation The mandatory parameters are handed down to this class via a JSONObject called
+     * for the whole issue of ticket arithmetics please refer to
+     * https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit#gid=457469542 for
+     * explanation The mandatory parameters are handed down to this class via a JSONObject called
      * <b>game_parameters</b>.
      *
      * <ul>
@@ -174,44 +173,20 @@ public class Conquest extends WithRespawns {
     }
 
 
-    private FSM create_CP_FSM(String agent) {
+    private FSM create_CP_FSM(final String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
-            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> {
-                cp_to_neutral(agent);
-            });
+            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
                 broadcast_score();
                 cp_to_neutral(agent);
             });
-            fsm.setAction("NEUTRAL", "btn01", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
-                    broadcast_score();
-                    cp_to_blue(agent);
-                    return true;
-                }
+            fsm.setStatesAfterTransition((new ArrayList<>(Arrays.asList("BLUE", "RED"))), (state, obj) -> {
+                if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
+                else cp_to_red(agent);
+                broadcast_score();
+                process_message(_msg_IN_GAME_EVENT_OCCURRED);
             });
-            fsm.setAction("BLUE", "btn01", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
-                    broadcast_score();
-                    cp_to_red(agent);
-                    return true;
-                }
-            });
-            fsm.setAction("RED", "btn01", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
-                    broadcast_score();
-                    cp_to_blue(agent);
-                    return true;
-                }
-            });
-
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             log.error(ex);
@@ -229,13 +204,11 @@ public class Conquest extends WithRespawns {
 
     private void cp_to_blue(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
-        process_message(_msg_IN_GAME_EVENT_OCCURRED);
         addEvent(String.format("Agent %s switched to BLUE", agent));
     }
 
     private void cp_to_red(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
-        process_message(_msg_IN_GAME_EVENT_OCCURRED);
         addEvent(String.format("Agent %s switched to RED", agent));
     }
 
@@ -243,11 +216,8 @@ public class Conquest extends WithRespawns {
         if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
 
         broadcast_cycle_counter++;
-        cps_held_by_blue.clear();
-        cps_held_by_red.clear();
-        cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("BLUE")).forEach(stringFSMEntry -> cps_held_by_blue.add(stringFSMEntry.getKey()));
-        cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("RED")).forEach(stringFSMEntry -> cps_held_by_red.add(stringFSMEntry.getKey()));
-        //cps_held_by_red = toIntExact(agentFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equalsIgnoreCase("RED")).count());
+
+        update_cps_held_by_list();
 
         remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue.size()]);
         remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_red.size()]);
@@ -264,10 +234,17 @@ public class Conquest extends WithRespawns {
         }
     }
 
+    private void update_cps_held_by_list(){
+        cps_held_by_blue.clear();
+        cps_held_by_red.clear();
+        cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("BLUE")).forEach(stringFSMEntry -> cps_held_by_blue.add(stringFSMEntry.getKey()));
+        cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("RED")).forEach(stringFSMEntry -> cps_held_by_red.add(stringFSMEntry.getKey()));
+    }
+
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_RESET)){
+        if (message.equals(_msg_RESET)) {
             blue_respawns = 0;
             red_respawns = 0;
             remaining_blue_tickets = respawn_tickets;
@@ -359,6 +336,8 @@ public class Conquest extends WithRespawns {
 
     @Override
     public JSONObject getState() {
+        update_cps_held_by_list();
+        
         final JSONObject statusObject = super.getState()
                 .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
                 .put("remaining_red_tickets", remaining_red_tickets.intValue())
