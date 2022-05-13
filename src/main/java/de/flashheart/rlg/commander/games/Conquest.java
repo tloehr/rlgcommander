@@ -168,8 +168,10 @@ public class Conquest extends WithRespawns {
             log.trace("only reacting on button UP. discarding.");
             return;
         }
-        if (hasRole(sender, "capture_points")) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
-        else super.process_message(sender, item, message);
+
+        if (hasRole(sender, "capture_points")) {
+            if (game_fsm.getCurrentState().equals(_state_RUNNING)) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
+        } else super.process_message(sender, item, message);
     }
 
 
@@ -234,7 +236,7 @@ public class Conquest extends WithRespawns {
         }
     }
 
-    private void update_cps_held_by_list(){
+    private void update_cps_held_by_list() {
         cps_held_by_blue.clear();
         cps_held_by_red.clear();
         cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("BLUE")).forEach(stringFSMEntry -> cps_held_by_blue.add(stringFSMEntry.getKey()));
@@ -337,7 +339,7 @@ public class Conquest extends WithRespawns {
     @Override
     public JSONObject getState() {
         update_cps_held_by_list();
-        
+
         final JSONObject statusObject = super.getState()
                 .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
                 .put("remaining_red_tickets", remaining_red_tickets.intValue())

@@ -7,6 +7,7 @@ import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -130,7 +131,14 @@ public class GamesService {
     }
 
     public void addStateReachedListener(int id, StateReachedListener toAdd) {
-        gameStateListeners.put(id, toAdd);
+        try {
+            check_id(id);
+            gameStateListeners.put(id, toAdd);
+            // we need to send an event right away, otherwise the rlgrc won't realize that it has subscribed successfully
+            toAdd.onStateReached(new StateReachedEvent(loaded_games[id - 1].get().getState().getString("game_state")));
+        } catch (ArrayIndexOutOfBoundsException | IllegalStateException | JSONException ex) {
+            log.warn(ex.getMessage());
+        }
     }
 
 }
