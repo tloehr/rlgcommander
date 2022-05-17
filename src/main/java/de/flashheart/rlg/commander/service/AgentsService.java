@@ -66,8 +66,8 @@ public class AgentsService {
         mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off", "led_wht", "infty:on,500;off,500", "led_ylw", "infty:on,500;off,500", "led_blu", "infty:on,500;off,500",
                 "led_red", "infty:off,500;on,500", "led_grn", "infty:off,500;on,500"), my_agent.getId());
         mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
-                "cmdr " + buildProperties.getVersion() + " b" + buildProperties.get("buildNumber"),
-                "agnt ${agversion} b${agbuild}",
+                "cmdr " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),
+                "agnt ${agversion}b${agbuild}",
                 "2me@flashheart.de"), my_agent.getId());
     }
 

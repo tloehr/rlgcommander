@@ -152,7 +152,7 @@ public class Conquest extends WithRespawns {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             blue_respawns++;
-            addEvent(String.format("BLUE Team Respawn #%s", red_respawns));
+            addEvent(String.format("BLUE Team Respawn #%s", blue_respawns));
             broadcast_score();
         }
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
