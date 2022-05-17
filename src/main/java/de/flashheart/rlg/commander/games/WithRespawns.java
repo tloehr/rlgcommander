@@ -71,9 +71,11 @@ public abstract class WithRespawns extends Pausable {
             );
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_PREPARING, (state, obj) -> {
+            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "medium"), agent);
             mqttOutbound.send("paged", MQTT.page("page0", " !! NOT READY !! ", "Press button", "when Your team", "is ready"), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
+            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "triple_buzz"), agent);
             // if all teams are ready, the GAME is ready to start
             if (all_spawns.values().stream().allMatch(fsm1 -> fsm1.getCurrentState().equals(_state_WE_ARE_READY)))
                 game_fsm.ProcessFSM(_msg_READY);
