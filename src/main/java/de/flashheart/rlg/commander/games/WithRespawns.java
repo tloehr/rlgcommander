@@ -63,6 +63,7 @@ public abstract class WithRespawns extends Pausable {
     private FSM create_Spawn_FSM(final String agent, String role, final String led_device_id, final String teamname) throws ParserConfigurationException, IOException, SAXException {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
+            mqttOutbound.send("play", MQTT.toJSON("soundfile", ""), agent);
             mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", led_device_id, "slow"), agent);
             mqttOutbound.send("paged", MQTT.merge(
                     MQTT.page("page0",
@@ -85,6 +86,7 @@ public abstract class WithRespawns extends Pausable {
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_START, (state, obj) -> {
             mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
             mqttOutbound.send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
+            mqttOutbound.send("play", MQTT.toJSON("soundfile", "intro-30s-cpt-future1-sharon.mp3"), agent);
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_RESUME, (state, obj) -> {
             mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
@@ -136,7 +138,7 @@ public abstract class WithRespawns extends Pausable {
         if (state.equals(_state_TEAMS_READY)) {
             if (starter_countdown > 0) {
                 all_spawns.values().forEach(fsm -> fsm.ProcessFSM(_msg_START_COUNTDOWN));
-                create_job(runGameJob, LocalDateTime.now().plusSeconds(starter_countdown-1), RunGameJob.class);
+                create_job(runGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class);
             } else {
                 process_message(_msg_RUN);
             }
