@@ -94,7 +94,7 @@ public class Rush extends Scheduled {
         jdm.put("sector", sector_number);
 
         try {
-            FSM mcom = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/mcom.xml"), null);
+            FSM mcom = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/rush/mcom.xml"), null);
 
             mcom.setStatesAfterTransition("PROLOG", (state, o) -> {
                 log.info("=====> {}:{}", agent, state);
@@ -138,7 +138,7 @@ public class Rush extends Scheduled {
      */
     private FSM createSector(final int sector_number, final String mcom1, final String mcom2) {
         try {
-            FSM sectorFSM = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/sector.xml"), null);
+            FSM sectorFSM = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/rush/sector.xml"), null);
 
             sectorFSM.setStatesAfterTransition("PROLOG", (state, o) -> {
                 log.info("=====> Sector{}:{}", sector_number, state);
