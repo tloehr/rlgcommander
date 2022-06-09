@@ -31,6 +31,7 @@ public abstract class WithRespawns extends Pausable {
 
     private final JobKey runGameJob;
     private final int starter_countdown;
+    private final String intro_mp3_file;
     private final boolean wait4teams2B_ready;
     private final HashMap<String, FSM> all_spawns;
     private final HashMap<String, String> spawnrole_for_this_agent;
@@ -39,6 +40,7 @@ public abstract class WithRespawns extends Pausable {
         super(game_parameters, scheduler, mqttOutbound);
         this.wait4teams2B_ready = game_parameters.getBoolean("wait4teams2B_ready");
         this.starter_countdown = game_parameters.getInt("starter_countdown");
+        this.intro_mp3_file = game_parameters.getString("intro_mp3_file");
         this.runGameJob = new JobKey("run_the_game", uuid.toString());
         this.all_spawns = new HashMap<>();
         this.spawnrole_for_this_agent = new HashMap<>();
@@ -63,7 +65,7 @@ public abstract class WithRespawns extends Pausable {
     private FSM create_Spawn_FSM(final String agent, String role, final String led_device_id, final String teamname) throws ParserConfigurationException, IOException, SAXException {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
-            mqttOutbound.send("play", MQTT.toJSON("soundfile", ""), agent);
+            mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
             mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", led_device_id, "slow"), agent);
             mqttOutbound.send("paged", MQTT.merge(
                     MQTT.page("page0",
@@ -86,7 +88,7 @@ public abstract class WithRespawns extends Pausable {
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_START, (state, obj) -> {
             mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
             mqttOutbound.send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
-            mqttOutbound.send("play", MQTT.toJSON("soundfile", "intro-30s-cpt-future1-sharon.mp3"), agent);
+            mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", intro_mp3_file), agent);
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_RESUME, (state, obj) -> {
             mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
