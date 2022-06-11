@@ -4,9 +4,11 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.jobs.BombTimerJob;
 import de.flashheart.rlg.commander.jobs.RespawnJob;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
+import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.xml.sax.SAXException;
@@ -14,8 +16,10 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -25,98 +29,108 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * Implementation for the FarCry 1 (2004) Assault Game Mode.
  */
 @Log4j2
-public class Farcry extends Timed  {
-    private final int flagcapturetime;
-    private final int respawn_period;
+public class Farcry extends Timed {
+    private final int bomb_timer;
     private FSM farcryFSM;
-    final JobKey myRespawnJobKey;
+    private final JobKey bombTimerJobkey;
+    private LocalDateTime estimated_end_time;
 
     public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
+        estimated_end_time = null;
         log.debug("\n   ____         _____\n" +
                 "  / __/__ _____/ ___/_____ __\n" +
                 " / _// _ `/ __/ /__/ __/ // /\n" +
                 "/_/  \\_,_/_/  \\___/_/  \\_, /\n" +
                 "                      /___/");
-        this.flagcapturetime = game_parameters.getInt("flag_capture_time");
-        this.respawn_period = game_parameters.getInt("respawn_period");
-        myRespawnJobKey = new JobKey("respawn", uuid.toString());
-        LocalDateTime ldtFlagTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(flagcapturetime), TimeZone.getTimeZone("UTC").toZoneId());
-        LocalDateTime ldtRespawnTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(respawn_period), TimeZone.getTimeZone("UTC").toZoneId());
-        LocalDateTime ldtTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(match_length), TimeZone.getTimeZone("UTC").toZoneId());
+        this.bombTimerJobkey = new JobKey("bomb_timer", uuid.toString());
+        this.bomb_timer = game_parameters.getInt("bomb_time");
+        LocalDateTime ldtFlagTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(bomb_timer), TimeZone.getTimeZone("UTC").toZoneId());
+        LocalDateTime ldtTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Bombtime: %s", ldtFlagTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
-                respawn_period == 0 ? "Respawns not handled" : String.format("Respawn-Time: %s", ldtRespawnTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
-                String.format("Spielzeit: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))));
-        create_FSM();
+                String.format("Gametime: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
-    }
-
-    @Override
-    protected void at_state(String state) {
-
+        roles.get("capture_point").stream().findFirst().ifPresent(agent -> create_flag_FSM(agent));
     }
 
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
-        if (message.equals("reset")) {
+        super.on_transition(old_state, message, new_state);
+        if (message.equals(_msg_RUN)) {
+            estimated_end_time = end_time;
+        }
+        if (message.equals(_msg_RESET)) {
+            estimated_end_time = null;
             mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal", "led_blu", "normal"), roles.get("leds"));
             mqttOutbound.send("signals", MQTT.toJSON("led_red", "normal"), roles.get("red_spawn"));
             mqttOutbound.send("signals", MQTT.toJSON("led_blu", "normal"), roles.get("blue_spawn"));
         }
     }
 
-    public void create_FSM() {
+    @Override
+    public void time_is_up() {
+
+    }
+
+
+    private void defused(String agent) {
+        mqttOutbound.send("paged",
+                MQTT.page("page0",
+                        "I am ${agentname}", "", "", "DEFUSED"),
+                agent);
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_grn", "normal"), agent);
+        deleteJob(bombTimerJobkey);
+    }
+
+    private void fused(String agent) {
+        mqttOutbound.send("paged",
+                MQTT.page("page0",
+                        "I am ${agentname}", "", "", "FUSED"),
+                agent);
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal"), agent);
+        final JobDataMap jdm = new JobDataMap();
+        jdm.put("bombid", "bomb1");
+        create_job(bombTimerJobkey, LocalDateTime.now().plusSeconds(bomb_timer), BombTimerJob.class, Optional.of(jdm));
+    }
+
+    private void prolog(String agent) {
+        mqttOutbound.send("paged",
+                MQTT.page("page0",
+                        "I am ${agentname}", "", "I will be a", "Capture Point"),
+                agent);
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "normal"), agent);
+    }
+
+
+    public void create_flag_FSM(final String agent) {
         try {
             farcryFSM = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/farcry.xml"), null);
-            /**
-             * PROLOG => BLUE
-             */
-            farcryFSM.setAction("PROLOG", "START", new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    log.info("{} =====> {}", curState, nextState);
-                    mqttOutbound.send("signals", MQTT.toJSON("sir1", "very_long"), roles.get("sirens"));
-                    mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "slow"), roles.get("leds"));
-                    mqttOutbound.send("paged", MQTT.page("page0", "Restspielzeit", "${remaining}", "Bombe NICHT scharf", respawn_period > 0 ? "Respawn: ${respawn}" : ""), roles.get("spawns"));
-                    estimated_end_time = start_time.plusSeconds(match_length);
-                    monitorRemainingTime();
-                    return true;
-                }
+            farcryFSM.setStatesAfterTransition("DEFUSED", (state, obj) -> {
+                defused(agent);
             });
 
-            /**
-             * BLUE => RED
-             */
-            farcryFSM.setAction("BLUE", "BTN01", new FSMAction() {
+            farcryFSM.setStatesAfterTransition("FUSED", (state, obj) -> {
+                fused(agent);
+            });
+
+            farcryFSM.setAction("DEFUSED", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.send("signals", MQTT.toJSON("sir2", "short"), roles.get("sirens"));
-                    mqttOutbound.send("signals", MQTT.toJSON("led_blu", "off", "led_red", "fast"), roles.get("leds"));
-                    mqttOutbound.send("paged", MQTT.page("page0", "Restspielzeit", "${remaining}", "Bombe IST scharf", respawn_period > 0 ? "Respawn: ${respawn}" : ""), roles.get("spawns"));
-                    estimated_end_time = LocalDateTime.now().plusSeconds(flagcapturetime);
-                    monitorRemainingTime();
+//                    mqttOutbound.send("paged", MQTT.page("page0", "Restspielzeit", "${remaining}", "Bombe IST scharf", respawn_period > 0 ? "Respawn: ${respawn}" : ""), roles.get("spawns"));
+                    estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
                     return true;
                 }
             });
 
-            /**
-             * RED => BLUE
-             */
-            farcryFSM.setAction("RED", "BTN01", new FSMAction() {
+            farcryFSM.setAction("FUSED", "btn01", new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     log.info("{} =====> {}", curState, nextState);
                     mqttOutbound.send("signals", MQTT.toJSON("sir3", "short"), roles.get("sirens"));
-                    mqttOutbound.send("signals", MQTT.toJSON("leds", "led_blu", "slow", "led_red", "off"), roles.get("leds"));
-                    mqttOutbound.send("paged", MQTT.page("page0", "Restspielzeit", "${remaining}", "Bombe NICHT scharf", respawn_period > 0 ? "Respawn: ${respawn}" : ""), roles.get("spawns"));
-                    // subtract the seconds since the start of the game from the match_length. this would be the remaining time
-                    // if we are in overtime the result is negative, hence shifting the estimated_end_time into the past
-                    // this will trigger the "GAME_OVER" event
-                    // das problem ist, dass wir vorher nochmal schnell in modus grün umschalten müssen, wenn
-                    estimated_end_time = start_time.plusSeconds(match_length); //LocalDateTime.now().plusSeconds(match_length - start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS));
-                    monitorRemainingTime();
+                    estimated_end_time = start_time.plusSeconds(game_time); //LocalDateTime.now().plusSeconds(match_length - start_time.until(LocalDateTime.now(), ChronoUnit.SECONDS));
                     return true;
                 }
             });
@@ -205,23 +219,22 @@ public class Farcry extends Timed  {
 //        trigger_internal_event("GAME_OVER");
     }
 
-    @Override
-    public void overtime() {
-        log.debug("overtime");
-//        trigger_internal_event("OVERTIME");
-    }
+
+//    @Override
+//    public void process_message(String sender, String item, JSONObject message) {
+//        // internal message OR message I am interested in
+//        if (sender.equalsIgnoreCase("_internal")) {
+//            farcryFSM.ProcessFSM(message.getString("message"));
+//        } else if (hasRole(sender, "button") && message.getString("button").equalsIgnoreCase("up")) {
+//            farcryFSM.ProcessFSM(message.getString("button_pressed").toUpperCase());
+//        } else {
+//            log.debug("message is not for me. ignoring.");
+//        }
+//    }
 
     @Override
-    public void process_message(String sender, String item, JSONObject message) {
+    protected void respawn(String role, String agent) {
 
-        // internal message OR message I am interested in
-        if (sender.equalsIgnoreCase("_internal")) {
-            farcryFSM.ProcessFSM(message.getString("message"));
-        } else if (hasRole(sender, "button") && message.getString("button").equalsIgnoreCase("up")) {
-            farcryFSM.ProcessFSM(message.getString("button_pressed").toUpperCase());
-        } else {
-            log.debug("message is not for me. ignoring.");
-        }
     }
 
 
@@ -238,7 +251,7 @@ public class Farcry extends Timed  {
     @Override
     public JSONObject getState() {
         return super.getState()
-                .put("flag_capture_time", flagcapturetime)
+                .put("flag_capture_time", bomb_timer)
                 .put("respawn_period", respawn_period)
                 .put("current_state", farcryFSM.getCurrentState());
     }

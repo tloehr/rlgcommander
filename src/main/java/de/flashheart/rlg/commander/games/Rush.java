@@ -4,7 +4,7 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.jobs.MComJob;
+import de.flashheart.rlg.commander.jobs.BombTimerJob;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
@@ -106,7 +106,7 @@ public class Rush extends Scheduled {
             mcom.setStatesAfterTransition("FUSED", (state, o) -> {
                 log.info("=====> {}:{}", agent, state);
                 LocalDateTime explosion_time = LocalDateTime.now().plusSeconds(bomb_timer);
-                create_job(mcomJob, explosion_time, MComJob.class, Optional.of(jdm));
+                create_job(mcomJob, explosion_time, BombTimerJob.class, Optional.of(jdm));
             });
             mcom.setStatesAfterTransition("EXPLODED", (state, o) -> {
                 log.info("=====> {}:{}", agent, state);

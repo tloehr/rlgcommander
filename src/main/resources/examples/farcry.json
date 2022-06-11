@@ -1,0 +1,29 @@
+{
+  "comment": "FarCry Assault",
+  "class": "de.flashheart.rlg.commander.games.Farcry",
+  "agents": {
+    "capture_points": [
+      "ag01"
+    ],
+    "attacker_spawn": [
+      "ag30"
+    ],
+    "defender_spawn": [
+      "ag31"
+    ],
+    "spawns": [
+      "ag30",
+      "ag31"
+    ],
+    "sirens": [
+      "ag50"
+    ]
+  },
+  "game_time": 600,
+  "bomb_time": 180,
+  "respawn_period": 20,
+  "wait4teams2B_ready": false,
+  "intro_mp3_file": "<random>",
+  "starter_countdown": 30,
+  "resume_countdown": 0
+}

@@ -1,26 +1,24 @@
 package de.flashheart.rlg.commander.jobs;
 
-import de.flashheart.rlg.commander.games.Game;
-import de.flashheart.rlg.commander.games.Rush;
-import de.flashheart.rlg.commander.games.Timed;
+import de.flashheart.rlg.commander.games.HasBombtimer;
 import lombok.extern.log4j.Log4j2;
-import org.quartz.*;
+import org.quartz.InterruptableJob;
+import org.quartz.JobExecutionContext;
+import org.quartz.SchedulerException;
+import org.quartz.UnableToInterruptJobException;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 
-@DisallowConcurrentExecution
 @Log4j2
-public class GameTimeIsUpJob extends QuartzJobBean implements InterruptableJob {
-//    public static final String name = "gametimejob1";
+public class BombTimerJob extends QuartzJobBean implements InterruptableJob {
 
     @Override
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
         try {
-            log.trace(jobExecutionContext.getJobDetail().getKey() + " executed");
             String uuid = jobExecutionContext.getMergedJobDataMap().getString("uuid");
-            Timed timedGame = (Timed) jobExecutionContext.getScheduler().getContext().get(uuid);
-            timedGame.time_is_up();
+            HasBombtimer game = (HasBombtimer) jobExecutionContext.getScheduler().getContext().get(uuid);
+            game.bomb_time_is_up(jobExecutionContext.getMergedJobDataMap().getString("bombid"));
         } catch (SchedulerException e) {
-            log.fatal(e);
+            log.error(e);
         }
     }
 

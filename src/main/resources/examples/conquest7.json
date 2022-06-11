@@ -32,6 +32,7 @@
   "end_bleed_interval": 0.5,
   "ticket_price_for_respawn": 1,
   "wait4teams2B_ready": false,
-  "starter_countdown": 0,
+  "intro_mp3_file": "<random>",
+  "starter_countdown": 30,
   "resume_countdown": 0
 }
