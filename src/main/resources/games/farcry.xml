@@ -13,6 +13,7 @@
 <FSM>
     <STATE id="PROLOG" type="ID">
         <MESSAGE id="run" nextState="DEFUSED"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="DEFUSED">
         <MESSAGE id="btn01" nextState="FUSED"/>
@@ -22,19 +23,19 @@
     <STATE id="FUSED">
         <MESSAGE id="btn01" nextState="DEFUSED"/>
         <MESSAGE id="game_time_is_up" nextState="OVERTIME"/>
-        <MESSAGE id="bomb_time_is_up" nextState="CAPTURED"/>
+        <MESSAGE id="bomb_time_is_up" nextState="TAKEN"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="OVERTIME">
         <MESSAGE id="btn01" nextState="DEFENDED"/>
-        <MESSAGE id="bomb_time_is_up" nextState="CAPTURED"/>
+        <MESSAGE id="bomb_time_is_up" nextState="TAKEN"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!-- ENDING STATES -->
     <STATE id="DEFENDED">
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="CAPTURED">
+    <STATE id="TAKEN">
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
 </FSM>
