@@ -4,6 +4,7 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
@@ -27,6 +28,7 @@ public abstract class Game {
     public static final String _msg_RESET = "reset";
     public static final String _msg_PREPARE = "prepare";
     public static final String _msg_READY = "ready";
+    public static final String _msg_BUTTON = "btn01";
     public static final String _msg_RUN = "run";
     public static final String _msg_IN_GAME_EVENT_OCCURRED = "in_game_event_occurred";
     public static final String _msg_PAUSE = "pause";
@@ -131,7 +133,14 @@ public abstract class Game {
      *
      * @param state the reached state
      */
-    protected abstract void at_state(String state);
+    protected void at_state(String state) {
+        if (state.equals(_state_PROLOG)) {
+            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
+            mqttOutbound.send("paged",
+                    MQTT.page("page0",
+                            "I am ${agentname}", "", "I will be a", "Siren"), roles.get("sirens"));
+        }
+    }
 
     /**
      * called on a new transistion within the game_fsm
@@ -140,7 +149,12 @@ public abstract class Game {
      * @param message   message triggering the transition
      * @param new_state after the transition
      */
-    protected abstract void on_transition(String old_state, String message, String new_state);
+    protected void on_transition(String old_state, String message, String new_state) {
+        if (message.equals(_msg_RUN))
+            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START, "led_all", "off"), roles.get("sirens"));
+        if (message.equals(_msg_GAME_OVER))
+            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_STOP), roles.get("sirens"));
+    }
 
     public void process_message(String message) throws IllegalStateException {
         if (game_fsm.ProcessFSM(message) == null) {

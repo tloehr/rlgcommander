@@ -26,6 +26,7 @@ public abstract class Pausable extends Scheduled {
 
     /**
      * games deriving from this class will be able to pause and resume during game
+     *
      * @param game_parameters - requires int "resume_countdown" in game_parameters. if >0 a countdown is provided before
      *                        resuming after PAUSING
      * @param scheduler
@@ -43,13 +44,9 @@ public abstract class Pausable extends Scheduled {
 
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
-        if (message.equals(_msg_RUN)) {
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START, "led_all", "off"), roles.get("sirens"));
-            deleteJob(continueGameJob);
-        }
-        if (message.equals(_msg_PAUSE)) {
-            pausing_since = Optional.of(LocalDateTime.now());
-        }
+        super.on_transition(old_state, message, new_state);
+        if (message.equals(_msg_RUN)) deleteJob(continueGameJob);
+        if (message.equals(_msg_PAUSE)) pausing_since = Optional.of(LocalDateTime.now());
         if (message.equals(_msg_CONTINUE)) {
             pausing_since = Optional.empty();
             mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START, "led_all", "off"), roles.get("sirens"));
@@ -58,13 +55,8 @@ public abstract class Pausable extends Scheduled {
 
     @Override
     protected void at_state(String state) {
-        if (state.equals(_state_PROLOG)) {
-            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
-            mqttOutbound.send("paged",
-                    MQTT.page("page0",
-                            "I am ${agentname}", "", "I will be a", "Siren"), roles.get("sirens"));
-            deleteJob(continueGameJob);
-        }
+        super.at_state(state);
+        if (state.equals(_state_PROLOG)) deleteJob(continueGameJob);
         if (state.equals(_state_RESUMING)) {
             if (resume_countdown > 0) {
                 create_job(continueGameJob, LocalDateTime.now().plusSeconds(resume_countdown - 1), ContinueGameJob.class);
@@ -73,9 +65,6 @@ public abstract class Pausable extends Scheduled {
             }
         }
         if (state.equals(_state_PAUSING))
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_STOP), roles.get("sirens"));
-
-        if (state.equals(_state_EPILOG))
             mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_STOP), roles.get("sirens"));
     }
 

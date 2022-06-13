@@ -160,7 +160,7 @@ public class Conquest extends WithRespawns {
 
     @Override
     public void process_message(String sender, String item, JSONObject message) {
-        if (!item.equalsIgnoreCase("btn01")) {
+        if (!item.equalsIgnoreCase(_msg_BUTTON)) {
             log.trace("no btn01 message. discarding.");
             return;
         }
@@ -168,7 +168,6 @@ public class Conquest extends WithRespawns {
             log.trace("only reacting on button UP. discarding.");
             return;
         }
-
         if (hasRole(sender, "capture_points")) {
             if (game_fsm.getCurrentState().equals(_state_RUNNING)) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
         } else super.process_message(sender, item, message);

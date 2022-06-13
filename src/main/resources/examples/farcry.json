@@ -5,6 +5,9 @@
     "capture_points": [
       "ag01"
     ],
+    "capture_sirens": [
+      "ag50"
+    ],
     "attacker_spawn": [
       "ag30"
     ],
@@ -21,6 +24,7 @@
   },
   "game_time": 600,
   "bomb_time": 180,
+  "capture_in_succession": false,
   "respawn_period": 20,
   "wait4teams2B_ready": false,
   "intro_mp3_file": "<random>",

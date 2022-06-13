@@ -60,6 +60,9 @@ public abstract class WithRespawns extends Pausable {
         String agent = roles.get(role).stream().findFirst().get();
         all_spawns.put(role, create_Spawn_FSM(agent, role, led_device_id, teamname));
         spawnrole_for_this_agent.put(agent, role);
+        // every spawn is a potential siren
+        agents.put(agent, "sirens");
+        roles.put("sirens", agent);
     }
 
     private FSM create_Spawn_FSM(final String agent, String role, final String led_device_id, final String teamname) throws ParserConfigurationException, IOException, SAXException {
