@@ -2,27 +2,39 @@ package de.flashheart.rlg.commander.games;
 
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.jobs.BombTimerJob;
 import de.flashheart.rlg.commander.jobs.ContinueGameJob;
+import de.flashheart.rlg.commander.misc.JavaTimeConverter;
+import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
+import org.quartz.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Optional;
+
+import static org.quartz.TriggerBuilder.newTrigger;
 
 /**
  * extend this class if You want Your game to be pausable with resume and countdown.
  */
+@Log4j2
 public abstract class Pausable extends Scheduled {
     protected final int resume_countdown;
     private final JobKey continueGameJob;
     protected Optional<LocalDateTime> pausing_since;
+    // this is a map of all jobs with their trigger time, defined by child classes that
+    // needs to be paused and revived when game is continuing.
+    protected HashSet<JobKey> resumable_jobs;
 
     /**
      * games deriving from this class will be able to pause and resume during game
@@ -39,6 +51,7 @@ public abstract class Pausable extends Scheduled {
         super(game_parameters, scheduler, mqttOutbound);
         this.resume_countdown = game_parameters.getInt("resume_countdown");
         this.continueGameJob = new JobKey("continue_the_game", uuid.toString());
+        this.resumable_jobs = new HashSet<>();
         pausing_since = Optional.empty();
     }
 
@@ -46,10 +59,17 @@ public abstract class Pausable extends Scheduled {
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RUN)) deleteJob(continueGameJob);
-        if (message.equals(_msg_PAUSE)) pausing_since = Optional.of(LocalDateTime.now());
+        if (message.equals(_msg_PAUSE)) {
+            pausing_since = Optional.of(LocalDateTime.now());
+            resumable_jobs.forEach(jobKey -> pause_job(jobKey));
+            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_STOP), roles.get("sirens"));
+        }
         if (message.equals(_msg_CONTINUE)) {
+            resumable_jobs.removeIf(jobKey -> !check_exists(jobKey));
+            final long seconds_elapsed = ChronoUnit.SECONDS.between(pausing_since.get(), LocalDateTime.now());
+            resumable_jobs.forEach(jobKey -> continue_job(jobKey, seconds_elapsed));
             pausing_since = Optional.empty();
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START, "led_all", "off"), roles.get("sirens"));
+            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START), roles.get("sirens"));
         }
     }
 
@@ -59,13 +79,22 @@ public abstract class Pausable extends Scheduled {
         if (state.equals(_state_PROLOG)) deleteJob(continueGameJob);
         if (state.equals(_state_RESUMING)) {
             if (resume_countdown > 0) {
-                create_job(continueGameJob, LocalDateTime.now().plusSeconds(resume_countdown - 1), ContinueGameJob.class);
+                create_job(continueGameJob, LocalDateTime.now().plusSeconds(resume_countdown - 1), ContinueGameJob.class, Optional.empty());
             } else {
                 process_message(_msg_CONTINUE);
             }
         }
-        if (state.equals(_state_PAUSING))
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_STOP), roles.get("sirens"));
+    }
+
+    protected void create_resumable_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap){
+        create_job(jobKey, start_time, clazz, jobDataMap);
+        resumable_jobs.add(jobKey);
+    }
+
+    @Override
+    protected void deleteJob(JobKey jobKey){
+        super.deleteJob(jobKey);
+        resumable_jobs.remove(jobKey);
     }
 
     @Override

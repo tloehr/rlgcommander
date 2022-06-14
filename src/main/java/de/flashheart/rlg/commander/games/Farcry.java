@@ -80,13 +80,14 @@ public class Farcry extends Timed implements HasBombtimer {
         add_spawn_for("defender_spawn", "led_grn", "Defender");
     }
 
+
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RUN)) {
             estimated_end_time = end_time;
+            // activate next capture point
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_RUN);
-//            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
         }
         if (message.equals(_msg_RESET)) {
             estimated_end_time = null;
@@ -95,16 +96,6 @@ public class Farcry extends Timed implements HasBombtimer {
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
             mqttOutbound.send("vars", MQTT.toJSON("overtime", ""), roles.get("spawns"));
         }
-//        if (message.equals(_msg_PAUSE)) {
-//            deleteJob(bombTimerJobkey);
-//        }
-//        if (message.equals(_msg_RESUME)) {
-//            // shift the start and end_time by the number of seconds the pause lasted
-//            long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
-//            start_time = start_time.plusSeconds(pause_length_in_seconds);
-//            end_time = start_time.plusSeconds(game_time);
-//            create_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class);
-//        }
     }
 
     @Override
@@ -116,7 +107,7 @@ public class Farcry extends Timed implements HasBombtimer {
         final JobDataMap jdm = new JobDataMap();
         jdm.put("bombid", agent);
         estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
-        create_job(bombTimerJobkey, estimated_end_time, BombTimerJob.class, Optional.of(jdm));
+        create_resumable_job(bombTimerJobkey, estimated_end_time, BombTimerJob.class, Optional.of(jdm));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "fast"), agent);
         mqttOutbound.send("signals", MQTT.toJSON("sir2", "short"), map_of_agents_and_sirens.get(agent).toString());
         mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), roles.get("spawns"));
@@ -200,19 +191,6 @@ public class Farcry extends Timed implements HasBombtimer {
                 cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
         } else super.process_message(sender, item, message);
     }
-
-
-//    @Override
-//    public void process_message(String sender, String item, JSONObject message) {
-//        // internal message OR message I am interested in
-//        if (sender.equalsIgnoreCase("_internal")) {
-//            farcryFSM.ProcessFSM(message.getString("message"));
-//        } else if (hasRole(sender, "button") && message.getString("button").equalsIgnoreCase("up")) {
-//            farcryFSM.ProcessFSM(message.getString("button_pressed").toUpperCase());
-//        } else {
-//            log.debug("message is not for me. ignoring.");
-//        }
-//    }
 
     @Override
     protected void respawn(String role, String agent) {

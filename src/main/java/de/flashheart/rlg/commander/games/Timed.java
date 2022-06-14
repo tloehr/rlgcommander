@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 /**
  * an abstract superclass for handling any game mode that has an (estimated or fixed) end_time We are talking about
@@ -59,7 +60,7 @@ public abstract class Timed extends WithRespawns {
             long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
             start_time = start_time.plusSeconds(pause_length_in_seconds);
             end_time = start_time.plusSeconds(game_time);
-            create_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class);
+            create_resumable_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class, Optional.empty());
         }
 
         if (message.equals(_msg_GAME_OVER)) {
@@ -75,7 +76,7 @@ public abstract class Timed extends WithRespawns {
         if (message.equals(_msg_RUN)) {
             start_time = LocalDateTime.now();
             end_time = start_time.plusSeconds(game_time);
-            create_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class);
+            create_resumable_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class, Optional.empty());
         }
     }
 

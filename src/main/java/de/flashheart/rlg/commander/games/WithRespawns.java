@@ -16,6 +16,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Optional;
 
 @Log4j2
 /**
@@ -143,7 +144,7 @@ public abstract class WithRespawns extends Pausable {
         if (state.equals(_state_TEAMS_READY)) {
             if (starter_countdown > 0) {
                 all_spawns.values().forEach(fsm -> fsm.ProcessFSM(_msg_START_COUNTDOWN));
-                create_job(runGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class);
+                create_job(runGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
             } else {
                 process_message(_msg_RUN);
             }
