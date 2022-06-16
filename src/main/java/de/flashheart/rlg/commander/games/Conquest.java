@@ -126,7 +126,8 @@ public class Conquest extends WithRespawns {
         log.debug("Ticket Bleeding per {} seconds: {}", TICKET_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
         log.debug("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
-        this.ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
+        ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
+        jobs_to_suspend_during_pause.add(ticketBleedingJobkey);
 
         cpFSMs = new HashMap<>();
         setGameDescription(game_parameters.getString("comment"),
@@ -160,7 +161,7 @@ public class Conquest extends WithRespawns {
 
     @Override
     public void process_message(String sender, String item, JSONObject message) {
-        if (!item.equalsIgnoreCase(_msg_BUTTON)) {
+        if (!item.equalsIgnoreCase(_msg_BUTTON_01)) {
             log.trace("no btn01 message. discarding.");
             return;
         }
@@ -214,7 +215,7 @@ public class Conquest extends WithRespawns {
     }
 
     public void ticket_bleeding_cycle() {
-        if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
+//        if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
 
         broadcast_cycle_counter++;
 

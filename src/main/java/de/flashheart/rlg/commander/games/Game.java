@@ -17,8 +17,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
@@ -28,7 +26,8 @@ public abstract class Game {
     public static final String _msg_RESET = "reset";
     public static final String _msg_PREPARE = "prepare";
     public static final String _msg_READY = "ready";
-    public static final String _msg_BUTTON = "btn01";
+    public static final String _msg_BUTTON_01 = "btn01";
+    public static final String _msg_BUTTON_02 = "btn02";
     public static final String _msg_RUN = "run";
     public static final String _msg_IN_GAME_EVENT_OCCURRED = "in_game_event_occurred";
     public static final String _msg_PAUSE = "pause";

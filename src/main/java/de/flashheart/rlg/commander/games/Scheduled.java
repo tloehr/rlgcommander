@@ -99,7 +99,7 @@ public abstract class Scheduled extends Game {
         }
     }
 
-    protected void continue_job(JobKey jobKey, long delayed_by_seconds) {
+    protected void reschedule_job(JobKey jobKey, long delayed_by_seconds) {
         try {
             if (!scheduler.checkExists(jobKey)) return;
             TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName() + "-trigger", uuid.toString());
@@ -113,6 +113,14 @@ public abstract class Scheduled extends Game {
                     .startAt(JavaTimeConverter.toDate(new_start_time))
                     .build();
             scheduler.rescheduleJob(triggerKey, newTrigger);
+        } catch (SchedulerException e) {
+            log.error(e);
+        }
+    }
+
+    protected void resume_job(JobKey jobKey) {
+        try {
+            scheduler.resumeJob(jobKey);
         } catch (SchedulerException e) {
             log.error(e);
         }
