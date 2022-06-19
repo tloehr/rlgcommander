@@ -5,6 +5,7 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.BombTimerJob;
+import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -102,27 +103,31 @@ public class Farcry extends Timed implements HasBombtimer {
         estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
         create_resumable_job(bombTimerJobkey, estimated_end_time, BombTimerJob.class, Optional.of(jdm));
 
-        // increasing siren signals during bomb time. repeated beeps signals the quarter were in
-        int segment_time = bomb_timer / 4 * 1000;
-        String siren_tick = "on,100;off,100;";
-        String signal = "1:on,2000;off," + (segment_time - 2000) + ";";
-        for (int segment = 2; segment <= 4; segment++) {
-            String pause_time = "off," + (segment_time - 200 * segment) + ";";
-            signal += StringUtils.repeat(siren_tick, segment) + pause_time;
-        }
-        // todo: add in_game_events
-        mqttOutbound.send("signals", MQTT.toJSON("sir2", signal), map_of_agents_and_sirens.get(agent).toString());
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "fast"), agent);
-        mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), roles.get("spawns"));
+//        // increasing siren signals during bomb time. repeated beeps signals the quarter were in
+//        int segment_time = bomb_timer / 4 * 1000;
+//        String siren_tick = "on,100;off,100;";
+//        String signal = "1:on,2000;off," + (segment_time - 2000) + ";";
+//        for (int segment = 2; segment <= 4; segment++) {
+//            String pause_time = "off," + (segment_time - 200 * segment) + ";";
+//            signal += StringUtils.repeat(siren_tick, segment) + pause_time;
+//        }
+
+        addEvent(String.format("Bomb@%s FUSED", agent));
+        process_message(_msg_IN_GAME_EVENT_OCCURRED);
+        mqttOutbound.send("signals", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
+        mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "progress:remaining"), agent);
         mqttOutbound.send("vars", MQTT.toJSON("fused", "fused"), roles.get("spawns"));
     }
 
     private void defused(String agent) {
         estimated_end_time = end_time;
         deleteJob(bombTimerJobkey);
+        addEvent(String.format("Bomb@%s DE-FUSED", agent));
+        if (game_fsm.getCurrentState().equalsIgnoreCase(_state_RUNNING)) process_message(_msg_IN_GAME_EVENT_OCCURRED);
         mqttOutbound.send("signals", MQTT.toJSON("sir2", "off"), map_of_agents_and_sirens.get(agent).toString());
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_grn", "fast"), agent);
-        mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), roles.get("spawns"));
+        mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_grn", "timer:remaining"), agent);
         mqttOutbound.send("vars", MQTT.toJSON("fused", "defused"), roles.get("spawns"));
     }
 
@@ -131,7 +136,10 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     private void taken(String agent) {
+        addEvent(String.format("Bomb#%s@%s EXPLODED", active_capture_point, agent));
+        process_message(_msg_IN_GAME_EVENT_OCCURRED);
         active_capture_point++;
+        mqttOutbound.send("signals", MQTT.toJSON("sir2", "off"), map_of_agents_and_sirens.get(agent).toString());
         if (active_capture_point == capture_points.size()) game_fsm.ProcessFSM(_msg_GAME_OVER);
         else cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_RUN);
     }
@@ -179,6 +187,8 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     private void overtime(String agent) {
+        addEvent("REACHED OVERTIME");
+        process_message(_msg_IN_GAME_EVENT_OCCURRED);
         mqttOutbound.send("vars", MQTT.toJSON("overtime", "overtime"), roles.get("spawns"));
     }
 

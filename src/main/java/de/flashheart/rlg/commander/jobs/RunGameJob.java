@@ -20,7 +20,7 @@ public class RunGameJob extends QuartzJobBean implements InterruptableJob {
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
         try {
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("uuid");
-            Conquest game = (Conquest) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
+            Game game = (Game) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
             game.process_message(Game._msg_RUN);
         } catch (SchedulerException e) {
             log.error(e);

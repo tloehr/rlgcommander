@@ -150,7 +150,7 @@ public abstract class Game {
      */
     protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals(_msg_RUN))
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START, "led_all", "off"), roles.get("sirens"));
+            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START), roles.get("sirens"));
         if (message.equals(_msg_GAME_OVER))
             mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_STOP), roles.get("sirens"));
     }

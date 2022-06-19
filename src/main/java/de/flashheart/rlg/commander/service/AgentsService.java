@@ -63,6 +63,7 @@ public class AgentsService {
         if (my_agent.getGameid() > -1) return; //  todo: access "most_recent_messages" instead
         log.info("Sending welcome message to newly attached agent {}", my_agent.getId());
         //mqttOutbound.send("init", agentid);
+        mqttOutbound.send("timers", MQTT.toJSON("_clearall", "0"), my_agent.getId());
         mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off", "led_wht", "infty:on,500;off,500", "led_ylw", "infty:on,500;off,500", "led_blu", "infty:on,500;off,500",
                 "led_red", "infty:off,500;on,500", "led_grn", "infty:off,500;on,500"), my_agent.getId());
         mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
@@ -73,7 +74,8 @@ public class AgentsService {
 
     /**
      * sends a test signal to see if the agent is working properly
-     * @param agentid to be tested
+     *
+     * @param agentid  to be tested
      * @param deviceid specific device like "led_red, sir1..."
      */
     public void test_agent(String agentid, String deviceid) {
