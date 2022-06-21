@@ -54,6 +54,7 @@ public class Tools {
     };
 
 
+    // todo: this should be in the rlgagent
     public static String getProgressTickingScheme(int time_period_in_millis) {
         // increasing siren signals during bomb time. repeated beeps signals the quarter were in
         int segment_time_in_millis = time_period_in_millis / 4;
