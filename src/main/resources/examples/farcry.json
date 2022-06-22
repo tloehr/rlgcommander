@@ -3,7 +3,7 @@
   "class": "de.flashheart.rlg.commander.games.Farcry",
   "agents": {
     "capture_points": [
-      "ag01"
+      "ag02"
     ],
     "capture_sirens": [
       "ag50"
