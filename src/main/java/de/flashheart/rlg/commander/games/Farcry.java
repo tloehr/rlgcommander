@@ -167,7 +167,8 @@ public class Farcry extends Timed implements HasBombtimer {
             fsm.setAction(_state_FUSED, _msg_BUTTON_01, new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    mqttOutbound.send("signals", MQTT.toJSON("sir3", "short"), map_of_agents_and_sirens.get(agent).toString());
+                    // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
+                    mqttOutbound.send("signals", MQTT.toJSON("sir3", "1:on,2000;off,1"), map_of_agents_and_sirens.get(agent).toString());
                     return true;
                 }
             });
@@ -189,6 +190,7 @@ public class Farcry extends Timed implements HasBombtimer {
 
     private void overtime(String agent) {
         addEvent("REACHED OVERTIME");
+        // todo: send an "OVERTIME" voice to the spawn agents
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
         mqttOutbound.send("vars", MQTT.toJSON("overtime", "overtime"), roles.get("spawns"));
     }
