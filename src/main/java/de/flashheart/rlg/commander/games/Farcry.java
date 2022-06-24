@@ -219,8 +219,9 @@ public class Farcry extends Timed implements HasBombtimer {
         final JSONObject statusObject = super.getState()
                 .put("active_capture_point", active_capture_point);
         final JSONObject states = new JSONObject();
-        cpFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
-        states.put("agent_states", states);
+        cpFSMs.forEach((agentid, fsm) -> statusObject.getJSONObject("agent_states").put(agentid, fsm.getCurrentState()));
+        // todo: integrate states from the spawn agents ?
+        //statusObject.put("agent_states", states);
         return statusObject;
     }
 
