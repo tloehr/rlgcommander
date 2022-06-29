@@ -82,17 +82,25 @@ public abstract class Game {
         this.game_description = new ArrayList<>();
     }
 
-    protected void addEvent(String message) {
+    protected void addEvent(JSONObject message) {
         addEvent(message, game_fsm.getCurrentState());
     }
 
-    protected void addEvent(String message, String state) {
+    protected void addEvent(JSONObject message, String state) {
         in_game_events.add(new JSONObject()
                 .put("pit", JavaTimeConverter.to_iso8601())
                 .put("event", message)
                 .put("new_state", state)
         );
     }
+
+    protected void addEvent(String message, String state) {
+           in_game_events.add(new JSONObject()
+                   .put("pit", JavaTimeConverter.to_iso8601())
+                   .put("event", message)
+                   .put("new_state", state)
+           );
+       }
 
     /**
      * adds a listener for state transitions

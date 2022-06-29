@@ -12,7 +12,11 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="run" nextState="DEFUSED"/>
+        <MESSAGE id="run" nextState="STANDBY"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="STANDBY">
+        <MESSAGE id="activate" nextState="DEFUSED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="DEFUSED">

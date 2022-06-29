@@ -146,14 +146,14 @@ public class Conquest extends WithRespawns {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             red_respawns++;
-            addEvent(String.format("RED Team Respawn #%s", red_respawns));
+            addEvent(new JSONObject().put("type", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
             broadcast_score();
         }
         if (role.equals("blue_spawn")) {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             blue_respawns++;
-            addEvent(String.format("BLUE Team Respawn #%s", blue_respawns));
+            addEvent(new JSONObject().put("type", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
             broadcast_score();
         }
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
@@ -206,12 +206,12 @@ public class Conquest extends WithRespawns {
 
     private void cp_to_blue(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
-        addEvent(String.format("Agent %s switched to BLUE", agent));
+        addEvent(new JSONObject().put("type", "capture_point").put("agent", agent).put("team", "blue"));
     }
 
     private void cp_to_red(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
-        addEvent(String.format("Agent %s switched to RED", agent));
+        addEvent(new JSONObject().put("type", "capture_point").put("agent", agent).put("team", "red"));
     }
 
     public void ticket_bleeding_cycle() {
@@ -239,8 +239,14 @@ public class Conquest extends WithRespawns {
     private void update_cps_held_by_list() {
         cps_held_by_blue.clear();
         cps_held_by_red.clear();
-        cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("BLUE")).forEach(stringFSMEntry -> cps_held_by_blue.add(stringFSMEntry.getKey()));
-        cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("RED")).forEach(stringFSMEntry -> cps_held_by_red.add(stringFSMEntry.getKey()));
+        // gather blue
+        cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("BLUE")
+                        || stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("GAME_OVER_BLUE"))
+                .forEach(stringFSMEntry -> cps_held_by_blue.add(stringFSMEntry.getKey()));
+        // gather red
+        cpFSMs.entrySet().stream().filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("RED")
+                        || stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase("GAME_OVER_RED"))
+                .forEach(stringFSMEntry -> cps_held_by_red.add(stringFSMEntry.getKey()));
     }
 
     @Override

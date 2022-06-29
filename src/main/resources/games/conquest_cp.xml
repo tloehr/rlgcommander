@@ -19,7 +19,7 @@
     </STATE>
     <STATE id="BLUE">
         <MESSAGE id="btn01" nextState="RED"/>
-        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER_BLUE"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
         <!-- to correct in game rule violation -->
         <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
@@ -27,11 +27,18 @@
     </STATE>
     <STATE id="RED">
         <MESSAGE id="btn01" nextState="BLUE"/>
-        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER_RED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
         <!-- to correct in game rule violation -->
         <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
         <MESSAGE id="to_blue" nextState="BLUE"/>
+    </STATE>
+    <!-- These may seem useless, but I want to show the last flag colors AFTER the game ended for statistics. -->
+    <STATE id="GAME_OVER_RED">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="GAME_OVER_BLUE">
+        <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="GAME_OVER">
         <MESSAGE id="reset" nextState="PROLOG"/>
