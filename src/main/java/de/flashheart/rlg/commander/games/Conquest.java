@@ -122,9 +122,9 @@ public class Conquest extends WithRespawns {
         LocalTime min_time = LocalTime.ofSecondOfDay(min_seconds_gametime.intValue());
         LocalTime max_time = LocalTime.ofSecondOfDay(max_seconds_gametime.intValue());
 
-        log.debug("Interval Table: {}", Arrays.toString(interval_table));
-        log.debug("Ticket Bleeding per {} seconds: {}", TICKET_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
-        log.debug("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
+        log.trace("Interval Table: {}", Arrays.toString(interval_table));
+        log.trace("Ticket Bleeding per {} seconds: {}", TICKET_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
+        log.trace("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
         ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
         jobs_to_suspend_during_pause.add(ticketBleedingJobkey);
@@ -156,6 +156,8 @@ public class Conquest extends WithRespawns {
             addEvent(new JSONObject().put("type", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
             broadcast_score();
         }
+        if (blue_respawns + red_respawns == 1)
+            mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), roles.get("spawns"));
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
@@ -215,8 +217,6 @@ public class Conquest extends WithRespawns {
     }
 
     public void ticket_bleeding_cycle() {
-//        if (pausing_since.isPresent()) return; // as we are pausing, we are not doing anything
-
         broadcast_cycle_counter++;
 
         update_cps_held_by_list();
@@ -300,7 +300,7 @@ public class Conquest extends WithRespawns {
         mqttOutbound.send("vars", vars, roles.get("spawns"));
 
         log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
-        log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+        log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
     }
 
     /**
@@ -321,7 +321,7 @@ public class Conquest extends WithRespawns {
 
     @Override
     protected JSONObject getPages() {
-        log.debug(game_fsm.getCurrentState());
+        log.trace(game_fsm.getCurrentState());
         if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
             String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
             return MQTT.page("page0", "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome);

@@ -203,6 +203,7 @@ public class Farcry extends Timed implements HasBombtimer {
         addEvent(new JSONObject().put("type", "overtime").put("agent", agent));
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
         mqttOutbound.send("vars", MQTT.toJSON("overtime", "overtime"), roles.get("spawns"));
+        mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "overtime"), agent);
     }
 
     @Override
