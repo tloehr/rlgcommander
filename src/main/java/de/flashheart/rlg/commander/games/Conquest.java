@@ -146,14 +146,14 @@ public class Conquest extends WithRespawns {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             red_respawns++;
-            addEvent(new JSONObject().put("type", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
+            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
             broadcast_score();
         }
         if (role.equals("blue_spawn")) {
             mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             blue_respawns++;
-            addEvent(new JSONObject().put("type", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
+            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
             broadcast_score();
         }
         if (blue_respawns + red_respawns == 1)
@@ -208,12 +208,12 @@ public class Conquest extends WithRespawns {
 
     private void cp_to_blue(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
-        addEvent(new JSONObject().put("type", "capture_point").put("agent", agent).put("team", "blue"));
+        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
-        addEvent(new JSONObject().put("type", "capture_point").put("agent", agent).put("team", "red"));
+        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 
     public void ticket_bleeding_cycle() {

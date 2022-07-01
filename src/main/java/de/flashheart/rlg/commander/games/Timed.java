@@ -52,10 +52,10 @@ public abstract class Timed extends WithRespawns {
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_PAUSE)){
+        if (message.equals(_msg_PAUSE)) {
             deleteJob(game_timer_jobkey);
         }
-        if (message.equals(_msg_RESUME)){
+        if (message.equals(_msg_RESUME)) {
             // shift the start and end_time by the number of seconds the pause lasted
             long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
             start_time = start_time.plusSeconds(pause_length_in_seconds);
@@ -81,7 +81,7 @@ public abstract class Timed extends WithRespawns {
     }
 
     protected long getRemaining() {
-        return end_time != null ? LocalDateTime.now().until(end_time, ChronoUnit.SECONDS) + 1 : 0l;
+        return end_time != null ? Math.min(0l, LocalDateTime.now().until(end_time, ChronoUnit.SECONDS) + 1) : 0l;
     }
 
     public abstract void game_time_is_up();

@@ -82,25 +82,22 @@ public abstract class Game {
         this.game_description = new ArrayList<>();
     }
 
-    protected void addEvent(JSONObject message) {
-        addEvent(message, game_fsm.getCurrentState());
-    }
-
-    protected void addEvent(JSONObject message, String state) {
+    protected void addEvent(JSONObject in_game_event) {
+        in_game_event.put("type", "in_game_state_change");
         in_game_events.add(new JSONObject()
                 .put("pit", JavaTimeConverter.to_iso8601())
-                .put("event", message)
-                .put("new_state", state)
+                .put("event", in_game_event)
+                .put("new_state", game_fsm.getCurrentState())
         );
     }
 
-    protected void addEvent(String message, String state) {
-           in_game_events.add(new JSONObject()
-                   .put("pit", JavaTimeConverter.to_iso8601())
-                   .put("event", message)
-                   .put("new_state", state)
-           );
-       }
+    private void addEvent(String message, String state) {
+        in_game_events.add(new JSONObject()
+                .put("pit", JavaTimeConverter.to_iso8601())
+                .put("event", new JSONObject().put("type", "general_game_state_change").put("message", message))
+                .put("new_state", state)
+        );
+    }
 
     /**
      * adds a listener for state transitions
@@ -161,6 +158,10 @@ public abstract class Game {
             mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START), roles.get("sirens"));
         if (message.equals(_msg_GAME_OVER))
             mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_STOP), roles.get("sirens"));
+        if (message.equals(_msg_RESET)) {
+            mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off", "buzzer", "off"), roles.get("sirens"));
+            mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), roles.get("spawns"));
+        }
     }
 
     public void process_message(String message) throws IllegalStateException {
