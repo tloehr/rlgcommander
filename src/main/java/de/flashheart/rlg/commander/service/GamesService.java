@@ -4,7 +4,9 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
-import de.flashheart.rlg.commander.misc.*;
+import de.flashheart.rlg.commander.misc.StateReachedEvent;
+import de.flashheart.rlg.commander.misc.StateReachedListener;
+import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -130,7 +132,7 @@ public class GamesService {
         gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
     }
 
-    public void addStateReachedListener(int id, StateReachedListener toAdd) {
+    public StateReachedListener addStateReachedListener(int id, StateReachedListener toAdd) {
         try {
             check_id(id);
             gameStateListeners.put(id, toAdd);
@@ -138,7 +140,9 @@ public class GamesService {
             toAdd.onStateReached(new StateReachedEvent(loaded_games[id - 1].get().getState().getString("game_state")));
         } catch (ArrayIndexOutOfBoundsException | IllegalStateException | JSONException ex) {
             log.warn(ex.getMessage());
+            toAdd = null;
         }
+        return toAdd;
     }
 
 }

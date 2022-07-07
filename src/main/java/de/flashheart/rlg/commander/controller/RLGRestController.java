@@ -12,9 +12,7 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.time.LocalTime;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,6 +47,7 @@ public class RLGRestController {
 
     /**
      * emits server sent events on game state changes
+     * test with: curl -N "http://localhost:8090/api/game-sse?id=1"
      *
      * @return
      */
@@ -61,39 +60,17 @@ public class RLGRestController {
                 try {
                     SseEmitter.SseEventBuilder event = SseEmitter.event().
                             data(stateReachedEvent.getState()). // gamesService.getGame(id).get().getState().toString()
-                            id(Long.toString(System.currentTimeMillis())).
+                                    id(Long.toString(System.currentTimeMillis())).
                             name("StateReachedEvent");
                     emitter.send(event);
-                } catch (IOException ex) {
-                    emitter.completeWithError(ex);
-                } catch (Exception e){
-                    log.error(e);
+                } catch (Exception e) {
+                    log.warn(e);
+                    emitter.completeWithError(e);
                 }
             });
         });
         return emitter;
     }
-
-//    @GetMapping("/stream-sse-mvc")
-//    public SseEmitter streamSseMvc() {
-//        SseEmitter emitter = new SseEmitter(-1l);
-//        ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
-//        sseMvcExecutor.execute(() -> {
-//            try {
-//                for (int i = 0; true; i++) {
-//                    SseEmitter.SseEventBuilder event = SseEmitter.event().
-//                            data("SSE MVC - " + LocalTime.now().toString()).
-//                            id(String.valueOf(i)).
-//                            name("sse event - mvc");
-//                    emitter.send(event);
-//                    Thread.sleep(1000);
-//                }
-//            } catch (Exception ex) {
-//                emitter.completeWithError(ex);
-//            }
-//        });
-//        return emitter;
-//    }
 
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
