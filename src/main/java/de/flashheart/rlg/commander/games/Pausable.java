@@ -18,6 +18,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Optional;
 
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.TriggerBuilder.newTrigger;
+
 /**
  * extend this class if You want Your game to be pausable with resume and countdown.
  */
@@ -87,6 +90,33 @@ public abstract class Pausable extends Scheduled {
     protected void create_resumable_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap){
         create_job(jobKey, start_time, clazz, jobDataMap);
         jobs_to_reschedule_after_pause.add(jobKey);
+    }
+
+    protected void create_resumable_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap){
+        create_job(jobKey, ssb, clazz, jobDataMap);
+        jobs_to_reschedule_after_pause.add(jobKey);
+    }
+
+
+    protected void create_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz) {
+        deleteJob(jobKey);
+        JobDetail job = newJob(clazz)
+                .withIdentity(jobKey)
+                .build();
+
+        Trigger trigger = newTrigger()
+                .withIdentity(jobKey.getName() + "-trigger", uuid.toString())
+                .startNow()
+                .withSchedule(ssb)
+                .usingJobData("uuid", uuid.toString()) // where we find the context later
+                .build();
+
+        jobs.put(jobKey, trigger);
+        try {
+            scheduler.scheduleJob(job, trigger);
+        } catch (SchedulerException e) {
+            log.fatal(e);
+        }
     }
 
     @Override

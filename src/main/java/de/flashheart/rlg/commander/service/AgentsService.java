@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -33,6 +35,14 @@ public class AgentsService {
             live_agents.put(agentid, my_agent);
             welcome(my_agent);
         });
+    }
+
+    public void remove_gameid_from_agents(Set<String> agentids) {
+        assign_gameid_to_agents(-1, agentids);
+    }
+
+    public Set<Agent> get_agents_for_gameid(int gameid) {
+        return live_agents.values().stream().filter(agent -> agent.getGameid() == gameid).collect(Collectors.toSet());
     }
 
     public void agent_reported_status(String agentid, JSONObject status) {
@@ -82,6 +92,17 @@ public class AgentsService {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
         if (my_agent.getGameid() > -1) return; // only when not in game
         mqttOutbound.send("signals", MQTT.toJSON(deviceid, "medium"), my_agent.getId());
+    }
+
+    /**
+     * turn off all lights and sirens
+     */
+    public void powersave_unused_agents() {
+        get_agents_for_gameid(-1).forEach(agent -> mqttOutbound.send("signals", MQTT.toJSON("all", "off"), agent.getId()));
+    }
+
+    public void welcome_unused_agents() {
+        get_agents_for_gameid(-1).forEach(agent -> welcome(agent));
     }
 
 }

@@ -41,7 +41,7 @@
     </STATE>
     <!--  finally running -->
     <STATE id="IN_GAME">
-        <MESSAGE id="btn01" nextState="IN_GAME"/>
+        <MESSAGE id="respawn_signal" nextState="IN_GAME"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
         <MESSAGE id="pause" nextState="PAUSING"/>
         <!-- Admin shortcuts -->

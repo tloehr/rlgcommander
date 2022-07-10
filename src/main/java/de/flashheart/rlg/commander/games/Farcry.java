@@ -5,6 +5,7 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.jobs.BombTimerJob;
+import de.flashheart.rlg.commander.jobs.RespawnJob;
 import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -12,6 +13,7 @@ import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.quartz.SimpleScheduleBuilder;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -37,7 +39,8 @@ public class Farcry extends Timed implements HasBombtimer {
     public static final String _msg_ACTIVATE = "activate";
 
     private final int bomb_timer;
-    private final JobKey bombTimerJobkey;
+    private final int respawn_timer;
+    private final JobKey bombTimerJobkey, respawnTimerJobkey;
     private final List<Object> capture_points;
     private LocalDateTime estimated_end_time;
     private final Map<String, FSM> cpFSMs;
@@ -56,12 +59,16 @@ public class Farcry extends Timed implements HasBombtimer {
                 "/_/    \\__,_/_/   \\___/_/   \\__, /\n" +
                 "                           /____/");
         this.bombTimerJobkey = new JobKey("bomb_timer", uuid.toString());
+        this.respawnTimerJobkey = new JobKey("respawn_timer", uuid.toString());
         this.bomb_timer = game_parameters.getInt("bomb_time");
+        this.respawn_timer = game_parameters.getInt("respawn_time");
         LocalDateTime ldtFlagTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(bomb_timer), TimeZone.getTimeZone("UTC").toZoneId());
         LocalDateTime ldtTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
+        LocalDateTime ldtRespawn = LocalDateTime.ofInstant(Instant.ofEpochSecond(respawn_timer), TimeZone.getTimeZone("UTC").toZoneId());
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Bombtime: %s", ldtFlagTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
-                String.format("Gametime: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))));
+                String.format("Gametime: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
+                String.format("Respawn every: %s", ldtRespawn.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         // additional parsing agents and sirens
         map_of_agents_and_sirens = new HashMap<>();
@@ -80,6 +87,9 @@ public class Farcry extends Timed implements HasBombtimer {
     @Override
     protected void at_state(String state) {
         super.at_state(state);
+        if (state.equals(_state_EPILOG)) {
+            deleteJob(respawnTimerJobkey);
+        }
         if (state.equals(_state_PROLOG)) {
             active_capture_point = 0;
             overtime = false;
@@ -91,6 +101,14 @@ public class Farcry extends Timed implements HasBombtimer {
         super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RUN)) {
             estimated_end_time = end_time;
+            // create timed respawn if necessary
+            if (respawn_timer > 0) {
+                create_resumable_job(respawnTimerJobkey,
+                        SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
+                        RespawnJob.class, Optional.empty());
+                mqttOutbound.send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), roles.get("spawns"));
+            }
+
             // all CPs to standby
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
             // activate first cp
@@ -99,6 +117,7 @@ public class Farcry extends Timed implements HasBombtimer {
         if (message.equals(_msg_RESET)) {
             estimated_end_time = null;
             deleteJob(bombTimerJobkey);
+            deleteJob(respawnTimerJobkey);
             active_capture_point = 0;
             overtime = false;
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
@@ -122,9 +141,9 @@ public class Farcry extends Timed implements HasBombtimer {
         jdm.put("bombid", agent);
         estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
         create_resumable_job(bombTimerJobkey, estimated_end_time, BombTimerJob.class, Optional.of(jdm));
-
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
+        mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "selfdestruct"), roles.get("spawns"));
         mqttOutbound.send("signals", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
         mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "progress:remaining"), agent);
@@ -185,6 +204,7 @@ public class Farcry extends Timed implements HasBombtimer {
                     // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
                     mqttOutbound.send("signals", MQTT.toJSON("sir2", "off"), map_of_agents_and_sirens.get(agent).toString());
                     mqttOutbound.send("signals", MQTT.toJSON("sir3", "1:on,2000;off,1"), map_of_agents_and_sirens.get(agent).toString());
+                    mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "shutdown"), roles.get("spawns"));
                     return true;
                 }
             });
@@ -230,10 +250,6 @@ public class Farcry extends Timed implements HasBombtimer {
         } else super.process_message(sender, item, message);
     }
 
-    @Override
-    protected void respawn(String role, String agent) {
-
-    }
 
     @Override
     public JSONObject getState() {
@@ -252,17 +268,18 @@ public class Farcry extends Timed implements HasBombtimer {
             return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
         }
         if (game_fsm.getCurrentState().equals(_state_RUNNING))
-            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp}", "${overtime}");
+            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp} ${overtime}", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
 
         return MQTT.page("page0", game_description);
     }
 
-//
-//    public void respawn() {
-//        // the last part of this message is a delayed buzzer sound, so its end lines up with the end of the respawn period
-//        mqttOutbound.send("signals", MQTT.toJSON("buzzer", String.format("1:off,%d;on,75;off,500;on,75;off,500;on,75;off,500;on,1200;off,1", respawn_period * 1000 - 2925 - 100)), roles.get("spawns"));
-//        mqttOutbound.send("timers", MQTT.toJSON("respawn", Long.toString(respawn_period)), roles.get("spawns"));
-//    }
+
+    @Override
+    protected void respawn(String role, String agent) {
+        // the last part of this message is a delayed buzzer sound, so its end lines up with the end of the respawn period
+        mqttOutbound.send("signals", MQTT.toJSON("buzzer", String.format("1:off,%d;on,75;off,500;on,75;off,500;on,75;off,500;on,1200;off,1", respawn_timer * 1000 - 2925 - 100)), roles.get("spawns"));
+        mqttOutbound.send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), roles.get("spawns"));
+    }
 
     private String get_next_cp() {
         if (capture_points.size() == 1) return "";

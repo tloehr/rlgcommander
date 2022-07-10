@@ -133,4 +133,16 @@ public class RLGRestController {
         agentsService.test_agent(agentid, deviceid);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
+
+    @PostMapping("/system/powersave_agents")
+    public ResponseEntity<?> powersave() {
+        agentsService.powersave_unused_agents();
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
+    @PostMapping("/system/welcome_agents")
+    public ResponseEntity<?> welcome() {
+        agentsService.welcome_unused_agents();
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
 }

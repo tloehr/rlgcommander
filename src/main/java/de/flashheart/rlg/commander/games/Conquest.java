@@ -173,7 +173,11 @@ public class Conquest extends WithRespawns {
         }
         if (hasRole(sender, "capture_points")) {
             if (game_fsm.getCurrentState().equals(_state_RUNNING)) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
-        } else super.process_message(sender, item, message);
+        } else if (hasRole(sender, "spawns")) {
+            super.process_message(sender, _msg_RESPAWN_SIGNAL, message);
+        } else {
+            super.process_message(sender, item, message);
+        }
     }
 
 

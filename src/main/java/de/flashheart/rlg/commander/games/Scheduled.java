@@ -70,10 +70,11 @@ public abstract class Scheduled extends Game {
         }
     }
 
-    protected void create_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz) {
+    protected void create_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
         deleteJob(jobKey);
         JobDetail job = newJob(clazz)
                 .withIdentity(jobKey)
+                .setJobData(jobDataMap.orElse(new JobDataMap()))
                 .build();
 
         Trigger trigger = newTrigger()

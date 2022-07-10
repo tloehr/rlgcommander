@@ -81,7 +81,7 @@ public class GamesService {
                 " \\___/|_|\\_|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         log.debug("\n" + Tools.fignums[id]);
         Game game_to_unload = loaded_games[id - 1].get();
-        agentsService.assign_gameid_to_agents(-1, game_to_unload.getAgents().keySet()); // remove gameid assignment
+        agentsService.remove_gameid_from_agents(game_to_unload.getAgents().keySet());
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
         gameStateListeners.removeAll(id);

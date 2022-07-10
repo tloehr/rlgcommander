@@ -29,6 +29,7 @@ public abstract class WithRespawns extends Pausable {
     public static final String _state_COUNTDOWN_TO_START = "COUNTDOWN_TO_START";
     public static final String _state_COUNTDOWN_TO_RESUME = "COUNTDOWN_TO_RESUME";
     public static final String _msg_START_COUNTDOWN = "start_countdown";
+    public static final String _msg_RESPAWN_SIGNAL = "respawn_signal";
 
     private final JobKey runGameJob;
     private final int starter_countdown;
@@ -106,7 +107,8 @@ public abstract class WithRespawns extends Pausable {
                             getPages(), MQTT.page("pause", "", "      PAUSE      ", "", "")),
                     agent);
         });
-        fsm.setAction(_state_IN_GAME, "btn01", new FSMAction() {
+        // making the signal to spawn more abstract. e.g. Conquest spawns on a button, Farcry on a timer
+        fsm.setAction(_state_IN_GAME, _msg_RESPAWN_SIGNAL, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
@@ -164,6 +166,10 @@ public abstract class WithRespawns extends Pausable {
     @Override
     public void process_message(String sender, String item, JSONObject message) {
         if (hasRole(sender, "spawns")) all_spawns.get(spawnrole_for_this_agent.get(sender)).ProcessFSM(item);
+    }
+
+    public void timed_respawn(){
+        all_spawns.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESPAWN_SIGNAL));
     }
 
     /**
