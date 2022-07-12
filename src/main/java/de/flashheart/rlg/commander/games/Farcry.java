@@ -81,7 +81,7 @@ public class Farcry extends Timed implements HasBombtimer {
         cpFSMs = new HashMap<>();
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
         add_spawn_for("attacker_spawn", "led_red", "Attacker");
-        add_spawn_for("defender_spawn", "led_grn", "Defender");
+        add_spawn_for("defender_spawn", "led_blu", "Defender");
     }
 
     @Override
@@ -147,7 +147,7 @@ public class Farcry extends Timed implements HasBombtimer {
         mqttOutbound.send("signals", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
         mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "progress:remaining"), agent);
-        mqttOutbound.send("vars", MQTT.toJSON("fused", "fused", "next_cp", get_next_cp()), roles.get("spawns"));
+        mqttOutbound.send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), roles.get("spawns"));
     }
 
     private void defused(String agent) {
@@ -156,8 +156,8 @@ public class Farcry extends Timed implements HasBombtimer {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defused"));
         if (game_fsm.getCurrentState().equalsIgnoreCase(_state_RUNNING)) process_message(_msg_IN_GAME_EVENT_OCCURRED);
         mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_grn", "timer:remaining"), agent);
-        mqttOutbound.send("vars", MQTT.toJSON("fused", "defused", "next_cp", get_next_cp()), roles.get("spawns"));
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "timer:remaining"), agent);
+        mqttOutbound.send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), roles.get("spawns"));
     }
 
     private void defended(String agent) {
