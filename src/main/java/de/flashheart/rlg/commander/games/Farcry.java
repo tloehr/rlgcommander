@@ -163,7 +163,7 @@ public class Farcry extends Timed implements HasBombtimer {
     private void defended(String agent) {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
         game_fsm.ProcessFSM(_msg_GAME_OVER);
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_green", "very_fast"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "very_fast"), agent);
         mqttOutbound.send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), roles.get("spawns"));
     }
 
@@ -171,8 +171,9 @@ public class Farcry extends Timed implements HasBombtimer {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "taken"));
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
         active_capture_point++;
-        mqttOutbound.send("signals", MQTT.toJSON("sir2", "off"), map_of_agents_and_sirens.get(agent).toString());
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "very_fast"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON("sir1","medium","sir2", "off"), map_of_agents_and_sirens.get(agent).toString());
+
+        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "10:on,250;off,250"), agent);
         // activate next CP or end the game when no CPs left
         boolean all_cps_taken = active_capture_point == capture_points.size();
         if (overtime || all_cps_taken) game_fsm.ProcessFSM(_msg_GAME_OVER);
@@ -184,6 +185,7 @@ public class Farcry extends Timed implements HasBombtimer {
                 MQTT.page("page0",
                         "I am ${agentname}", "", "I will be a", "Capture Point"),
                 agent);
+        log.debug("capture point no: {}", capture_points.indexOf(agent));
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "fast"), agent);
     }
 
