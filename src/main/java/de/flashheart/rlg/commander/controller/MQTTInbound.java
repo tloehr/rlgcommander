@@ -1,7 +1,7 @@
 package de.flashheart.rlg.commander.controller;
 
 
-import de.flashheart.rlg.commander.entity.Agent;
+import de.flashheart.rlg.commander.elements.Agent;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.NoArgsConstructor;

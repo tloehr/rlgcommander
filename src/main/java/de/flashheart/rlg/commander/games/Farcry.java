@@ -4,11 +4,11 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.games.traits.HasBombtimer;
 import de.flashheart.rlg.commander.jobs.BombTimerJob;
-import de.flashheart.rlg.commander.jobs.RespawnJob;
+import de.flashheart.rlg.commander.jobs.RespawnTimerJob;
 import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
@@ -49,7 +49,7 @@ public class Farcry extends Timed implements HasBombtimer {
     private int active_capture_point;
     boolean overtime;
 
-    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
+    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
         estimated_end_time = null;
         log.debug("    ______\n" +
@@ -73,6 +73,7 @@ public class Farcry extends Timed implements HasBombtimer {
         // additional parsing agents and sirens
         map_of_agents_and_sirens = new HashMap<>();
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList();
+        if (capture_points.size() > 5) throw new ArrayIndexOutOfBoundsException("max number of capture points is 5");
         List sirs = game_parameters.getJSONObject("agents").getJSONArray("capture_sirens").toList();
         for (int i = 0; i < capture_points.size(); i++) {
             map_of_agents_and_sirens.put(capture_points.get(i), sirs.get(i));
@@ -89,6 +90,9 @@ public class Farcry extends Timed implements HasBombtimer {
         super.at_state(state);
         if (state.equals(_state_EPILOG)) {
             deleteJob(respawnTimerJobkey);
+            // to prevent respawn signals AFTER game_over
+            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "off"), roles.get("spawns"));
+            mqttOutbound.send("timers", MQTT.toJSON("respawn", "0"), roles.get("spawns"));
         }
         if (state.equals(_state_PROLOG)) {
             active_capture_point = 0;
@@ -105,7 +109,7 @@ public class Farcry extends Timed implements HasBombtimer {
             if (respawn_timer > 0) {
                 create_resumable_job(respawnTimerJobkey,
                         SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
-                        RespawnJob.class, Optional.empty());
+                        RespawnTimerJob.class, Optional.empty());
                 mqttOutbound.send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), roles.get("spawns"));
             }
 
@@ -172,11 +176,17 @@ public class Farcry extends Timed implements HasBombtimer {
         process_message(_msg_IN_GAME_EVENT_OCCURRED);
         active_capture_point++;
         mqttOutbound.send("signals", MQTT.toJSON("sir2", "off"), map_of_agents_and_sirens.get(agent).toString());
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "very_fast"), agent);
+
         // activate next CP or end the game when no CPs left
         boolean all_cps_taken = active_capture_point == capture_points.size();
-        if (overtime || all_cps_taken) game_fsm.ProcessFSM(_msg_GAME_OVER);
-        else cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
+        if (overtime || all_cps_taken) {
+            game_fsm.ProcessFSM(_msg_GAME_OVER);
+            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "very_fast"), agent);
+        } else {
+            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "10:on,250;off,250"), agent);
+            mqttOutbound.send("signals", MQTT.toJSON("sir4", "long"), map_of_agents_and_sirens.get(agent).toString());
+            cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
+        }
     }
 
     private void prolog(String agent) {
@@ -184,8 +194,30 @@ public class Farcry extends Timed implements HasBombtimer {
                 MQTT.page("page0",
                         "I am ${agentname}", "", "I will be a", "Capture Point"),
                 agent);
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "fast"), agent);
+
+        //mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "fast"), agent);
+        mqttOutbound.send("signals", show_number_as_leds(capture_points.indexOf(agent) + 1, "fast"), agent);
+
     }
+
+    /**
+     * @param num 1..5
+     * @return signals for led stripes. out of bounds means all off
+     */
+    JSONObject show_number_as_leds(int num, final String signal) {
+        if (num < 1 || num > 5) return MQTT.toJSON("led_all", "off");
+        List<String> leds_to_use = new ArrayList<>(Arrays.asList(Arrays.copyOfRange(ALL_LEDS, 0, num)));
+        List<String> leds_to_set_off = new ArrayList<>(Arrays.asList(ALL_LEDS));
+        leds_to_set_off.removeAll(leds_to_use); // set difference
+
+        JSONObject result = new JSONObject();
+        leds_to_use.forEach(led -> result.put(led, signal));
+        leds_to_set_off.forEach(led -> result.put(led, "off"));
+
+
+        return result;
+    }
+
 
     private FSM create_CP_FSM(final String agent) {
         try {
@@ -215,7 +247,7 @@ public class Farcry extends Timed implements HasBombtimer {
                     mqttOutbound.send("vars", MQTT.toJSON("active_cp", agent), roles.get("spawns"));
                     addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     if (active_capture_point > 0)
-                        mqttOutbound.send("signals", MQTT.toJSON("sir2", "medium"), map_of_agents_and_sirens.get(agent).toString());
+                        mqttOutbound.send("signals", MQTT.toJSON("sir2", "long"), map_of_agents_and_sirens.get(agent).toString());
                     return true;
                 }
             });

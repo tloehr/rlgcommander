@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  FSM for a Spawn Agent.
+  FSM for a StaticSpawn Agent.
   With "teams to report in as ready" function.
 
   https://github.com/Ankzz/easyfsm
@@ -17,7 +17,7 @@
     </STATE>
     <!--    we are preparing - not ready yet-->
     <STATE id="WE_ARE_PREPARING">
-        <MESSAGE id="btn01" nextState="WE_ARE_READY"/>
+        <MESSAGE id="respawn_signal" nextState="WE_ARE_READY"/>
         <MESSAGE id="ready" nextState="WE_ARE_READY"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="run" nextState="IN_GAME"/>
@@ -25,7 +25,7 @@
     </STATE>
     <!--    we are ready - waiting for the others -->
     <STATE id="WE_ARE_READY">
-        <MESSAGE id="btn01" nextState="WE_ARE_PREPARING"/>
+        <MESSAGE id="respawn_signal" nextState="WE_ARE_PREPARING"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="start_countdown" nextState="COUNTDOWN_TO_START"/>
         <MESSAGE id="run" nextState="IN_GAME"/>
@@ -33,8 +33,6 @@
     </STATE>
     <!--    everybody is ready - countdown -->
     <STATE id="COUNTDOWN_TO_START">
-        <!--        <MESSAGE id="btn01" nextState="WE_ARE_PREPARING"/>-->
-        <!--        <MESSAGE id="other_team_not_ready" nextState="WE_ARE_READY"/>-->
         <!-- Admin shortcuts -->
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
