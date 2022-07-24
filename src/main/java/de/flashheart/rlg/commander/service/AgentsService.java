@@ -2,16 +2,14 @@ package de.flashheart.rlg.commander.service;
 
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.entity.Agent;
+import de.flashheart.rlg.commander.elements.Agent;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Log4j2

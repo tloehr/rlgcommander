@@ -41,6 +41,12 @@ public abstract class Game {
     public static final String _state_PAUSING = "PAUSING";
     public static final String _state_RESUMING = "RESUMING";
     public static final String _state_EPILOG = "EPILOG";
+    public static final String OUT_LED_WHITE = "led_wht";
+    public static final String OUT_LED_RED = "led_red";
+    public static final String OUT_LED_BLUE = "led_blu";
+    public static final String OUT_LED_YELLOW = "led_ylw";
+    public static final String OUT_LED_GREEN = "led_grn";
+    public static final String[] ALL_LEDS = new String[]{OUT_LED_WHITE, OUT_LED_RED, OUT_LED_YELLOW, OUT_LED_GREEN, OUT_LED_BLUE};
     public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG};
     public String _signal_AIRSIREN_START = "very_long";
     public String _signal_AIRSIREN_STOP = "1:on,1500;off,750;on,1500;off,750;on,5000;off,1";

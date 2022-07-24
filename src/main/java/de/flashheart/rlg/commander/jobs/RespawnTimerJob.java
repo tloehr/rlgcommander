@@ -9,7 +9,7 @@ import org.quartz.UnableToInterruptJobException;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 
 @Log4j2
-public class RespawnJob extends QuartzJobBean implements InterruptableJob {
+public class RespawnTimerJob extends QuartzJobBean implements InterruptableJob {
 
     @Override
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
