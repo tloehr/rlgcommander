@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.misc;
+package de.flashheart.rlg.commander.games.events;
 
 import java.util.EventListener;
 

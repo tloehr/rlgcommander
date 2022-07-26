@@ -3,7 +3,7 @@ package de.flashheart.rlg.commander.games;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.jobs.ConquestTicketBleedingJob;
+import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONException;

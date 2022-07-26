@@ -2,7 +2,7 @@ package de.flashheart.rlg.commander.games;
 
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.jobs.ContinueGameJob;
+import de.flashheart.rlg.commander.games.jobs.ContinueGameJob;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;

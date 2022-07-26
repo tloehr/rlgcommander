@@ -14,6 +14,11 @@ The commander communicates with the agent via the MQTT protocol. Itself is remot
 
 ![communication](src/main/resources/docs/commander-scheme.png)
 
+# Main Releases
+* pre 1.1 - development versions never used in RL
+* 1.1 First version to run on a real paintball field. BF Conquest only.
+* 1.2 Added FarCry Assault.
+* 1.3 Redesign of spawn agent concept
 
 
 

@@ -4,7 +4,7 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.jobs.BombTimerJob;
+import de.flashheart.rlg.commander.games.jobs.BombTimerJob;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;

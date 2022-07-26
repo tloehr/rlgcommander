@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.jobs;
+package de.flashheart.rlg.commander.games.jobs;
 
 import de.flashheart.rlg.commander.games.Timed;
 import lombok.extern.log4j.Log4j2;

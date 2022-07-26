@@ -1,7 +1,7 @@
 package de.flashheart.rlg.commander.games;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.jobs.GameTimeIsUpJob;
+import de.flashheart.rlg.commander.games.jobs.GameTimeIsUpJob;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
