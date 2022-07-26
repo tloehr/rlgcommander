@@ -171,6 +171,8 @@ public class Conquest extends WithRespawns {
             log.trace("only reacting on button UP. discarding.");
             return;
         }
+        // if(spawns.process_message(sender, item, message)) return; // true if successful - we are done
+        //
         if (hasRole(sender, "capture_points")) {
             if (game_fsm.getCurrentState().equals(_state_RUNNING)) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
         } else if (hasRole(sender, "spawns")) {

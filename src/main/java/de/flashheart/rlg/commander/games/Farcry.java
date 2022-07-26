@@ -279,6 +279,8 @@ public class Farcry extends Timed implements HasBombtimer {
         if (hasRole(sender, "capture_points")) {
             if (cpFSMs.get(sender).getCurrentState().matches(_state_FUSED + "|" + _state_DEFUSED + "|" + _state_OVERTIME))
                 cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
+//        } else if (hasRole(sender, "spawns")) {
+//            super.process_message(sender, _msg_RESPAWN_SIGNAL, message);
         } else super.process_message(sender, item, message);
     }
 

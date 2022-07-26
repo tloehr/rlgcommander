@@ -12,18 +12,9 @@ public class StaticSpawn extends AbstractSpawn {
     int active_spawn;
     SpawnAgent spawn;
 
-    public StaticSpawn(String spawn_role, String led_id, String teamname, MQTTOutbound mqttOutbound) {
-        super(spawn_role, led_id, teamname, mqttOutbound);
+    public StaticSpawn(String spawn_role, String led_id, String teamname) {
+        super(spawn_role, led_id, teamname);
     }
 
-    @Override
-    AbstractSpawn add_agent(String agent) {
-        spawn = new SpawnAgent(agent, this);
-        return this;
-    }
 
-    @Override
-    void cleanup() {
-
-    }
 }

@@ -1,6 +1,6 @@
 {
   "comment": "7 CPs, BF1 style",
-  "rest_url": "http://localhost:8090/api/game/load",
+  "rest_url": "http://localhost:8090/api/game/load?id=1",
   "class": "de.flashheart.rlg.commander.games.Conquest",
   "agents": {
     "capture_points": [
@@ -12,26 +12,33 @@
       "ag06",
       "ag07"
     ],
-    "red_spawn": [
-      "ag50"
-    ],
-    "blue_spawn": [
-      "ag51"
-    ],
-    "spawns": [
-      "ag50",
-      "ag51"
-    ],
     "sirens": [
-      "ag52"
+      "ag50"
     ]
+  },
+  "spawns": {
+    "type": "static",
+    "red_spawn": {
+      "led": "led_red",
+      "Team": "Team Red",
+      "spawn_agents": [
+        "ag30"
+      ]
+    },
+    "blue_spawn": {
+      "led": "led_blu",
+      "Team": "Team Blue",
+      "spawn_agents": [
+        "ag31"
+      ]
+    }
   },
   "respawn_tickets": 250,
   "not_bleeding_before_cps": 1,
   "start_bleed_interval": 5,
   "end_bleed_interval": 0.5,
   "ticket_price_for_respawn": 1,
-  "wait4teams2B_ready": false,
+  "wait4teams2B_ready": true,
   "intro_mp3_file": "<random>",
   "starter_countdown": 30,
   "resume_countdown": 0

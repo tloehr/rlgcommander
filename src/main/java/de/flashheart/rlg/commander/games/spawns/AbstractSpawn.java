@@ -3,14 +3,13 @@ package de.flashheart.rlg.commander.games.spawns;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import netscape.javascript.JSObject;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 
 @AllArgsConstructor
 @Getter
-public abstract class AbstractSpawn implements SpawnIdentityProvider {
+public abstract class AbstractSpawn implements SpawnDataProvider {
     public static final String _state_WE_ARE_PREPARING = "WE_ARE_PREPARING";
     public static final String _state_WE_ARE_READY = "WE_ARE_READY";
     public static final String _state_IN_GAME = "IN_GAME";
@@ -22,15 +21,6 @@ public abstract class AbstractSpawn implements SpawnIdentityProvider {
     String spawn_role;
     String led_id;
     String team_name;
-    MQTTOutbound mqttOutbound;
-    ArrayList<String> gamedescription;
-    JSObject pages;
 
-    void send(String cmd, JSONObject payload, String agent){
-        mqttOutbound.send(cmd, payload, agent);
-    }
 
-    abstract AbstractSpawn add_agent(String agent);
-
-    abstract void cleanup();
 }
