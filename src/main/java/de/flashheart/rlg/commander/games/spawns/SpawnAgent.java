@@ -12,8 +12,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
-@Getter
-@Setter
 @Log4j2
 public class SpawnAgent {
     final String agent;
@@ -21,9 +19,8 @@ public class SpawnAgent {
     FSM fsm;
     String led_id;
 
-    public SpawnAgent(String agent, SpawnDataProvider spawnDataProvider) {
+    public SpawnAgent(String agent, AbstractSpawn spawn) {
         this.agent = agent;
-        this.sip = spawnDataProvider;
 //        try {
 //            this.fsm = create_Spawn_FSM();
 //        } catch (Exception e) {

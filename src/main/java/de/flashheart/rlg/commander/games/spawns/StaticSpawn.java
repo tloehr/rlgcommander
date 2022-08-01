@@ -4,16 +4,21 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.json.JSONObject;
 
 @Getter
 @Setter
 @EqualsAndHashCode
 public class StaticSpawn extends AbstractSpawn {
-    int active_spawn;
     SpawnAgent spawn;
 
-    public StaticSpawn(String spawn_role, String led_id, String teamname) {
-        super(spawn_role, led_id, teamname);
+    public StaticSpawn(String role, String led, String team) {
+        super(role, led, team);
+    }
+
+    @Override
+    public void add_agent(String agent) {
+        spawn = new SpawnAgent(agent, this);
     }
 
 

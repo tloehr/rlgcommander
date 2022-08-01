@@ -52,7 +52,7 @@ public class Farcry extends Timed implements HasBombtimer {
     public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
         estimated_end_time = null;
-        log.debug("    ______\n" +
+        log.info("    ______\n" +
                 "   / ____/___ __________________  __\n" +
                 "  / /_  / __ `/ ___/ ___/ ___/ / / /\n" +
                 " / __/ / /_/ / /  / /__/ /  / /_/ /\n" +

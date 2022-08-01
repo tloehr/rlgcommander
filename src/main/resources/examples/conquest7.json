@@ -18,28 +18,32 @@
   },
   "spawns": {
     "type": "static",
-    "red_spawn": {
-      "led": "led_red",
-      "Team": "Team Red",
-      "spawn_agents": [
-        "ag30"
-      ]
-    },
-    "blue_spawn": {
-      "led": "led_blu",
-      "Team": "Team Blue",
-      "spawn_agents": [
-        "ag31"
-      ]
-    }
+    "wait4teams2B_ready": true,
+    "intro_mp3_file": "<random>",
+    "starter_countdown": 30,
+    "resume_countdown": 0,
+    "teams": [
+      {
+        "role": "red_spawn",
+        "led": "led_red",
+        "name": "Team Red",
+        "agents": [
+          "ag30"
+        ]
+      },
+      {
+        "role": "blue_spawn",
+        "led": "led_blu",
+        "name": "Team Blue",
+        "agents": [
+          "ag31"
+        ]
+      }
+    ]
   },
   "respawn_tickets": 250,
   "not_bleeding_before_cps": 1,
   "start_bleed_interval": 5,
   "end_bleed_interval": 0.5,
-  "ticket_price_for_respawn": 1,
-  "wait4teams2B_ready": true,
-  "intro_mp3_file": "<random>",
-  "starter_countdown": 30,
-  "resume_countdown": 0
+  "ticket_price_for_respawn": 1
 }

@@ -10,6 +10,7 @@ import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.games.events.StateTransitionEvent;
 import de.flashheart.rlg.commander.games.events.StateTransitionListener;
+import de.flashheart.rlg.commander.games.spawns.Spawns;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
@@ -70,6 +71,7 @@ public abstract class Game {
     protected final List<JSONObject> in_game_events;
     // main FSM to control the basic states of every game
     protected final FSM game_fsm;
+//    protected final Spawns spawns;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         uuid = UUID.randomUUID();
@@ -90,6 +92,7 @@ public abstract class Game {
         );
         this.game_fsm = createFSM();
         this.game_description = new ArrayList<>();
+//        this.spawns = new Spawns(mqttOutbound, game_parameters);
     }
 
     protected void addEvent(JSONObject in_game_event) {

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 @AllArgsConstructor
 @Getter
-public abstract class AbstractSpawn implements SpawnDataProvider {
+public abstract class AbstractSpawn {
     public static final String _state_WE_ARE_PREPARING = "WE_ARE_PREPARING";
     public static final String _state_WE_ARE_READY = "WE_ARE_READY";
     public static final String _state_IN_GAME = "IN_GAME";
@@ -18,9 +18,9 @@ public abstract class AbstractSpawn implements SpawnDataProvider {
     public static final String _msg_START_COUNTDOWN = "start_countdown";
     public static final String _msg_RESPAWN_SIGNAL = "respawn_signal";
 
-    String spawn_role;
-    String led_id;
-    String team_name;
+    String role;
+    String led;
+    String team;
 
-
+    public abstract void add_agent(String agent);
 }

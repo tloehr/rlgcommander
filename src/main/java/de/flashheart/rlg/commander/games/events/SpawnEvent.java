@@ -7,8 +7,9 @@ import lombok.ToString;
 @ToString
 @Getter
 @AllArgsConstructor
-public class RespawnEvent {
+public class SpawnEvent {
     String role;
     String agent;
+    String message;
 }
 

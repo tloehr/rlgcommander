@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.games;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.games.spawns.Spawns;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Triple;
@@ -30,7 +31,6 @@ public abstract class Scheduled extends Game {
 
     public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-
         jobs = new HashMap<>();
         try {
             scheduler.getContext().put(uuid.toString(), this);
