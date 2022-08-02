@@ -4,9 +4,8 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.BroadcastScoreJob;
-import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
+import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.map.MultiKeyMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobKey;
@@ -17,7 +16,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,27 +34,26 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private final List<Object> capture_points;
     private final Map<String, FSM> cpFSMs;
     private final HashMap<String, Long> scores;
-    private final HashMap<String, String> score_vars;
     private final JobKey broadcastScoreJobkey;
     private long last_job_broadcast;
     private long score_blue, score_red;
 
     public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        log.info("\n       ______           __            ________\n" +
+        log.info("\n" +
+                "   ______           __            ________\n" +
                 "  / ____/__  ____  / /____  _____/ ____/ /___ _____ ______\n" +
                 " / /   / _ \\/ __ \\/ __/ _ \\/ ___/ /_  / / __ `/ __ `/ ___/\n" +
                 "/ /___/  __/ / / / /_/  __/ /  / __/ / / /_/ / /_/ (__  )\n" +
                 "\\____/\\___/_/ /_/\\__/\\___/_/  /_/   /_/\\__,_/\\__, /____/\n" +
                 "                                            /____/");
-        LocalDateTime ldtTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
+        ZonedDateTime ldtTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
         setGameDescription(game_parameters.getString("comment"), "",
                 String.format("Gametime: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
 
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList();
 
         scores = new HashMap<>();
-        score_vars = new HashMap<>();
         cpFSMs = new HashMap<>();
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
 
@@ -139,7 +138,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             scores.clear();
             cpFSMs.keySet().forEach(agent -> {
                 scores.put(get_agent_key(agent, "red"), 0l);
-                scores.put(get_agent_key(agent, "red"), 0l);
+                scores.put(get_agent_key(agent, "blue"), 0l);
             });
         }
 
@@ -151,7 +150,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     @Override
     public void broadcast_score() {
-        final long now = System.currentTimeMillis();
+        final long now = ZonedDateTime.now().toInstant().toEpochMilli();
         final long time_to_add = now - last_job_broadcast;
         last_job_broadcast = now;
         cpFSMs.entrySet().forEach(stringFSMEntry -> add_score_for(stringFSMEntry.getKey(), stringFSMEntry.getValue().getCurrentState(), time_to_add));
@@ -160,19 +159,22 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
             mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), roles.get("spawns"));
             //todo: hier ghets weiter
-            JSONObject vars = new JSONObject().put("score_blue","").put("score_red","");
-            for (String key : score_vars.keySet()) {
-                vars = MQTT.merge(vars, MQTT.toJSON(key, score_vars.get(key)));
+
+            JSONObject vars = new JSONObject()
+                    .put("score_blue", ZonedDateTime.ofInstant(Instant.ofEpochMilli(score_blue), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss")))
+                    .put("score_red", ZonedDateTime.ofInstant(Instant.ofEpochMilli(score_red), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss")));
+            for (String key : scores.keySet()) {
+                vars = MQTT.merge(vars, MQTT.toJSON(key, ZonedDateTime.ofInstant(Instant.ofEpochMilli(scores.get(key)), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss"))));
             }
             mqttOutbound.send("vars", vars, roles.get("spawns"));
         }
     }
 
     private void add_score_for(String agent, String current_state, long time_to_add) {
-        if (!current_state.equals("BLUE") || !current_state.equals("RED")) return;
+        if (!current_state.equals("BLUE") && !current_state.equals("RED")) return;
         if (current_state.equals("BLUE")) score_blue += time_to_add;
         if (current_state.equals("RED")) score_red += time_to_add;
-        final long new_score = scores.get(get_agent_key(agent, current_state) + time_to_add);
+        final long new_score = scores.get(get_agent_key(agent, current_state)) + time_to_add;
         scores.put(get_agent_key(agent, current_state), new_score);
     }
 

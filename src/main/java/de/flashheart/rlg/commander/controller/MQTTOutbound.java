@@ -28,8 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MQTTOutbound {
     @Value("${mqtt.url}")
     public String mqtturl;
-    @Value("${mqtt.outbound.prefix}")
-    public String prefix;
+    @Value("${mqtt.outbound.topic}")
+    public String topic;
     @Value("${mqtt.qos}")
     public int qos;
     @Value("${mqtt.retained}")
@@ -67,7 +67,7 @@ public class MQTTOutbound {
     public MessageHandler mqttOutbound() {  // for outbound only
         MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(String.format("%s-outbound", clientid), mqttClientFactory());
         messageHandler.setAsync(true);
-        messageHandler.setDefaultTopic(prefix);
+        messageHandler.setDefaultTopic(topic);
         messageHandler.setDefaultQos(qos);
         messageHandler.setDefaultRetained(retained);
         return messageHandler;
@@ -92,7 +92,7 @@ public class MQTTOutbound {
     public void send(String cmd, JSONObject payload, Collection<String> agents) {
         if (agents.isEmpty()) return;
         agents.forEach(agent -> {
-            log.trace("sending {}", prefix + agent + "/" + cmd);
+            log.trace("sending {}", topic + agent + "/" + cmd);
             send(agent + "/" + cmd, payload);
         });
     }
@@ -100,19 +100,19 @@ public class MQTTOutbound {
     public void send(String cmd, JSONArray payload, Collection<String> agents) {
         if (agents.isEmpty()) return;
         agents.forEach(agent -> {
-            log.debug("sending {}", prefix + agent + "/" + cmd);
+            log.debug("sending {}", topic + agent + "/" + cmd);
             send(agent + "/" + cmd, payload);
         });
     }
 
     public void send(String topic, JSONObject payload) {
-        most_recent_messages_to_agents.put(prefix + topic, payload.toString());
-        gateway.sendToMqtt(payload.toString(), retained, prefix + topic);
+        most_recent_messages_to_agents.put(this.topic + topic, payload.toString());
+        gateway.sendToMqtt(payload.toString(), retained, this.topic + topic);
     }
 
     public void send(String topic, JSONArray payload) {
-        most_recent_messages_to_agents.put(prefix + topic, payload.toString());
-        gateway.sendToMqtt(payload.toString(), retained, prefix + topic);
+        most_recent_messages_to_agents.put(this.topic + topic, payload.toString());
+        gateway.sendToMqtt(payload.toString(), retained, this.topic + topic);
     }
 
 }
