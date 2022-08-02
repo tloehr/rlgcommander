@@ -81,7 +81,7 @@ public abstract class Timed extends WithRespawns {
     }
 
     protected long getRemaining() {
-        return end_time != null ? Math.min(0l, LocalDateTime.now().until(end_time, ChronoUnit.SECONDS) + 1) : 0l;
+        return end_time != null ? Math.max(0l, LocalDateTime.now().until(end_time, ChronoUnit.SECONDS) + 1) : 0l;
     }
 
     public abstract void game_time_is_up();

@@ -3,29 +3,45 @@ package de.flashheart.rlg.commander.games;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.games.jobs.BroadcastScoreJob;
+import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
 
 @Log4j2
-public class CenterFlags extends Timed {
+public class CenterFlags extends Timed implements HasScoreBroadcast {
 
+    private final BigDecimal SCORE_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
+    private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
+    private long broadcast_cycle_counter;
     private final List<Object> capture_points;
     private final Map<String, FSM> cpFSMs;
+    private final HashMap<String, Long> scores;
+    private final HashMap<String, String> score_vars;
+    private final JobKey broadcastScoreJobkey;
+    private long last_job_broadcast;
+    private long score_blue, score_red;
 
-    CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
+    public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        log.info("       ______           __            ________\n" +
+        log.info("\n       ______           __            ________\n" +
                 "  / ____/__  ____  / /____  _____/ ____/ /___ _____ ______\n" +
                 " / /   / _ \\/ __ \\/ __/ _ \\/ ___/ /_  / / __ `/ __ `/ ___/\n" +
                 "/ /___/  __/ / / / /_/  __/ /  / __/ / / /_/ / /_/ (__  )\n" +
@@ -37,8 +53,21 @@ public class CenterFlags extends Timed {
 
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList();
 
+        scores = new HashMap<>();
+        score_vars = new HashMap<>();
         cpFSMs = new HashMap<>();
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
+
+        broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
+        jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
+        // just for score
+        add_spawn_for("red_spawn", "led_red", "RedFor");
+        add_spawn_for("blue_spawn", "led_blu", "BlueFor");
+
+    }
+
+    private String get_agent_key(String agent, String state) {
+        return String.format("score_%s_%s", state.toLowerCase(Locale.ROOT), agent);
     }
 
     private FSM create_CP_FSM(final String agent) {
@@ -65,7 +94,7 @@ public class CenterFlags extends Timed {
     private void cp_to_neutral(String agent) {
         mqttOutbound.send("paged",
                 MQTT.page("page0",
-                        "I am ${agentname}", "", "I will be a", "Capture Point"),
+                        "I am ${agentname}", "", "I am a", "Capture Point"),
                 agent);
         mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "normal"), agent);
     }
@@ -80,18 +109,114 @@ public class CenterFlags extends Timed {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 
-    private void broadcast_score() {
+    @Override
+    protected void on_transition(String old_state, String message, String new_state) {
+        super.on_transition(old_state, message, new_state);
+        if (message.equals(_msg_RESET)) {
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
+        }
+        if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
 
+            // setup and start bleeding job
+            long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
+            create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
+            broadcast_cycle_counter = 0;
+        }
+    }
+
+    @Override
+    protected void at_state(String state) {
+        super.at_state(state);
+        if (state.equals(_state_PROLOG)) {
+            deleteJob(broadcastScoreJobkey);
+            broadcast_cycle_counter = 0l;
+            last_job_broadcast = 0l;
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
+            // reset scores
+            score_blue = 0l;
+            score_red = 0l;
+            scores.clear();
+            cpFSMs.keySet().forEach(agent -> {
+                scores.put(get_agent_key(agent, "red"), 0l);
+                scores.put(get_agent_key(agent, "red"), 0l);
+            });
+        }
+
+        if (state.equals(_state_EPILOG)) {
+            deleteJob(broadcastScoreJobkey); // this cycle has no use anymore
+            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("game_over"));
+        }
+    }
+
+    @Override
+    public void broadcast_score() {
+        final long now = System.currentTimeMillis();
+        final long time_to_add = now - last_job_broadcast;
+        last_job_broadcast = now;
+        cpFSMs.entrySet().forEach(stringFSMEntry -> add_score_for(stringFSMEntry.getKey(), stringFSMEntry.getValue().getCurrentState(), time_to_add));
+
+        broadcast_cycle_counter++;
+        if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
+            mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), roles.get("spawns"));
+            //todo: hier ghets weiter
+            JSONObject vars = new JSONObject().put("score_blue","").put("score_red","");
+            for (String key : score_vars.keySet()) {
+                vars = MQTT.merge(vars, MQTT.toJSON(key, score_vars.get(key)));
+            }
+            mqttOutbound.send("vars", vars, roles.get("spawns"));
+        }
+    }
+
+    private void add_score_for(String agent, String current_state, long time_to_add) {
+        if (!current_state.equals("BLUE") || !current_state.equals("RED")) return;
+        if (current_state.equals("BLUE")) score_blue += time_to_add;
+        if (current_state.equals("RED")) score_red += time_to_add;
+        final long new_score = scores.get(get_agent_key(agent, current_state) + time_to_add);
+        scores.put(get_agent_key(agent, current_state), new_score);
+    }
+
+    @Override
+    public void process_message(String origin, String source, JSONObject details) {
+        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+        if (!details.getString("button").equalsIgnoreCase("up")) return;
+        if (!hasRole(origin, "capture_points")) return;
+
+        if (game_fsm.getCurrentState().equals(_state_RUNNING))
+            cpFSMs.get(origin).ProcessFSM(source.toLowerCase());
+        else
+            super.process_message(origin, source, details);
     }
 
     @Override
     protected JSONObject getPages() {
+        if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
+            return MQTT.page("page0", "Game Over", "", "", "");
+        }
+        if (game_fsm.getCurrentState().equals(_state_RUNNING)) {
+            // one page per Agent
+            JSONObject pages = MQTT.page("page0",
+                    "Restzeit:  ${remaining}",
+                    "---------",
+                    "Blau: ${score_blue}",
+                    "Rot: ${score_red}");
+            for (String agent : cpFSMs.keySet().stream().sorted().collect(Collectors.toList())) {
+                pages = MQTT.merge(MQTT.page("page_" + agent,
+                        "  " + agent + "  ",
+                        "Farbe: ${" + agent + "_state}",
+                        "Blau: ${score_blue_" + agent + "}",
+                        "Rot: ${score_red_" + agent + "}"));
+            }
+            return pages;
+        }
         return MQTT.page("page0", game_description);
     }
 
     @Override
     public void game_time_is_up() {
-
+        log.info("Game time is up");
+        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
+        game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
 
     @Override

@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MQTTOutbound {
     @Value("${mqtt.url}")
     public String mqtturl;
-    @Value("${mqtt.prefix}")
+    @Value("${mqtt.outbound.prefix}")
     public String prefix;
     @Value("${mqtt.qos}")
     public int qos;
