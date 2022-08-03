@@ -71,7 +71,7 @@ public abstract class WithRespawns extends Pausable {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
             mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
-            mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", led_device_id, "fast"), agent);
+            mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", led_device_id, "fast"), agent);
             mqttOutbound.send("paged", MQTT.merge(
                     MQTT.page("page0",
                             "I am ${agentname} and will", "be Your spawn.", "You are " + teamname, "!! Standby !!"),
@@ -79,11 +79,11 @@ public abstract class WithRespawns extends Pausable {
             );
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_PREPARING, (state, obj) -> {
-            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
+            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
             mqttOutbound.send("paged", MQTT.page("page0", " !! NOT READY !! ", "Press button", "when Your team", "is ready"), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
-            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "1:on,75;off,100;on,400;off,1"), agent);
+            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,100;on,400;off,1"), agent);
             // if all teams are ready, the GAME is ready to start
             if (all_spawns.values().stream().allMatch(fsm1 -> fsm1.getCurrentState().equals(_state_WE_ARE_READY)))
                 game_fsm.ProcessFSM(_msg_READY);

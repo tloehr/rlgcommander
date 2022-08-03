@@ -203,7 +203,8 @@ public class Rush extends Scheduled {
             agentFSMs.get(sender).ProcessFSM(message.getString("button"));
         } else if (hasRole(sender, "attacker_spawn") && message.getString("button").equalsIgnoreCase("up")) {
             // red respawn button was pressed
-            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", MQTT.WHITE, "single_buzz"), sender);
+            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), sender);
+            mqttOutbound.send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), sender);
             remaining_tickets_for_this_zone--;
             broadcast_score();
         } else {

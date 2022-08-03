@@ -72,7 +72,8 @@ public class AgentsService {
         log.info("Sending welcome message to newly attached agent {}", my_agent.getId());
         //mqttOutbound.send("init", agentid);
         mqttOutbound.send("timers", MQTT.toJSON("_clearall", "0"), my_agent.getId());
-        mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off", MQTT.WHITE, "infty:on,500;off,500", MQTT.YELLOW, "infty:on,500;off,500", MQTT.BLUE, "infty:on,500;off,500",
+        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), my_agent.getId());
+        mqttOutbound.send("visual", MQTT.toJSON(MQTT.WHITE, "infty:on,500;off,500", MQTT.YELLOW, "infty:on,500;off,500", MQTT.BLUE, "infty:on,500;off,500",
                 MQTT.RED, "infty:off,500;on,500", MQTT.GREEN, "infty:off,500;on,500"), my_agent.getId());
         mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
                 "cmdr " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),
@@ -89,14 +90,18 @@ public class AgentsService {
     public void test_agent(String agentid, String deviceid) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
         if (my_agent.getGameid() > -1) return; // only when not in game
-        mqttOutbound.send("signals", MQTT.toJSON(deviceid, "medium"), my_agent.getId());
+        String topic = deviceid.matches(MQTT.ACOUSTICS) ? "acoustic" : "visual";
+        mqttOutbound.send(topic, MQTT.toJSON(deviceid, "medium"), my_agent.getId());
     }
 
     /**
      * turn off all lights and sirens
      */
     public void powersave_unused_agents() {
-        get_agents_for_gameid(-1).forEach(agent -> mqttOutbound.send("signals", MQTT.toJSON("all", "off"), agent.getId()));
+        get_agents_for_gameid(-1).forEach(agent -> {
+            mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent.getId());
+            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), agent.getId());
+        });
     }
 
     public void welcome_unused_agents() {

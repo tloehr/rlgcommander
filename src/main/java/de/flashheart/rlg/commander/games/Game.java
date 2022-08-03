@@ -152,10 +152,10 @@ public abstract class Game {
      */
     protected void at_state(String state) {
         if (state.equals(_state_PROLOG)) {
-            mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off"), roles.get("sirens"));
+            mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
             mqttOutbound.send("paged",
                     MQTT.page("page0",
-                            "I am ${agentname}", "", "I will be a", "Siren"), roles.get("sirens"));
+                            "I am ${agentname}", "", "", "I am a Siren"), roles.get("sirens"));
         }
     }
 
@@ -168,11 +168,11 @@ public abstract class Game {
      */
     protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals(_msg_RUN))
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_START), roles.get("sirens"));
+            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
         if (message.equals(_msg_GAME_OVER))
-            mqttOutbound.send("signals", MQTT.toJSON("sir1", _signal_AIRSIREN_STOP), roles.get("sirens"));
+            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
         if (message.equals(_msg_RESET)) {
-            mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off", "buzzer", "off"), roles.get("sirens"));
+            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
             mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), roles.get("spawns"));
         }
     }

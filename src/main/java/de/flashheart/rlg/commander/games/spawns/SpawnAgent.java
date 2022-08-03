@@ -40,11 +40,11 @@ public class SpawnAgent {
 //            );
 //        });
 //        fsm.setStatesAfterTransition(AbstractSpawn._state_WE_ARE_PREPARING, (state, obj) -> {
-//            sip.send("signals", MQTT.toJSON("buzzer", "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
+//            sip.send("signals", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
 //            sip.send("paged", MQTT.page("page0", " !! NOT READY !! ", "Press button", "when Your team", "is ready"), agent);
 //        });
 //        fsm.setStatesAfterTransition(AbstractSpawn._state_WE_ARE_READY, (state, obj) -> {
-//            sip.send("signals", MQTT.toJSON("buzzer", "1:on,75;off,100;on,400;off,1"), agent);
+//            sip.send("signals", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,100;on,400;off,1"), agent);
 //            // if all teams are ready, the GAME is ready to start
 //            if (all_spawns.values().stream().allMatch(fsm1 -> fsm1.getCurrentState().equals(AbstractSpawn._state_WE_ARE_READY)))
 //                game_fsm.ProcessFSM(Game._msg_READY);

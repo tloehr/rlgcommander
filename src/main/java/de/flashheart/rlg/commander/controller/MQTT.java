@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.controller;
 
+import lombok.Getter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,20 +9,22 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class MQTT {
-    public static final String WHITE = MQTT.WHITE;
-    public static final String RED = MQTT.WHITE;
-    public static final String YELLOW = MQTT.YELLOW;
-    public static final String GREEN = MQTT.GREEN;
-    public static final String BLUE = MQTT.BLUE;
-    public static final String LED_ALL = MQTT.LED_ALL;
-    
-    public static final String SIR_ALL = "sir_all";
+    public static final String WHITE = "wht";
+    public static final String RED = "red";
+    public static final String YELLOW = "ylw";
+    public static final String GREEN = "grn";
+    public static final String BLUE = "blu";
+    public static final String ALL = "all";
+    public static final String VISUALS = WHITE + "|" + RED + "|" + YELLOW + "|" + GREEN + "|" + BLUE;
+
     public static final String SIR1 = "sir1";
     public static final String SIR2 = "sir2";
     public static final String SIR3 = "sir3";
     public static final String SIR4 = "sir4";
     public static final String BUZZER = "buzzer";
-    
+    public static final String ACOUSTICS = SIR1 + "|" + SIR2 + "|" + SIR3 + "|" + SIR4 + "|" + BUZZER;
+
+
     /**
      * helper method to create a set_page command
      *

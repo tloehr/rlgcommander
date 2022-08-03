@@ -95,16 +95,18 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 MQTT.page("page0",
                         "I am ${agentname}", "Blue: ${score_blue}", "Red: ${score_red}", "I am a Flag"),
                 agent);
-        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
+        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
     }
 
     private void cp_to_blue(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal", "buzzer", "double_buzz"), agent);
+        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
+        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal", "buzzer", "double_buzz"), agent);
+        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
+        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 
