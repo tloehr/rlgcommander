@@ -35,7 +35,7 @@ public class Spawns {
  *     "teams": [
  *       {
  *         "role": "red_spawn",
- *         "led": "led_red",
+ *         "led": MQTT.RED,
  *         "name": "Team Red",
  *         "agents": [
  *           "ag30"
@@ -43,7 +43,7 @@ public class Spawns {
  *       },
  *       {
  *         "role": "blue_spawn",
- *         "led": "led_blu",
+ *         "led": MQTT.BLUE,
  *         "name": "Team Blue",
  *         "agents": [
  *           "ag31"

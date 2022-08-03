@@ -32,8 +32,10 @@ public class MQTTOutbound {
     public String topic;
     @Value("${mqtt.qos}")
     public int qos;
-    @Value("${mqtt.retained}")
-    public boolean retained;
+    @Value("${mqtt.retain}")
+    public boolean retain;
+    @Value("${mqtt.acoustic.retain}")
+    public boolean acoustic_retain;
     @Value("${mqtt.clientid}")
     public String clientid;
     @Value("${mqtt.max_inflight}")
@@ -41,13 +43,13 @@ public class MQTTOutbound {
 
     ApplicationContext applicationContext;
     MyGateway gateway;
-    ConcurrentHashMap<String, String> most_recent_messages_to_agents; // see MyConfiguration.java
+//    ConcurrentHashMap<String, String> most_recent_messages_to_agents; // see MyConfiguration.java
 
     @Autowired
-    public MQTTOutbound(ApplicationContext applicationContext, ConcurrentHashMap<String, String> most_recent_messages_to_agents) {
+    public MQTTOutbound(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         this.gateway = applicationContext.getBean(MyGateway.class);
-        this.most_recent_messages_to_agents = most_recent_messages_to_agents; // todo: for later use
+//        this.most_recent_messages_to_agents = most_recent_messages_to_agents; // todo: for later use
     }
 
     @Bean
@@ -69,17 +71,13 @@ public class MQTTOutbound {
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(topic);
         messageHandler.setDefaultQos(qos);
-        messageHandler.setDefaultRetained(retained);
+        messageHandler.setDefaultRetained(retain);
         return messageHandler;
     }
 
     @Bean
     public MessageChannel mqttOutboundChannel() {
         return new DirectChannel();
-    }
-
-    public void send(String cmd, String agent) {
-        send(cmd, new JSONObject(), agent);
     }
 
     public void send(String cmd, JSONObject payload, String agent) {
@@ -97,22 +95,10 @@ public class MQTTOutbound {
         });
     }
 
-    public void send(String cmd, JSONArray payload, Collection<String> agents) {
-        if (agents.isEmpty()) return;
-        agents.forEach(agent -> {
-            log.debug("sending {}", topic + agent + "/" + cmd);
-            send(agent + "/" + cmd, payload);
-        });
-    }
-
-    public void send(String topic, JSONObject payload) {
-        most_recent_messages_to_agents.put(this.topic + topic, payload.toString());
-        gateway.sendToMqtt(payload.toString(), retained, this.topic + topic);
-    }
-
-    public void send(String topic, JSONArray payload) {
-        most_recent_messages_to_agents.put(this.topic + topic, payload.toString());
-        gateway.sendToMqtt(payload.toString(), retained, this.topic + topic);
+    private void send(String topic, JSONObject payload) {
+//        most_recent_messages_to_agents.put(this.topic + topic, payload.toString());
+        boolean retain_for_topic = topic.matches("acoustic|play") ? acoustic_retain : retain;
+        gateway.sendToMqtt(payload.toString(), retain_for_topic, this.topic + topic);
     }
 
 }

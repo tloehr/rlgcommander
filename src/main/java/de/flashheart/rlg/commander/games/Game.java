@@ -46,11 +46,11 @@ public abstract class Game {
     public static final String _state_PAUSING = "PAUSING";
     public static final String _state_RESUMING = "RESUMING";
     public static final String _state_EPILOG = "EPILOG";
-    public static final String OUT_LED_WHITE = "led_wht";
-    public static final String OUT_LED_RED = "led_red";
-    public static final String OUT_LED_BLUE = "led_blu";
-    public static final String OUT_LED_YELLOW = "led_ylw";
-    public static final String OUT_LED_GREEN = "led_grn";
+    public static final String OUT_LED_WHITE = MQTT.WHITE;
+    public static final String OUT_LED_RED = MQTT.RED;
+    public static final String OUT_LED_BLUE = MQTT.BLUE;
+    public static final String OUT_LED_YELLOW = MQTT.YELLOW;
+    public static final String OUT_LED_GREEN = MQTT.GREEN;
     public static final String[] ALL_LEDS = new String[]{OUT_LED_WHITE, OUT_LED_RED, OUT_LED_YELLOW, OUT_LED_GREEN, OUT_LED_BLUE};
     public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG};
     public String _signal_AIRSIREN_START = "very_long";
@@ -152,7 +152,7 @@ public abstract class Game {
      */
     protected void at_state(String state) {
         if (state.equals(_state_PROLOG)) {
-            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), roles.get("sirens"));
+            mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off"), roles.get("sirens"));
             mqttOutbound.send("paged",
                     MQTT.page("page0",
                             "I am ${agentname}", "", "I will be a", "Siren"), roles.get("sirens"));

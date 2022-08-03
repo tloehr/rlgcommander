@@ -13,9 +13,9 @@ public class MyConfiguration {
         return new ConcurrentHashMap<>();
     }
 
-    @Bean
-    public ConcurrentHashMap<String, String> most_recent_messages_to_agents() {
-        return new ConcurrentHashMap<>();
-    }
+//    @Bean
+//    public ConcurrentHashMap<String, String> most_recent_messages_to_agents() {
+//        return new ConcurrentHashMap<>();
+//    }
 
 }

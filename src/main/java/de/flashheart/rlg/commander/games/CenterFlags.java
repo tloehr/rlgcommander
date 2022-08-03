@@ -60,8 +60,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
         jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
         // just for score
-        add_spawn_for("red_spawn", "led_red", "RedFor");
-        add_spawn_for("blue_spawn", "led_blu", "BlueFor");
+        add_spawn_for("red_spawn", MQTT.RED, "RedFor");
+        add_spawn_for("blue_spawn", MQTT.BLUE, "BlueFor");
 
     }
 
@@ -93,18 +93,18 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private void cp_to_neutral(String agent) {
         mqttOutbound.send("paged",
                 MQTT.page("page0",
-                        "I am ${agentname}", "", "I am a", "Capture Point"),
+                        "I am ${agentname}", "Blue: ${score_blue}", "Red: ${score_red}", "I am a Flag"),
                 agent);
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "normal"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
     }
 
     private void cp_to_blue(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal", "buzzer", "double_buzz"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal", "buzzer", "double_buzz"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 

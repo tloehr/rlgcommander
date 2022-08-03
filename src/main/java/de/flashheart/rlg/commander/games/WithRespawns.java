@@ -71,7 +71,7 @@ public abstract class WithRespawns extends Pausable {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
             mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
-            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", led_device_id, "fast"), agent);
+            mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", led_device_id, "fast"), agent);
             mqttOutbound.send("paged", MQTT.merge(
                     MQTT.page("page0",
                             "I am ${agentname} and will", "be Your spawn.", "You are " + teamname, "!! Standby !!"),

@@ -81,8 +81,8 @@ public class Farcry extends Timed implements HasBombtimer {
 
         cpFSMs = new HashMap<>();
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-        add_spawn_for("attacker_spawn", "led_red", "Attacker");
-        add_spawn_for("defender_spawn", "led_blu", "Defender");
+        add_spawn_for("attacker_spawn", MQTT.RED, "Attacker");
+        add_spawn_for("defender_spawn", MQTT.BLUE, "Defender");
     }
 
     @Override
@@ -135,7 +135,7 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     private void standby(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
 //        mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off"), map_of_agents_and_sirens.get(agent).toString());
     }
 
@@ -150,7 +150,7 @@ public class Farcry extends Timed implements HasBombtimer {
         mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "selfdestruct"), roles.get("spawns"));
         mqttOutbound.send("signals", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
         mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "progress:remaining"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "progress:remaining"), agent);
         mqttOutbound.send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), roles.get("spawns"));
     }
 
@@ -160,14 +160,14 @@ public class Farcry extends Timed implements HasBombtimer {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defused"));
         if (game_fsm.getCurrentState().equalsIgnoreCase(_state_RUNNING)) process_message(_msg_IN_GAME_EVENT_OCCURRED);
         mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "timer:remaining"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "timer:remaining"), agent);
         mqttOutbound.send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), roles.get("spawns"));
     }
 
     private void defended(String agent) {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
         game_fsm.ProcessFSM(_msg_GAME_OVER);
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_green", "very_fast"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", "led_green", "very_fast"), agent);
         mqttOutbound.send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), roles.get("spawns"));
     }
 
@@ -181,9 +181,9 @@ public class Farcry extends Timed implements HasBombtimer {
         boolean all_cps_taken = active_capture_point == capture_points.size();
         if (overtime || all_cps_taken) {
             game_fsm.ProcessFSM(_msg_GAME_OVER);
-            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "very_fast"), agent);
+            mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "very_fast"), agent);
         } else {
-            mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "10:on,250;off,250"), agent);
+            mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "10:on,250;off,250"), agent);
             mqttOutbound.send("signals", MQTT.toJSON("sir4", "long"), map_of_agents_and_sirens.get(agent).toString());
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
         }
@@ -195,7 +195,7 @@ public class Farcry extends Timed implements HasBombtimer {
                         "I am ${agentname}", "", "I will be a", "Capture Point"),
                 agent);
 
-        //mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "fast"), agent);
+        //mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "fast"), agent);
         mqttOutbound.send("signals", show_number_as_leds(capture_points.indexOf(agent) + 1, "fast"), agent);
 
     }
@@ -205,7 +205,7 @@ public class Farcry extends Timed implements HasBombtimer {
      * @return signals for led stripes. out of bounds means all off
      */
     JSONObject show_number_as_leds(int num, final String signal) {
-        if (num < 1 || num > 5) return MQTT.toJSON("led_all", "off");
+        if (num < 1 || num > 5) return MQTT.toJSON(MQTT.LED_ALL, "off");
         List<String> leds_to_use = new ArrayList<>(Arrays.asList(Arrays.copyOfRange(ALL_LEDS, 0, num)));
         List<String> leds_to_set_off = new ArrayList<>(Arrays.asList(ALL_LEDS));
         leds_to_set_off.removeAll(leds_to_use); // set difference

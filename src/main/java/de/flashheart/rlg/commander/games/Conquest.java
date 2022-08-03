@@ -136,21 +136,21 @@ public class Conquest extends WithRespawns {
                 String.format("Time: %s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-        add_spawn_for("red_spawn", "led_red", "Team Red");
-        add_spawn_for("blue_spawn", "led_blu", "Team Blue");
+        add_spawn_for("red_spawn", MQTT.RED, "Team Red");
+        add_spawn_for("blue_spawn", MQTT.BLUE, "Team Blue");
     }
 
     @Override
     protected void respawn(String role, String agent) {
         if (role.equals("red_spawn")) {
-            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
+            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", MQTT.WHITE, "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             red_respawns++;
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
             broadcast_score();
         }
         if (role.equals("blue_spawn")) {
-            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", "led_wht", "single_buzz"), agent);
+            mqttOutbound.send("signals", MQTT.toJSON("buzzer", "single_buzz", MQTT.WHITE, "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             blue_respawns++;
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
@@ -209,16 +209,16 @@ public class Conquest extends WithRespawns {
                 MQTT.page("page0",
                         "I am ${agentname}", "", "I will be a", "Capture Point"),
                 agent);
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_wht", "normal"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
     }
 
     private void cp_to_blue(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_blu", "normal", "buzzer", "double_buzz"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal", "buzzer", "double_buzz"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
-        mqttOutbound.send("signals", MQTT.toJSON("led_all", "off", "led_red", "normal", "buzzer", "double_buzz"), agent);
+        mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal", "buzzer", "double_buzz"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 

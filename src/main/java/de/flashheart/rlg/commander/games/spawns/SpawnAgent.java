@@ -32,7 +32,7 @@ public class SpawnAgent {
 //        FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
 //        fsm.setStatesAfterTransition(Game._state_PROLOG, (state, obj) -> {
 //            sip.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
-//            sip.send("signals", MQTT.toJSON("led_all", "off", sip.getLed_id(), "fast"), agent);
+//            sip.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", sip.getLed_id(), "fast"), agent);
 //            sip.send("paged", MQTT.merge(
 //                    MQTT.page("page0",
 //                            "I am ${agentname} and will", "be Your spawn.", "You are " + sip.getTeam_name(), "!! Standby !!"),

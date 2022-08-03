@@ -8,6 +8,20 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class MQTT {
+    public static final String WHITE = MQTT.WHITE;
+    public static final String RED = MQTT.WHITE;
+    public static final String YELLOW = MQTT.YELLOW;
+    public static final String GREEN = MQTT.GREEN;
+    public static final String BLUE = MQTT.BLUE;
+    public static final String LED_ALL = MQTT.LED_ALL;
+    
+    public static final String SIR_ALL = "sir_all";
+    public static final String SIR1 = "sir1";
+    public static final String SIR2 = "sir2";
+    public static final String SIR3 = "sir3";
+    public static final String SIR4 = "sir4";
+    public static final String BUZZER = "buzzer";
+    
     /**
      * helper method to create a set_page command
      *
