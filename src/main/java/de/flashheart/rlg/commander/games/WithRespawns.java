@@ -100,11 +100,11 @@ public abstract class WithRespawns extends Pausable {
             mqttOutbound.send("paged", MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
         });
         fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> {
-            mqttOutbound.send("paged", getPages(), agent);
+            mqttOutbound.send("paged", getSpawnPages(), agent);
         });
         fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> {
             mqttOutbound.send("paged", MQTT.merge(
-                            getPages(), MQTT.page("pause", "", "      PAUSE      ", "", "")),
+                            getSpawnPages(), MQTT.page("pause", "", "      PAUSE      ", "", "")),
                     agent);
         });
         // making the signal to spawn more abstract. e.g. Conquest spawns on a button, Farcry on a timer
@@ -151,7 +151,7 @@ public abstract class WithRespawns extends Pausable {
                 process_message(_msg_RUN);
             }
         }
-        if (state.equals(_state_RUNNING)) mqttOutbound.send("paged", getPages(), roles.get("spawns"));
+        if (state.equals(_state_RUNNING)) mqttOutbound.send("paged", getSpawnPages(), roles.get("spawns"));
         if (state.equals(_state_PAUSING)) all_spawns.values().forEach(fsm -> fsm.ProcessFSM(_msg_PAUSE));
         if (state.equals(_state_EPILOG)) all_spawns.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
     }

@@ -297,7 +297,7 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
-    protected JSONObject getPages() {
+    protected JSONObject getSpawnPages() {
         if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
             return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
         }

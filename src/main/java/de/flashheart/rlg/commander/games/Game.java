@@ -10,7 +10,6 @@ import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.games.events.StateTransitionEvent;
 import de.flashheart.rlg.commander.games.events.StateTransitionListener;
-import de.flashheart.rlg.commander.games.spawns.Spawns;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
@@ -334,7 +333,7 @@ public abstract class Game {
         return game_parameters;
     }
 
-    protected abstract JSONObject getPages();
+    protected abstract JSONObject getSpawnPages();
 
 
 }

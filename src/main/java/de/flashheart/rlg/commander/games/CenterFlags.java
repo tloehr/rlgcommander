@@ -74,13 +74,11 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
-                broadcast_score();
                 cp_to_neutral(agent);
             });
             fsm.setStatesAfterTransition((new ArrayList<>(Arrays.asList("BLUE", "RED"))), (state, obj) -> {
                 if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
                 else cp_to_red(agent);
-                broadcast_score();
                 process_message(_msg_IN_GAME_EVENT_OCCURRED);
             });
             return fsm;
@@ -141,6 +139,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             cpFSMs.keySet().forEach(agent -> {
                 scores.put(get_agent_key(agent, "red"), 0l);
                 scores.put(get_agent_key(agent, "blue"), 0l);
+                mqttOutbound.send("vars", new JSONObject().put("score_blue","00:00").put("score_red","00:00"), agents.keySet());
             });
         }
 
@@ -160,7 +159,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         broadcast_cycle_counter++;
         if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
             mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), roles.get("spawns"));
-            //todo: hier ghets weiter
 
             JSONObject vars = new JSONObject()
                     .put("score_blue", ZonedDateTime.ofInstant(Instant.ofEpochMilli(score_blue), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss")))
@@ -168,7 +166,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             for (String key : scores.keySet()) {
                 vars = MQTT.merge(vars, MQTT.toJSON(key, ZonedDateTime.ofInstant(Instant.ofEpochMilli(scores.get(key)), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss"))));
             }
-            mqttOutbound.send("vars", vars, roles.get("spawns"));
+            mqttOutbound.send("vars", vars, agents.keySet());
         }
     }
 
@@ -193,7 +191,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    protected JSONObject getPages() {
+    protected JSONObject getSpawnPages() {
         if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
             return MQTT.page("page0", "Game Over", "", "", "");
         }

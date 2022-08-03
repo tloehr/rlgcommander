@@ -43,13 +43,11 @@ public class MQTTOutbound {
 
     ApplicationContext applicationContext;
     MyGateway gateway;
-//    ConcurrentHashMap<String, String> most_recent_messages_to_agents; // see MyConfiguration.java
 
     @Autowired
     public MQTTOutbound(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         this.gateway = applicationContext.getBean(MyGateway.class);
-//        this.most_recent_messages_to_agents = most_recent_messages_to_agents; // todo: for later use
     }
 
     @Bean
@@ -69,9 +67,6 @@ public class MQTTOutbound {
     public MessageHandler mqttOutbound() {  // for outbound only
         MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(String.format("%s-outbound", clientid), mqttClientFactory());
         messageHandler.setAsync(true);
-        messageHandler.setDefaultTopic(topic);
-        messageHandler.setDefaultQos(qos);
-        messageHandler.setDefaultRetained(retain);
         return messageHandler;
     }
 
@@ -96,9 +91,8 @@ public class MQTTOutbound {
     }
 
     private void send(String topic, JSONObject payload) {
-//        most_recent_messages_to_agents.put(this.topic + topic, payload.toString());
-        boolean retain_for_topic = topic.matches("acoustic|play") ? acoustic_retain : retain;
-        gateway.sendToMqtt(payload.toString(), retain_for_topic, this.topic + topic);
+        boolean retain_for_topic = topic.endsWith("acoustic") | topic.endsWith("play") ? acoustic_retain : retain;
+        gateway.sendToMqtt(payload.toString(), qos, retain_for_topic, this.topic + topic);
     }
 
 }

@@ -330,7 +330,7 @@ public class Conquest extends WithRespawns {
     }
 
     @Override
-    protected JSONObject getPages() {
+    protected JSONObject getSpawnPages() {
         log.trace(game_fsm.getCurrentState());
         if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
             String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
