@@ -105,7 +105,7 @@ public abstract class Scheduled extends Game {
             if (!scheduler.checkExists(jobKey)) return;
             TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName() + "-trigger", uuid.toString());
             Trigger oldTrigger = scheduler.getTrigger(triggerKey);
-            LocalDateTime old_start_time = JavaTimeConverter.toJavaLocalDateTime(oldTrigger.getStartTime());
+            //LocalDateTime old_start_time = JavaTimeConverter.toJavaLocalDateTime(oldTrigger.getStartTime());
 
             LocalDateTime new_start_time = JavaTimeConverter.toJavaLocalDateTime(oldTrigger.getStartTime()).plusSeconds(delayed_by_seconds);
 

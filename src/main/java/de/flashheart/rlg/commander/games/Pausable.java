@@ -51,7 +51,6 @@ public abstract class Pausable extends Scheduled {
         this.continueGameJob = new JobKey("continue_the_game", uuid.toString());
         this.jobs_to_reschedule_after_pause = new HashSet<>();
         this.jobs_to_suspend_during_pause = new HashSet<>();
-        pausing_since = Optional.empty();
     }
 
     @Override
@@ -69,7 +68,6 @@ public abstract class Pausable extends Scheduled {
             final long seconds_elapsed = ChronoUnit.SECONDS.between(pausing_since.get(), LocalDateTime.now());
             jobs_to_reschedule_after_pause.forEach(jobKey -> reschedule_job(jobKey, seconds_elapsed));
             jobs_to_suspend_during_pause.forEach(jobKey -> resume_job(jobKey));
-            pausing_since = Optional.empty();
             mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
         }
     }
@@ -77,7 +75,13 @@ public abstract class Pausable extends Scheduled {
     @Override
     protected void at_state(String state) {
         super.at_state(state);
-        if (state.equals(_state_PROLOG)) deleteJob(continueGameJob);
+        if (state.equals(_state_PROLOG)) {
+            deleteJob(continueGameJob);
+            pausing_since = Optional.empty();
+        }
+        if (state.equals(_state_RUNNING)) {
+            pausing_since = Optional.empty();
+        }
         if (state.equals(_state_RESUMING)) {
             if (resume_countdown > 0) {
                 create_job(continueGameJob, LocalDateTime.now().plusSeconds(resume_countdown - 1), ContinueGameJob.class, Optional.empty());
@@ -87,12 +91,12 @@ public abstract class Pausable extends Scheduled {
         }
     }
 
-    protected void create_resumable_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap){
+    protected void create_resumable_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
         create_job(jobKey, start_time, clazz, jobDataMap);
         jobs_to_reschedule_after_pause.add(jobKey);
     }
 
-    protected void create_resumable_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap){
+    protected void create_resumable_job(JobKey jobKey, SimpleScheduleBuilder ssb, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
         create_job(jobKey, ssb, clazz, jobDataMap);
         jobs_to_reschedule_after_pause.add(jobKey);
     }
@@ -120,7 +124,7 @@ public abstract class Pausable extends Scheduled {
     }
 
     @Override
-    protected void deleteJob(JobKey jobKey){
+    protected void deleteJob(JobKey jobKey) {
         super.deleteJob(jobKey);
         jobs_to_reschedule_after_pause.remove(jobKey);
     }
