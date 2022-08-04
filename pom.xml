@@ -82,7 +82,9 @@
             <artifactId>dynamicfsm</artifactId>
             <version>${dynamicfsm.version}</version>
         </dependency>
-<!--        <dependency>-->
+
+
+        <!--        <dependency>-->
 <!--            <groupId>com.github.lalyos</groupId>-->
 <!--            <artifactId>jfiglet</artifactId>-->
 <!--            <version>0.0.8</version>-->
