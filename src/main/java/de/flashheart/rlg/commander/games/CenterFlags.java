@@ -195,6 +195,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
             return MQTT.page("page0", "Game Over", "", "", "");
         }
+
         if (game_fsm.getCurrentState().equals(_state_RUNNING)) {
             // one page per Agent
             JSONObject pages = MQTT.page("page0",
@@ -202,6 +203,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                     "---------",
                     "Blau: ${score_blue}",
                     "Rot: ${score_red}");
+            //todo: das hier klappt nicht. bleibt immer die letzte seite übrig.
             for (String agent : cpFSMs.keySet().stream().sorted().collect(Collectors.toList())) {
                 pages = MQTT.merge(MQTT.page("page_" + agent,
                         "  " + agent + "  ",
