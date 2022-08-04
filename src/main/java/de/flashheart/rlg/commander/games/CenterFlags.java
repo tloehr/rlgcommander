@@ -4,7 +4,6 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.BroadcastScoreJob;
-import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,7 +35,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private final HashMap<String, Long> scores;
     private final JobKey broadcastScoreJobkey;
     private long last_job_broadcast;
-    private long score_blue, score_red;
+
 
     public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -66,7 +65,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     private String get_agent_key(String agent, String state) {
-        return String.format("score_%s_%s", state.toLowerCase(Locale.ROOT), agent);
+        return String.format("%s_%s", state.toLowerCase(Locale.ROOT), agent);
     }
 
     private FSM create_CP_FSM(final String agent) {
@@ -94,6 +93,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                         "I am ${agentname}", "Blue: ${score_blue}", "Red: ${score_red}", "I am a Flag"),
                 agent);
         mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+
     }
 
     private void cp_to_blue(String agent) {
@@ -133,13 +133,13 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             last_job_broadcast = 0l;
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
             // reset scores
-            score_blue = 0l;
-            score_red = 0l;
             scores.clear();
+            scores.put("blue", 0l);
+            scores.put("red", 0l);
             cpFSMs.keySet().forEach(agent -> {
                 scores.put(get_agent_key(agent, "red"), 0l);
                 scores.put(get_agent_key(agent, "blue"), 0l);
-                mqttOutbound.send("vars", new JSONObject().put("score_blue","00:00").put("score_red","00:00"), agents.keySet());
+                mqttOutbound.send("vars", new JSONObject().put("score_blue", "00:00").put("score_red", "00:00"), agents.keySet());
             });
         }
 
@@ -161,8 +161,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), roles.get("spawns"));
 
             JSONObject vars = new JSONObject()
-                    .put("score_blue", ZonedDateTime.ofInstant(Instant.ofEpochMilli(score_blue), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss")))
-                    .put("score_red", ZonedDateTime.ofInstant(Instant.ofEpochMilli(score_red), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss")));
+                    .put("score_blue", ZonedDateTime.ofInstant(Instant.ofEpochMilli(scores.get("blue")), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss")))
+                    .put("score_red", ZonedDateTime.ofInstant(Instant.ofEpochMilli(scores.get("red")), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss")));
             for (String key : scores.keySet()) {
                 vars = MQTT.merge(vars, MQTT.toJSON(key, ZonedDateTime.ofInstant(Instant.ofEpochMilli(scores.get(key)), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss"))));
             }
@@ -172,10 +172,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     private void add_score_for(String agent, String current_state, long time_to_add) {
         if (!current_state.equals("BLUE") && !current_state.equals("RED")) return;
-        if (current_state.equals("BLUE")) score_blue += time_to_add;
-        if (current_state.equals("RED")) score_red += time_to_add;
-        final long new_score = scores.get(get_agent_key(agent, current_state)) + time_to_add;
-        scores.put(get_agent_key(agent, current_state), new_score);
+        scores.put(current_state.toLowerCase(), scores.get(current_state.toLowerCase()) + time_to_add);
+        scores.put(get_agent_key(agent, current_state), scores.get(get_agent_key(agent, current_state)) + time_to_add);
     }
 
     @Override
@@ -226,5 +224,15 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     @Override
     protected void respawn(String role, String agent) {
         // not managed
+    }
+
+    @Override
+    public JSONObject getState() {
+        final JSONObject states = new JSONObject();
+        cpFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
+        final JSONObject statusObject = super.getState()
+                .put("scores", new JSONObject(scores))
+                .put("agent_states", states);
+        return statusObject;
     }
 }
