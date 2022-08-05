@@ -30,6 +30,7 @@ public abstract class Game {
     public static final String _msg_RESET = "reset";
     public static final String _msg_PREPARE = "prepare";
     public static final String _msg_READY = "ready";
+    public static final String _msg_ADMIN = "admin";
     public static final String _msg_BUTTON_01 = "btn01";
     public static final String _msg_BUTTON_02 = "btn02";
     public static final String _msg_RUN = "run";
@@ -174,6 +175,11 @@ public abstract class Game {
             mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
             mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), roles.get("spawns"));
         }
+    }
+
+    // todo: admin reaction
+    public void admin_message(JSONObject params) throws IllegalStateException {
+        // overwrite if necessary
     }
 
     public void process_message(String message) throws IllegalStateException {

@@ -113,6 +113,11 @@ public class GamesService {
         loaded_games[id - 1].get().process_message(message);
     }
 
+    public void admin_message(int id, String params) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+        check_id(id);
+        loaded_games[id - 1].get().admin_message(new JSONObject(params));
+    }
+
     public void process_message(int id, String agentid, String item, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
         loaded_games[id - 1].get().process_message(agentid, item, payload);

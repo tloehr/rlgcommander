@@ -46,8 +46,7 @@ public class RLGRestController {
     }
 
     /**
-     * emits server sent events on game state changes
-     * test with: curl -N "http://localhost:8090/api/game-sse?id=1"
+     * emits server sent events on game state changes test with: curl -N "http://localhost:8090/api/game-sse?id=1"
      *
      * @return
      */
@@ -80,10 +79,16 @@ public class RLGRestController {
     }
 
     // set values for a running game in pause mode
-//    @PostMapping("/game/admin")
-//    public ResponseEntity<?> admin_game(@RequestParam(name = "id") String id, @RequestBody String description) {
-//        return new ResponseEntity<>(gamesService.admin_set_values(id, description).orElseThrow().getStatus().toString(), HttpStatus.OK);
+//    {
+//      "agent": "ag01",
+//      "operation": "to_neutral"
 //    }
+    @PostMapping("/game/admin")
+    public ResponseEntity<?> admin_game(@RequestParam(name = "id") int id,
+                                        @RequestBody String params) {
+        gamesService.admin_message(id, params);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
 
     @PostMapping("/game/process")
     public ResponseEntity<?> process_message(@RequestParam(name = "id") int id,

@@ -35,6 +35,7 @@
         <MESSAGE id="in_game_event_occurred" nextState="RUNNING"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
+<!--        <MESSAGE id="admin" nextState="RUNNING"/>-->
     </STATE>
     <STATE id="PAUSING">
         <MESSAGE id="resume" nextState="RESUMING"/>

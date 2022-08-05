@@ -1,9 +1,7 @@
 package de.flashheart.rlg.commander.misc;
 
-import java.time.LocalDateTime;
-import java.time.Period;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 public class JavaTimeConverter {
@@ -46,5 +44,9 @@ public class JavaTimeConverter {
 
     public static LocalDateTime from_iso8601(String iso8601) {
         return ZonedDateTime.parse(iso8601).toLocalDateTime();
+    }
+
+    public static String format(long millis){
+        return ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss"));
     }
 }
