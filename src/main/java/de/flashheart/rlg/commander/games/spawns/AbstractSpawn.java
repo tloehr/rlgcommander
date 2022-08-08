@@ -26,14 +26,14 @@ public abstract class AbstractSpawn {
     String role;
     String led;
     String team;
+    private final Spawns spawns;
     Multimap<Integer, SpawnAgent> spawn_agents;
-    private final MQTTOutbound mqttOutbound;
 
-    public AbstractSpawn(String role, String led, String team, MQTTOutbound mqttOutbound) {
+    public AbstractSpawn(String role, String led, String team, Spawns spawns) {
         this.role = role;
         this.led = led;
         this.team = team;
-        this.mqttOutbound = mqttOutbound;
+        this.spawns = spawns;
         spawn_agents = HashMultimap.create();
     }
 

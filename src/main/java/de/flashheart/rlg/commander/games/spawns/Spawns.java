@@ -1,7 +1,9 @@
 package de.flashheart.rlg.commander.games.spawns;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.games.events.SpawnEvent;
 import de.flashheart.rlg.commander.games.events.SpawnListener;
+import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -25,6 +27,7 @@ public class Spawns {
     private final boolean wait4teams2B_ready;
 
     int active_secion;
+    int max_sections;
 
     public Spawns(MQTTOutbound mqttOutbound, JSONObject game_parameters) throws JSONException {
 /**
@@ -92,18 +95,29 @@ public class Spawns {
                                 });
                             }
                     );
+                    max_sections = section_number.intValue() - 1;
                 }
         );
 
     }
 
     public void next() {
-        active_secion++;
+        if (active_secion < max_sections) active_secion++;
     }
 
     public void reset() {
         active_secion = 0;
     }
+
+    public void addSpawnListener(SpawnListener spawnListener){
+        spawnListeners.add(spawnListener);
+    }
+
+    private void fireSpawnEvent(SpawnEvent event) {
+        spawnListeners.forEach(spawnListener -> spawnListener.handleRespawnEvent(event));
+    }
+
+
 
     public boolean process_message(String agent, String item, JSONObject message) {
         MutableBoolean message_processed = new MutableBoolean(false);
