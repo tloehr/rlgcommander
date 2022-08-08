@@ -20,9 +20,4 @@ public class RollingSpawn extends AbstractSpawn {
         active_spawn = 0;
     }
 
-
-    @Override
-    public void add_agent(String agent) {
-
-    }
 }

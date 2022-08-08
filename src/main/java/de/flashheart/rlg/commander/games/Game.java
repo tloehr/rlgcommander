@@ -102,14 +102,7 @@ public abstract class Game {
                 .put("event", in_game_event)
                 .put("new_state", game_fsm.getCurrentState())
         );
-    }
-
-    private void addEvent(String message, String state) {
-        in_game_events.add(new JSONObject()
-                .put("pit", JavaTimeConverter.to_iso8601())
-                .put("event", new JSONObject().put("type", "general_game_state_change").put("message", message))
-                .put("new_state", state)
-        );
+        process_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
     /**
@@ -134,8 +127,13 @@ public abstract class Game {
     private void fireStateTransition(StateTransitionEvent event) {
         stateTransitionListeners.forEach(stateTransitionListener -> stateTransitionListener.onStateTransition(event));
         log.debug("transition {}:{} == > {}", event.getOldState(), event.getMessage(), event.getNewState());
-        if (!event.getMessage().equals(_msg_IN_GAME_EVENT_OCCURRED))
-            addEvent(event.getMessage(), event.getNewState());
+        if (!event.getMessage().equals(_msg_IN_GAME_EVENT_OCCURRED)) {
+            in_game_events.add(new JSONObject()
+                    .put("pit", JavaTimeConverter.to_iso8601())
+                    .put("event", new JSONObject().put("type", "general_game_state_change").put("message", event.getMessage()))
+                    .put("new_state", event.getNewState()));
+        }
+//            addEvent(event.getMessage(), event.getNewState());
         on_transition(event.getOldState(), event.getMessage(), event.getNewState());
     }
 
@@ -177,9 +175,14 @@ public abstract class Game {
         }
     }
 
-    // todo: admin reaction
-    public void admin_message(JSONObject params) throws IllegalStateException {
-        // overwrite if necessary
+    /**
+     * dummy method. will be notified if a REST request is sent to games/admin.
+     *
+     * @param params contains the details about the admin operation
+     * @throws IllegalStateException
+     */
+    public void zeus(JSONObject params) throws IllegalStateException {
+        log.warn("no zeus function implemented. ignoring.");
     }
 
     public void process_message(String message) throws IllegalStateException {
@@ -306,7 +309,6 @@ public abstract class Game {
      */
     public JSONObject getState() {
         return new JSONObject(game_parameters.toString())
-                .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("class", this.getClass().getName())
                 .put("game_state", game_fsm.getCurrentState())
                 .put("in_game_events", new JSONArray(in_game_events));

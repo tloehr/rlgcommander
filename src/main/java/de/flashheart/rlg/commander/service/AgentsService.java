@@ -90,8 +90,13 @@ public class AgentsService {
     public void test_agent(String agentid, String deviceid) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
         if (my_agent.getGameid() > -1) return; // only when not in game
-        String topic = deviceid.matches(MQTT.ACOUSTICS) ? "acoustic" : "visual";
-        mqttOutbound.send(topic, MQTT.toJSON(deviceid, "medium"), my_agent.getId());
+        if (deviceid.toLowerCase().matches("play|stop")) {
+            String song = deviceid.equalsIgnoreCase("play") ? "<random>" : "";
+            mqttOutbound.send("play", MQTT.toJSON("subpath", "pause", "soundfile", song), agentid);
+        } else {
+            String topic = deviceid.matches(MQTT.ACOUSTICS) ? "acoustic" : "visual";
+            mqttOutbound.send(topic, MQTT.toJSON(deviceid, "medium"), my_agent.getId());
+        }
     }
 
     /**

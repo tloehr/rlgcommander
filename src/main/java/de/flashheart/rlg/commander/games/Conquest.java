@@ -160,7 +160,7 @@ public class Conquest extends WithRespawns {
         }
         if (blue_respawns + red_respawns == 1)
             mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), roles.get("spawns"));
-        process_message(_msg_IN_GAME_EVENT_OCCURRED);
+//        process_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
     @Override
@@ -197,7 +197,6 @@ public class Conquest extends WithRespawns {
                 if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
                 else cp_to_red(agent);
                 broadcast_score();
-                process_message(_msg_IN_GAME_EVENT_OCCURRED);
             });
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {

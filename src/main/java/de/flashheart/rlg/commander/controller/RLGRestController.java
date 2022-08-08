@@ -83,10 +83,15 @@ public class RLGRestController {
 //      "agent": "ag01",
 //      "operation": "to_neutral"
 //    }
-    @PostMapping("/game/admin")
+    //{
+    // "operation": "change_score"
+//      "team": "blue", or "red"
+//      "score": +10 or -10
+//    }
+    @PostMapping("/game/zeus")
     public ResponseEntity<?> admin_game(@RequestParam(name = "id") int id,
                                         @RequestBody String params) {
-        gamesService.admin_message(id, params);
+        gamesService.zeus(id, params);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 

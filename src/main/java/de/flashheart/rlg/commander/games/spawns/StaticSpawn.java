@@ -16,10 +16,5 @@ public class StaticSpawn extends AbstractSpawn {
         super(role, led, team);
     }
 
-    @Override
-    public void add_agent(String agent) {
-        spawn = new SpawnAgent(agent, this);
-    }
-
 
 }

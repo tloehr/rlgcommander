@@ -61,6 +61,8 @@ public abstract class Pausable extends Scheduled {
             pausing_since = Optional.of(LocalDateTime.now());
             jobs_to_reschedule_after_pause.forEach(jobKey -> pause_job(jobKey));
             jobs_to_suspend_during_pause.forEach(jobKey -> pause_job(jobKey));
+            //todo: reconsider when changing the spawn system
+            mqttOutbound.send("timers", MQTT.toJSON("_clearall", ""), roles.get("spawns"));
             mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
         }
         if (message.equals(_msg_CONTINUE)) {

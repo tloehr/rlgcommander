@@ -2,6 +2,7 @@ package de.flashheart.rlg.commander.service;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
@@ -19,6 +20,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -96,7 +100,10 @@ public class GamesService {
     public JSONObject getGameState(int id) throws ArrayIndexOutOfBoundsException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
-        return loaded_games[id - 1].isEmpty() ? new JSONObject() : loaded_games[id - 1].get().getState();
+        JSONObject state = new JSONObject()
+                .put("version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")))
+                .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)));
+        return loaded_games[id - 1].isEmpty() ? state : MQTT.merge(state, loaded_games[id - 1].get().getState());
     }
 
     public JSONArray getGameStates() throws ArrayIndexOutOfBoundsException {
@@ -113,9 +120,9 @@ public class GamesService {
         loaded_games[id - 1].get().process_message(message);
     }
 
-    public void admin_message(int id, String params) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+    public void zeus(int id, String params) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().admin_message(new JSONObject(params));
+        loaded_games[id - 1].get().zeus(new JSONObject(params));
     }
 
     public void process_message(int id, String agentid, String item, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {

@@ -7,15 +7,19 @@ import de.flashheart.rlg.commander.games.Game;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.json.JSONObject;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
 @Log4j2
+@Getter
 public class SpawnAgent {
     final String agent;
-    private SpawnDataProvider sip;
+    private final AbstractSpawn spawn;
     FSM fsm;
     String led_id;
 
@@ -26,9 +30,12 @@ public class SpawnAgent {
 //        } catch (Exception e) {
 //            log.error(e);
 //        }
+        this.spawn = spawn;
     }
 
-//    private FSM create_Spawn_FSM() throws ParserConfigurationException, IOException, SAXException {
+
+
+    //    private FSM create_Spawn_FSM() throws ParserConfigurationException, IOException, SAXException {
 //        FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
 //        fsm.setStatesAfterTransition(Game._state_PROLOG, (state, obj) -> {
 //            sip.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
@@ -80,4 +87,8 @@ public class SpawnAgent {
 //
 //        return fsm;
 //    }
+
+    public void process_message(String item, JSONObject message) {
+
+    }
 }

@@ -2,7 +2,6 @@ package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
-import com.google.common.collect.ArrayTable;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
@@ -11,10 +10,7 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.BroadcastScoreJob;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.mutable.MutableLong;
-import org.checkerframework.checker.units.qual.A;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobKey;
@@ -25,7 +21,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -110,8 +105,9 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             fsm.setStatesAfterTransition((new ArrayList<>(Arrays.asList("BLUE", "RED"))), (state, obj) -> {
                 if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
                 else cp_to_red(agent);
-                process_message(_msg_IN_GAME_EVENT_OCCURRED);
+//                process_message(_msg_IN_GAME_EVENT_OCCURRED);
             });
+
             fsm.setAction("to_neutral", new FSMAction() {   // admin function
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
@@ -132,6 +128,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                         "I am ${agentname}...", "...and Your Flag", "Blue: ${" + get_agent_key(agent, "blue") + "}", "Red: ${" + get_agent_key(agent, "red") + "}"),
                 agent);
         mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+        if (game_fsm.getCurrentState().equals(_state_RUNNING))
+            addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
     }
 
     private void cp_to_blue(String agent) {
@@ -157,7 +155,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
 
-            long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
+            long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
             create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
             broadcast_cycle_counter = 0;
         }
@@ -237,8 +235,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
      * @param agent
      */
     private void revert_score_for(String agent) {
-        //MutableLong scores_for_this_agent = new MutableLong(0l);
-        //scores.row(agent).entrySet().forEach(stringLongEntry -> scores_for_this_agent.add(stringLongEntry.getValue()));
         Lists.newArrayList("blue", "red").forEach(color -> {
             long score_for_this_agent_and_color = scores.get(agent, color);
             long sum_score_for_this_color = scores.get("all", color);
@@ -248,13 +244,30 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void admin_message(JSONObject params) throws IllegalStateException {
-        String agent = params.getString("agent");
+    public void zeus(JSONObject params) throws IllegalStateException, JSONException {
         String operation = params.getString("operation");
-        if (!cpFSMs.containsKey(agent)) return;
-        if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red")) return;
         if (operation.equalsIgnoreCase("to_neutral")) {
+            String agent = params.getString("agent");
+            if (!cpFSMs.containsKey(agent)) throw new IllegalStateException(agent + " unknown");
+            if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red"))
+                throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be BLUE or RED");
             cpFSMs.get(agent).ProcessFSM(operation);
+            addEvent(new JSONObject()
+                    .put("item", "capture_point")
+                    .put("agent", agent)
+                    .put("state", "neutral")
+                    .put("zeus", "intervention"));
+        }
+        if (operation.equalsIgnoreCase("add_seconds")) {
+            String team = params.getString("team").toLowerCase();
+            long amount = params.getLong("amount");
+            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
+            scores.put("all", team, scores.get("all", team) + amount * 1000L);
+            addEvent(new JSONObject()
+                    .put("item", "add_seconds")
+                    .put("team", team)
+                    .put("amount", amount)
+                    .put("zeus", "intervention"));
         }
     }
 
