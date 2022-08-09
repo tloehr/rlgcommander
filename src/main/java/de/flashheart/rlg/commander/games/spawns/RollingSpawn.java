@@ -11,13 +11,10 @@ import java.util.ArrayList;
 @Getter
 @Setter
 public class RollingSpawn extends AbstractSpawn {
-    int active_spawn;
-    final ArrayList<SpawnAgent> spawn_list;
 
-    public RollingSpawn(String spawn_role, String led_id, String teamname) {
-        super(spawn_role, led_id, teamname);
-        spawn_list = new ArrayList<>();
-        active_spawn = 0;
+
+    public RollingSpawn(String role, String led, String team, Spawns spawns) {
+        super(role, led, team, spawns);
     }
 
 }

@@ -102,7 +102,7 @@ public abstract class Game {
                 .put("event", in_game_event)
                 .put("new_state", game_fsm.getCurrentState())
         );
-        process_message(_msg_IN_GAME_EVENT_OCCURRED);
+        if (game_fsm.getCurrentState().equals(_state_RUNNING)) process_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
     /**

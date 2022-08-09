@@ -127,11 +127,7 @@ public class Farcry extends Timed implements HasBombtimer {
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
             mqttOutbound.send("vars", MQTT.toJSON("overtime", ""), roles.get("spawns"));
         }
-    }
-
-    @Override
-    protected long getRemaining() {
-        return estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : 0l;
+        //todo: pause and resume missing
     }
 
     private void standby(String agent) {
@@ -187,6 +183,11 @@ public class Farcry extends Timed implements HasBombtimer {
             mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), map_of_agents_and_sirens.get(agent).toString());
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
         }
+    }
+
+    @Override
+    protected long getRemaining() {
+        return estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : super.getRemaining();
     }
 
     private void prolog(String agent) {

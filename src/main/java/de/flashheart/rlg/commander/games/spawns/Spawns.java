@@ -77,9 +77,9 @@ public class Spawns {
                     final String led = teams.getString("led");
                     final String team = teams.getString("team");
 
-                    if (spawn_type.equalsIgnoreCase(SPAWN_TYPE_STATIC)) all_spawns.put(role, new StaticSpawn(role, led, team));
+                    if (spawn_type.equalsIgnoreCase(SPAWN_TYPE_STATIC)) all_spawns.put(role, new StaticSpawn(role, led, team, this));
                     else if (spawn_type.equalsIgnoreCase(SPAWN_TYPE_ROLLING))
-                        all_spawns.put(role, new RollingSpawn(role, led, team));
+                        all_spawns.put(role, new RollingSpawn(role, led, team, this));
                     else throw new JSONException(spawn_type + " is not an acceptable spawn type");
 
 
