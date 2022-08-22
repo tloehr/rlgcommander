@@ -1,7 +1,6 @@
 package de.flashheart.rlg.commander.games.jobs;
 
-import de.flashheart.rlg.commander.games.Conquest;
-import de.flashheart.rlg.commander.games.HasScoreBroadcast;
+import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;

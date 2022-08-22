@@ -10,10 +10,14 @@
 <FSM>
     <STATE id="PROLOG" type="ID">
         <MESSAGE id="prepare" nextState="WE_ARE_PREPARING"/>
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="start_countdown" nextState="COUNTDOWN_TO_START"/>
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="STAND_BY">
+        <MESSAGE id="activate" nextState="IN_GAME"/>
     </STATE>
     <!--    we are preparing - not ready yet-->
     <STATE id="WE_ARE_PREPARING">
@@ -39,6 +43,7 @@
     </STATE>
     <!--  finally running -->
     <STATE id="IN_GAME">
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
         <MESSAGE id="respawn_signal" nextState="IN_GAME"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
         <MESSAGE id="pause" nextState="PAUSING"/>

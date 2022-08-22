@@ -41,11 +41,19 @@ public abstract class AbstractSpawn {
         spawn_agents.put(section, new SpawnAgent(agent, this));
     }
 
-    public boolean process_message(int section, String agent, String item, JSONObject message) {
-        Optional<SpawnAgent> found = spawn_agents.get(section).stream().filter(spawnAgent -> spawnAgent.getAgent().equalsIgnoreCase(agent)).findFirst();
-        found.ifPresent(spawnAgent -> spawnAgent.process_message(item, message));
-        return found.isPresent();
+    public boolean has_agent_in(int section, String agent) {
+        return spawn_agents.get(section).stream().anyMatch(spawnAgent -> spawnAgent.getAgent().equalsIgnoreCase(agent));
     }
 
+    public void process_message(int section, String agent, String message) {
+        spawn_agents.get(section).stream()
+                .filter(spawnAgent -> spawnAgent.getAgent().equalsIgnoreCase(agent))
+                .findFirst()
+                .ifPresent(spawnAgent -> spawnAgent.process_message(message));
+    }
+
+    public void process_message(int section, String message) {
+        spawn_agents.values().forEach(spawnAgent -> spawnAgent.process_message(message));
+    }
 
 }

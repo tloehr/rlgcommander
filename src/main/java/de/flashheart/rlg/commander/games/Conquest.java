@@ -4,6 +4,7 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
+import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONException;
@@ -27,7 +28,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * lifecycle cleanup before new game is laoded (by GameService)
  */
 @Log4j2
-public class Conquest extends WithRespawns {
+public class Conquest extends WithRespawns implements HasScoreBroadcast {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
     private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
@@ -160,7 +161,6 @@ public class Conquest extends WithRespawns {
         }
         if (blue_respawns + red_respawns == 1)
             mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), roles.get("spawns"));
-//        process_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
     @Override
@@ -294,7 +294,8 @@ public class Conquest extends WithRespawns {
         }
     }
 
-    private void broadcast_score() {
+    @Override
+    public void broadcast_score() {
         JSONObject vars = MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
                 "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()));
 

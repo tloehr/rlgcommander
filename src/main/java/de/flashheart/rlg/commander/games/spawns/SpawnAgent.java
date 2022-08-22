@@ -88,7 +88,8 @@ public class SpawnAgent {
 //        return fsm;
 //    }
 
-    public void process_message(String item, JSONObject message) {
-
+    public void process_message(String  message) {
+        fsm.ProcessFSM(message);
     }
+
 }

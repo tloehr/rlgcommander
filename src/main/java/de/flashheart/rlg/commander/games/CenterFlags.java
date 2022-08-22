@@ -8,6 +8,7 @@ import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.BroadcastScoreJob;
+import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;

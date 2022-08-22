@@ -1,11 +1,8 @@
 package de.flashheart.rlg.commander.games.spawns;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.events.SpawnEvent;
-import de.flashheart.rlg.commander.games.events.SpawnListener;
-import de.flashheart.rlg.commander.games.events.StateReachedEvent;
+import de.flashheart.rlg.commander.games.events.*;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,8 +14,9 @@ import java.util.*;
 public class Spawns {
     public static final String SPAWN_TYPE_STATIC = "static";
     public static final String SPAWN_TYPE_ROLLING = "rolling";
-    final HashMap<String, AbstractSpawn> all_spawns;
+    final HashMap<String, AbstractSpawn> spawns_for_role;
     final List<SpawnListener> spawnListeners;
+    final List<ScheduleStartGameEventListener> scheduleStartGameEventListeners;
     private final MQTTOutbound mqttOutbound;
     private final JSONObject game_parameters;
     private final String spawn_type;
@@ -60,8 +58,9 @@ public class Spawns {
 
         this.mqttOutbound = mqttOutbound;
         this.game_parameters = game_parameters;
-        all_spawns = new HashMap<>();
+        spawns_for_role = new HashMap<>();
         spawnListeners = new ArrayList<>();
+        scheduleStartGameEventListeners = new ArrayList<>();
         reset();
 
         this.wait4teams2B_ready = game_parameters.getBoolean("wait4teams2B_ready");
@@ -77,9 +76,10 @@ public class Spawns {
                     final String led = teams.getString("led");
                     final String team = teams.getString("team");
 
-                    if (spawn_type.equalsIgnoreCase(SPAWN_TYPE_STATIC)) all_spawns.put(role, new StaticSpawn(role, led, team, this));
+                    if (spawn_type.equalsIgnoreCase(SPAWN_TYPE_STATIC))
+                        spawns_for_role.put(role, new StaticSpawn(role, led, team, this));
                     else if (spawn_type.equalsIgnoreCase(SPAWN_TYPE_ROLLING))
-                        all_spawns.put(role, new RollingSpawn(role, led, team, this));
+                        spawns_for_role.put(role, new RollingSpawn(role, led, team, this));
                     else throw new JSONException(spawn_type + " is not an acceptable spawn type");
 
 
@@ -90,7 +90,7 @@ public class Spawns {
                     teams.getJSONArray("agents").forEach(o -> {
                                 JSONArray section = (JSONArray) o;
                                 section.forEach(spawn_agent_in_this_section -> {
-                                    all_spawns.get(role).add_agent(spawn_agent_in_this_section.toString(), section_number.intValue());
+                                    spawns_for_role.get(role).add_agent(spawn_agent_in_this_section.toString(), section_number.intValue());
                                     section_number.increment();
                                 });
                             }
@@ -109,24 +109,33 @@ public class Spawns {
         active_secion = 0;
     }
 
-    public void addSpawnListener(SpawnListener spawnListener){
+
+    public void addSpawnListener(SpawnListener spawnListener) {
         spawnListeners.add(spawnListener);
     }
 
-    private void fireSpawnEvent(SpawnEvent event) {
+    public void addScheduleStartGameEventListener(ScheduleStartGameEventListener scheduleStartGameEventListener) {
+        scheduleStartGameEventListeners.add(scheduleStartGameEventListener);
+    }
+
+    private void fireRespawnEvent(final SpawnEvent event) {
         spawnListeners.forEach(spawnListener -> spawnListener.handleRespawnEvent(event));
     }
 
-
-
-    public boolean process_message(String agent, String item, JSONObject message) {
-        MutableBoolean message_processed = new MutableBoolean(false);
-        all_spawns.values().stream().forEach(spawn -> {
-            boolean already_processed = message_processed.getValue();
-            message_processed.setValue(already_processed || spawn.process_message(active_secion, agent, item, message));
-        });
-        return message_processed.booleanValue();
+    private void fireGameStartScheduleEvent(final ScheduleStartGameEvent scheduleStartGameEvent) {
+        scheduleStartGameEventListeners.forEach(scheduleStartGameEventListener -> scheduleStartGameEventListener.createRunGameJob(scheduleStartGameEvent));
     }
 
+    public boolean process_message(String agent, String message) {
+        spawns_for_role.values().forEach(spawn -> spawn.process_message(active_secion, agent, message));
+        // processed ?
+        return spawns_for_role.values().stream().anyMatch(spawn -> spawn.has_agent_in(active_secion, agent));
+    }
 
+    public void process_message(String message) {
+        spawns_for_role.values()
+                .forEach(spawn -> spawn.spawn_agents.values()
+                        .forEach(spawnAgent -> spawnAgent.process_message(message))
+                );
+    }
 }
