@@ -17,7 +17,9 @@
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="STAND_BY">
+        <MESSAGE id="reset" nextState="PROLOG"/>
         <MESSAGE id="activate" nextState="IN_GAME"/>
+        <MESSAGE id="game_over" nextState="EPILOG"/>
     </STATE>
     <!--    we are preparing - not ready yet-->
     <STATE id="WE_ARE_PREPARING">

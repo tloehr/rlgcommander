@@ -75,7 +75,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
      */
     public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        log.debug("\n   ______                                  __\n" +
+        log.info("\n   ______                                  __\n" +
                 "  / ____/___  ____  ____ ___  _____  _____/ /_\n" +
                 " / /   / __ \\/ __ \\/ __ `/ / / / _ \\/ ___/ __/\n" +
                 "/ /___/ /_/ / / / / /_/ / /_/ /  __(__  ) /_\n" +
@@ -142,8 +142,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    protected void respawn(String role, String agent) {
-        if (role.equals("red_spawn")) {
+    protected void on_respawn_signal_received(String team, String agent) {
+        if (team.equals("red_spawn")) {
             mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
             mqttOutbound.send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
@@ -151,7 +151,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
             broadcast_score();
         }
-        if (role.equals("blue_spawn")) {
+        if (team.equals("blue_spawn")) {
             mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
             mqttOutbound.send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
@@ -177,10 +177,9 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         //
         if (hasRole(sender, "capture_points")) {
             if (game_fsm.getCurrentState().equals(_state_RUNNING)) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
-        } else if (hasRole(sender, "spawns")) {
-            super.process_message(sender, _msg_RESPAWN_SIGNAL, message);
         } else {
-            super.process_message(sender, item, message);
+            // _msg_BUTTON_01 is replaced with _msg_RESPAWN_SIGNAL
+            super.process_message(sender, _msg_RESPAWN_SIGNAL, message);
         }
     }
 

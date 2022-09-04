@@ -67,6 +67,7 @@ public abstract class Game {
     protected final UUID uuid;
     protected final Scheduler scheduler;
     protected final Multimap<String, String> agents, roles;
+    protected final boolean silent_game;
     // what happened, and when ?
     protected final List<JSONObject> in_game_events;
     // main FSM to control the basic states of every game
@@ -81,6 +82,7 @@ public abstract class Game {
         this.agents = HashMultimap.create();
         this.roles = HashMultimap.create();
         this.in_game_events = new ArrayList<>();
+        this.silent_game = game_parameters.optBoolean("silent_game");
         JSONObject agts = game_parameters.getJSONObject("agents");
         Set<String> rls = agts.keySet();
         rls.forEach(role ->

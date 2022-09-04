@@ -316,10 +316,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
 
-    @Override
-    protected void respawn(String role, String agent) {
-        // not managed
-    }
 
     @Override
     public JSONObject getState() {
