@@ -73,6 +73,7 @@ public class Farcry extends Timed implements HasBombtimer {
         List sirs = game_parameters.getJSONObject("agents").getJSONArray("capture_sirens").toList();
         for (int i = 0; i < capture_points.size(); i++) {
             map_of_agents_and_sirens.put(capture_points.get(i), sirs.get(i));
+            roles.put("sirens", sirs.get(i).toString()); // add these sirens to the siren list
         }
 
         cpFSMs = new HashMap<>();
@@ -154,7 +155,6 @@ public class Farcry extends Timed implements HasBombtimer {
 
     private void taken(String agent) {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "taken"));
-//        process_message(_msg_IN_GAME_EVENT_OCCURRED);
         active_capture_point++;
         send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
 
@@ -167,6 +167,7 @@ public class Farcry extends Timed implements HasBombtimer {
             send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "10:on,250;off,250"), agent);
             send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), map_of_agents_and_sirens.get(agent).toString());
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
+            next_spawn_segment();
         }
     }
 
@@ -303,6 +304,7 @@ public class Farcry extends Timed implements HasBombtimer {
     protected void delete_timed_respawn() {
         super.delete_timed_respawn();
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), get_active_spawn_agents());
+        send("timers", MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
     }
 
     private String get_next_cp() {

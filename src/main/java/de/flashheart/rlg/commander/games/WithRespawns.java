@@ -3,6 +3,7 @@ package de.flashheart.rlg.commander.games;
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
@@ -41,6 +42,7 @@ public abstract class WithRespawns extends Pausable {
     public static final String _state_COUNTDOWN_TO_RESUME = "COUNTDOWN_TO_RESUME";
     public static final String _msg_START_COUNTDOWN = "start_countdown";
     public static final String _msg_STANDBY = "stand_by";
+    public static final String _msg_ACTIVATE = "activate";
     public static final String _msg_RESPAWN_SIGNAL = "respawn_signal";
     public static final String RED_SPAWN = "red_spawn";
     public static final String BLUE_SPAWN = "blue_spawn";
@@ -155,7 +157,7 @@ public abstract class WithRespawns extends Pausable {
             send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
             send("paged", MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
         });
-        fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> {
+        fsm.setStatesAfterTransition(Lists.newArrayList(_state_EPILOG, _state_RUNNING), (state, obj) -> {
             send("paged", getSpawnPages(), agent);
         });
         fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> {
@@ -187,7 +189,7 @@ public abstract class WithRespawns extends Pausable {
                 create_resumable_job(respawnTimerJobkey,
                         SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
                         RespawnTimerJob.class, Optional.empty());
-                send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
+                send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_all_spawn_agents());
             }
             send_message_to_agents_in_segment(active_segment, _msg_RUN);
         }
@@ -227,15 +229,19 @@ public abstract class WithRespawns extends Pausable {
         }
     }
 
-    void next_segment() {
+    void next_spawn_segment() {
+        send_message_to_agents_in_segment(active_segment, _msg_STANDBY);
         active_segment++;
         if (active_segment == spawn_segments.size()) active_segment = 0;
+        send_message_to_agents_in_segment(active_segment, _msg_ACTIVATE);
+        // todo: bildschirm wird nicht angepasst und die LEDs auch nicht
     }
 
     @Override
     protected void at_state(String state) {
         super.at_state(state);
         if (state.equals(_state_PROLOG)) {
+            active_segment = 0;
             deleteJob(deferredRunGameJob);
             delete_timed_respawn();
             send_message_to_all_inactive_segments(_msg_STANDBY);
@@ -253,7 +259,6 @@ public abstract class WithRespawns extends Pausable {
                 process_internal_message(_msg_RUN);
             }
         }
-        if (state.equals(_state_RUNNING)) send("paged", getSpawnPages(), get_active_spawn_agents());
         if (state.equals(_state_PAUSING)) send_message_to_agents_in_segment(active_segment, _msg_PAUSE);
         if (state.equals(_state_EPILOG)) send_message_to_all_agents(_msg_START_COUNTDOWN);
     }
@@ -285,7 +290,6 @@ public abstract class WithRespawns extends Pausable {
     protected void delete_timed_respawn() {
         if (respawn_timer <= 0) return;
         deleteJob(respawnTimerJobkey);
-        send("timers", MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
     }
 
     @Override
@@ -301,7 +305,11 @@ public abstract class WithRespawns extends Pausable {
     }
 
     protected Collection<String> get_active_spawn_agents() {
-        return spawn_segments.column(active_segment).values().stream().map(Pair::getKey).collect(Collectors.toList());
+        return spawn_segments.column(active_segment).values().stream().map(Pair::getKey).collect(Collectors.toSet());
+    }
+
+    protected Collection<String> get_all_spawn_agents() {
+        return spawn_segments.values().stream().map(Pair::getKey).collect(Collectors.toSet());
     }
 
 }

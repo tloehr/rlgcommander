@@ -1,32 +1,59 @@
 {
   "comment": "FarCry Assault",
   "class": "de.flashheart.rlg.commander.games.Farcry",
+  "game_time": 600,
+  "bomb_time": 60,
+  "resume_countdown": 0,
   "agents": {
     "capture_points": [
-      "ag02"
+      "ag01",
+      "ag02",
+      "ag03"
     ],
     "capture_sirens": [
-      "ag50"
-    ],
-    "attacker_spawn": [
-      "ag30"
-    ],
-    "defender_spawn": [
-      "ag31"
-    ],
-    "spawns": [
-      "ag30",
-      "ag31"
-    ],
-    "sirens": [
-      "ag50"
+      "ag50",
+      "ag51",
+      "ag52"
     ]
   },
-  "game_time": 600,
-  "bomb_time": 180,
-  "respawn_period": 20,
-  "wait4teams2B_ready": false,
-  "intro_mp3_file": "<random>",
-  "starter_countdown": 30,
-  "resume_countdown": 0
+  "spawns": {
+    "wait4teams2B_ready": false,
+    "intro_mp3_file": "<random>",
+    "starter_countdown": 0,
+    "respawn_time": 0,
+    "teams": [
+      {
+        "role": "red_spawn",
+        "led": "red",
+        "name": "RedFor",
+        "agents": [
+          [
+            "ag30"
+          ],
+          [
+            "ag31"
+          ],
+          [
+            "ag32"
+          ]
+        ]
+      },
+      {
+        "role": "blue_spawn",
+        "led": "blu",
+        "name": "BlueFor",
+        "agents": [
+          [
+            "ag31"
+          ],
+          [
+            "ag32"
+          ],
+          [
+            "ag33"
+          ]
+        ]
+      }
+    ]
+  }
 }
