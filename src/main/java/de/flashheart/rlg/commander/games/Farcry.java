@@ -77,8 +77,6 @@ public class Farcry extends Timed implements HasBombtimer {
 
         cpFSMs = new HashMap<>();
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-        add_spawn_for("attacker_spawn", MQTT.RED, "Attacker");
-        add_spawn_for("defender_spawn", MQTT.BLUE, "Defender");
     }
 
     @Override
@@ -87,8 +85,8 @@ public class Farcry extends Timed implements HasBombtimer {
         if (state.equals(_state_EPILOG)) {
 
             // to prevent respawn signals AFTER game_over
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), roles.get("spawns"));
-            mqttOutbound.send("timers", MQTT.toJSON("respawn", "0"), roles.get("spawns"));
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), get_active_spawn_agents());
+            send("timers", MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
         }
         if (state.equals(_state_PROLOG)) {
             active_capture_point = 0;
@@ -112,14 +110,14 @@ public class Farcry extends Timed implements HasBombtimer {
             active_capture_point = 0;
             overtime = false;
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-            mqttOutbound.send("vars", MQTT.toJSON("overtime", ""), roles.get("spawns"));
+            send("vars", MQTT.toJSON("overtime", ""), get_active_spawn_agents());
         }
         //todo: pause and resume missing
     }
 
     private void standby(String agent) {
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent);
-//        mqttOutbound.send("signals", MQTT.toJSON("sir_all", "off"), map_of_agents_and_sirens.get(agent).toString());
+        send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent);
+//        send("signals", MQTT.toJSON("sir_all", "off"), map_of_agents_and_sirens.get(agent).toString());
     }
 
 
@@ -130,11 +128,11 @@ public class Farcry extends Timed implements HasBombtimer {
         create_resumable_job(bombTimerJobkey, estimated_end_time, BombTimerJob.class, Optional.of(jdm));
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
 //        process_message(_msg_IN_GAME_EVENT_OCCURRED);
-        mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "selfdestruct"), roles.get("spawns"));
-        mqttOutbound.send("acoustic", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
-        mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "progress:remaining"), agent);
-        mqttOutbound.send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), roles.get("spawns"));
+        send("play", MQTT.toJSON("subpath", "announce", "soundfile", "selfdestruct"), get_active_spawn_agents());
+        send("acoustic", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
+        send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
+        send("visual", MQTT.toJSON(MQTT.ALL, "progress:remaining"), agent);
+        send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), get_active_spawn_agents());
     }
 
     private void defused(String agent) {
@@ -142,32 +140,32 @@ public class Farcry extends Timed implements HasBombtimer {
         deleteJob(bombTimerJobkey);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defused"));
 //        if (game_fsm.getCurrentState().equalsIgnoreCase(_state_RUNNING)) process_message(_msg_IN_GAME_EVENT_OCCURRED);
-        mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "timer:remaining"), agent);
-        mqttOutbound.send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), roles.get("spawns"));
+        send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "timer:remaining"), agent);
+        send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), get_active_spawn_agents());
     }
 
     private void defended(String agent) {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
         game_fsm.ProcessFSM(_msg_GAME_OVER);
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "very_fast"), agent);
-        mqttOutbound.send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), roles.get("spawns"));
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "very_fast"), agent);
+        send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), get_active_spawn_agents());
     }
 
     private void taken(String agent) {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "taken"));
 //        process_message(_msg_IN_GAME_EVENT_OCCURRED);
         active_capture_point++;
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
+        send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
 
         // activate next CP or end the game when no CPs left
         boolean all_cps_taken = active_capture_point == capture_points.size();
         if (overtime || all_cps_taken) {
             game_fsm.ProcessFSM(_msg_GAME_OVER);
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "very_fast"), agent);
+            send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "very_fast"), agent);
         } else {
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "10:on,250;off,250"), agent);
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), map_of_agents_and_sirens.get(agent).toString());
+            send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "10:on,250;off,250"), agent);
+            send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), map_of_agents_and_sirens.get(agent).toString());
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
         }
     }
@@ -178,13 +176,13 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     private void prolog(String agent) {
-        mqttOutbound.send("paged",
+        send("paged",
                 MQTT.page("page0",
                         "I am ${agentname}", "", "I will be a", "Capture Point"),
                 agent);
 
-        //mqttOutbound.send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "fast"), agent);
-        mqttOutbound.send("visual", show_number_as_leds(capture_points.indexOf(agent) + 1, "fast"), agent);
+        //send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "fast"), agent);
+        send("visual", show_number_as_leds(capture_points.indexOf(agent) + 1, "fast"), agent);
 
     }
 
@@ -222,9 +220,9 @@ public class Farcry extends Timed implements HasBombtimer {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
-                    mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
-                    mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR3, "1:on,2000;off,1"), map_of_agents_and_sirens.get(agent).toString());
-                    mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "shutdown"), roles.get("spawns"));
+                    send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
+                    send("acoustic", MQTT.toJSON(MQTT.SIR3, "1:on,2000;off,1"), map_of_agents_and_sirens.get(agent).toString());
+                    send("play", MQTT.toJSON("subpath", "announce", "soundfile", "shutdown"), get_active_spawn_agents());
                     return true;
                 }
             });
@@ -232,10 +230,10 @@ public class Farcry extends Timed implements HasBombtimer {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // start siren for the next flag - starting with the second flag
-                    mqttOutbound.send("vars", MQTT.toJSON("active_cp", agent), roles.get("spawns"));
+                    send("vars", MQTT.toJSON("active_cp", agent), get_active_spawn_agents());
                     addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     if (active_capture_point > 0)
-                        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR2, "long"), map_of_agents_and_sirens.get(agent).toString());
+                        send("acoustic", MQTT.toJSON(MQTT.SIR2, "long"), map_of_agents_and_sirens.get(agent).toString());
                     return true;
                 }
             });
@@ -249,13 +247,13 @@ public class Farcry extends Timed implements HasBombtimer {
     private void overtime() {
         addEvent(new JSONObject().put("item", "overtime"));
 //        process_message(_msg_IN_GAME_EVENT_OCCURRED);
-        mqttOutbound.send("vars", MQTT.toJSON("overtime", "overtime"), roles.get("spawns"));
-        mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "overtime"), roles.get("spawns"));
+        send("vars", MQTT.toJSON("overtime", "overtime"), get_active_spawn_agents());
+        send("play", MQTT.toJSON("subpath", "announce", "soundfile", "overtime"), get_active_spawn_agents());
         overtime = true;
     }
 
     @Override
-    public void process_message(String sender, String item, JSONObject message) {
+    public void process_external_message(String sender, String item, JSONObject message) {
         if (!item.equalsIgnoreCase(_msg_BUTTON_01)) {
             log.trace("no button message. discarding.");
             return;
@@ -267,9 +265,7 @@ public class Farcry extends Timed implements HasBombtimer {
         if (hasRole(sender, "capture_points")) {
             if (cpFSMs.get(sender).getCurrentState().matches(_state_FUSED + "|" + _state_DEFUSED + "|" + _state_OVERTIME))
                 cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
-//        } else if (hasRole(sender, "spawns")) {
-//            super.process_message(sender, _msg_RESPAWN_SIGNAL, message);
-        } else super.process_message(sender, item, message);
+        } else super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
     }
 
 
@@ -299,14 +295,14 @@ public class Farcry extends Timed implements HasBombtimer {
     @Override
     protected void on_respawn_signal_received(String role, String agent) {
         // the last part of this message is a delayed buzzer sound, so its end lines up with the end of the respawn period
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, String.format("1:off,%d;on,75;off,500;on,75;off,500;on,75;off,500;on,1200;off,1", respawn_timer * 1000 - 2925 - 100)), roles.get("spawns"));
-        mqttOutbound.send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), roles.get("spawns"));
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, String.format("1:off,%d;on,75;off,500;on,75;off,500;on,75;off,500;on,1200;off,1", respawn_timer * 1000 - 2925 - 100)), get_active_spawn_agents());
+        send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
     }
 
     @Override
     protected void delete_timed_respawn() {
         super.delete_timed_respawn();
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), roles.get("spawns"));
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), get_active_spawn_agents());
     }
 
     private String get_next_cp() {

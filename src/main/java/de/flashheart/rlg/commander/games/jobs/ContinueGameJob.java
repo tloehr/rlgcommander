@@ -21,7 +21,7 @@ public class ContinueGameJob extends QuartzJobBean implements InterruptableJob {
         try {
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("uuid");
             Conquest game = (Conquest) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
-            game.process_message(Game._msg_CONTINUE);
+            game.process_internal_message(Game._msg_CONTINUE);
         } catch (SchedulerException e) {
             log.error(e);
         }

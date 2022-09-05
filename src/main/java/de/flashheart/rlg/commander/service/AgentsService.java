@@ -31,7 +31,6 @@ public class AgentsService {
             Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
             my_agent.setGameid(gameid);
             live_agents.put(agentid, my_agent);
-            welcome(my_agent);
         });
     }
 
@@ -73,8 +72,15 @@ public class AgentsService {
         //mqttOutbound.send("init", agentid);
         mqttOutbound.send("timers", MQTT.toJSON("_clearall", "0"), my_agent.getId());
         mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), my_agent.getId());
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.WHITE, "infty:on,500;off,500", MQTT.YELLOW, "infty:on,500;off,500", MQTT.BLUE, "infty:on,500;off,500",
-                MQTT.RED, "infty:off,500;on,500", MQTT.GREEN, "infty:off,500;on,500"), my_agent.getId());
+        // welcome signal
+        mqttOutbound.send("visual",
+                MQTT.toJSON(
+                        MQTT.WHITE, "60:on,500;off,500",
+                        MQTT.YELLOW, "60:on,500;off,500",
+                        MQTT.BLUE, "60:on,500;off,500",
+                        MQTT.RED, "60:off,500;on,500;off,1",
+                        MQTT.GREEN, "60:off,500;on,500;off,1"),
+                my_agent.getId());
         mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
                 "cmdr " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),
                 "agnt ${agversion}b${agbuild}",

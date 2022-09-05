@@ -67,8 +67,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
         jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
         // just for score
-        add_spawn_for("red_spawn", MQTT.RED, "RedFor");
-        add_spawn_for("blue_spawn", MQTT.BLUE, "BlueFor");
+//        add_spawn_for("red_spawn", MQTT.RED, "RedFor");
+//        add_spawn_for("blue_spawn", MQTT.BLUE, "BlueFor");
 
     }
 
@@ -124,25 +124,25 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        mqttOutbound.send("paged",
+        send("paged",
                 MQTT.page("page0",
                         "I am ${agentname}...", "...and Your Flag", "Blue: ${" + get_agent_key(agent, "blue") + "}", "Red: ${" + get_agent_key(agent, "red") + "}"),
                 agent);
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
         if (game_fsm.getCurrentState().equals(_state_RUNNING))
             addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
     }
 
     private void cp_to_blue(String agent) {
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
         broadcast_score();
     }
 
     private void cp_to_red(String agent) {
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
         broadcast_score();
     }
@@ -193,8 +193,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         broadcast_cycle_counter++;
         if (!game_fsm.getCurrentState().equals(_state_RUNNING) || broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
             JSONObject vars = MQTT.merge(scores_to_vars(), get_agents_states_for_lcd());
-            mqttOutbound.send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), roles.get("spawns"));
-            mqttOutbound.send("vars", vars, DEVELOP_MODE ? agents.keySet() : roles.get("spawns"));
+            send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_active_spawn_agents());
+            send("vars", vars, DEVELOP_MODE ? agents.keySet() : get_active_spawn_agents());
             log.debug(vars.toString(4));
         }
 
@@ -273,15 +273,14 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void process_message(String origin, String source, JSONObject details) {
+    public void process_external_message(String sender, String source, JSONObject message) {
         if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-        if (!details.getString("button").equalsIgnoreCase("up")) return;
-        if (!hasRole(origin, "capture_points")) return;
+        if (!message.getString("button").equalsIgnoreCase("up")) return;
 
-        if (game_fsm.getCurrentState().equals(_state_RUNNING))
-            cpFSMs.get(origin).ProcessFSM(source.toLowerCase());
+        if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING))
+            cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
         else
-            super.process_message(origin, source, details);
+            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
     }
 
     @Override
@@ -307,6 +306,11 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             );
         }
         return MQTT.page("page0", game_description);
+    }
+
+    @Override
+    protected void on_respawn_signal_received(String spawn_role, String agent) {
+        // we dont care about respawns in this mode
     }
 
     @Override

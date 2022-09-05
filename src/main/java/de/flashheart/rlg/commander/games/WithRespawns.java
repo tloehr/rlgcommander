@@ -3,8 +3,6 @@ package de.flashheart.rlg.commander.games;
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
@@ -26,8 +24,9 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Log4j2
 /**
@@ -35,6 +34,7 @@ import java.util.Optional;
  */
 public abstract class WithRespawns extends Pausable {
     public static final String _state_WE_ARE_PREPARING = "WE_ARE_PREPARING";
+    public static final String _state_STANDBY = "STAND_BY";
     public static final String _state_WE_ARE_READY = "WE_ARE_READY";
     public static final String _state_IN_GAME = "IN_GAME";
     public static final String _state_COUNTDOWN_TO_START = "COUNTDOWN_TO_START";
@@ -42,17 +42,14 @@ public abstract class WithRespawns extends Pausable {
     public static final String _msg_START_COUNTDOWN = "start_countdown";
     public static final String _msg_STANDBY = "stand_by";
     public static final String _msg_RESPAWN_SIGNAL = "respawn_signal";
-    public static final String SPAWN_TYPE_STATIC = "static";
-    public static final String SPAWN_TYPE_ROLLING = "rolling";
+    public static final String RED_SPAWN = "red_spawn";
+    public static final String BLUE_SPAWN = "blue_spawn";
 
     private final JobKey deferredRunGameJob, respawnTimerJobkey;
     private final int starter_countdown;
     private final String intro_mp3_file;
     private final boolean wait4teams2B_ready;
-    //    private final HashMap<String, FSM> all_spawns;
-//    private final HashMap<String, String> spawnrole_for_this_agent;
-    // the key is a combination of team:segment
-//    private final SetMultimap<String, Pair<String, FSM>> spawn_segments;
+
     // Table of Teams in cols, segments in rows
     // cells contain pairs of agent names and FSMs
     private final Table<String, Integer, Pair<String, FSM>> spawn_segments;
@@ -60,71 +57,47 @@ public abstract class WithRespawns extends Pausable {
     protected int active_segment;
     private final JSONObject spawn_parameters;
 
-    /**
-     * "spawns": {
-     * "type": "static",
-     * "wait4teams2B_ready": true,
-     * "intro_mp3_file": "<random>",
-     * "starter_countdown": 30,
-     * "resume_countdown": 0,
-     * "respawn_time": 0,
-     * "teams": [
-     * {
-     * "role": "red_spawn",
-     * "led": "red",
-     * "name": "Team Red",
-     * "agents": [
-     *      ["ag30"]
-     * ]
-     * },
-     * {
-     * "role": "blue_spawn",
-     * "led": "blu",
-     * "name": "Team Blue",
-     * "agents": [
-     *      ["ag31"]
-     * ]
-     * }
-     * ]
-     * },
-     * <p>
-     */
     public WithRespawns(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         this.spawn_parameters = game_parameters.getJSONObject("spawns");
         this.respawn_timer = spawn_parameters.optInt("respawn_time");
         this.wait4teams2B_ready = spawn_parameters.optBoolean("wait4teams2B_ready");
         this.starter_countdown = spawn_parameters.optInt("starter_countdown");
-        this.intro_mp3_file = spawn_parameters.optString("intro_mp3_file","<none>");
+        this.intro_mp3_file = spawn_parameters.optString("intro_mp3_file", "<none>");
         this.deferredRunGameJob = new JobKey("run_the_game", uuid.toString());
         this.respawnTimerJobkey = new JobKey("timed_respawn", uuid.toString());
-//        this.all_spawns = new HashMap<>();
-//        this.spawnrole_for_this_agent = new HashMap<>();
         this.spawn_segments = HashBasedTable.create();
         active_segment = 0;
 
+        // https://stackoverflow.com/a/48031801
+        // all segments must have the same length
+//        if (spawn_parameters.getJSONArray("teams").toList().stream().map(o -> ((JSONObject) o).getJSONArray("agents").length()).distinct().count() > 1)
+//            throw new JSONException("all agents sections must have the same length");
+
+        // split up spawn description by teams
+        // one definition for each side
         spawn_parameters.getJSONArray("teams").forEach(j -> {
                     JSONObject teams = (JSONObject) j;
-                    final String role = teams.getString("role");
+                    final String spawn_role = teams.getString("role");
                     final String led = teams.getString("led");
-                    final String team = teams.getString("team");
+                    final String team_name = teams.getString("name");
 
                     // this is a list of a list of spawn agents
                     // every inner list combines all agents for a section
-                    //
-                    MutableInt section_number = new MutableInt(0);
+                    MutableInt section_number = new MutableInt(-1);
                     teams.getJSONArray("agents").forEach(o -> {
                                 JSONArray section = (JSONArray) o;
                                 section.forEach(spawn_agent_in_this_section -> {
                                     section_number.increment();
                                     String agent = spawn_agent_in_this_section.toString();
-                                    spawn_segments.put(role, section_number.intValue(),
+                                    spawn_segments.put(spawn_role, section_number.intValue(),
                                             new ImmutablePair<>(
                                                     agent,
-                                                    create_Spawn_FSM(agent, role, led, team)
+                                                    create_Spawn_FSM(agent, spawn_role, led, team_name)
                                             )
                                     );
                                     // every spawn is a potential siren
+                                    // we ignore a STANDBY state here, as it is only used for start stop signals
                                     agents.put(agent, "sirens");
                                     roles.put("sirens", agent);
                                 });
@@ -134,67 +107,59 @@ public abstract class WithRespawns extends Pausable {
         );
     }
 
-
-    /**
-     * adds a spawnagent for a team
-     *
-     * @param role          spawn role name for this agent
-     * @param led_device_id led device to blink for this team (e.g. led_red for team red)
-     * @param teamname      Name of the team to show on the LCD
-     * @throws ParserConfigurationException
-     * @throws IOException
-     * @throws SAXException
-     */
-    public void add_spawn_for(String role, String led_device_id, String teamname) throws ParserConfigurationException, IOException, SAXException {
-//        String agent = roles.get(role).stream().findFirst().get();
-//        all_spawns.put(role, create_Spawn_FSM(agent, role, led_device_id, teamname));
-//        spawnrole_for_this_agent.put(agent, role);
-//        // every spawn is a potential siren
-//        agents.put(agent, "sirens");
-//        roles.put("sirens", agent);
-    }
-
-
     @SneakyThrows
-    private FSM create_Spawn_FSM(final String agent, String role, final String led_device_id, final String teamname) {
+    private FSM create_Spawn_FSM(final String agent, String spawn_role, final String led_device_id, final String teamname) {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
-            mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", led_device_id, "fast"), agent);
-            mqttOutbound.send("paged", MQTT.merge(
+            send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
+            send("visual", MQTT.toJSON(MQTT.ALL, "off", led_device_id, "fast"), agent);
+            send("paged", MQTT.merge(
                     MQTT.page("page0",
                             "I am ${agentname} and will", "be Your spawn.", "You are " + teamname, "!! Standby !!"),
                     MQTT.page("page1", game_description)), agent
             );
         });
+        fsm.setStatesAfterTransition(_state_STANDBY, (state, obj) -> {
+            send("acoustic", MQTT.toJSON("all", "off"), agent);
+            send("visual", MQTT.toJSON("all", "off"), agent);
+            send("paged", MQTT.merge(
+                    MQTT.page("page0", "", "THIS SPAWN IS", "", ""),
+                    MQTT.page("page1", "", "", "", "INACTIVE")), agent);
+        });
         fsm.setStatesAfterTransition(_state_WE_ARE_PREPARING, (state, obj) -> {
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
-            mqttOutbound.send("paged", MQTT.page("page0", " !! NOT READY !! ", "Press button", "when Your team", "is ready"), agent);
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
+            send("paged", MQTT.merge(
+                    MQTT.page("page0", " !! GAME LOBBY !! ", "", "Press button", ""),
+                    MQTT.page("page1", " !! GAME LOBBY !! ", "", "", "when ready")
+            ), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,100;on,400;off,1"), agent);
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,100;on,400;off,1"), agent);
             // if ALL teams are ready, the GAME is READY to start
             // we filter on all agents in the active segment for both teams
             if (spawn_segments.column(active_segment).values().stream()
                     .allMatch(stringFSMPair -> stringFSMPair.getValue().getCurrentState().equals(_state_WE_ARE_READY)))
                 game_fsm.ProcessFSM(_msg_READY);
             else
-                mqttOutbound.send("paged", MQTT.page("page0", " !! WE ARE READY !! ", "Waiting for others", "If NOT ready:", "Press button again"), agent);
+                send("paged", MQTT.merge(
+                        MQTT.page("page0", " !! GAME LOBBY !! ", "WE ARE READY", "", ""),
+                        MQTT.page("page1", " !! GAME LOBBY !! ", "WE ARE READY", "WAITING FOR", "OTHER TEAM")
+                ), agent);
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_START, (state, obj) -> {
-            mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
-            mqttOutbound.send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
-            mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", intro_mp3_file), agent);
+            send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
+            send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
+            send("play", MQTT.toJSON("subpath", "intro", "soundfile", intro_mp3_file), agent);
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_RESUME, (state, obj) -> {
-            mqttOutbound.send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
-            mqttOutbound.send("paged", MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
+            send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
+            send("paged", MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
         });
         fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> {
-            mqttOutbound.send("paged", getSpawnPages(), agent);
+            send("paged", getSpawnPages(), agent);
         });
         fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> {
-            mqttOutbound.send("paged", MQTT.merge(
+            send("paged", MQTT.merge(
                             getSpawnPages(), MQTT.page("pause", "", "      PAUSE      ", "", "")),
                     agent);
         });
@@ -203,7 +168,7 @@ public abstract class WithRespawns extends Pausable {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
-                on_respawn_signal_received(role, agent);
+                on_respawn_signal_received(spawn_role, agent);
                 return true;
             }
         });
@@ -222,15 +187,16 @@ public abstract class WithRespawns extends Pausable {
                 create_resumable_job(respawnTimerJobkey,
                         SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
                         RespawnTimerJob.class, Optional.empty());
-                mqttOutbound.send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), roles.get("spawns"));
+                send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
             }
             send_message_to_agents_in_segment(active_segment, _msg_RUN);
         }
-        if (message.equals(_msg_RESET)) delete_timed_respawn();
-
-        if (message.equals(_msg_CONTINUE)) {
-            send_message_to_agents_in_segment(active_segment, _msg_CONTINUE);
+        if (message.equals(_msg_PAUSE)) send("timers", MQTT.toJSON("_clearall", ""), get_active_spawn_agents());
+        if (message.equals(_msg_RESET)) {
+            delete_timed_respawn();
+            send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), get_active_spawn_agents());
         }
+        if (message.equals(_msg_CONTINUE)) send_message_to_agents_in_segment(active_segment, _msg_CONTINUE);
     }
 
     void send_message_to_agents_in_segment(int segment, String message) {
@@ -240,7 +206,11 @@ public abstract class WithRespawns extends Pausable {
     void send_message_to_agent_in_segment(int segment, String agent, String message) {
         spawn_segments.column(segment).values()
                 .stream().filter(stringFSMPair -> stringFSMPair.getLeft().equals(agent))
-                .forEach(stringFSMPair -> stringFSMPair.getValue().ProcessFSM(message)
+                .forEach(stringFSMPair -> {
+                            log.debug(stringFSMPair.getKey());
+                            log.debug(message);
+                            stringFSMPair.getValue().ProcessFSM(message);
+                        }
                 );
     }
 
@@ -272,7 +242,7 @@ public abstract class WithRespawns extends Pausable {
             send_message_to_agents_in_segment(active_segment, _msg_RESET);
         }
         if (state.equals(_state_TEAMS_NOT_READY)) {
-            if (!wait4teams2B_ready) process_message(_msg_READY);
+            if (!wait4teams2B_ready) process_internal_message(_msg_READY);
             else send_message_to_agents_in_segment(active_segment, _msg_PREPARE);
         }
         if (state.equals(_state_TEAMS_READY)) {
@@ -280,10 +250,10 @@ public abstract class WithRespawns extends Pausable {
                 send_message_to_agents_in_segment(active_segment, _msg_START_COUNTDOWN);
                 create_job(deferredRunGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
             } else {
-                process_message(_msg_RUN);
+                process_internal_message(_msg_RUN);
             }
         }
-        if (state.equals(_state_RUNNING)) mqttOutbound.send("paged", getSpawnPages(), roles.get("spawns"));
+        if (state.equals(_state_RUNNING)) send("paged", getSpawnPages(), get_active_spawn_agents());
         if (state.equals(_state_PAUSING)) send_message_to_agents_in_segment(active_segment, _msg_PAUSE);
         if (state.equals(_state_EPILOG)) send_message_to_all_agents(_msg_START_COUNTDOWN);
     }
@@ -295,28 +265,27 @@ public abstract class WithRespawns extends Pausable {
     }
 
     @Override
-    public void process_message(String sender, String item, JSONObject message) {
-        if (hasRole(sender, "spawns"))
+    public void process_external_message(String sender, String item, JSONObject message) {
+        if (sender.equals(RespawnTimerJob._sender_TIMED_RESPAWN))
+            send_message_to_agents_in_segment(active_segment, _msg_RESPAWN_SIGNAL);
+        else
+            // there is no other class above us which cares about external messages
+            // so we simply consume it
             send_message_to_agent_in_segment(active_segment, sender, item);
-    }
-
-    public void timed_respawn() {
-        send_message_to_agents_in_segment(active_segment, _msg_RESPAWN_SIGNAL);
     }
 
     /**
      * implement this method to react on button presses on a spawn agent
      *
-     * @param team  spawn role for this agent
-     * @param agent agent id
+     * @param spawn_role spawn role for this agent
+     * @param agent      agent id
      */
-    protected void on_respawn_signal_received(String team, String agent) {
-    }
+    protected abstract void on_respawn_signal_received(String spawn_role, String agent);
 
     protected void delete_timed_respawn() {
         if (respawn_timer <= 0) return;
         deleteJob(respawnTimerJobkey);
-        mqttOutbound.send("timers", MQTT.toJSON("respawn", "0"), roles.get("spawns"));
+        send("timers", MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
     }
 
     @Override
@@ -329,6 +298,10 @@ public abstract class WithRespawns extends Pausable {
         spawn_segments.column(active_segment).values().forEach(stringFSMPair -> states.put(stringFSMPair.getLeft(), stringFSMPair.getRight().getCurrentState()));
         statusObject.put("agent_states", states);
         return statusObject;
+    }
+
+    protected Collection<String> get_active_spawn_agents() {
+        return spawn_segments.column(active_segment).values().stream().map(Pair::getKey).collect(Collectors.toList());
     }
 
 }

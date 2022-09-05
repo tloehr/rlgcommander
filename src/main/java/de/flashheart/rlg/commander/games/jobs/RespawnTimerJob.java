@@ -10,6 +10,7 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 
 @Log4j2
 public class RespawnTimerJob extends QuartzJobBean implements InterruptableJob {
+    public static final String _sender_TIMED_RESPAWN = "_timed_respawn_";
 
     @Override
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
@@ -17,7 +18,7 @@ public class RespawnTimerJob extends QuartzJobBean implements InterruptableJob {
             log.debug(jobExecutionContext.getJobDetail().getKey() + " executed");
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("uuid");
             WithRespawns game = (WithRespawns) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
-            game.timed_respawn();
+            game.process_external_message(_sender_TIMED_RESPAWN, null, null);
         } catch (SchedulerException e) {
             log.error(e);
         }

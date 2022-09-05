@@ -20,9 +20,6 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.*;
 
 @Log4j2
@@ -58,8 +55,10 @@ public abstract class Game {
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
     private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
 
-    final MQTTOutbound mqttOutbound;
-    //final Multimap<String, Agent> function_to_agents;
+    // all message must be sent via THIS base classes send method to implement "SILENT_GAME"
+    private final MQTTOutbound mqttOutbound;
+    private final boolean silent_game;
+
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
     protected final ArrayList<String> game_description;
@@ -67,7 +66,6 @@ public abstract class Game {
     protected final UUID uuid;
     protected final Scheduler scheduler;
     protected final Multimap<String, String> agents, roles;
-    protected final boolean silent_game;
     // what happened, and when ?
     protected final List<JSONObject> in_game_events;
     // main FSM to control the basic states of every game
@@ -94,7 +92,6 @@ public abstract class Game {
         );
         this.game_fsm = createFSM();
         this.game_description = new ArrayList<>();
-//        this.spawns = new Spawns(mqttOutbound, game_parameters);
     }
 
     protected void addEvent(JSONObject in_game_event) {
@@ -104,7 +101,7 @@ public abstract class Game {
                 .put("event", in_game_event)
                 .put("new_state", game_fsm.getCurrentState())
         );
-        if (game_fsm.getCurrentState().equals(_state_RUNNING)) process_message(_msg_IN_GAME_EVENT_OCCURRED);
+        if (game_fsm.getCurrentState().equals(_state_RUNNING)) process_internal_message(_msg_IN_GAME_EVENT_OCCURRED);
     }
 
     /**
@@ -152,8 +149,8 @@ public abstract class Game {
      */
     protected void at_state(String state) {
         if (state.equals(_state_PROLOG)) {
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
-            mqttOutbound.send("paged",
+            send("visual", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
+            send("paged",
                     MQTT.page("page0",
                             "I am ${agentname}", "", "", "I am a Siren"), roles.get("sirens"));
         }
@@ -168,13 +165,28 @@ public abstract class Game {
      */
     protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals(_msg_RUN))
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
+           send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
         if (message.equals(_msg_GAME_OVER))
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
         if (message.equals(_msg_RESET)) {
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
-            mqttOutbound.send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), roles.get("spawns"));
+           send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
         }
+    }
+
+    /**
+     * sandwich method to implement silent game function
+     * @param cmd
+     * @param payload
+     * @param agent
+     */
+    protected void send(String cmd, JSONObject payload, String agent) {
+        if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
+        mqttOutbound.send(cmd, payload, agent);
+    }
+
+    protected void send(String cmd, JSONObject payload, Collection<String> agents) {
+        if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
+        mqttOutbound.send(cmd, payload, agents);
     }
 
     /**
@@ -187,7 +199,7 @@ public abstract class Game {
         log.warn("no zeus function implemented. ignoring.");
     }
 
-    public void process_message(String message) throws IllegalStateException {
+    public void process_internal_message(String message) throws IllegalStateException {
         if (game_fsm.ProcessFSM(message) == null) {
             throw new IllegalStateException(String.format("message not processed. no transition in FSM from %s on message %s.", game_fsm.getCurrentState(), message));
         }
@@ -200,7 +212,7 @@ public abstract class Game {
      * @param message
      * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
      */
-    public abstract void process_message(String sender, String item, JSONObject message);
+    public abstract void process_external_message(String sender, String item, JSONObject message);
 
 
     /**

@@ -47,7 +47,7 @@ public abstract class Pausable extends Scheduled {
      */
     public Pausable(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        this.resume_countdown = game_parameters.getInt("resume_countdown");
+        this.resume_countdown = game_parameters.optInt("resume_countdown");
         this.continueGameJob = new JobKey("continue_the_game", uuid.toString());
         this.jobs_to_reschedule_after_pause = new HashSet<>();
         this.jobs_to_suspend_during_pause = new HashSet<>();
@@ -61,16 +61,14 @@ public abstract class Pausable extends Scheduled {
             pausing_since = Optional.of(LocalDateTime.now());
             jobs_to_reschedule_after_pause.forEach(jobKey -> pause_job(jobKey));
             jobs_to_suspend_during_pause.forEach(jobKey -> pause_job(jobKey));
-            //todo: reconsider when changing the spawn system
-            mqttOutbound.send("timers", MQTT.toJSON("_clearall", ""), roles.get("spawns"));
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
         }
         if (message.equals(_msg_CONTINUE)) {
             jobs_to_reschedule_after_pause.removeIf(jobKey -> !check_exists(jobKey));
             final long seconds_elapsed = ChronoUnit.SECONDS.between(pausing_since.get(), LocalDateTime.now());
             jobs_to_reschedule_after_pause.forEach(jobKey -> reschedule_job(jobKey, seconds_elapsed));
             jobs_to_suspend_during_pause.forEach(jobKey -> resume_job(jobKey));
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
         }
     }
 
@@ -88,7 +86,7 @@ public abstract class Pausable extends Scheduled {
             if (resume_countdown > 0) {
                 create_job(continueGameJob, LocalDateTime.now().plusSeconds(resume_countdown - 1), ContinueGameJob.class, Optional.empty());
             } else {
-                process_message(_msg_CONTINUE);
+                process_internal_message(_msg_CONTINUE);
             }
         }
     }

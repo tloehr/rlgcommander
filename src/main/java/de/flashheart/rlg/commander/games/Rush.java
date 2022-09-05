@@ -175,12 +175,12 @@ public class Rush extends Scheduled {
             });
             sectorFSM.setStatesAfterTransition("SECTOR_DEFENDED", (state, o) -> {
                 log.info("=====> Sector{}:{}", sector_number, state);
-                process_message(_msg_GAME_OVER);
+                process_internal_message(_msg_GAME_OVER);
             });
             sectorFSM.setStatesAfterTransition("SECTOR_TAKEN", (state, o) -> {
                 log.info("=====> Sector{}:{}", sector_number, state);
                 active_sector = sector_number + 1;
-                if (active_sector > MAX_NUMBER_OF_SECTORS) process_message(_msg_GAME_OVER);
+                if (active_sector > MAX_NUMBER_OF_SECTORS) process_internal_message(_msg_GAME_OVER);
                 else sectors.get(active_sector).ProcessFSM("start");
             });
 
@@ -192,7 +192,7 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    public void process_message(String sender, String item, JSONObject message) {
+    public void process_external_message(String sender, String item, JSONObject message) {
 
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_bombtimer_")) {
@@ -203,8 +203,8 @@ public class Rush extends Scheduled {
             agentFSMs.get(sender).ProcessFSM(message.getString("button"));
         } else if (hasRole(sender, "attacker_spawn") && message.getString("button").equalsIgnoreCase("up")) {
             // red respawn button was pressed
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), sender);
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), sender);
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), sender);
+            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), sender);
             remaining_tickets_for_this_zone--;
             broadcast_score();
         } else {
@@ -213,12 +213,12 @@ public class Rush extends Scheduled {
     }
 
     private void broadcast_score() {
-//        mqttOutbound.send("vars",
+//        send("vars",
 //                MQTT.toJSON("tickets", Integer.toString(remaining_tickets_for_this_zone.intValue()),
 //                        "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()),
 //                        "red_flags", Integer.toString(cps_held_by_red.size()),
 //                        "blue_flags", Integer.toString(cps_held_by_blue.size())),
-//                roles.get("spawns"));
+//                get_active_spawn_agents());
 //
 //        log.debug("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
 //        log.debug("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());

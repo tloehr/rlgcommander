@@ -73,7 +73,7 @@ public class GamesService {
 
         loaded_games[id - 1] = Optional.of(game);
         agentsService.assign_gameid_to_agents(id, game.getAgents().keySet());
-        game.process_message(Game._msg_RESET);
+        game.process_internal_message(Game._msg_RESET);
         return game;
     }
 
@@ -89,6 +89,7 @@ public class GamesService {
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
         gameStateListeners.removeAll(id);
+        agentsService.welcome_unused_agents();
         //fireStateReached(id, new StateReachedEvent(""));
     }
 
@@ -117,7 +118,7 @@ public class GamesService {
 
     public void process_message(int id, String message) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().process_message(message);
+        loaded_games[id - 1].get().process_internal_message(message);
     }
 
     public void zeus(int id, String params) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -127,7 +128,7 @@ public class GamesService {
 
     public void process_message(int id, String agentid, String item, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().process_message(agentid, item, payload);
+        loaded_games[id - 1].get().process_external_message(agentid, item, payload);
     }
 
     public JSONArray get_games() {

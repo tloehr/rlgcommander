@@ -137,34 +137,34 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
                 String.format("Time: %s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-        add_spawn_for("red_spawn", MQTT.RED, "Team Red");
-        add_spawn_for("blue_spawn", MQTT.BLUE, "Team Blue");
+//        add_spawn_for("red_spawn", MQTT.RED, "Team Red");
+//        add_spawn_for("blue_spawn", MQTT.BLUE, "Team Blue");
     }
 
     @Override
     protected void on_respawn_signal_received(String team, String agent) {
-        if (team.equals("red_spawn")) {
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
+        if (team.equals(RED_SPAWN)) {
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
+            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             red_respawns++;
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
             broadcast_score();
         }
-        if (team.equals("blue_spawn")) {
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
+        if (team.equals(BLUE_SPAWN)) {
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
+            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             blue_respawns++;
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
             broadcast_score();
         }
         if (blue_respawns + red_respawns == 1)
-            mqttOutbound.send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), roles.get("spawns"));
+            send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), get_active_spawn_agents());
     }
 
     @Override
-    public void process_message(String sender, String item, JSONObject message) {
+    public void process_external_message(String sender, String item, JSONObject message) {
         if (!item.equalsIgnoreCase(_msg_BUTTON_01)) {
             log.trace("no btn01 message. discarding.");
             return;
@@ -179,7 +179,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             if (game_fsm.getCurrentState().equals(_state_RUNNING)) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
         } else {
             // _msg_BUTTON_01 is replaced with _msg_RESPAWN_SIGNAL
-            super.process_message(sender, _msg_RESPAWN_SIGNAL, message);
+            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
         }
     }
 
@@ -205,22 +205,22 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        mqttOutbound.send("paged",
+        send("paged",
                 MQTT.page("page0",
                         "I am ${agentname}", "", "I will be a", "Capture Point"),
                 agent);
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
     }
 
     private void cp_to_blue(String agent) {
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 
@@ -240,7 +240,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
 
         if (remaining_blue_tickets.intValue() <= 0 || remaining_red_tickets.intValue() <= 0) {
             broadcast_score();
-            process_message(_msg_GAME_OVER);
+            process_internal_message(_msg_GAME_OVER);
         }
     }
 
@@ -306,7 +306,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         vars.put("blue_l1", blue_flags[0]);
         vars.put("blue_l2", blue_flags[1]);
 
-        mqttOutbound.send("vars", vars, roles.get("spawns"));
+        send("vars", vars, get_active_spawn_agents());
 
         log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
