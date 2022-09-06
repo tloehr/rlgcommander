@@ -246,7 +246,7 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    protected JSONObject getSpawnPages() {
+    protected JSONObject getSpawnPages(String state) {
         return MQTT.page("page0", game_description);
     }
 }

@@ -284,15 +284,15 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    protected JSONObject getSpawnPages() {
-        if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
+    protected JSONObject getSpawnPages(String state) {
+        if (state.equals(_state_EPILOG)) {
             return MQTT.page("page0", "Game Over",
                     "",
                     "Blau: ${score_blue}",
                     "Rot: ${score_red}");
         }
 
-        if (game_fsm.getCurrentState().matches(_state_PAUSING + "|" + _state_RUNNING)) {
+        if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return MQTT.merge(MQTT.page("page0",
                             "Restzeit:  ${remaining}",
                             "",

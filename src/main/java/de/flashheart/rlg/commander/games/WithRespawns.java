@@ -157,14 +157,12 @@ public abstract class WithRespawns extends Pausable {
             send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
             send("paged", MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
         });
-        fsm.setStatesAfterTransition(Lists.newArrayList(_state_EPILOG, _state_RUNNING), (state, obj) -> {
-            send("paged", getSpawnPages(), agent);
+        fsm.setStatesAfterTransition(_state_IN_GAME, (state, obj) -> {
+            send("visual", MQTT.toJSON(MQTT.ALL, "off", led_device_id, "fast"), agent);
+            send("paged", getSpawnPages(_state_RUNNING), agent);
         });
-        fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> {
-            send("paged", MQTT.merge(
-                            getSpawnPages(), MQTT.page("pause", "", "      PAUSE      ", "", "")),
-                    agent);
-        });
+        fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> send("paged", MQTT.merge(getSpawnPages(state), MQTT.page("pause", "", "      PAUSE      ", "", "")), agent));
+        fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> send("paged", getSpawnPages(state), agent));
         // making the signal to spawn more abstract. e.g. Conquest spawns on a button, Farcry on a timer
         fsm.setAction(_state_IN_GAME, _msg_RESPAWN_SIGNAL, new FSMAction() {
             @Override
@@ -199,6 +197,34 @@ public abstract class WithRespawns extends Pausable {
             send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), get_active_spawn_agents());
         }
         if (message.equals(_msg_CONTINUE)) send_message_to_agents_in_segment(active_segment, _msg_CONTINUE);
+        if (message.equals(_msg_GAME_OVER)) send_message_to_all_agents(_msg_GAME_OVER);
+    }
+
+
+    @Override
+    protected void at_state(String state) {
+        super.at_state(state);
+        if (state.equals(_state_PROLOG)) {
+            active_segment = 0;
+            deleteJob(deferredRunGameJob);
+            delete_timed_respawn();
+            send_message_to_all_agents(_msg_RESET);
+            send_message_to_all_inactive_segments(_msg_STANDBY);
+            send_message_to_agents_in_segment(active_segment, _msg_RESET); // again, because agents can be in different segments in different roles
+        }
+        if (state.equals(_state_TEAMS_NOT_READY)) {
+            if (!wait4teams2B_ready) process_internal_message(_msg_READY);
+            else send_message_to_agents_in_segment(active_segment, _msg_PREPARE);
+        }
+        if (state.equals(_state_TEAMS_READY)) {
+            if (starter_countdown > 0) {
+                send_message_to_agents_in_segment(active_segment, _msg_START_COUNTDOWN);
+                create_job(deferredRunGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
+            } else {
+                process_internal_message(_msg_RUN);
+            }
+        }
+        if (state.equals(_state_PAUSING)) send_message_to_agents_in_segment(active_segment, _msg_PAUSE);
     }
 
     void send_message_to_agents_in_segment(int segment, String message) {
@@ -208,12 +234,7 @@ public abstract class WithRespawns extends Pausable {
     void send_message_to_agent_in_segment(int segment, String agent, String message) {
         spawn_segments.column(segment).values()
                 .stream().filter(stringFSMPair -> stringFSMPair.getLeft().equals(agent))
-                .forEach(stringFSMPair -> {
-                            log.debug(stringFSMPair.getKey());
-                            log.debug(message);
-                            stringFSMPair.getValue().ProcessFSM(message);
-                        }
-                );
+                .forEach(stringFSMPair -> stringFSMPair.getValue().ProcessFSM(message));
     }
 
     void send_message_to_all_agents(String message) {
@@ -234,34 +255,8 @@ public abstract class WithRespawns extends Pausable {
         active_segment++;
         if (active_segment == spawn_segments.size()) active_segment = 0;
         send_message_to_agents_in_segment(active_segment, _msg_ACTIVATE);
-        // todo: bildschirm wird nicht angepasst und die LEDs auch nicht
     }
 
-    @Override
-    protected void at_state(String state) {
-        super.at_state(state);
-        if (state.equals(_state_PROLOG)) {
-            active_segment = 0;
-            deleteJob(deferredRunGameJob);
-            delete_timed_respawn();
-            send_message_to_all_inactive_segments(_msg_STANDBY);
-            send_message_to_agents_in_segment(active_segment, _msg_RESET);
-        }
-        if (state.equals(_state_TEAMS_NOT_READY)) {
-            if (!wait4teams2B_ready) process_internal_message(_msg_READY);
-            else send_message_to_agents_in_segment(active_segment, _msg_PREPARE);
-        }
-        if (state.equals(_state_TEAMS_READY)) {
-            if (starter_countdown > 0) {
-                send_message_to_agents_in_segment(active_segment, _msg_START_COUNTDOWN);
-                create_job(deferredRunGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
-            } else {
-                process_internal_message(_msg_RUN);
-            }
-        }
-        if (state.equals(_state_PAUSING)) send_message_to_agents_in_segment(active_segment, _msg_PAUSE);
-        if (state.equals(_state_EPILOG)) send_message_to_all_agents(_msg_START_COUNTDOWN);
-    }
 
     @Override
     protected void on_cleanup() {

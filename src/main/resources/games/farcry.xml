@@ -12,10 +12,10 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="run" nextState="STANDBY"/>
+        <MESSAGE id="run" nextState="STAND_BY"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="STANDBY">
+    <STATE id="STAND_BY">
         <MESSAGE id="activate" nextState="DEFUSED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>

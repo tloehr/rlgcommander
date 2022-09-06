@@ -28,13 +28,11 @@ import java.util.*;
  */
 @Log4j2
 public class Farcry extends Timed implements HasBombtimer {
-    public static final String _state_STANDBY = "STANDBY";
     public static final String _state_DEFUSED = "DEFUSED";
     public static final String _state_FUSED = "FUSED";
     public static final String _state_DEFENDED = "DEFENDED";
     public static final String _state_TAKEN = "TAKEN";
     public static final String _state_OVERTIME = "OVERTIME";
-    public static final String _msg_ACTIVATE = "activate";
 
     private final int bomb_timer;
 
@@ -84,7 +82,6 @@ public class Farcry extends Timed implements HasBombtimer {
     protected void at_state(String state) {
         super.at_state(state);
         if (state.equals(_state_EPILOG)) {
-
             // to prevent respawn signals AFTER game_over
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), get_active_spawn_agents());
             send("timers", MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
@@ -111,7 +108,7 @@ public class Farcry extends Timed implements HasBombtimer {
             active_capture_point = 0;
             overtime = false;
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-            send("vars", MQTT.toJSON("overtime", ""), get_active_spawn_agents());
+            send("vars", MQTT.toJSON("overtime", ""), get_all_spawn_agents());
         }
         //todo: pause and resume missing
     }
@@ -133,7 +130,7 @@ public class Farcry extends Timed implements HasBombtimer {
         send("acoustic", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         send("visual", MQTT.toJSON(MQTT.ALL, "progress:remaining"), agent);
-        send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), get_active_spawn_agents());
+        send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), get_all_spawn_agents());
     }
 
     private void defused(String agent) {
@@ -143,14 +140,14 @@ public class Farcry extends Timed implements HasBombtimer {
 //        if (game_fsm.getCurrentState().equalsIgnoreCase(_state_RUNNING)) process_message(_msg_IN_GAME_EVENT_OCCURRED);
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "timer:remaining"), agent);
-        send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), get_active_spawn_agents());
+        send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), get_all_spawn_agents());
     }
 
     private void defended(String agent) {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
         game_fsm.ProcessFSM(_msg_GAME_OVER);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "very_fast"), agent);
-        send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), get_active_spawn_agents());
+        send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), get_all_spawn_agents());
     }
 
     private void taken(String agent) {
@@ -166,8 +163,8 @@ public class Farcry extends Timed implements HasBombtimer {
         } else {
             send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "10:on,250;off,250"), agent);
             send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), map_of_agents_and_sirens.get(agent).toString());
-            cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
             next_spawn_segment();
+            cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
         }
     }
 
@@ -231,7 +228,7 @@ public class Farcry extends Timed implements HasBombtimer {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // start siren for the next flag - starting with the second flag
-                    send("vars", MQTT.toJSON("active_cp", agent), get_active_spawn_agents());
+                    send("vars", MQTT.toJSON("active_cp", agent), get_all_spawn_agents());
                     addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     if (active_capture_point > 0)
                         send("acoustic", MQTT.toJSON(MQTT.SIR2, "long"), map_of_agents_and_sirens.get(agent).toString());
@@ -248,7 +245,7 @@ public class Farcry extends Timed implements HasBombtimer {
     private void overtime() {
         addEvent(new JSONObject().put("item", "overtime"));
 //        process_message(_msg_IN_GAME_EVENT_OCCURRED);
-        send("vars", MQTT.toJSON("overtime", "overtime"), get_active_spawn_agents());
+        send("vars", MQTT.toJSON("overtime", "overtime"), get_all_spawn_agents());
         send("play", MQTT.toJSON("subpath", "announce", "soundfile", "overtime"), get_active_spawn_agents());
         overtime = true;
     }
@@ -282,12 +279,12 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
-    protected JSONObject getSpawnPages() {
-        if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
+    protected JSONObject getSpawnPages(String state) {
+        if (state.equals(_state_EPILOG)) {
             return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
         }
-        if (game_fsm.getCurrentState().equals(_state_RUNNING))
-            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp} ${overtime}", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
+        if (state.equals(_state_RUNNING))
+            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp}","${overtime}", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
 
         return MQTT.page("page0", game_description);
     }

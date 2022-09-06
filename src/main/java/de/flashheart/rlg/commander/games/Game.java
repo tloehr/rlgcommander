@@ -165,16 +165,17 @@ public abstract class Game {
      */
     protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals(_msg_RUN))
-           send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
         if (message.equals(_msg_GAME_OVER))
-            send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.ALL, "off", MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
         if (message.equals(_msg_RESET)) {
-           send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
         }
     }
 
     /**
      * sandwich method to implement silent game function
+     *
      * @param cmd
      * @param payload
      * @param agent
@@ -355,7 +356,7 @@ public abstract class Game {
         return game_parameters;
     }
 
-    protected abstract JSONObject getSpawnPages();
+    protected abstract JSONObject getSpawnPages(String state);
 
 
 }
