@@ -4,6 +4,7 @@
   "game_time": 600,
   "bomb_time": 60,
   "resume_countdown": 0,
+  "silent_game": true,
   "agents": {
     "capture_points": [
       "ag01",
