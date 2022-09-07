@@ -28,6 +28,7 @@
         <!-- Admin shortcuts -->
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
     </STATE>
     <!--    we are ready - waiting for the others -->
     <STATE id="WE_ARE_READY">
@@ -36,12 +37,14 @@
         <MESSAGE id="start_countdown" nextState="COUNTDOWN_TO_START"/>
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
     </STATE>
     <!--    everybody is ready - countdown -->
     <STATE id="COUNTDOWN_TO_START">
         <!-- Admin shortcuts -->
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
     </STATE>
     <!--  finally running -->
     <STATE id="IN_GAME">
@@ -57,15 +60,18 @@
         <MESSAGE id="continue" nextState="IN_GAME"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
     </STATE>
     <STATE id="COUNTDOWN_TO_RESUME">
         <MESSAGE id="continue" nextState="IN_GAME"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
     </STATE>
     <!-- ENDING STATES -->
     <STATE id="EPILOG">
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
     </STATE>
 </FSM>
 

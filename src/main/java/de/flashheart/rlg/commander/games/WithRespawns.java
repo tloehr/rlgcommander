@@ -72,7 +72,8 @@ public abstract class WithRespawns extends Pausable {
         active_segment = 0;
 
         // https://stackoverflow.com/a/48031801
-        // all segments must have the same length
+        // todo: all segments must have the same length
+        // todo: segment length must match the num_segments value
 //        if (spawn_parameters.getJSONArray("teams").toList().stream().map(o -> ((JSONObject) o).getJSONArray("agents").length()).distinct().count() > 1)
 //            throw new JSONException("all agents sections must have the same length");
 
@@ -122,6 +123,7 @@ public abstract class WithRespawns extends Pausable {
             );
         });
         fsm.setStatesAfterTransition(_state_STANDBY, (state, obj) -> {
+            send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
             send("acoustic", MQTT.toJSON("all", "off"), agent);
             send("visual", MQTT.toJSON("all", "off"), agent);
             send("paged", MQTT.merge(
@@ -163,7 +165,6 @@ public abstract class WithRespawns extends Pausable {
         });
         fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> send("paged", MQTT.merge(getSpawnPages(state), MQTT.page("pause", "", "      PAUSE      ", "", "")), agent));
         fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> send("paged", getSpawnPages(state), agent));
-        // making the signal to spawn more abstract. e.g. Conquest spawns on a button, Farcry on a timer
         fsm.setAction(_state_IN_GAME, _msg_RESPAWN_SIGNAL, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
@@ -208,9 +209,10 @@ public abstract class WithRespawns extends Pausable {
             active_segment = 0;
             deleteJob(deferredRunGameJob);
             delete_timed_respawn();
-            send_message_to_all_agents(_msg_RESET);
-            send_message_to_all_inactive_segments(_msg_STANDBY);
-            send_message_to_agents_in_segment(active_segment, _msg_RESET); // again, because agents can be in different segments in different roles
+            //todo: test me
+            send_message_to_all_agents(_msg_STANDBY);
+            //send_message_to_all_inactive_segments(_msg_STANDBY);
+            send_message_to_agents_in_segment(active_segment, _msg_RESET);
         }
         if (state.equals(_state_TEAMS_NOT_READY)) {
             if (!wait4teams2B_ready) process_internal_message(_msg_READY);
