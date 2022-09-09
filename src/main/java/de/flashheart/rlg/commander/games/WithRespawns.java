@@ -54,7 +54,7 @@ public abstract class WithRespawns extends Pausable {
 
     // Table of Teams in cols, segments in rows
     // cells contain pairs of agent names and FSMs
-    private final Table<String, Integer, Pair<String, FSM>> spawn_segments;
+    protected final Table<String, Integer, Pair<String, FSM>> spawn_segments;
     protected final int respawn_timer;
     protected int active_segment;
     private final JSONObject spawn_parameters;
@@ -71,11 +71,7 @@ public abstract class WithRespawns extends Pausable {
         this.spawn_segments = HashBasedTable.create();
         active_segment = 0;
 
-        // https://stackoverflow.com/a/48031801
-        // todo: all segments must have the same length
-        // todo: segment length must match the num_segments value
-//        if (spawn_parameters.getJSONArray("teams").toList().stream().map(o -> ((JSONObject) o).getJSONArray("agents").length()).distinct().count() > 1)
-//            throw new JSONException("all agents sections must have the same length");
+
 
         // split up spawn description by teams
         // one definition for each side
@@ -209,7 +205,6 @@ public abstract class WithRespawns extends Pausable {
             active_segment = 0;
             deleteJob(deferredRunGameJob);
             delete_timed_respawn();
-            //todo: test me
             send_message_to_all_agents(_msg_STANDBY);
             //send_message_to_all_inactive_segments(_msg_STANDBY);
             send_message_to_agents_in_segment(active_segment, _msg_RESET);
@@ -293,11 +288,12 @@ public abstract class WithRespawns extends Pausable {
     public JSONObject getState() {
         final JSONObject statusObject = super.getState()
                 .put("wait4teams2B_ready", wait4teams2B_ready)
-                .put("starter_countdown", starter_countdown);
+                .put("starter_countdown", starter_countdown)
+                .put("active_segment", active_segment);
 
         final JSONObject states = new JSONObject();
         spawn_segments.column(active_segment).values().forEach(stringFSMPair -> states.put(stringFSMPair.getLeft(), stringFSMPair.getRight().getCurrentState()));
-        statusObject.put("agent_states", states);
+        statusObject.put("respawn_agent_states", states);
         return statusObject;
     }
 

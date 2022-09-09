@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.controller;
 
+import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
@@ -73,9 +74,16 @@ public class RLGRestController {
 
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
-    public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) throws
-            ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        return new ResponseEntity<>(gamesService.load_game(id, description).getState().toString(4), HttpStatus.CREATED);
+    public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) {
+        ResponseEntity r;
+        try {
+            Game game = gamesService.load_game(id, description);
+            r = new ResponseEntity<>(game.getState().toString(4), HttpStatus.ACCEPTED);
+        } catch (Exception e) {
+            log.warn(e);
+            r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
+        }
+        return r;
     }
 
     // set values for a running game in pause mode

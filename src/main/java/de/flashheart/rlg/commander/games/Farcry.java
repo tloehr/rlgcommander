@@ -8,6 +8,7 @@ import de.flashheart.rlg.commander.games.traits.HasBombtimer;
 import de.flashheart.rlg.commander.games.jobs.BombTimerJob;
 import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
@@ -38,6 +39,7 @@ public class Farcry extends Timed implements HasBombtimer {
 
     private final JobKey bombTimerJobkey;
     private final List<Object> capture_points;
+    private final List<Object> sirs;
     private LocalDateTime estimated_end_time;
     private final Map<String, FSM> cpFSMs;
     private final Map map_of_agents_and_sirens;
@@ -68,7 +70,8 @@ public class Farcry extends Timed implements HasBombtimer {
         map_of_agents_and_sirens = new HashMap<>();
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList();
         if (capture_points.size() > 5) throw new ArrayIndexOutOfBoundsException("max number of capture points is 5");
-        List sirs = game_parameters.getJSONObject("agents").getJSONArray("capture_sirens").toList();
+        sirs = game_parameters.getJSONObject("agents").getJSONArray("capture_sirens").toList();
+        check_segment_sizes();
         for (int i = 0; i < capture_points.size(); i++) {
             map_of_agents_and_sirens.put(capture_points.get(i), sirs.get(i));
             roles.put("sirens", sirs.get(i).toString()); // add these sirens to the siren list
@@ -76,6 +79,22 @@ public class Farcry extends Timed implements HasBombtimer {
 
         cpFSMs = new HashMap<>();
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
+    }
+
+    void check_segment_sizes() throws JSONException {
+        log.debug(spawn_segments);
+        // all segments must have the same size
+
+        if (!spawn_segments.containsRow(RED_SPAWN)) throw new JSONException(RED_SPAWN + " missing");
+        if (!spawn_segments.containsRow(BLUE_SPAWN)) throw new JSONException(BLUE_SPAWN + " missing");
+        if (spawn_segments.rowMap().values().stream().map(integerPairMap -> integerPairMap.keySet().size()).distinct().count() > 1)
+            throw new JSONException("all teams must have the same number of spawn segments");
+
+        int num_of_spawn_segments = spawn_segments.row(RED_SPAWN).size();
+
+        if (!(num_of_spawn_segments == capture_points.size() && num_of_spawn_segments == sirs.size()))
+            throw new JSONException("number of segments mismatch. number of CPs, sirens and spawn_segments must match");
+
     }
 
     @Override
@@ -273,8 +292,7 @@ public class Farcry extends Timed implements HasBombtimer {
                 .put("capture_points_taken", active_capture_point)
                 .put("max_capture_points", cpFSMs.size());
         cpFSMs.forEach((agentid, fsm) -> statusObject.getJSONObject("agent_states").put(agentid, fsm.getCurrentState()));
-        // todo: integrate states from the spawn agents ?
-        //statusObject.put("agent_states", states);
+
         return statusObject;
     }
 
@@ -284,7 +302,7 @@ public class Farcry extends Timed implements HasBombtimer {
             return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
         }
         if (state.equals(_state_RUNNING))
-            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp}","${overtime}", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
+            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp}", "${overtime}", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
 
         return MQTT.page("page0", game_description);
     }
