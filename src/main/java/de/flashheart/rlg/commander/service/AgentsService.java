@@ -93,7 +93,7 @@ public class AgentsService {
      * @param agentid  to be tested
      * @param deviceid specific device like "led_red, sir1..."
      */
-    public void test_agent(String agentid, String deviceid) {
+    public void test_agent(String agentid, String deviceid, String pattern) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
         if (my_agent.getGameid() > -1) return; // only when not in game
         if (deviceid.toLowerCase().matches("play|stop")) {
@@ -101,7 +101,7 @@ public class AgentsService {
             mqttOutbound.send("play", MQTT.toJSON("subpath", "pause", "soundfile", song), agentid);
         } else {
             String topic = deviceid.matches(MQTT.ACOUSTICS) ? "acoustic" : "visual";
-            mqttOutbound.send(topic, MQTT.toJSON(deviceid, "medium"), my_agent.getId());
+            mqttOutbound.send(topic, MQTT.toJSON(deviceid, pattern), my_agent.getId());
         }
     }
 

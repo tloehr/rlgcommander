@@ -136,8 +136,8 @@ public class RLGRestController {
     }
 
     @PostMapping("/system/test_agent")
-    public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String agentid, @RequestParam(name = "deviceid") String deviceid) {
-        agentsService.test_agent(agentid, deviceid);
+    public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String agentid, @RequestParam(name = "deviceid") String deviceid, @RequestParam(name = "pattern") String pattern) {
+        agentsService.test_agent(agentid, deviceid, pattern);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
