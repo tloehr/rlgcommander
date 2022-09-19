@@ -59,8 +59,8 @@ public class RLGRestController {
             gamesService.addStateReachedListener(id, stateReachedEvent -> {
                 try {
                     SseEmitter.SseEventBuilder event = SseEmitter.event().
-                            data(stateReachedEvent.getState()). // gamesService.getGame(id).get().getState().toString()
-                                    id(Long.toString(System.currentTimeMillis())).
+                            data(stateReachedEvent.getState()).
+                            id(Long.toString(System.currentTimeMillis())).
                             name("StateReachedEvent");
                     emitter.send(event);
                 } catch (Exception e) {
@@ -86,16 +86,6 @@ public class RLGRestController {
         return r;
     }
 
-    // set values for a running game in pause mode
-//    {
-//      "agent": "ag01",
-//      "operation": "to_neutral"
-//    }
-    //{
-    // "operation": "change_score"
-//      "team": "blue", or "red"
-//      "score": +10 or -10
-//    }
     @PostMapping("/game/zeus")
     public ResponseEntity<?> admin_game(@RequestParam(name = "id") int id,
                                         @RequestBody String params) {

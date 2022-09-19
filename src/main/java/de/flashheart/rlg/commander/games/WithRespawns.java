@@ -292,8 +292,10 @@ public abstract class WithRespawns extends Pausable {
                 .put("active_segment", active_segment);
 
         final JSONObject states = new JSONObject();
-        spawn_segments.column(active_segment).values().forEach(stringFSMPair -> states.put(stringFSMPair.getLeft(), stringFSMPair.getRight().getCurrentState()));
-        statusObject.put("respawn_agent_states", states);
+        spawn_segments.column(active_segment)
+                .values()
+                .forEach(stringFSMPair -> states.put(stringFSMPair.getLeft(), stringFSMPair.getRight().getCurrentState()));
+        statusObject.put("agent_states", states);
         return statusObject;
     }
 

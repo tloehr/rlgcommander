@@ -50,8 +50,6 @@ public abstract class Game {
     public static final String OUT_LED_GREEN = MQTT.GREEN;
     public static final String[] ALL_LEDS = new String[]{OUT_LED_WHITE, OUT_LED_RED, OUT_LED_YELLOW, OUT_LED_GREEN, OUT_LED_BLUE};
     public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG};
-    public String _signal_AIRSIREN_START = "very_long";
-    public String _signal_AIRSIREN_STOP = "1:on,1500;off,750;on,1500;off,750;on,5000;off,1";
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
     private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
 
@@ -165,9 +163,9 @@ public abstract class Game {
      */
     protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals(_msg_RUN))
-            send("acoustic", MQTT.toJSON(MQTT.SIR1, _signal_AIRSIREN_START), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.SIR1, "game_starts"), roles.get("sirens"));
         if (message.equals(_msg_GAME_OVER))
-            send("acoustic", MQTT.toJSON(MQTT.ALL, "off", MQTT.SIR1, _signal_AIRSIREN_STOP), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.ALL, "off", MQTT.SIR1, "game_ends"), roles.get("sirens"));
         if (message.equals(_msg_RESET)) {
             send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
         }

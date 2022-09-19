@@ -195,7 +195,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             JSONObject vars = MQTT.merge(scores_to_vars(), get_agents_states_for_lcd());
             send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_active_spawn_agents());
             send("vars", vars, DEVELOP_MODE ? agents.keySet() : get_active_spawn_agents());
-            log.debug(vars.toString(4));
+            log.trace(vars.toString(4));
         }
 
     }
