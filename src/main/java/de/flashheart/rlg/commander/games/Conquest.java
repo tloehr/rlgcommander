@@ -6,6 +6,8 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,6 +43,12 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     private HashSet<String> cps_held_by_blue, cps_held_by_red;
     private final JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
+    private long last_red_respawn_event_time = 0L;
+    private long last_blue_respawn_event_time = 0L;
+    private int red_killing_spree_length;
+    private int blue_killing_spree_length;
+    private Optional<Pair<String, Integer>> team_on_a_spree;
+    private long SPREE_TIME_IN_MS = 0L;
 
 
     /**
@@ -142,8 +150,14 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    protected void on_respawn_signal_received(String team, String agent) {
-        if (team.equals(RED_SPAWN)) {
+    protected void on_respawn_signal_received(String spawn, String agent) {
+        long now = System.currentTimeMillis();
+        if (spawn.equals(RED_SPAWN)) {
+            // a respawn here resets the spree of the other team
+            blue_killing_spree_length = 0;
+            red_killing_spree_length++;
+            last_red_respawn_event_time = now;
+
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
             send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
@@ -151,7 +165,11 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
             broadcast_score();
         }
-        if (team.equals(BLUE_SPAWN)) {
+        if (spawn.equals(BLUE_SPAWN)) {
+            red_killing_spree_length = 0;
+            blue_killing_spree_length++;
+            last_blue_respawn_event_time = now;
+
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
             send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
@@ -159,6 +177,17 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
             broadcast_score();
         }
+        first_blood_announcement();
+    }
+
+    private void prepare_spree_announcement() {
+        if (red_killing_spree_length > 1)
+            team_on_a_spree = Optional.of(new ImmutablePair<>(RED_SPAWN, Math.min(red_killing_spree_length, 4)));
+        else if (blue_killing_spree_length > 1)
+            team_on_a_spree = Optional.of(new ImmutablePair<>(BLUE_SPAWN, Math.min(blue_killing_spree_length, 4)));
+    }
+
+    private void first_blood_announcement() {
         if (blue_respawns + red_respawns == 1)
             send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), get_active_spawn_agents());
     }
@@ -263,6 +292,9 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         if (message.equals(_msg_RESET)) {
             blue_respawns = 0;
             red_respawns = 0;
+            blue_killing_spree_length = 0;
+            red_killing_spree_length = 0;
+            team_on_a_spree = Optional.empty();
             remaining_blue_tickets = respawn_tickets;
             remaining_red_tickets = respawn_tickets;
             cps_held_by_blue.clear();
@@ -310,6 +342,17 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
 
         log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+
+        // spree announcement when necessary
+        team_on_a_spree.ifPresent(stringIntegerPair -> {
+            String team = stringIntegerPair.getLeft();
+            int spree = stringIntegerPair.getRight();
+            String enemy = get_opposing_team(team);
+            send("play", MQTT.toJSON("subpath", "announce", "soundfile", SPREE_ANNOUNCEMENTS[spree]), get_active_spawn_agents(team));
+            send("play", MQTT.toJSON("subpath", "announce", "soundfile", ENEMY_SPREE_ANNOUNCEMENTS[spree]), get_active_spawn_agents(enemy));
+        });
+        if (team_on_a_spree.isPresent()) team_on_a_spree = Optional.empty();
+
     }
 
     /**

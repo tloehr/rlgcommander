@@ -47,12 +47,15 @@ public abstract class WithRespawns extends Pausable {
     public static final String RED_SPAWN = "red_spawn";
     public static final String BLUE_SPAWN = "blue_spawn";
 
+    public static final String[] SPREE_ANNOUNCEMENTS = new String[]{"doublekill","triplekill","quadrakill","pentakill","spree"};
+    public static final String[] ENEMY_SPREE_ANNOUNCEMENTS = new String[]{"enemydoublekill","enemytriplekill","enemyquadrakill","enemypentakill","enemyspree"};
+
     private final JobKey deferredRunGameJob, respawnTimerJobkey;
     private final int starter_countdown;
     private final String intro_mp3_file;
     private final boolean wait4teams2B_ready;
 
-    // Table of Teams in cols, segments in rows
+    // Table of Teams in rows, segments in cols
     // cells contain pairs of agent names and FSMs
     protected final Table<String, Integer, Pair<String, FSM>> spawn_segments;
     protected final int respawn_timer;
@@ -104,6 +107,7 @@ public abstract class WithRespawns extends Pausable {
                     );
                 }
         );
+        log.debug(spawn_segments.size());
     }
 
     @SneakyThrows
@@ -306,5 +310,14 @@ public abstract class WithRespawns extends Pausable {
     protected Collection<String> get_all_spawn_agents() {
         return spawn_segments.values().stream().map(Pair::getKey).collect(Collectors.toSet());
     }
+
+    protected Collection<String> get_active_spawn_agents(String team) {
+        return spawn_segments.row(team).values().stream().map(Pair::getKey).collect(Collectors.toSet());
+    }
+
+    protected String get_opposing_team(String spawn){
+        return spawn.equals(RED_SPAWN) ? BLUE_SPAWN : RED_SPAWN;
+    }
+
 
 }

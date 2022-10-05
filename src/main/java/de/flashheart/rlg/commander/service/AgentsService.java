@@ -67,7 +67,7 @@ public class AgentsService {
     }
 
     public void welcome(Agent my_agent) {
-        if (my_agent.getGameid() > -1) return; //  todo: access "most_recent_messages" instead
+        if (my_agent.getGameid() > -1) return;
         log.info("Sending welcome message to newly attached agent {}", my_agent.getId());
         //mqttOutbound.send("init", agentid);
         mqttOutbound.send("timers", MQTT.toJSON("_clearall", "0"), my_agent.getId());

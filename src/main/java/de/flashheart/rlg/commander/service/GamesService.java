@@ -89,8 +89,8 @@ public class GamesService {
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
         gameStateListeners.removeAll(id);
+        // todo: this welcomes all agents even if they never reported in. not really a problem - kind of an oddity
         agentsService.welcome_unused_agents();
-        //fireStateReached(id, new StateReachedEvent(""));
     }
 
     public Optional<Game> getGame(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
