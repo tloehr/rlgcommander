@@ -4,7 +4,9 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
+import de.flashheart.rlg.commander.games.jobs.SpreeAnnounceJob;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
+import de.flashheart.rlg.commander.games.traits.HasSpreeAnnouncement;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -19,6 +21,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -30,7 +33,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * lifecycle cleanup before new game is laoded (by GameService)
  */
 @Log4j2
-public class Conquest extends WithRespawns implements HasScoreBroadcast {
+public class Conquest extends WithRespawns implements HasScoreBroadcast, HasSpreeAnnouncement {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
     private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
@@ -41,14 +44,12 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
     private int blue_respawns, red_respawns;
     private HashSet<String> cps_held_by_blue, cps_held_by_red;
-    private final JobKey ticketBleedingJobkey;
+    private final JobKey ticketBleedingJobkey, spree_announcement;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
-    private long last_red_respawn_event_time = 0L;
-    private long last_blue_respawn_event_time = 0L;
     private int red_killing_spree_length;
     private int blue_killing_spree_length;
     private Optional<Pair<String, Integer>> team_on_a_spree;
-    private long SPREE_TIME_IN_MS = 0L;
+    private boolean announced_long_spree_already;
 
 
     /**
@@ -136,6 +137,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         log.trace("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
         ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
+        spree_announcement = new JobKey("spreeannounce", uuid.toString());
         jobs_to_suspend_during_pause.add(ticketBleedingJobkey);
 
         cpFSMs = new HashMap<>();
@@ -151,40 +153,63 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
 
     @Override
     protected void on_respawn_signal_received(String spawn, String agent) {
-        long now = System.currentTimeMillis();
         if (spawn.equals(RED_SPAWN)) {
-            // a respawn here resets the spree of the other team
+            // a respawn here resets the spree of the other tea
             blue_killing_spree_length = 0;
             red_killing_spree_length++;
-            last_red_respawn_event_time = now;
+            if (red_killing_spree_length == 1) announced_long_spree_already = false;
 
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
             send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
             red_respawns++;
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
-            broadcast_score();
         }
         if (spawn.equals(BLUE_SPAWN)) {
             red_killing_spree_length = 0;
             blue_killing_spree_length++;
-            last_blue_respawn_event_time = now;
+            if (blue_killing_spree_length == 1) announced_long_spree_already = false;
 
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
             send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
             blue_respawns++;
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
-            broadcast_score();
         }
+//        broadcast_score();
         first_blood_announcement();
+        prepare_spree_announcement();
     }
 
+
     private void prepare_spree_announcement() {
+        team_on_a_spree = Optional.empty();
+        deleteJob(spree_announcement);
         if (red_killing_spree_length > 1)
-            team_on_a_spree = Optional.of(new ImmutablePair<>(RED_SPAWN, Math.min(red_killing_spree_length, 4)));
-        else if (blue_killing_spree_length > 1)
-            team_on_a_spree = Optional.of(new ImmutablePair<>(BLUE_SPAWN, Math.min(blue_killing_spree_length, 4)));
+            team_on_a_spree = Optional.of(new ImmutablePair<>(RED_SPAWN, red_killing_spree_length));
+        if (blue_killing_spree_length > 1)
+            team_on_a_spree = Optional.of(new ImmutablePair<>(BLUE_SPAWN, blue_killing_spree_length));
+        team_on_a_spree.ifPresent(stringIntegerPair -> {
+            if (!announced_long_spree_already)
+                create_job(spree_announcement, LocalDateTime.now().plusSeconds(3), SpreeAnnounceJob.class, Optional.empty());
+        });
+    }
+
+    @Override
+    public void spree_announce() {
+        // spree announcement when necessary
+        team_on_a_spree.ifPresent(stringIntegerPair -> {
+            int spree = stringIntegerPair.getRight();
+            String team = stringIntegerPair.getLeft();
+            String enemy = get_opposing_team(team);
+            log.trace("spree {}", spree);
+            log.trace("{}({}) says {}", team, get_active_spawn_agents(team), ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]);
+            log.trace("{}({}) says {}", enemy, get_active_spawn_agents(enemy), SPREE_ANNOUNCEMENTS[spree - 2]);
+
+            send("play", MQTT.toJSON("subpath", "announce", "soundfile", ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(team));
+            send("play", MQTT.toJSON("subpath", "announce", "soundfile", SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(enemy));
+            announced_long_spree_already = spree >= 6;
+        });
     }
 
     private void first_blood_announcement() {
@@ -211,7 +236,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
         }
     }
-
 
     private FSM create_CP_FSM(final String agent) {
         try {
@@ -295,6 +319,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             blue_killing_spree_length = 0;
             red_killing_spree_length = 0;
             team_on_a_spree = Optional.empty();
+            announced_long_spree_already = false;
             remaining_blue_tickets = respawn_tickets;
             remaining_red_tickets = respawn_tickets;
             cps_held_by_blue.clear();
@@ -342,17 +367,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
 
         log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
-
-        // spree announcement when necessary
-        team_on_a_spree.ifPresent(stringIntegerPair -> {
-            String team = stringIntegerPair.getLeft();
-            int spree = stringIntegerPair.getRight();
-            String enemy = get_opposing_team(team);
-            send("play", MQTT.toJSON("subpath", "announce", "soundfile", SPREE_ANNOUNCEMENTS[spree]), get_active_spawn_agents(team));
-            send("play", MQTT.toJSON("subpath", "announce", "soundfile", ENEMY_SPREE_ANNOUNCEMENTS[spree]), get_active_spawn_agents(enemy));
-        });
-        if (team_on_a_spree.isPresent()) team_on_a_spree = Optional.empty();
-
     }
 
     /**
@@ -411,4 +425,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         statusObject.put("agent_states", states);
         return statusObject;
     }
+
+
 }

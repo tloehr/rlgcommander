@@ -107,7 +107,6 @@ public abstract class WithRespawns extends Pausable {
                     );
                 }
         );
-        log.debug(spawn_segments.size());
     }
 
     @SneakyThrows
