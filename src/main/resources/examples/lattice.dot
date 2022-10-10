@@ -1,11 +1,11 @@
 graph D {
-    ag30 -- ag05
-    ag05 -- ag02
-    ag05 -- ag01
-    ag05 -- ag04
-    ag04 -- ag03
-    ag04 -- ag01
-    ag03 -- ag01
     ag01 -- ag02
-    ag02 -- ag31
+    ag03 -- ag01
+    ag04 -- ag01
+    ag04 -- ag03
+    ag05 -- ag01
+    ag05 -- ag02
+    ag05 -- ag04
+    ag30 -- ag05
+    ag31 -- ag02
 }

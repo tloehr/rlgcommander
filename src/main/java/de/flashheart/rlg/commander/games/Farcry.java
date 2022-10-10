@@ -34,6 +34,7 @@ public class Farcry extends Timed implements HasBombtimer {
     public static final String _state_DEFENDED = "DEFENDED";
     public static final String _state_TAKEN = "TAKEN";
     public static final String _state_OVERTIME = "OVERTIME";
+    private static final int MAX_CAPTURE_POINTS = 5;
 
     private final int bomb_timer;
 
@@ -59,17 +60,19 @@ public class Farcry extends Timed implements HasBombtimer {
         this.bombTimerJobkey = new JobKey("bomb_timer", uuid.toString());
         this.bomb_timer = game_parameters.getInt("bomb_time");
         LocalDateTime ldtFlagTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(bomb_timer), TimeZone.getTimeZone("UTC").toZoneId());
-        LocalDateTime ldtTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
         LocalDateTime ldtRespawn = LocalDateTime.ofInstant(Instant.ofEpochSecond(respawn_timer), TimeZone.getTimeZone("UTC").toZoneId());
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Bombtime: %s", ldtFlagTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
-                String.format("Gametime: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
+                String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))),
                 String.format("Respawn every: %s", ldtRespawn.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         // additional parsing agents and sirens
         map_of_agents_and_sirens = new HashMap<>();
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList();
-        if (capture_points.size() > 5) throw new ArrayIndexOutOfBoundsException("max number of capture points is 5");
+
+        if (capture_points.size() > MAX_CAPTURE_POINTS)
+            throw new ArrayIndexOutOfBoundsException("max number of capture points is " + MAX_CAPTURE_POINTS);
+
         sirs = game_parameters.getJSONObject("agents").getJSONArray("capture_sirens").toList();
         check_segment_sizes();
         for (int i = 0; i < capture_points.size(); i++) {

@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
-
 @Log4j2
 public class CenterFlags extends Timed implements HasScoreBroadcast {
 
@@ -52,9 +51,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 "/ /___/  __/ / / / /_/  __/ /  / __/ / / /_/ / /_/ (__  )\n" +
                 "\\____/\\___/_/ /_/\\__/\\___/_/  /_/   /_/\\__,_/\\__, /____/\n" +
                 "                                            /____/");
-        ZonedDateTime ldtTime = ZonedDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
         setGameDescription(game_parameters.getString("comment"), "",
-                String.format("Gametime: %s", ldtTime.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
+                String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
 
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
 
@@ -316,7 +314,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     @Override
     public void game_time_is_up() {
-        log.info("Game time is up");
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }

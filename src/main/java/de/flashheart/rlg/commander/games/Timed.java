@@ -11,10 +11,13 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.TimeZone;
 
 /**
  * an abstract superclass for handling any game mode that has an (estimated or fixed) end_time We are talking about
@@ -38,12 +41,14 @@ public abstract class Timed extends WithRespawns {
      * Farcry (last moment flag activations or quick attacker)
      */
     LocalDateTime end_time;
+    ZonedDateTime ldt_game_time;
 
     final JobKey game_timer_jobkey;
 
     Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         this.game_time = game_parameters.getInt("game_time");
+        ldt_game_time = ZonedDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
         game_timer_jobkey = new JobKey("gametime", uuid.toString());
         start_time = null;
         end_time = null;

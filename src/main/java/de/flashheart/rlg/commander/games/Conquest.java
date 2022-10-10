@@ -4,15 +4,16 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
-import de.flashheart.rlg.commander.games.jobs.SpreeAnnounceJob;
+import de.flashheart.rlg.commander.games.jobs.DelayedReactionJob;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
-import de.flashheart.rlg.commander.games.traits.HasSpreeAnnouncement;
+import de.flashheart.rlg.commander.games.traits.HasDelayedReaction;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.xml.sax.SAXException;
@@ -33,7 +34,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * lifecycle cleanup before new game is laoded (by GameService)
  */
 @Log4j2
-public class Conquest extends WithRespawns implements HasScoreBroadcast, HasSpreeAnnouncement {
+public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDelayedReaction {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
     private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
@@ -191,12 +192,12 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasSpre
             team_on_a_spree = Optional.of(new ImmutablePair<>(BLUE_SPAWN, blue_killing_spree_length));
         team_on_a_spree.ifPresent(stringIntegerPair -> {
             if (!announced_long_spree_already)
-                create_job(spree_announcement, LocalDateTime.now().plusSeconds(3), SpreeAnnounceJob.class, Optional.empty());
+                create_job(spree_announcement, LocalDateTime.now().plusSeconds(3), DelayedReactionJob.class, Optional.empty());
         });
     }
 
     @Override
-    public void spree_announce() {
+    public void delayed_reaction(JobDataMap map) {
         // spree announcement when necessary
         team_on_a_spree.ifPresent(stringIntegerPair -> {
             int spree = stringIntegerPair.getRight();
