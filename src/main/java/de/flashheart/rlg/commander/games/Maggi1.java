@@ -81,9 +81,10 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
                 map.put("agent", agent);
                 // unlock later
                 create_job(cpLockJobs.get(agent), LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.of(map));
-
                 int index_of_agent = capture_points.indexOf(agent) + 1;
-                line_variables.put("line" + index_of_agent, agent + ": " + (state.equals("BLUE_LOCKED") ? "BLAU" : "ROT"));
+                String color =(state.equals("BLUE_LOCKED") ? "BLAU" : "ROT");
+                line_variables.put("line" + index_of_agent, agent + ": " + color);
+                addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", color));
                 broadcast_score();
                 String led = state.equals("BLUE_LOCKED") ? MQTT.BLUE : MQTT.RED;
                 send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
@@ -112,8 +113,8 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
-        if (game_fsm.getCurrentState().equals(_state_RUNNING))
-            addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
+//        if (game_fsm.getCurrentState().equals(_state_RUNNING))
+//            addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
         int index_of_agent = capture_points.indexOf(agent) + 1;
         line_variables.put("line" + index_of_agent, "");
         broadcast_score();
@@ -123,7 +124,6 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
         deleteJob(cpLockJobs.get(agent));
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
         JobDataMap map = new JobDataMap();
         map.put("agent", agent);
         // lock in 2 secs
@@ -134,7 +134,6 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
         deleteJob(cpLockJobs.get(agent));
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
         JobDataMap map = new JobDataMap();
         map.put("agent", agent);
         // lock in 2 secs
@@ -210,4 +209,5 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
         send("vars", line_variables, get_all_spawn_agents());
     }
+    
 }
