@@ -32,7 +32,6 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 @Log4j2
 public class CenterFlags extends Timed implements HasScoreBroadcast {
 
-    private static final boolean DEVELOP_MODE = true;
     private final BigDecimal SCORE_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
@@ -41,6 +40,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private final Table<String, String, Long> scores;
     private final JobKey broadcastScoreJobkey;
     private long last_job_broadcast;
+    private int blue_respawns, red_respawns;
 
     public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -86,6 +86,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 vars.put(get_agent_key(agent, color), JavaTimeConverter.format(scores.get(agent, color)));
             });
             vars.put("score_" + color, JavaTimeConverter.format(scores.get("all", color)));
+            vars.put("red_respawns", red_respawns);
+            vars.put("blue_respawns", blue_respawns);
         });
         return vars;
     }
@@ -150,6 +152,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RESET)) {
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
+            blue_respawns = 0;
+            red_respawns = 0;
         }
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
@@ -192,8 +196,11 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         if (!game_fsm.getCurrentState().equals(_state_RUNNING) || broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
             JSONObject vars = MQTT.merge(scores_to_vars(), get_agents_states_for_lcd());
             send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_active_spawn_agents());
-            send("vars", vars, DEVELOP_MODE ? agents.keySet() : get_active_spawn_agents());
-            log.trace(vars.toString(4));
+            send("vars", vars, agents.keySet());
+            if (game_fsm.getCurrentState().equals(_state_EPILOG))
+                log.info(vars.toString(4));
+            else
+                log.trace(vars.toString(4));
         }
 
     }
@@ -244,7 +251,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     @Override
     public void zeus(JSONObject params) throws IllegalStateException, JSONException {
-        String operation = params.getString("operation");
+        String operation = params.getString("operation").toLowerCase();
         if (operation.equalsIgnoreCase("to_neutral")) {
             String agent = params.getString("agent");
             if (!cpFSMs.containsKey(agent)) throw new IllegalStateException(agent + " unknown");
@@ -268,6 +275,19 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                     .put("amount", amount)
                     .put("zeus", "intervention"));
         }
+        if (operation.equalsIgnoreCase("add_respawns")) {
+            String team = params.getString("team").toLowerCase();
+            int amount = params.getInt("amount");
+            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
+            if (team.equalsIgnoreCase("blue")) blue_respawns += amount;
+            if (team.equalsIgnoreCase("red")) red_respawns += amount;
+            scores.put("all", team, scores.get("all", team) + amount * 1000L);
+            addEvent(new JSONObject()
+                    .put("item", "add_respawns")
+                    .put("team", team)
+                    .put("amount", amount)
+                    .put("zeus", "intervention"));
+        }
     }
 
     @Override
@@ -277,9 +297,9 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
         if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING))
             cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
-        // we can shortcut here. we dont care about respawns
-//        else
-//            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+        else {
+            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+        }
     }
 
     @Override
@@ -309,7 +329,18 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     @Override
     protected void on_respawn_signal_received(String spawn_role, String agent) {
-        // we dont care about respawns in this mode
+        if (spawn_role.equals(RED_SPAWN)) {
+            red_respawns++;
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
+            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
+            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
+        }
+        if (spawn_role.equals(BLUE_SPAWN)) {
+            blue_respawns++;
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
+            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
+            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
+        }
     }
 
     @Override
@@ -318,14 +349,14 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
 
-
     @Override
     public JSONObject getState() {
         final JSONObject states = new JSONObject();
         cpFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
         return super.getState()
                 .put("scores", new JSONObject(scores.columnMap()))
+                .put("red_respawns", red_respawns)
+                .put("blue_respawns", blue_respawns)
                 .put("agent_states", states);
     }
-
 }

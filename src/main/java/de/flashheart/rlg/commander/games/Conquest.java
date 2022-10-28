@@ -52,7 +52,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     private Optional<Pair<String, Integer>> team_on_a_spree;
     private boolean announced_long_spree_already;
 
-
     /**
      * This class creates a conquest style game as known from Battlefield.
      * <p>
@@ -348,6 +347,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
             deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
             log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("game_over"));
+            broadcast_score(); // one last time
         }
     }
 
@@ -366,8 +366,15 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
 
         send("vars", vars, get_active_spawn_agents());
 
-        log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
-        log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+        if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
+            log.info("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
+            log.info("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+            log.info(vars.toString(4));
+        } else {
+            log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
+            log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+            log.trace(vars.toString(4));
+        }
     }
 
     /**
@@ -407,6 +414,23 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
                             "Red->${red_tickets}:${blue_tickets}<-Blue"));
         }
         return MQTT.page("page0", game_description);
+    }
+
+    @Override
+    public void zeus(JSONObject params) throws IllegalStateException, JSONException {
+        String operation = params.getString("operation").toLowerCase();
+        if (operation.equalsIgnoreCase("to_neutral")) {
+            String agent = params.getString("agent");
+            if (!cpFSMs.containsKey(agent)) throw new IllegalStateException(agent + " unknown");
+            if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red"))
+                throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be BLUE or RED");
+            cpFSMs.get(agent).ProcessFSM(operation);
+            addEvent(new JSONObject()
+                    .put("item", "capture_point")
+                    .put("agent", agent)
+                    .put("state", "neutral")
+                    .put("zeus", "intervention"));
+        }
     }
 
     @Override
