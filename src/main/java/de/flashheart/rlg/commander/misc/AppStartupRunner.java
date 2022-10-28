@@ -12,15 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Log4j2
 public class AppStartupRunner implements ApplicationRunner {
-
-//    MQTTOutbound mqttOutbound;
-//    BuildProperties buildProperties;
-//
-//    public AppStartupRunner(MQTTOutbound mqttOutbound, BuildProperties buildProperties) {
-//        this.mqttOutbound = mqttOutbound;
-//        this.buildProperties = buildProperties;
-//    }
-
     @Override
     public void run(ApplicationArguments args) {
 

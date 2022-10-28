@@ -1,16 +1,6 @@
-# Change the default WEBPort. Usually it's 8080
-server.port=8090
-#
-mqtt.url=tcp://localhost:1883
-mqtt.inbound.topic=rlg/evt/#
-mqtt.outbound.topic=rlg/cmd/
-mqtt.qos=2
-mqtt.retain=true
-mqtt.acoustic.retain=false
-mqtt.clientid=rlgcmd-default
-mqtt.max_inflight=1000
-#
-logging.level.root=INFO
-logging.level.org.eclipse.paho.client.mqttv3=INFO
-logging.level.de.flashheart.rlg=INFO
-#
+mqtt.automaticReconnect=true
+mqtt.cleanSession=true
+mqtt.connectionTimeout=10
+debug=false
+logging.level.de.flashheart=INFO
+spring.quartz.properties.org.quartz.scheduler.instanceId=myscheduler

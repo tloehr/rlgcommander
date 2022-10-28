@@ -40,7 +40,7 @@ public class GamesService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void welcome() {
-        log.info("RLG-Commander {}b{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
+        log.info("RLG-Commander v{} b{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
     @Autowired

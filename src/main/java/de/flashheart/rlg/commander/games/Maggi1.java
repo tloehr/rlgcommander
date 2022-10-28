@@ -32,6 +32,7 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
     private final Map<String, JobKey> cpLockJobs;
     private long UNLOCK_TIME, LOCK_TIME;
     private JSONObject line_variables;
+    private int blue_points, red_points;
 
     public Maggi1(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -77,18 +78,25 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
                 else cp_to_red(agent);
             });
             fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList("BLUE_LOCKED", "RED_LOCKED")), (state, obj) -> {
+                if (state.equals("BLUE_LOCKED")) blue_points++;
+                else red_points++;
                 JobDataMap map = new JobDataMap();
                 map.put("agent", agent);
                 // unlock later
                 create_job(cpLockJobs.get(agent), LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.of(map));
                 int index_of_agent = capture_points.indexOf(agent) + 1;
-                String color =(state.equals("BLUE_LOCKED") ? "BLAU" : "ROT");
+                String color = state.equals("BLUE_LOCKED") ? "BLAU" : "ROT";
                 line_variables.put("line" + index_of_agent, agent + ": " + color);
                 addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", color));
                 broadcast_score();
                 String led = state.equals("BLUE_LOCKED") ? MQTT.BLUE : MQTT.RED;
                 send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
                 send("visual", MQTT.toJSON(led, "10:on,500;off,500"), get_all_spawn_agents());
+                // 2,5 seconds sir2 at begin of lock period
+                send("acoustic", MQTT.toJSON(MQTT.SIR2, "long"), roles.get("sirens"));
+                // 2,5 seconds sir3 wailing, before unlock
+                String unlock_scheme = String.format("1:off,%s;on,2500;off,1", UNLOCK_TIME * 1000 - 2500);
+                send("acoustic", MQTT.toJSON(MQTT.SIR3, unlock_scheme), roles.get("sirens"));
             });
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
@@ -144,18 +152,25 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
     protected JSONObject getSpawnPages(String state) {
         if (state.equals(_state_EPILOG)) {
             return MQTT.page("page0", "Game Over",
-                    "",
-                    "",
-                    "");
+                    "Results:",
+                    "Red: ${red_points}",
+                    "Blue: ${blue_points}");
         }
 
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return
-                    MQTT.page("page0",
-                            "Restzeit:  ${remaining}",
-                            "${line1}",
-                            "${line2}",
-                            "${line3}");
+                    MQTT.merge(
+                            MQTT.page("page0",
+                                    "Restzeit:  ${remaining}",
+                                    "${line1}",
+                                    "${line2}",
+                                    "${line3}"),
+                            MQTT.page("page1",
+                                    "Restzeit:  ${remaining}",
+                                    "",
+                                    "Red: ${red_points}",
+                                    "Blue: ${blue_points}")
+                    );
             // we have only 3 lines, so we only use 3 Capture Points
         }
 
@@ -169,6 +184,8 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
             // spawn agents are used as display not for a specific team
             empty_lines();
+            blue_points = 0;
+            red_points = 0;
         }
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
             cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
@@ -207,7 +224,16 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
     @Override
     public void broadcast_score() {
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
+        line_variables.put("red_points", red_points).put("blue_points", blue_points);
         send("vars", line_variables, get_all_spawn_agents());
     }
-    
+
+    @Override
+    public JSONObject getState() {
+        final JSONObject statusObject = super.getState()
+                .put("red_points", red_points).put("blue_points", blue_points);
+
+        return statusObject;
+    }
+
 }
