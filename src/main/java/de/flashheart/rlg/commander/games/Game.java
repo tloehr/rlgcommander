@@ -68,6 +68,7 @@ public abstract class Game {
     protected final List<JSONObject> in_game_events;
     // main FSM to control the basic states of every game
     protected final FSM game_fsm;
+    protected final Map<String, FSM> cpFSMs;
 //    protected final Spawns spawns;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
@@ -79,6 +80,8 @@ public abstract class Game {
         this.roles = HashMultimap.create();
         this.in_game_events = new ArrayList<>();
         this.silent_game = game_parameters.optBoolean("silent_game");
+        this.cpFSMs = new HashMap<>();
+
         JSONObject agts = game_parameters.getJSONObject("agents");
         Set<String> rls = agts.keySet();
         rls.forEach(role ->
@@ -90,6 +93,13 @@ public abstract class Game {
         );
         this.game_fsm = createFSM();
         this.game_description = new ArrayList<>();
+
+        send("paged", MQTT.page("page0",
+                "I am ${agentname}", "", "", "I am a Siren"), roles.get("sirens")
+        );
+
+        // generic creation of capture_points - if needed
+        roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
     }
 
     protected void addEvent(JSONObject in_game_event) {
@@ -120,6 +130,9 @@ public abstract class Game {
         stateReachedListeners.add(toAdd);
     }
 
+    public FSM create_CP_FSM(String agent) {
+        return null;
+    }
 
     private void fireStateTransition(StateTransitionEvent event) {
         stateTransitionListeners.forEach(stateTransitionListener -> stateTransitionListener.onStateTransition(event));
@@ -146,12 +159,7 @@ public abstract class Game {
      * @param state the reached state
      */
     protected void at_state(String state) {
-        if (state.equals(_state_PROLOG)) {
-            send("visual", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
-            send("paged",
-                    MQTT.page("page0",
-                            "I am ${agentname}", "", "", "I am a Siren"), roles.get("sirens"));
-        }
+
     }
 
     /**
@@ -162,14 +170,11 @@ public abstract class Game {
      * @param new_state after the transition
      */
     protected void on_transition(String old_state, String message, String new_state) {
-        if (message.equals(_msg_RUN))
-            send("acoustic", MQTT.toJSON(MQTT.SIR1, "game_starts"), roles.get("sirens"));
-        if (message.equals(_msg_GAME_OVER))
-            send("acoustic", MQTT.toJSON(MQTT.ALL, "off", MQTT.SIR1, "game_ends"), roles.get("sirens"));
-        if (message.equals(_msg_RESET)) {
-            send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
-        }
+        if (message.equals(_msg_RUN)) run_operations();
+        if (message.equals(_msg_GAME_OVER)) game_over_operations();
+        if (message.equals(_msg_RESET)) reset_operations();
     }
+
 
     /**
      * sandwich method to implement silent game function
@@ -213,6 +218,21 @@ public abstract class Game {
      */
     public abstract void process_external_message(String sender, String item, JSONObject message);
 
+    public void reset_operations() {
+        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
+        send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
+        send("visual", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
+    }
+
+    public void run_operations() {
+        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
+        send("acoustic", MQTT.toJSON(MQTT.SIR1, "game_starts"), roles.get("sirens"));
+    }
+
+    public void game_over_operations() {
+        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
+        send("acoustic", MQTT.toJSON(MQTT.ALL, "off", MQTT.SIR1, "game_ends"), roles.get("sirens"));
+    }
 
     /**
      * mainly boilerplate code to create the game_fsm

@@ -56,7 +56,6 @@ public abstract class Pausable extends Scheduled {
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_RUN)) deleteJob(continueGameJob);
         if (message.equals(_msg_PAUSE)) {
             pausing_since = Optional.of(LocalDateTime.now());
             jobs_to_reschedule_after_pause.forEach(jobKey -> pause_job(jobKey));
@@ -73,12 +72,21 @@ public abstract class Pausable extends Scheduled {
     }
 
     @Override
+    public void run_operations() {
+        super.run_operations();
+        deleteJob(continueGameJob);
+    }
+
+    @Override
+    public void reset_operations() {
+        super.reset_operations();
+        deleteJob(continueGameJob);
+        pausing_since = Optional.empty();
+    }
+
+    @Override
     protected void at_state(String state) {
         super.at_state(state);
-        if (state.equals(_state_PROLOG)) {
-            deleteJob(continueGameJob);
-            pausing_since = Optional.empty();
-        }
         if (state.equals(_state_RUNNING)) {
             pausing_since = Optional.empty();
         }

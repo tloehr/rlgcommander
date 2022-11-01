@@ -39,7 +39,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
-    private final Map<String, FSM> cpFSMs;
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
 
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
@@ -140,15 +139,10 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
         spree_announcement = new JobKey("spreeannounce", uuid.toString());
         jobs_to_suspend_during_pause.add(ticketBleedingJobkey);
 
-        cpFSMs = new HashMap<>();
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Tickets: %s", respawn_tickets.intValue()),
                 String.format("Bleed starts @%sCPs", not_bleeding_before_cps),
                 String.format("Time: %s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
-
-        roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-//        add_spawn_for("red_spawn", MQTT.RED, "Team Red");
-//        add_spawn_for("blue_spawn", MQTT.BLUE, "Team Blue");
     }
 
     @Override
@@ -176,7 +170,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
             blue_respawns++;
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
         }
-//        broadcast_score();
         first_blood_announcement();
         prepare_spree_announcement();
     }
@@ -237,7 +230,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
         }
     }
 
-    private FSM create_CP_FSM(final String agent) {
+    @Override
+    public FSM create_CP_FSM(final String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
@@ -311,44 +305,36 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     }
 
     @Override
-    protected void on_transition(String old_state, String message, String new_state) {
-        super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_RESET)) {
-            blue_respawns = 0;
-            red_respawns = 0;
-            blue_killing_spree_length = 0;
-            red_killing_spree_length = 0;
-            team_on_a_spree = Optional.empty();
-            announced_long_spree_already = false;
-            remaining_blue_tickets = respawn_tickets;
-            remaining_red_tickets = respawn_tickets;
-            cps_held_by_blue.clear();
-            cps_held_by_red.clear();
-        }
-        if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
-
-            // setup and start bleeding job
-            long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
-            create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
-            broadcast_cycle_counter = 0;
-        }
+    public void run_operations() {
+        super.run_operations();
+        // setup and start bleeding job
+        long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
+        create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
+        broadcast_cycle_counter = 0;
     }
 
     @Override
-    protected void at_state(String state) {
-        super.at_state(state);
-        if (state.equals(_state_PROLOG)) {
-            deleteJob(ticketBleedingJobkey);
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-        }
+    public void reset_operations() {
+        super.reset_operations();
+        deleteJob(ticketBleedingJobkey);
+        blue_respawns = 0;
+        red_respawns = 0;
+        blue_killing_spree_length = 0;
+        red_killing_spree_length = 0;
+        team_on_a_spree = Optional.empty();
+        announced_long_spree_already = false;
+        remaining_blue_tickets = respawn_tickets;
+        remaining_red_tickets = respawn_tickets;
+        cps_held_by_blue.clear();
+        cps_held_by_red.clear();
+    }
 
-        if (state.equals(_state_EPILOG)) {
-            deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
-            log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("game_over"));
-            broadcast_score(); // one last time
-        }
+    @Override
+    public void game_over_operations() {
+        super.game_over_operations();
+        deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
+        log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
+        broadcast_score(); // one last time
     }
 
     @Override

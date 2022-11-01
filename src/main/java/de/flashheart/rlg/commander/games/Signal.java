@@ -23,27 +23,26 @@ import java.util.stream.Collectors;
 
 
 @Log4j2
-public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadcast {
+public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadcast {
     public static final int MAX_CAPTURE_POINTS = 2;
     public static final String _msg_LOCK = "lock";
     public static final String _msg_TO_NEUTRAL = "to_neutral";
     private final List<String> capture_points;
-    private final Map<String, FSM> cpFSMs;
     private final Map<String, JobKey> cpLockJobs;
     private long UNLOCK_TIME, LOCK_TIME;
     private JSONObject line_variables;
     private int blue_points, red_points;
 
-    public Maggi1(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
+    public Signal(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         log.info("\n" +
-                " __  __                   _     _\n" +
-                "|  \\/  | __ _  __ _  __ _(_)   / |\n" +
-                "| |\\/| |/ _` |/ _` |/ _` | |   | |\n" +
-                "| |  | | (_| | (_| | (_| | |   | |\n" +
-                "|_|  |_|\\__,_|\\__, |\\__, |_|___|_|\n" +
-                "              |___/ |___/ |_____|\n");
-        cpFSMs = new HashMap<>();
+                " ____  _                   _\n" +
+                "/ ___|(_) __ _ _ __   __ _| |\n" +
+                "\\___ \\| |/ _` | '_ \\ / _` | |\n" +
+                " ___) | | (_| | | | | (_| | |\n" +
+                "|____/|_|\\__, |_| |_|\\__,_|_|\n" +
+                "         |___/");
+
         cpLockJobs = new HashMap<>();
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
 
@@ -53,14 +52,9 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
         setGameDescription(game_parameters.getString("comment"), "",
                 String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
 
-        roles.get("capture_points").forEach(agent -> {
-            cpFSMs.put(agent, create_CP_FSM(agent));
-            cpLockJobs.put(agent, new JobKey(agent + "_lock_color", uuid.toString()));
-        });
 
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
         LOCK_TIME = game_parameters.optLong("lock_time");
-        empty_lines();
     }
 
     @Override
@@ -69,9 +63,10 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
 
-    private FSM create_CP_FSM(final String agent) {
+    @Override
+    public FSM create_CP_FSM(final String agent) {
         try {
-            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/maggi1.xml"), null);
+            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/signal.xml"), null);
             fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList("PROLOG", "NEUTRAL")), (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList("BLUE", "RED")), (state, obj) -> {
                 if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
@@ -98,6 +93,9 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
                 String unlock_scheme = String.format("1:off,%s;on,2500;off,1", UNLOCK_TIME * 1000 - 2500);
                 send("acoustic", MQTT.toJSON(MQTT.SIR3, unlock_scheme), roles.get("sirens"));
             });
+
+            cpLockJobs.put(agent, new JobKey(agent + "_lock_color", uuid.toString()));
+
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             log.error(ex);
@@ -180,27 +178,27 @@ public class Maggi1 extends Timed implements HasDelayedReaction, HasScoreBroadca
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_RESET)) {
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-            // spawn agents are used as display not for a specific team
-            empty_lines();
-            blue_points = 0;
-            red_points = 0;
-        }
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
             broadcast_score();
             send("visual", MQTT.toJSON(MQTT.ALL, "off"), get_all_spawn_agents());
         }
     }
 
     @Override
-    protected void at_state(String state) {
-        super.at_state(state);
-        if (state.equals(_state_PROLOG)) {
-            send("visual", MQTT.toJSON(MQTT.ALL, "off"), get_all_spawn_agents());
-        }
+    public void run_operations() {
+        super.run_operations();
+        send("visual", MQTT.toJSON(MQTT.ALL, "off"), get_all_spawn_agents());
     }
+
+    @Override
+    public void reset_operations() {
+        super.reset_operations();
+        // spawn agents are used as display not for a specific team
+        empty_lines();
+        blue_points = 0;
+        red_points = 0;
+    }
+
 
     void empty_lines() {
         line_variables = MQTT.toJSON("line1", "", "line2", "", "line3", "", "line4", "");

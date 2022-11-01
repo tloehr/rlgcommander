@@ -74,8 +74,6 @@ public abstract class WithRespawns extends Pausable {
         this.spawn_segments = HashBasedTable.create();
         active_segment = 0;
 
-
-
         // split up spawn description by teams
         // one definition for each side
         spawn_parameters.getJSONArray("teams").forEach(j -> {
@@ -176,42 +174,48 @@ public abstract class WithRespawns extends Pausable {
         return fsm;
     }
 
+    @Override
+    public void run_operations() {
+        super.run_operations();
+        deleteJob(deferredRunGameJob);
+        // create timed respawn if necessary
+        if (respawn_timer > 0) {
+            create_resumable_job(respawnTimerJobkey,
+                    SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
+                    RespawnTimerJob.class, Optional.empty());
+            send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_all_spawn_agents());
+        }
+        send_message_to_agents_in_segment(active_segment, _msg_RUN);
+    }
+
+    @Override
+    public void game_over_operations() {
+        super.game_over_operations();
+        send_message_to_all_agents(_msg_GAME_OVER);
+    }
 
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
-            deleteJob(deferredRunGameJob);
-            // create timed respawn if necessary
-            if (respawn_timer > 0) {
-                create_resumable_job(respawnTimerJobkey,
-                        SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
-                        RespawnTimerJob.class, Optional.empty());
-                send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_all_spawn_agents());
-            }
-            send_message_to_agents_in_segment(active_segment, _msg_RUN);
-        }
         if (message.equals(_msg_PAUSE)) send("timers", MQTT.toJSON("_clearall", ""), get_active_spawn_agents());
-        if (message.equals(_msg_RESET)) {
-            delete_timed_respawn();
-            send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), get_active_spawn_agents());
-        }
         if (message.equals(_msg_CONTINUE)) send_message_to_agents_in_segment(active_segment, _msg_CONTINUE);
-        if (message.equals(_msg_GAME_OVER)) send_message_to_all_agents(_msg_GAME_OVER);
     }
 
+    @Override
+    public void reset_operations() {
+        super.reset_operations();
+        send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), get_active_spawn_agents());
+        active_segment = 0;
+        deleteJob(deferredRunGameJob);
+        delete_timed_respawn();
+        send_message_to_all_agents(_msg_STANDBY);
+        //send_message_to_all_inactive_segments(_msg_STANDBY);
+        send_message_to_agents_in_segment(active_segment, _msg_RESET);
+    }
 
     @Override
     protected void at_state(String state) {
         super.at_state(state);
-        if (state.equals(_state_PROLOG)) {
-            active_segment = 0;
-            deleteJob(deferredRunGameJob);
-            delete_timed_respawn();
-            send_message_to_all_agents(_msg_STANDBY);
-            //send_message_to_all_inactive_segments(_msg_STANDBY);
-            send_message_to_agents_in_segment(active_segment, _msg_RESET);
-        }
         if (state.equals(_state_TEAMS_NOT_READY)) {
             if (!wait4teams2B_ready) process_internal_message(_msg_READY);
             else send_message_to_agents_in_segment(active_segment, _msg_PREPARE);

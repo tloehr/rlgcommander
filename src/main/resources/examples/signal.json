@@ -1,7 +1,7 @@
 {
-  "comment": "Maggi's Stammtisch",
+  "comment": "Signal",
   "rest_url": "http://localhost:8090/api/game/load?id=1",
-  "class": "de.flashheart.rlg.commander.games.Maggi1",
+  "class": "de.flashheart.rlg.commander.games.Signal",
   "lock_time": 2,
   "unlock_time": 10,
   "game_time": 600,

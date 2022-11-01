@@ -1,0 +1,56 @@
+{
+  "comment": "Stronghold",
+  "rest_url": "http://localhost:8090/api/game/load?id=1",
+  "class": "de.flashheart.rlg.commander.games.Stronghold",
+  "game_time": 600,
+  "resume_countdown": 0,
+  "silent_game": false,
+  "defender": "BlueFor",
+  "agents": {
+    "capture_points": [
+      "ag01",
+      "ag02",
+      "ag03",
+      "ag04"
+    ],
+    "sirens": [
+      "ag50"
+    ]
+  },
+  "defense_rings": [
+    [
+      "ag01",
+      "ag02",
+      "ag03",
+      "ag04"
+    ]
+  ],
+  "spawns": {
+    "wait4teams2B_ready": false,
+    "intro_mp3_file": "<random>",
+    "starter_countdown": 0,
+    "respawn_time": 0,
+    "teams": [
+      {
+        "role": "red_spawn",
+        "led": "red",
+        "name": "RedFor",
+        "agents": [
+          [
+            "ag30"
+          ]
+        ]
+      },
+      {
+        "role": "blue_spawn",
+        "led": "blu",
+        "name": "BlueFor",
+        "agents": [
+          [
+            "ag31"
+          ]
+        ]
+      }
+    ]
+  }
+}

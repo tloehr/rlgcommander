@@ -42,7 +42,6 @@ public class Farcry extends Timed implements HasBombtimer {
     private final List<Object> capture_points;
     private final List<Object> sirs;
     private LocalDateTime estimated_end_time;
-    private final Map<String, FSM> cpFSMs;
     private final Map map_of_agents_and_sirens;
     // which CP to take next
     private int active_capture_point;
@@ -79,9 +78,6 @@ public class Farcry extends Timed implements HasBombtimer {
             map_of_agents_and_sirens.put(capture_points.get(i), sirs.get(i));
             roles.put("sirens", sirs.get(i).toString()); // add these sirens to the siren list
         }
-
-        cpFSMs = new HashMap<>();
-        roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
     }
 
     void check_segment_sizes() throws JSONException {
@@ -101,39 +97,24 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
-    protected void at_state(String state) {
-        super.at_state(state);
-        if (state.equals(_state_EPILOG)) {
-            // to prevent respawn signals AFTER game_over
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), get_active_spawn_agents());
-            send("timers", MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
-        }
-        if (state.equals(_state_PROLOG)) {
-            active_capture_point = 0;
-            overtime = false;
-        }
+    public void run_operations() {
+        super.run_operations();
+        estimated_end_time = end_time;
+        // activate first cp
+        cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
     }
 
     @Override
-    protected void on_transition(String old_state, String message, String new_state) {
-        super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_RUN)) {
-            estimated_end_time = end_time;
-            // all CPs to standby
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
-            // activate first cp
-            cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
-        }
-        if (message.equals(_msg_RESET)) {
-            estimated_end_time = null;
-            deleteJob(bombTimerJobkey);
-            active_capture_point = 0;
-            overtime = false;
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-            send("vars", MQTT.toJSON("overtime", ""), get_all_spawn_agents());
-        }
-        //todo: pause and resume missing
+    public void reset_operations() {
+        super.reset_operations();
+        estimated_end_time = null;
+        deleteJob(bombTimerJobkey);
+        active_capture_point = 0;
+        overtime = false;
+        send("vars", MQTT.toJSON("overtime", ""), get_all_spawn_agents());
     }
+
+
 
     private void standby(String agent) {
         send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent);
@@ -225,7 +206,8 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
 
-    private FSM create_CP_FSM(final String agent) {
+    @Override
+    public FSM create_CP_FSM(final String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/farcry.xml"), null);
             fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> prolog(agent));

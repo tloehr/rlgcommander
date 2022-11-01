@@ -66,22 +66,28 @@ public abstract class Timed extends WithRespawns {
             start_time = start_time.plusSeconds(pause_length_in_seconds);
             end_time = start_time.plusSeconds(game_time);
         }
+    }
 
-        if (message.equals(_msg_GAME_OVER)) {
-            deleteJob(game_timer_jobkey);
-        }
+    @Override
+    public void run_operations() {
+        super.run_operations();
+        start_time = LocalDateTime.now();
+        end_time = start_time.plusSeconds(game_time);
+        create_resumable_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class, Optional.empty());
+    }
 
-        if (message.equals(_msg_RESET)) {
-            start_time = null;
-            end_time = null;
-            deleteJob(game_timer_jobkey);
-        }
+    @Override
+    public void reset_operations() {
+        super.reset_operations();
+        start_time = null;
+        end_time = null;
+        deleteJob(game_timer_jobkey);
+    }
 
-        if (message.equals(_msg_RUN)) {
-            start_time = LocalDateTime.now();
-            end_time = start_time.plusSeconds(game_time);
-            create_resumable_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class, Optional.empty());
-        }
+    @Override
+    public void game_over_operations() {
+        super.game_over_operations();
+        deleteJob(game_timer_jobkey);
     }
 
     protected long getRemaining() {

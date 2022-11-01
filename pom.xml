@@ -10,7 +10,7 @@
     </parent>
     <groupId>de.flashheart.rlg</groupId>
     <artifactId>rlgcommander</artifactId>
-    <version>1.4</version>
+    <version>1.5</version>
     <name>rlgcommander</name>
     <description>Command Module for the RLGS2 gaming system.</description>
     <properties>

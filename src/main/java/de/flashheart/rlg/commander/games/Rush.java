@@ -68,15 +68,17 @@ public class Rush extends Scheduled {
             roles.put("mcom", sector.getString("mcom2"));
             roles.put("sirens", sector.getString("siren"));
         }
+        game_fsm.ProcessFSM(_msg_RESET);
+    }
+
+
+    @Override
+    public void run_operations() {
+
     }
 
     @Override
-    protected void at_state(String state) {
-
-    }
-
-    @Override
-    protected void on_transition(String old_state, String message, String new_state) {
+    public void reset_operations() {
 
     }
 

@@ -36,7 +36,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
     private final List<String> capture_points;
-    private final Map<String, FSM> cpFSMs;
     private final Table<String, String, Long> scores;
     private final JobKey broadcastScoreJobkey;
     private long last_job_broadcast;
@@ -57,7 +56,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
 
         scores = HashBasedTable.create();
-        cpFSMs = new HashMap<>();
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
 
         reset_score_table();
@@ -96,7 +94,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         return String.format("%s_%s", state.toLowerCase(), agent);
     }
 
-    private FSM create_CP_FSM(final String agent) {
+    @Override
+    public FSM create_CP_FSM(final String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
@@ -148,39 +147,30 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    protected void on_transition(String old_state, String message, String new_state) {
-        super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_RESET)) {
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-            blue_respawns = 0;
-            red_respawns = 0;
-        }
-        if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
-
-            long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
-            create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
-            broadcast_cycle_counter = 0;
-        }
+    public void game_over_operations() {
+        super.game_over_operations();
+        deleteJob(broadcastScoreJobkey); // this cycle has no use anymore
+        broadcast_score(); // one last time
     }
 
     @Override
-    protected void at_state(String state) {
-        super.at_state(state);
-        if (state.equals(_state_PROLOG)) {
-            deleteJob(broadcastScoreJobkey);
-            broadcast_cycle_counter = 0l;
-            last_job_broadcast = 0l;
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-            reset_score_table();
-            broadcast_score();
-        }
+    public void reset_operations() {
+        super.reset_operations();
+        deleteJob(broadcastScoreJobkey);
+        broadcast_cycle_counter = 0l;
+        last_job_broadcast = 0l;
+        blue_respawns = 0;
+        red_respawns = 0;
+        reset_score_table();
+        broadcast_score();
+    }
 
-        if (state.equals(_state_EPILOG)) {
-            deleteJob(broadcastScoreJobkey); // this cycle has no use anymore
-            cpFSMs.values().forEach(fsm -> fsm.ProcessFSM("game_over"));
-            broadcast_score(); // one last time
-        }
+    @Override
+    public void run_operations() {
+        super.run_operations();
+        long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
+        create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
+        broadcast_cycle_counter = 0;
     }
 
     @Override
