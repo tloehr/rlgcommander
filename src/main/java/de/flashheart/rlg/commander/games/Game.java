@@ -100,6 +100,8 @@ public abstract class Game {
 
         // generic creation of capture_points - if needed
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
+        send("paged", MQTT.page("page0",
+                "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
     }
 
     protected void addEvent(JSONObject in_game_event) {
@@ -159,7 +161,6 @@ public abstract class Game {
      * @param state the reached state
      */
     protected void at_state(String state) {
-
     }
 
     /**

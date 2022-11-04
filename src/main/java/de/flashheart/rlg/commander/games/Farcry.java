@@ -177,11 +177,6 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     private void prolog(String agent) {
-        send("paged",
-                MQTT.page("page0",
-                        "I am ${agentname}", "", "I will be a", "Capture Point"),
-                agent);
-
         //send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "fast"), agent);
         send("visual", show_number_as_leds(capture_points.indexOf(agent) + 1, "fast"), agent);
 
@@ -312,16 +307,15 @@ public class Farcry extends Timed implements HasBombtimer {
         return active_capture_point == capture_points.size() - 1 ? "This is the LAST" : "Next: " + capture_points.get(active_capture_point + 1);
     }
 
-
-    @Override
-    public void game_time_is_up() {
-        log.info("Game time is up");
-        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_TIME_IS_UP));
-    }
-
     @Override
     public void bomb_time_is_up(String bombid) {
         log.info("Bomb has exploded");
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_BOMB_TIME_IS_UP));
+    }
+
+    @Override
+    public void game_over_operations() {
+        super.game_over_operations();
+        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_TIME_IS_UP));
     }
 }

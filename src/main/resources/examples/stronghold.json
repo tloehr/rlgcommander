@@ -5,8 +5,17 @@
   "game_time": 600,
   "resume_countdown": 0,
   "silent_game": false,
-  "defender": "BlueFor",
+  "lock_taken_flags": true,
   "agents": {
+    "blu": [],
+    "grn": [],
+    "ylw": [],
+    "red": [
+      "ag01",
+      "ag02",
+      "ag03",
+      "ag04"
+    ],
     "capture_points": [
       "ag01",
       "ag02",
@@ -17,14 +26,6 @@
       "ag50"
     ]
   },
-  "defense_rings": [
-    [
-      "ag01",
-      "ag02",
-      "ag03",
-      "ag04"
-    ]
-  ],
   "spawns": {
     "wait4teams2B_ready": false,
     "intro_mp3_file": "<random>",

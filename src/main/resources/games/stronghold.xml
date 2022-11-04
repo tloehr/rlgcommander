@@ -2,38 +2,39 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="run" nextState="NEUTRAL"/>
+        <MESSAGE id="run" nextState="STAND_BY"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="NEUTRAL">
-        <MESSAGE id="btn01" nextState="BLUE"/>
+    <STATE id="STAND_BY">
+        <MESSAGE id="activate" nextState="DEFUSED"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="BLUE">
-        <MESSAGE id="btn01" nextState="RED"/>
-        <MESSAGE id="lock" nextState="BLUE_LOCKED"/>
+    <STATE id="DEFUSED">
+        <MESSAGE id="btn01" nextState="FUSED"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="RED">
-        <MESSAGE id="btn01" nextState="BLUE"/>
-        <MESSAGE id="lock" nextState="RED_LOCKED"/>
+    <STATE id="FUSED">
+        <!-- optional: press again to defuse the flag again -->
+        <MESSAGE id="btn01" nextState="DEFUSED"/>
+        <MESSAGE id="lock" nextState="LOCKED"/>
+        <MESSAGE id="taken" nextState="TAKEN"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="RED_LOCKED">
-        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
-        <MESSAGE id="game_over" nextState="GAME_OVER"/>
-        <MESSAGE id="reset" nextState="PROLOG"/>
-    </STATE>
-    <STATE id="BLUE_LOCKED">
-        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
+    <STATE id="LOCKED">
+        <!-- optional: press again to defuse the flag again -->
+        <MESSAGE id="taken" nextState="TAKEN"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="GAME_OVER">
         <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="TAKEN">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
     </STATE>
 </FSM>
 

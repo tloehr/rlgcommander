@@ -252,10 +252,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     }
 
     private void cp_to_neutral(String agent) {
-        send("paged",
-                MQTT.page("page0",
-                        "I am ${agentname}", "", "I will be a", "Capture Point"),
-                agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
     }
 

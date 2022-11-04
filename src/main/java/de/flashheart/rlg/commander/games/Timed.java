@@ -99,7 +99,10 @@ public abstract class Timed extends WithRespawns {
 //        }
     }
 
-    public abstract void game_time_is_up();
+    public void game_time_is_up() {
+        log.info("Game time is up");
+        game_fsm.ProcessFSM(_msg_GAME_OVER);
+    }
 
     @Override
     public JSONObject getState() {

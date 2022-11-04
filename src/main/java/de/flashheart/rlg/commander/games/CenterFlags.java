@@ -334,12 +334,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void game_time_is_up() {
-        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
-        game_fsm.ProcessFSM(_msg_GAME_OVER);
-    }
-
-    @Override
     public JSONObject getState() {
         final JSONObject states = new JSONObject();
         cpFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
