@@ -342,10 +342,13 @@ public abstract class Game {
      * @return status information to be sent if we are asked for it
      */
     public JSONObject getState() {
+        JSONObject agent_states = new JSONObject();
+        cpFSMs.forEach((agentid, fsm) -> agent_states.put(agentid, fsm.getCurrentState()));
         return new JSONObject(game_parameters.toString())
                 .put("class", this.getClass().getName())
                 .put("game_state", game_fsm.getCurrentState())
-                .put("in_game_events", new JSONArray(in_game_events));
+                .put("in_game_events", new JSONArray(in_game_events))
+                .put("agent_states", agent_states);
     }
 
     /**
@@ -375,7 +378,9 @@ public abstract class Game {
         return game_parameters;
     }
 
-    protected abstract JSONObject getSpawnPages(String state);
+    protected JSONObject getSpawnPages(String state){
+        return MQTT.page("page0", game_description);
+    }
 
 
 }

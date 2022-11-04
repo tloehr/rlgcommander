@@ -335,12 +335,9 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     @Override
     public JSONObject getState() {
-        final JSONObject states = new JSONObject();
-        cpFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
         return super.getState()
                 .put("scores", new JSONObject(scores.columnMap()))
                 .put("red_respawns", red_respawns)
-                .put("blue_respawns", blue_respawns)
-                .put("agent_states", states);
+                .put("blue_respawns", blue_respawns);
     }
 }

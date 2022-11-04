@@ -298,11 +298,10 @@ public abstract class WithRespawns extends Pausable {
                 .put("starter_countdown", starter_countdown)
                 .put("active_segment", active_segment);
 
-        final JSONObject states = new JSONObject();
         spawn_segments.column(active_segment)
                 .values()
-                .forEach(stringFSMPair -> states.put(stringFSMPair.getLeft(), stringFSMPair.getRight().getCurrentState()));
-        statusObject.put("agent_states", states);
+                .forEach(stringFSMPair -> statusObject.getJSONObject("agent_states").put(stringFSMPair.getLeft(), stringFSMPair.getRight().getCurrentState()));
+
         return statusObject;
     }
 

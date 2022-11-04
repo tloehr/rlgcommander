@@ -268,12 +268,9 @@ public class Farcry extends Timed implements HasBombtimer {
 
     @Override
     public JSONObject getState() {
-        final JSONObject statusObject = super.getState()
+        return super.getState()
                 .put("capture_points_taken", active_capture_point)
                 .put("max_capture_points", cpFSMs.size());
-        cpFSMs.forEach((agentid, fsm) -> statusObject.getJSONObject("agent_states").put(agentid, fsm.getCurrentState()));
-
-        return statusObject;
     }
 
     @Override

@@ -418,19 +418,13 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     @Override
     public JSONObject getState() {
         update_cps_held_by_list();
-
-        final JSONObject statusObject = super.getState()
+        return super.getState()
                 .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
                 .put("remaining_red_tickets", remaining_red_tickets.intValue())
                 .put("cps_held_by_blue", cps_held_by_blue)
                 .put("cps_held_by_red", cps_held_by_red)
                 .put("red_respawns", red_respawns)
                 .put("blue_respawns", blue_respawns);
-
-        final JSONObject states = new JSONObject();
-        cpFSMs.forEach((agentid, fsm) -> states.put(agentid, fsm.getCurrentState()));
-        statusObject.put("agent_states", states);
-        return statusObject;
     }
 
 
