@@ -1,7 +1,10 @@
 package de.flashheart.rlg.commander.games;
 
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.GameTimeIsUpJob;
+import de.flashheart.rlg.commander.games.traits.HasBombtimer;
+import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,7 +27,7 @@ import java.util.TimeZone;
  * time, NOT about END-SCORES or RUNNING OUT OF RESOURCES.
  */
 @Log4j2
-public abstract class Timed extends WithRespawns {
+public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
     final String _msg_GAME_TIME_IS_UP = "game_time_is_up";
     /**
      * the length of the match in seconds. Due to the nature of certain gamemodes (like farcry) this value is rather a
@@ -102,6 +105,11 @@ public abstract class Timed extends WithRespawns {
     public void game_time_is_up() {
         log.info("Game time is up");
         game_fsm.ProcessFSM(_msg_GAME_OVER);
+    }
+
+    @Override
+    public void broadcast_score() {
+        send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
     }
 
     @Override

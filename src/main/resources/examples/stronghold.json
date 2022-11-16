@@ -5,7 +5,7 @@
   "game_time": 600,
   "resume_countdown": 0,
   "silent_game": false,
-  "lock_taken_flags": true,
+  "allow_defuse": false,
   "agents": {
     "blu": [],
     "grn": [],

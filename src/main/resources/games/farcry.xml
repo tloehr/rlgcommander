@@ -18,6 +18,7 @@
     <STATE id="STAND_BY">
         <MESSAGE id="activate" nextState="DEFUSED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
     </STATE>
     <STATE id="DEFUSED">
         <MESSAGE id="btn01" nextState="FUSED"/>
@@ -38,8 +39,13 @@
     <!-- ENDING STATES -->
     <STATE id="DEFENDED">
         <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
     </STATE>
     <STATE id="TAKEN">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+    </STATE>
+    <STATE id="GAME_OVER">
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
 </FSM>

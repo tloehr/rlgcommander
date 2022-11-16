@@ -124,14 +124,14 @@ public abstract class WithRespawns extends Pausable {
             send("acoustic", MQTT.toJSON("all", "off"), agent);
             send("visual", MQTT.toJSON("all", "off"), agent);
             send("paged", MQTT.merge(
-                    MQTT.page("page0", "", "THIS SPAWN IS", "", ""),
-                    MQTT.page("page1", "", "", "", "INACTIVE")), agent);
+                    MQTT.page("page0", "", "THIS SPAWN IS", "", "INACTIVE"),
+                    MQTT.page("page1", "THIS SPAWN IS", "", "INACTIVE", "")), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_PREPARING, (state, obj) -> {
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
             send("paged", MQTT.merge(
-                    MQTT.page("page0", " !! GAME LOBBY !! ", "", "Press button", ""),
-                    MQTT.page("page1", " !! GAME LOBBY !! ", "", "", "when ready")
+                    MQTT.page("page0", " !! GAME LOBBY !! ", "", "Press button", "when ready"),
+                    MQTT.page("page1", " !! GAME LOBBY !! ", "", "", "")
             ), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
@@ -209,7 +209,6 @@ public abstract class WithRespawns extends Pausable {
         deleteJob(deferredRunGameJob);
         delete_timed_respawn();
         send_message_to_all_agents(_msg_STANDBY);
-        //send_message_to_all_inactive_segments(_msg_STANDBY);
         send_message_to_agents_in_segment(active_segment, _msg_RESET);
     }
 

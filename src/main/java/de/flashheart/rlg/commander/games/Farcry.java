@@ -80,6 +80,10 @@ public class Farcry extends Timed implements HasBombtimer {
         }
     }
 
+    /**
+     * checks whether the spawn segment definitions are valid
+     * @throws JSONException
+     */
     void check_segment_sizes() throws JSONException {
         log.debug(spawn_segments);
         // all segments must have the same size
@@ -93,7 +97,6 @@ public class Farcry extends Timed implements HasBombtimer {
 
         if (!(num_of_spawn_segments == capture_points.size() && num_of_spawn_segments == sirs.size()))
             throw new JSONException("number of segments mismatch. number of CPs, sirens and spawn_segments must match");
-
     }
 
     @Override
@@ -114,13 +117,9 @@ public class Farcry extends Timed implements HasBombtimer {
         send("vars", MQTT.toJSON("overtime", ""), get_all_spawn_agents());
     }
 
-
-
     private void standby(String agent) {
         send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent);
-//        send("signals", MQTT.toJSON("sir_all", "off"), map_of_agents_and_sirens.get(agent).toString());
     }
-
 
     private void fused(String agent) {
         final JobDataMap jdm = new JobDataMap();
@@ -128,7 +127,6 @@ public class Farcry extends Timed implements HasBombtimer {
         estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
         create_resumable_job(bombTimerJobkey, estimated_end_time, BombTimerJob.class, Optional.of(jdm));
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
-//        process_message(_msg_IN_GAME_EVENT_OCCURRED);
         send("play", MQTT.toJSON("subpath", "announce", "soundfile", "selfdestruct"), get_active_spawn_agents());
         send("acoustic", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
@@ -140,7 +138,6 @@ public class Farcry extends Timed implements HasBombtimer {
         estimated_end_time = end_time;
         deleteJob(bombTimerJobkey);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defused"));
-//        if (game_fsm.getCurrentState().equalsIgnoreCase(_state_RUNNING)) process_message(_msg_IN_GAME_EVENT_OCCURRED);
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "timer:remaining"), agent);
         send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), get_all_spawn_agents());
@@ -148,9 +145,9 @@ public class Farcry extends Timed implements HasBombtimer {
 
     private void defended(String agent) {
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
-        game_fsm.ProcessFSM(_msg_GAME_OVER);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "very_fast"), agent);
         send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), get_all_spawn_agents());
+        game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
 
     private void taken(String agent) {
@@ -161,8 +158,8 @@ public class Farcry extends Timed implements HasBombtimer {
         // activate next CP or end the game when no CPs left
         boolean all_cps_taken = active_capture_point == capture_points.size();
         if (overtime || all_cps_taken) {
-            game_fsm.ProcessFSM(_msg_GAME_OVER);
             send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "very_fast"), agent);
+            game_fsm.ProcessFSM(_msg_GAME_OVER);
         } else {
             send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "10:on,250;off,250"), agent);
             send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), map_of_agents_and_sirens.get(agent).toString());
@@ -177,9 +174,7 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     private void prolog(String agent) {
-        //send("signals", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "fast"), agent);
         send("visual", show_number_as_leds(capture_points.indexOf(agent) + 1, "fast"), agent);
-
     }
 
     /**
@@ -196,10 +191,8 @@ public class Farcry extends Timed implements HasBombtimer {
         leds_to_use.forEach(led -> result.put(led, signal));
         leds_to_set_off.forEach(led -> result.put(led, "off"));
 
-
         return result;
     }
-
 
     @Override
     public FSM create_CP_FSM(final String agent) {
@@ -243,7 +236,6 @@ public class Farcry extends Timed implements HasBombtimer {
 
     private void overtime() {
         addEvent(new JSONObject().put("item", "overtime"));
-//        process_message(_msg_IN_GAME_EVENT_OCCURRED);
         send("vars", MQTT.toJSON("overtime", "overtime"), get_all_spawn_agents());
         send("play", MQTT.toJSON("subpath", "announce", "soundfile", "overtime"), get_active_spawn_agents());
         overtime = true;
@@ -265,7 +257,6 @@ public class Farcry extends Timed implements HasBombtimer {
         } else super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
     }
 
-
     @Override
     public JSONObject getState() {
         return super.getState()
@@ -283,7 +274,6 @@ public class Farcry extends Timed implements HasBombtimer {
 
         return MQTT.page("page0", game_description);
     }
-
 
     @Override
     protected void on_respawn_signal_received(String role, String agent) {
@@ -311,8 +301,8 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
-    public void game_over_operations() {
-        super.game_over_operations();
+    public void game_time_is_up() {
+        log.info("Game time is up");
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_TIME_IS_UP));
     }
 }

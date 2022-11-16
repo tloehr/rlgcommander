@@ -44,6 +44,9 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 "         |___/");
 
         cpLockJobs = new HashMap<>();
+        cpFSMs.forEach((agent, fsm) -> cpLockJobs.put(agent, new JobKey(agent + "_lock_color", uuid.toString())));
+        line_variables = new JSONObject();
+
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
 
         if (capture_points.size() > MAX_CAPTURE_POINTS)
@@ -51,7 +54,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
         setGameDescription(game_parameters.getString("comment"), "",
                 String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
-
 
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
         LOCK_TIME = game_parameters.optLong("lock_time");
@@ -93,8 +95,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 String unlock_scheme = String.format("1:off,%s;on,2500;off,1", UNLOCK_TIME * 1000 - 2500);
                 send("acoustic", MQTT.toJSON(MQTT.SIR3, unlock_scheme), roles.get("sirens"));
             });
-
-            cpLockJobs.put(agent, new JobKey(agent + "_lock_color", uuid.toString()));
 
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {

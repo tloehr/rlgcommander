@@ -65,7 +65,10 @@ public class GamesService {
         JSONObject game_description = new JSONObject(json);
         loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
-        Game game = (Game) Class.forName(game_description.getString("class")).getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class).newInstance(game_description, scheduler, mqttOutbound);
+        Game game = (Game) Class
+                .forName(game_description.getString("class"))
+                .getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class)
+                .newInstance(game_description, scheduler, mqttOutbound);
         game.addStateReachedListener(event -> {
             log.trace("gameid #{} new state: {}", id, event.getState());
             fireStateReached(id, event); // pass it on to the RestController

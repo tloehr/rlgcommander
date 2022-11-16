@@ -47,6 +47,7 @@ public abstract class Pausable extends Scheduled {
      */
     public Pausable(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+        pausing_since = Optional.empty();
         this.resume_countdown = game_parameters.optInt("resume_countdown");
         this.continueGameJob = new JobKey("continue_the_game", uuid.toString());
         this.jobs_to_reschedule_after_pause = new HashSet<>();

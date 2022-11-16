@@ -4,10 +4,8 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.misc.Tools;
+import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
@@ -22,7 +20,7 @@ import java.util.*;
  * ring we start with red then red, yellow and so on
  */
 @Log4j2
-public class Stronghold extends Timed {
+public class Stronghold extends Timed implements HasScoreBroadcast {
     public static final String _state_DEFUSED = "DEFUSED";
     public static final String _state_FUSED = "FUSED";
     public static final String _state_TAKEN = "TAKEN";
@@ -31,9 +29,11 @@ public class Stronghold extends Timed {
     public static final String _msg_TAKEN = "taken";
     private int active_ring;
     private int max_number_of_rings;
-    private boolean lock_taken_flags;
+    private boolean allow_defuse;
+    //String[] rings = new String[]{"blu", "ylw", "grn", "red"};
     String[] rings = new String[]{"red", "ylw", "grn", "blu"};
     private HashMap<String, String> map_agent_to_ring_color;
+    private JSONObject variables;
 
     public Stronghold(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -45,7 +45,8 @@ public class Stronghold extends Timed {
                 "|____/ \\__|_|  \\___/|_| |_|\\__, |_| |_|\\___/|_|\\__,_|\n" +
                 "                           |___/");
 
-        lock_taken_flags = game_parameters.optBoolean("lock_taken_flags");
+        variables = new JSONObject();
+        allow_defuse = game_parameters.optBoolean("allow_defuse");
         map_agent_to_ring_color = new HashMap<>();
         List.of(rings).forEach(color -> {
             if (roles.get(color).isEmpty()) return;
@@ -70,8 +71,7 @@ public class Stronghold extends Timed {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
-                    send("acoustic", MQTT.toJSON(MQTT.SIR2, "off", MQTT.SIR3, "1:on,2000;off,1"), roles.get("sirens"));
-                    //send("play", MQTT.toJSON("subpath", "announce", "soundfile", "shutdown"), get_active_spawn_agents());
+                    send("acoustic", MQTT.toJSON(MQTT.SIR2, "off", MQTT.SIR3, "medium"), roles.get("sirens"));
                     return true;
                 }
             });
@@ -80,7 +80,7 @@ public class Stronghold extends Timed {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // start siren for the next flag - starting with the second flag
-                    addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
+                    //addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     return true;
                 }
             });
@@ -96,38 +96,57 @@ public class Stronghold extends Timed {
         if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
         if (!message.getString("button").equalsIgnoreCase("up")) return;
 
-        if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING))
+        if (game_fsm.getCurrentState().equals(_state_RUNNING) && roles.get(rings[active_ring]).contains(sender))
             cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
-        else {
-            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
-        }
+        else super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
     }
 
     private void taken(String agent) {
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
         send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent);
+        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
     }
 
     private void fused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "fast"), agent);
+        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_FUSED));
-        if (lock_taken_flags) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
+        if (!allow_defuse) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
         if (active_ring_taken()) {
+            // the others are still locked. Need to be TAKEN now
             roles.get(rings[active_ring])
                     .stream()
                     .filter(s -> !cpFSMs.get(s).equals(_state_TAKEN)) // only those which are not already taken
                     .forEach(other_agents_in_this_ring -> cpFSMs.get(other_agents_in_this_ring).ProcessFSM(_msg_TAKEN)
                     );
-            active_ring++; // on to the next ring
-            if (active_ring == max_number_of_rings) game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
-            activate_ring(active_ring);
+            addEvent(new JSONObject().put("item", "ring").put("ring", rings[active_ring]).put("state", _state_TAKEN));
+            active_ring--; // on to the next ring
+            if (active_ring < 0) game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
+            else activate_ring(active_ring);
+            broadcast_score();
         } else {
-            send("acoustic", MQTT.toJSON("sir2", "short"), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON("sir2", "medium"), roles.get("sirens"));
         }
+    }
+
+
+    @Override
+    public void reset_operations() {
+        super.reset_operations();
+        active_ring = max_number_of_rings - 1; // start backwards
+        broadcast_score();
+    }
+
+    @Override
+    public void run_operations() {
+        super.run_operations();
+        activate_ring(active_ring);
+        broadcast_score();
     }
 
     private void activate_ring(int active_ring) {
         roles.get(rings[active_ring]).forEach(agent -> cpFSMs.get(agent).ProcessFSM(_msg_ACTIVATE));
+        if (active_ring < max_number_of_rings - 1) // not with the first or only ring
+            send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), roles.get("sirens"));
+        addEvent(new JSONObject().put("item", "ring").put("ring", rings[active_ring]).put("state", "activated"));
     }
 
     private void defused(String agent) {
@@ -137,7 +156,7 @@ public class Stronghold extends Timed {
 
     private void standby(String agent) {
         send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_STANDBY));
+        //addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_STANDBY));
     }
 
     private void prolog(String agent) {
@@ -152,19 +171,114 @@ public class Stronghold extends Timed {
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
-        active_ring = 0;
+    protected JSONObject getSpawnPages(String state) {
+        if (state.matches(_state_EPILOG)) {
+            return MQTT.merge(
+                    MQTT.page("page0",
+                            "Game Over",
+                            "",
+                            "Erobert:",
+                            "${rings_taken}"),
+                    MQTT.page("page1",
+                            "Game Over",
+                            "",
+                            "Aktiv:",
+                            "${active_ring}"),
+                    MQTT.page("page2",
+                            "Game Over",
+                            "",
+                            "Nächste:",
+                            "${rings_to_go}")
+            );
+        }
+
+        if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
+            return MQTT.merge(
+                    MQTT.page("page0",
+                            "Restzeit:  ${remaining}",
+                            "",
+                            "Erobert:",
+                            "${rings_taken}"),
+                    MQTT.page("page1",
+                            "Restzeit:  ${remaining}",
+                            "",
+                            "Aktiv:",
+                            "${active_ring}"),
+                    MQTT.page("page2",
+                            "Restzeit:  ${remaining}",
+                            "",
+                            "Nächste:",
+                            "${rings_to_go}")
+            );
+        }
+        return MQTT.page("page0", game_description);
     }
 
-    @Override
-    public void run_operations() {
-        super.run_operations();
-        activate_ring(active_ring);
-    }
 
     @Override
     protected void on_respawn_signal_received(String spawn_role, String agent) {
 
+    }
+
+    @Override
+    public void broadcast_score() {
+        super.broadcast_score();
+        if (max_number_of_rings == 1) {
+            variables.put("rings_taken", new ArrayList<>());
+            variables.put("active_ring", rings[active_ring]);
+            variables.put("rings_to_go", new ArrayList<>());
+        } else {
+            //todo: debug this
+            variables.put("rings_taken", Arrays.asList(Arrays.copyOfRange(rings, active_ring-1, max_number_of_rings)).toString());
+            variables.put("active_ring", rings[active_ring]);
+            variables.put("rings_to_go", Arrays.asList(Arrays.copyOfRange(rings, 0, active_ring)).toString());
+        }
+        send("vars", variables, get_all_spawn_agents());
+    }
+
+    @Override
+    public void zeus(JSONObject params) throws IllegalStateException, JSONException {
+        String operation = params.getString("operation").toLowerCase();
+        if (operation.equalsIgnoreCase("to_neutral")) {
+            String agent = params.getString("agent");
+            if (!cpFSMs.containsKey(agent)) throw new IllegalStateException(agent + " unknown");
+            if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red"))
+                throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be BLUE or RED");
+            cpFSMs.get(agent).ProcessFSM(operation);
+            addEvent(new JSONObject()
+                    .put("item", "capture_point")
+                    .put("agent", agent)
+                    .put("state", "neutral")
+                    .put("zeus", "intervention"));
+        }
+//        if (operation.equalsIgnoreCase("add_seconds")) {
+//            String team = params.getString("team").toLowerCase();
+//            long amount = params.getLong("amount");
+//            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
+//            scores.put("all", team, scores.get("all", team) + amount * 1000L);
+//            addEvent(new JSONObject()
+//                    .put("item", "add_seconds")
+//                    .put("team", team)
+//                    .put("amount", amount)
+//                    .put("zeus", "intervention"));
+//        }
+//        if (operation.equalsIgnoreCase("add_respawns")) {
+//            String team = params.getString("team").toLowerCase();
+//            int amount = params.getInt("amount");
+//            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
+//            if (team.equalsIgnoreCase("blue")) blue_respawns += amount;
+//            if (team.equalsIgnoreCase("red")) red_respawns += amount;
+//            scores.put("all", team, scores.get("all", team) + amount * 1000L);
+//            addEvent(new JSONObject()
+//                    .put("item", "add_respawns")
+//                    .put("team", team)
+//                    .put("amount", amount)
+//                    .put("zeus", "intervention"));
+//        }
+    }
+
+    @Override
+    public JSONObject getState() {
+        return MQTT.merge(super.getState(), variables);
     }
 }

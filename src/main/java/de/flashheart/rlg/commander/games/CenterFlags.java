@@ -53,6 +53,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         setGameDescription(game_parameters.getString("comment"), "",
                 String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
 
+
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
 
         scores = HashBasedTable.create();
@@ -295,14 +296,22 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     @Override
     protected JSONObject getSpawnPages(String state) {
         if (state.equals(_state_EPILOG)) {
-            return MQTT.page("page0", "Game Over",
-                    "",
-                    "Blau: ${score_blue}",
-                    "Rot: ${score_red}");
+            return MQTT.merge(
+                    MQTT.page("page0", "Game Over",
+                            "Punktestand",
+                            "Blau: ${score_blue}",
+                            "Rot: ${score_red}"),
+                    MQTT.page("page1",
+                            "Game Over",
+                            "Respawns",
+                            "Blau: ${blue_respawns}",
+                            "Rot: ${red_respawns}")
+            );
         }
 
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
-            return MQTT.merge(MQTT.page("page0",
+            return MQTT.merge(
+                    MQTT.page("page0",
                             "Restzeit:  ${remaining}",
                             "",
                             "Blau: ${score_blue}",
@@ -311,7 +320,12 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                             "Restzeit:  ${remaining}",
                             "${line1}",
                             "${line2}",
-                            "${line3}")
+                            "${line3}"),
+                    MQTT.page("page2",
+                            "Restzeit:  ${remaining}",
+                            "Respawns",
+                            "Blau: ${blue_respawns}",
+                            "Rot: ${red_respawns}")
             );
         }
         return MQTT.page("page0", game_description);

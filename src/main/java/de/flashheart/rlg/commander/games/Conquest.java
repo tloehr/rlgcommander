@@ -385,12 +385,12 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
         if (state.equals(_state_RUNNING)) {
             return MQTT.merge(
                     MQTT.page("page0",
-                            "   >>> RED   <<<   ",
+                            "  >>> RED Flags <<< ",
                             "${red_l1}",
                             "${red_l2}",
                             "Red->${red_tickets}:${blue_tickets}<-Blue"),
                     MQTT.page("page1",
-                            "   >>> BLUE  <<<   ",
+                            " >>> BLUE Flags <<< ",
                             "${blue_l1}",
                             "${blue_l2}",
                             "Red->${red_tickets}:${blue_tickets}<-Blue"));
