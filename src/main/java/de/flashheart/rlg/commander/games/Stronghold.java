@@ -13,7 +13,9 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * defense rings have to be taken in order blue -> green -> yellow -> red maximum number of rings: 4 if we need only one
@@ -54,6 +56,12 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
             roles.get(color).forEach(agent ->
                     map_agent_to_ring_color.put(agent, color));
         });
+
+        setGameDescription(game_parameters.getString("comment"),
+                String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))),
+                String.format("Number of rings: %s", max_number_of_rings)
+        );
+
     }
 
     @Override
@@ -119,8 +127,10 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                     );
             addEvent(new JSONObject().put("item", "ring").put("ring", rings[active_ring]).put("state", _state_TAKEN));
             active_ring--; // on to the next ring
-            if (active_ring < 0) game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
-            else activate_ring(active_ring);
+            if (active_ring < 0) {
+                active_ring = 0;
+                game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
+            } else activate_ring(active_ring);
             broadcast_score();
         } else {
             send("acoustic", MQTT.toJSON("sir2", "medium"), roles.get("sirens"));
@@ -177,18 +187,8 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                     MQTT.page("page0",
                             "Game Over",
                             "",
-                            "Erobert:",
-                            "${rings_taken}"),
-                    MQTT.page("page1",
-                            "Game Over",
-                            "",
-                            "Aktiv:",
-                            "${active_ring}"),
-                    MQTT.page("page2",
-                            "Game Over",
-                            "",
-                            "Nächste:",
-                            "${rings_to_go}")
+                            "Erobert",
+                            "${rings_taken}")
             );
         }
 
@@ -196,19 +196,14 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
             return MQTT.merge(
                     MQTT.page("page0",
                             "Restzeit:  ${remaining}",
-                            "",
-                            "Erobert:",
-                            "${rings_taken}"),
+                            "  >>  >>  >>  >>  >>",
+                            "${rings_progress}",
+                            ">>  >>  >>  >>  >>  "),
                     MQTT.page("page1",
                             "Restzeit:  ${remaining}",
-                            "",
-                            "Aktiv:",
-                            "${active_ring}"),
-                    MQTT.page("page2",
-                            "Restzeit:  ${remaining}",
-                            "",
-                            "Nächste:",
-                            "${rings_to_go}")
+                            ">>  >>  >>  >>  >>  ",
+                            "${rings_progress}",
+                            "  >>  >>  >>  >>  >>")
             );
         }
         return MQTT.page("page0", game_description);
@@ -223,16 +218,23 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     @Override
     public void broadcast_score() {
         super.broadcast_score();
-        if (max_number_of_rings == 1) {
-            variables.put("rings_taken", new ArrayList<>());
-            variables.put("active_ring", rings[active_ring]);
-            variables.put("rings_to_go", new ArrayList<>());
-        } else {
-            //todo: debug this
-            variables.put("rings_taken", Arrays.asList(Arrays.copyOfRange(rings, active_ring-1, max_number_of_rings)).toString());
-            variables.put("active_ring", rings[active_ring]);
-            variables.put("rings_to_go", Arrays.asList(Arrays.copyOfRange(rings, 0, active_ring)).toString());
+        List<String> rings_taken = new ArrayList<>();
+        String active = rings[active_ring];
+        List<String> rings_to_go = new ArrayList<>();
+        if (max_number_of_rings > 1) {
+            rings_taken = Arrays.asList(Arrays.copyOfRange(rings, active_ring + 1, max_number_of_rings));
+            rings_to_go = Arrays.asList(Arrays.copyOfRange(rings, 0, active_ring));
         }
+
+        String progress = rings_taken.stream().collect(Collectors.joining(","));
+        progress += " **" + active.toUpperCase() + "** ";
+        progress += rings_to_go.stream().collect(Collectors.joining(","));
+
+        variables.put("active_ring", active);
+        variables.put("rings_taken", rings_taken);
+        variables.put("rings_to_go", rings_to_go);
+        variables.put("rings_progress", progress);
+
         send("vars", variables, get_all_spawn_agents());
     }
 

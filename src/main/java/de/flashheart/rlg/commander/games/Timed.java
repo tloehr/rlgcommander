@@ -55,6 +55,9 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
         game_timer_jobkey = new JobKey("gametime", uuid.toString());
         start_time = null;
         end_time = null;
+
+        setGameDescription(game_parameters.getString("comment"),
+                        String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
     }
 
     @Override

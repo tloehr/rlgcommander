@@ -52,9 +52,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         if (capture_points.size() > MAX_CAPTURE_POINTS)
             throw new ArrayIndexOutOfBoundsException("max number of capture points is " + MAX_CAPTURE_POINTS);
 
-        setGameDescription(game_parameters.getString("comment"), "",
-                String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
-
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
         LOCK_TIME = game_parameters.optLong("lock_time");
     }
