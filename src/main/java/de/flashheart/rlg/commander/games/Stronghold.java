@@ -240,43 +240,21 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
 
     @Override
     public void zeus(JSONObject params) throws IllegalStateException, JSONException {
+        if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
+
         String operation = params.getString("operation").toLowerCase();
-        if (operation.equalsIgnoreCase("to_neutral")) {
+        if (operation.equalsIgnoreCase("defuse")) {
             String agent = params.getString("agent");
             if (!cpFSMs.containsKey(agent)) throw new IllegalStateException(agent + " unknown");
-            if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red"))
-                throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be BLUE or RED");
+            if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches( "fused|locked"))
+                throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be FUSED or LOCKED");
             cpFSMs.get(agent).ProcessFSM(operation);
             addEvent(new JSONObject()
                     .put("item", "capture_point")
                     .put("agent", agent)
-                    .put("state", "neutral")
+                    .put("state", operation)
                     .put("zeus", "intervention"));
         }
-//        if (operation.equalsIgnoreCase("add_seconds")) {
-//            String team = params.getString("team").toLowerCase();
-//            long amount = params.getLong("amount");
-//            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
-//            scores.put("all", team, scores.get("all", team) + amount * 1000L);
-//            addEvent(new JSONObject()
-//                    .put("item", "add_seconds")
-//                    .put("team", team)
-//                    .put("amount", amount)
-//                    .put("zeus", "intervention"));
-//        }
-//        if (operation.equalsIgnoreCase("add_respawns")) {
-//            String team = params.getString("team").toLowerCase();
-//            int amount = params.getInt("amount");
-//            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
-//            if (team.equalsIgnoreCase("blue")) blue_respawns += amount;
-//            if (team.equalsIgnoreCase("red")) red_respawns += amount;
-//            scores.put("all", team, scores.get("all", team) + amount * 1000L);
-//            addEvent(new JSONObject()
-//                    .put("item", "add_respawns")
-//                    .put("team", team)
-//                    .put("amount", amount)
-//                    .put("zeus", "intervention"));
-//        }
     }
 
     @Override

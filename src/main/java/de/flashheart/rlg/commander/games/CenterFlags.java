@@ -239,6 +239,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     @Override
     public void zeus(JSONObject params) throws IllegalStateException, JSONException {
+        if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
+
         String operation = params.getString("operation").toLowerCase();
         if (operation.equalsIgnoreCase("to_neutral")) {
             String agent = params.getString("agent");

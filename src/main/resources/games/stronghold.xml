@@ -18,14 +18,17 @@
     <STATE id="FUSED">
         <!-- optional: press again to defuse the flag again -->
         <MESSAGE id="btn01" nextState="DEFUSED"/>
+        <!-- for zeus operation-->
+        <MESSAGE id="defuse" nextState="DEFUSED"/>
         <MESSAGE id="lock" nextState="LOCKED"/>
         <MESSAGE id="taken" nextState="TAKEN"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="LOCKED">
-        <!-- optional: press again to defuse the flag again -->
         <MESSAGE id="taken" nextState="TAKEN"/>
+        <!-- for zeus operation-->
+        <MESSAGE id="defuse" nextState="DEFUSED"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
