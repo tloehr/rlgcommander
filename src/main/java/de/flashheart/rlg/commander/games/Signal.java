@@ -55,13 +55,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
         LOCK_TIME = game_parameters.optLong("lock_time");
     }
-
-    @Override
-    public void game_time_is_up() {
-        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
-        game_fsm.ProcessFSM(_msg_GAME_OVER);
-    }
-
     @Override
     public FSM create_CP_FSM(final String agent) {
         try {

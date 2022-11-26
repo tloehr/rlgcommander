@@ -49,7 +49,6 @@ public class AgentsService {
             welcome(my_agent); // new agenta receive a default signal setting, so do reconnecting agents
         live_agents.put(agentid, my_agent);
     }
-
     public boolean agent_belongs_to_game(String agentid, int gameid) {
         Agent myAgent = live_agents.getOrDefault(agentid, new Agent("dummy"));
         return myAgent.getGameid() == gameid;

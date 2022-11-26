@@ -38,6 +38,11 @@ public class Rush extends Scheduled {
     private final int MAX_NUMBER_OF_SECTORS;
     private int remaining_tickets_for_this_zone;
 
+    @Override
+    public FSM create_CP_FSM(String agent) {
+        return null;
+    }
+
     public Rush(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
         log.debug("    ____             __\n" +

@@ -86,7 +86,6 @@ public abstract class Scheduled extends Game {
             log.fatal(e);
         }
     }
-
     protected void pause_job(JobKey jobKey) {
         try {
             scheduler.pauseJob(jobKey);
@@ -94,7 +93,6 @@ public abstract class Scheduled extends Game {
             log.error(e);
         }
     }
-
     protected void reschedule_job(JobKey jobKey, long delayed_by_seconds) {
         try {
             if (!scheduler.checkExists(jobKey)) return;
@@ -112,7 +110,6 @@ public abstract class Scheduled extends Game {
             log.error(e);
         }
     }
-
     protected void resume_job(JobKey jobKey) {
         try {
             scheduler.resumeJob(jobKey);
@@ -120,7 +117,6 @@ public abstract class Scheduled extends Game {
             log.error(e);
         }
     }
-
     protected boolean check_exists(JobKey jobKey) {
         boolean check;
         try {

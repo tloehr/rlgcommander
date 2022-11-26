@@ -185,10 +185,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             JSONObject vars = MQTT.merge(scores_to_vars(), get_agents_states_for_lcd());
             send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_active_spawn_agents());
             send("vars", vars, agents.keySet());
-            if (game_fsm.getCurrentState().equals(_state_EPILOG))
-                log.info(vars.toString(4));
-            else
-                log.trace(vars.toString(4));
+            log.trace(vars.toString(4));
         }
 
     }
@@ -329,7 +326,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         }
         return MQTT.page("page0", game_description);
     }
-
     @Override
     protected void on_respawn_signal_received(String spawn_role, String agent) {
         if (spawn_role.equals(RED_SPAWN)) {
@@ -345,7 +341,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
         }
     }
-
     @Override
     public JSONObject getState() {
         return super.getState()

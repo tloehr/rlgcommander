@@ -132,11 +132,7 @@ public abstract class Game {
     public void addStateReachedListener(StateReachedListener toAdd) {
         stateReachedListeners.add(toAdd);
     }
-
-    public FSM create_CP_FSM(String agent) {
-        return null;
-    }
-
+    public abstract FSM create_CP_FSM(String agent);
     private void fireStateTransition(StateTransitionEvent event) {
         stateTransitionListeners.forEach(stateTransitionListener -> stateTransitionListener.onStateTransition(event));
         log.debug("transition {}:{} == > {}", event.getOldState(), event.getMessage(), event.getNewState());
@@ -234,6 +230,7 @@ public abstract class Game {
     public void game_over_operations() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
         send("acoustic", MQTT.toJSON(MQTT.ALL, "off", MQTT.SIR1, "game_ends"), roles.get("sirens"));
+        log.info(getState().toString(4));
     }
 
     /**

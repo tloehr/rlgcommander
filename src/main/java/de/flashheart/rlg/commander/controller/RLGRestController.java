@@ -131,12 +131,10 @@ public class RLGRestController {
     public ResponseEntity<?> max_number_of_games() {
         return new ResponseEntity(new JSONObject().put("max_number_of_games", GamesService.MAX_NUMBER_OF_GAMES).toString(), HttpStatus.OK);
     }
-
     @GetMapping("/system/list_agents")
     public ResponseEntity<?> list_agents() {
         return new ResponseEntity<>(agentsService.get_all_agent_states().toString(), HttpStatus.OK);
     }
-
     @PostMapping("/system/test_agent")
     public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String agentid, @RequestParam(name = "deviceid") String deviceid, @RequestParam(name = "pattern") String pattern) {
         agentsService.test_agent(agentid, deviceid, pattern);

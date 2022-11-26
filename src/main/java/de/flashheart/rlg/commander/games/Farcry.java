@@ -293,13 +293,11 @@ public class Farcry extends Timed implements HasBombtimer {
         if (capture_points.size() == 1) return "";
         return active_capture_point == capture_points.size() - 1 ? "This is the LAST" : "Next: " + capture_points.get(active_capture_point + 1);
     }
-
     @Override
     public void bomb_time_is_up(String bombid) {
         log.info("Bomb has exploded");
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_BOMB_TIME_IS_UP));
     }
-
     @Override
     public void game_time_is_up() {
         log.info("Game time is up");

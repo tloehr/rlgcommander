@@ -329,7 +329,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     public void game_over_operations() {
         super.game_over_operations();
         deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
-        log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
+//        log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
         broadcast_score(); // one last time
     }
 
@@ -348,15 +348,9 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
 
         send("vars", vars, get_active_spawn_agents());
 
-        if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
-            log.info("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
-            log.info("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
-            log.info(vars.toString(4));
-        } else {
-            log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
-            log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
-            log.trace(vars.toString(4));
-        }
+        log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
+        log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+        log.trace(vars.toString(4));
     }
 
     /**

@@ -100,16 +100,11 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
         if (start_time == null) return game_time;
         long elapsed_time = start_time.until(pausing_since.orElse(LocalDateTime.now()), ChronoUnit.SECONDS);
         return Math.max(0L, game_time - elapsed_time);
-//        } else {
-//            return end_time != null ? Math.max(0l, LocalDateTime.now().until(end_time, ChronoUnit.SECONDS) + 1) : 0l;
-//        }
     }
-
     public void game_time_is_up() {
         log.info("Game time is up");
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
-
     @Override
     public void broadcast_score() {
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
