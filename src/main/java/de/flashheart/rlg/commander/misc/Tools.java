@@ -56,7 +56,8 @@ public class Tools {
 
     // todo: this should be in the rlgagent
     public static String getProgressTickingScheme(int time_period_in_millis) {
-        if (time_period_in_millis <= 30000l) return "1:on,2000;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000";
+        if (time_period_in_millis <= 30000l)
+            return "1:on,2000;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000";
         // increasing siren signals during bomb time. repeated beeps signals the quarter were in
         int segment_time_in_millis = time_period_in_millis / 4;
         String siren_tick = "on,100;off,100;";
@@ -82,5 +83,30 @@ public class Tools {
 
         return signal;
     }
+
+    /**
+     * https://stackoverflow.com/a/43381186
+     *
+     * @param remain
+     * @param total
+     */
+    public static String get_progress_bar(int remain, int total) {
+        if (remain > total) {
+            throw new IllegalArgumentException();
+        }
+        int maxBareSize = 10; // 10unit for 100%
+        int remainProcent = ((100 * remain) / total) / maxBareSize;
+        char defaultChar = '-';
+        String icon = "*";
+        String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
+        StringBuilder bareDone = new StringBuilder();
+        bareDone.append("[");
+        for (int i = 0; i < remainProcent; i++) {
+            bareDone.append(icon);
+        }
+        String bareRemain = bare.substring(remainProcent);
+        return bareDone + bareRemain + " " + remainProcent * 10 + "%";
+    }
+
 
 }

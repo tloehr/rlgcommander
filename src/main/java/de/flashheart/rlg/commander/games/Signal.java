@@ -195,11 +195,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     @Override
-    protected void on_respawn_signal_received(String spawn_role, String agent) {
-        // don't care
-    }
-
-    @Override
     public void delayed_reaction(JobDataMap map) {
         String agent = map.getString("agent");
         String state = cpFSMs.get(agent).getCurrentState().toLowerCase();

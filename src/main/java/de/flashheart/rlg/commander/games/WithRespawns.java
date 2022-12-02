@@ -283,7 +283,7 @@ public abstract class WithRespawns extends Pausable {
      * @param spawn_role spawn role for this agent
      * @param agent      agent id
      */
-    protected abstract void on_respawn_signal_received(String spawn_role, String agent);
+    protected void on_respawn_signal_received(String spawn_role, String agent){};
 
     protected void delete_timed_respawn() {
         if (respawn_timer <= 0) return;
