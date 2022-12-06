@@ -21,9 +21,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,7 +29,6 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
 @Log4j2
 public class CenterFlags extends Timed implements HasScoreBroadcast {
-
     private final BigDecimal SCORE_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
@@ -182,7 +179,10 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
         broadcast_cycle_counter++;
         if (!game_fsm.getCurrentState().equals(_state_RUNNING) || broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
-            JSONObject vars = MQTT.merge(scores_to_vars(), get_agents_states_for_lcd());
+            JSONObject vars = MQTT.merge(scores_to_vars(),
+                    get_agents_states_for_lcd_with("red"),
+                    get_agents_states_for_lcd_with("blue")
+            );
             send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_active_spawn_agents());
             send("vars", vars, agents.keySet());
             log.trace(vars.toString(4));
@@ -190,23 +190,27 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     }
 
+
+    private ArrayList<String> get_agents_with(String _color) {
+        ArrayList<String> result = new ArrayList<>();
+        cpFSMs.entrySet().stream()
+                .filter(stringFSMEntry -> stringFSMEntry.getValue().getCurrentState().equalsIgnoreCase(_color))
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .forEach(stringFSMEntry -> result.add(stringFSMEntry.getKey()));
+        return result;
+    }
+
     /**
      * creates line variables to show the state of the agents involved.
      *
      * @return
      */
-    private JSONObject get_agents_states_for_lcd() {
-        ArrayList<String> s = new ArrayList<>();
-        capture_points.forEach(agent -> {
-            String color = cpFSMs.get(agent).getCurrentState().toLowerCase();
-            if (!color.matches("red|blue")) color = "--";
-            s.add(String.format("%s:%s", agent, StringUtils.left(color, 4)));
-        });
-        JSONObject lines = MQTT.toJSON("line1", "", "line2", "", "line3", "", "line4", "");
+    private JSONObject get_agents_states_for_lcd_with(String _color) {
+        JSONObject lines = MQTT.toJSON(_color + "line1", "", _color + "line2", "", _color + "line3", "", _color + "line4", "");
         int index = 0;
-        for (List<String> list : Lists.partition(s, 2)) {
+        for (List<String> list : Lists.partition(get_agents_with(_color), 4)) {
             index++;
-            lines.put("line" + index, list.get(0) + (list.size() > 1 ? "," + list.get(1) : ""));
+            lines.put(_color + "line" + index, list.stream().collect(Collectors.joining(",")));
         }
         return lines;
     }
@@ -308,24 +312,30 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return MQTT.merge(
                     MQTT.page("page0",
-                            "Restzeit:  ${remaining}",
-                            "",
+                            "Restzeit: ${remaining}",
+                            StringUtils.center("Zeiten", 20),
                             "Blau: ${score_blue}",
                             "Rot: ${score_red}"),
                     MQTT.page("page1",
-                            "Restzeit:  ${remaining}",
-                            "${line1}",
-                            "${line2}",
-                            "${line3}"),
+                            "Restzeit: ${remaining}",
+                            StringUtils.center("Rote Flaggen", 20),
+                            "${redline1}",
+                            "${redline2}"),
                     MQTT.page("page2",
-                            "Restzeit:  ${remaining}",
-                            "Respawns",
+                            "Restzeit: ${remaining}",
+                            StringUtils.center("Blaue Flaggen", 20),
+                            "${blueline1}",
+                            "${blueline2}"),
+                    MQTT.page("page3",
+                            "Restzeit: ${remaining}",
+                            StringUtils.center("Respawns", 20),
                             "Blau: ${blue_respawns}",
                             "Rot: ${red_respawns}")
             );
         }
         return MQTT.page("page0", game_description);
     }
+
     @Override
     protected void on_respawn_signal_received(String spawn_role, String agent) {
         if (spawn_role.equals(RED_SPAWN)) {
@@ -341,6 +351,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
         }
     }
+
     @Override
     public JSONObject getState() {
         return super.getState()

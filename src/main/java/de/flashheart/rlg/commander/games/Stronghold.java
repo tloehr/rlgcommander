@@ -272,6 +272,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                                     .matches(_state_FUSED + "|" + _state_LOCKED + "|" + _state_TAKEN))
                     .count());
 
+            // todo: change to two lines of agents like in CenterFlags Lists.partition
             String stable_agents = roles.get(rings_in_progress.getFirst()).stream()
                     .filter(agent ->
                             cpFSMs.get(agent).getCurrentState()

@@ -55,6 +55,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
         LOCK_TIME = game_parameters.optLong("lock_time");
     }
+
     @Override
     public FSM create_CP_FSM(final String agent) {
         try {
@@ -78,12 +79,9 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 broadcast_score();
                 String led = state.equals("BLUE_LOCKED") ? MQTT.BLUE : MQTT.RED;
                 send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
-                send("visual", MQTT.toJSON(led, "10:on,500;off,500"), get_all_spawn_agents());
+                send("visual", MQTT.toJSON(led, "fast"), get_all_spawn_agents());
                 // 2,5 seconds sir2 at begin of lock period
                 send("acoustic", MQTT.toJSON(MQTT.SIR2, "long"), roles.get("sirens"));
-                // 2,5 seconds sir3 wailing, before unlock
-                String unlock_scheme = String.format("1:off,%s;on,2500;off,1", UNLOCK_TIME * 1000 - 2500);
-                send("acoustic", MQTT.toJSON(MQTT.SIR3, unlock_scheme), roles.get("sirens"));
             });
 
             return fsm;
@@ -109,8 +107,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
-//        if (game_fsm.getCurrentState().equals(_state_RUNNING))
-//            addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
         int index_of_agent = capture_points.indexOf(agent) + 1;
         line_variables.put("line" + index_of_agent, "");
         broadcast_score();
@@ -198,9 +194,11 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     public void delayed_reaction(JobDataMap map) {
         String agent = map.getString("agent");
         String state = cpFSMs.get(agent).getCurrentState().toLowerCase();
-        if (state.matches("red_locked|blue_locked"))
+        if (state.matches("red_locked|blue_locked")) {
+            send("acoustic", MQTT.toJSON(MQTT.SIR3, "long"), roles.get("sirens"));
+            send("visual", MQTT.toJSON(MQTT.ALL, "off"), get_all_spawn_agents());
             cpFSMs.get(map.getString("agent")).ProcessFSM(_msg_TO_NEUTRAL);
-        else
+        } else
             cpFSMs.get(map.getString("agent")).ProcessFSM(_msg_LOCK);
     }
 

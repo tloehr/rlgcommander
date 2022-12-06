@@ -421,6 +421,4 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
                 .put("red_respawns", red_respawns)
                 .put("blue_respawns", blue_respawns);
     }
-
-
 }
