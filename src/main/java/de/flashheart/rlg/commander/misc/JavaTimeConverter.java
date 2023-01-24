@@ -3,6 +3,7 @@ package de.flashheart.rlg.commander.misc;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class JavaTimeConverter {
 
@@ -46,7 +47,16 @@ public class JavaTimeConverter {
         return ZonedDateTime.parse(iso8601).toLocalDateTime();
     }
 
-    public static String format(long millis){
-        return ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("mm:ss"));
+    public static String format(long millis) {
+        String pattern = millis / 1000l >= 3600 ? "HH:mm:ss" : "mm:ss";
+        return format(millis, pattern);
+    }
+
+    public static String format(Instant instant, String pattern) {
+        return ZonedDateTime.ofInstant(instant, TimeZone.getTimeZone("UTC").toZoneId()).format(DateTimeFormatter.ofPattern(pattern));
+    }
+
+    public static String format(long millis, String pattern) {
+        return format(Instant.ofEpochMilli(millis), pattern);
     }
 }

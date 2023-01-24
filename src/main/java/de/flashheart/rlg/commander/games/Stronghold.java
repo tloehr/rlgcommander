@@ -219,28 +219,28 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                     MQTT.page("page0",
                             "Game Over",
                             "",
-                            "Eroberte Ringe",
+                            "Broken Rings",
                             "${rings_taken}/${rings_in_use}")
             );
         }
 
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             JSONObject pages = MQTT.merge(MQTT.page("page0",
-                            "Restzeit:  ${remaining}",
-                            "Stabilität",
-                            "Ring: ${active_ring}",
+                            "Remaining:  ${remaining}",
+                            "Integrity of active",
+                            "ring: ${active_ring}",
                             "${active_progress}"),
                     MQTT.page("page1",
-                            "Restzeit:  ${remaining}",
+                            "Remaining:  ${remaining}",
                             "",
-                            "Intakte Agenten",
+                            "Agents still alive",
                             "${stable_agents}")
-            );
+            ); //todo: make 2 lines for stable_agents
             if (rings_in_use.size() > 1) pages = MQTT.merge(pages,
                     MQTT.page("page2",
-                            "Restzeit:  ${remaining}",
-                            "Stabilität",
-                            "Gesamt",
+                            "Remaining:  ${remaining}",
+                            "Integrity",
+                            "Total",
                             "${total_progress}")
             );
             return pages;

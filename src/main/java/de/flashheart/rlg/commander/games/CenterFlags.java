@@ -57,9 +57,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
         jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
-        // just for score
-//        add_spawn_for("red_spawn", MQTT.RED, "RedFor");
-//        add_spawn_for("blue_spawn", MQTT.BLUE, "BlueFor");
 
     }
 
@@ -145,6 +142,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     public void game_over_operations() {
         super.game_over_operations();
         deleteJob(broadcastScoreJobkey); // this cycle has no use anymore
+        //todo: this is not called the last time. agents show an outdated score after game over - WHY ?
         broadcast_score(); // one last time
     }
 
