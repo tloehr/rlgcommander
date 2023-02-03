@@ -110,6 +110,17 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
     }
 
+//    @Override
+//    protected JSONObject getSpawnPages(String state) {
+//        if (state.equals(_state_EPILOG)) {
+//            return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
+//        }
+//        if (state.equals(_state_RUNNING))
+//            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp}", "${overtime}", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
+//
+//        return MQTT.page("page0", game_description);
+//    }
+
     @Override
     public JSONObject getState() {
         return super.getState()

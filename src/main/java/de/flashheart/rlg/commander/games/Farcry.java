@@ -34,7 +34,7 @@ public class Farcry extends Timed implements HasBombtimer {
     public static final String _state_DEFENDED = "DEFENDED";
     public static final String _state_TAKEN = "TAKEN";
     public static final String _state_OVERTIME = "OVERTIME";
-    private static final int MAX_CAPTURE_POINTS = 5;
+    private static final int MAX_CAPTURE_POINTS = 6;
 
     private final int bomb_timer;
 
