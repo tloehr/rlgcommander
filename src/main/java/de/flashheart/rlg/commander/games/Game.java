@@ -132,7 +132,14 @@ public abstract class Game {
     public void addStateReachedListener(StateReachedListener toAdd) {
         stateReachedListeners.add(toAdd);
     }
+
+    /**
+     * if we have a game mode WITHOUT capture points - simply don't use the "capture_points" key in the game_params json
+     * @param agent
+     * @return
+     */
     public abstract FSM create_CP_FSM(String agent);
+
     private void fireStateTransition(StateTransitionEvent event) {
         stateTransitionListeners.forEach(stateTransitionListener -> stateTransitionListener.onStateTransition(event));
         log.debug("transition {}:{} == > {}", event.getOldState(), event.getMessage(), event.getNewState());

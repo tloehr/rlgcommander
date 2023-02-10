@@ -3,15 +3,14 @@
   "class": "de.flashheart.rlg.commander.games.Timed",
   "remark": "A generic timed game that only keeps track of the game timer. You can add some textlines to be scrolled at the spawn agents.",
   "game_time": 600,
-  "count_respawn": false,
+  "count_respawns": false,
   "resume_countdown": 0,
   "silent_game": false,
-  "display": [
-    "Get more points than the other team",
-    "Try to shoot only at the opponent",
-    "Die less often than the others",
-    "Simply win the frigging game"
-  ],
+  "display": {
+    "line1": "",
+    "line2": "",
+    "line3": ""
+  },
   "spawns": {
     "wait4teams2B_ready": false,
     "intro_mp3_file": "<random>",

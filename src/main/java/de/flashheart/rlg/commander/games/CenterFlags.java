@@ -37,6 +37,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private final JobKey broadcastScoreJobkey;
     private long last_job_broadcast;
     private int blue_respawns, red_respawns;
+    private final boolean count_respawns;
 
     public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -49,15 +50,11 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 "                                            /____/");
 
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
-
+        count_respawns = game_parameters.optBoolean("count_respawns");
         scores = HashBasedTable.create();
-        roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-
         reset_score_table();
-
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
         jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
-
     }
 
     private void reset_score_table() {
@@ -188,7 +185,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     }
 
-
     private ArrayList<String> get_agents_with(String _color) {
         ArrayList<String> result = new ArrayList<>();
         cpFSMs.entrySet().stream()
@@ -294,21 +290,23 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     @Override
     protected JSONObject getSpawnPages(String state) {
         if (state.equals(_state_EPILOG)) {
-            return MQTT.merge(
-                    MQTT.page("page0", "Game Over",
-                            "Punktestand",
-                            "Blau: ${score_blue}",
-                            "Rot: ${score_red}"),
+            JSONObject epilog_pages = MQTT.page("page0",
+                    "Game Over",
+                    "Punktestand",
+                    "Blau: ${score_blue}",
+                    "Rot: ${score_red}");
+            if (count_respawns) MQTT.merge(epilog_pages,
                     MQTT.page("page1",
                             "Game Over",
                             "Respawns",
                             "Blau: ${blue_respawns}",
                             "Rot: ${red_respawns}")
             );
+            return epilog_pages;
         }
 
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
-            return MQTT.merge(
+            JSONObject pages_when_game_runs = MQTT.merge(
                     MQTT.page("page0",
                             "Restzeit: ${remaining}",
                             StringUtils.center("Zeiten", 20),
@@ -323,19 +321,24 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                             "Restzeit: ${remaining}",
                             StringUtils.center("Blaue Flaggen", 20),
                             "${blueline1}",
-                            "${blueline2}"),
+                            "${blueline2}")
+            );
+            if (count_respawns) MQTT.merge(pages_when_game_runs,
                     MQTT.page("page3",
                             "Restzeit: ${remaining}",
                             StringUtils.center("Respawns", 20),
                             "Blau: ${blue_respawns}",
                             "Rot: ${red_respawns}")
             );
+            return pages_when_game_runs;
         }
         return MQTT.page("page0", game_description);
     }
 
     @Override
     protected void on_respawn_signal_received(String spawn_role, String agent) {
+        if (!count_respawns) return;
+
         if (spawn_role.equals(RED_SPAWN)) {
             red_respawns++;
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
