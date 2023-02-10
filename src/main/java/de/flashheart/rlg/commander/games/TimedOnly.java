@@ -31,8 +31,15 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     private long last_job_broadcast;
     JSONObject vars;
 
-    TimedOnly(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
+    public TimedOnly(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+        log.info("\n" +
+                      " _____ _                    _  ___        _\n" +
+                "|_   _(_)_ __ ___   ___  __| |/ _ \\ _ __ | |_   _\n" +
+                "  | | | | '_ ` _ \\ / _ \\/ _` | | | | '_ \\| | | | |\n" +
+                "  | | | | | | | | |  __/ (_| | |_| | | | | | |_| |\n" +
+                "  |_| |_|_| |_| |_|\\___|\\__,_|\\___/|_| |_|_|\\__, |\n" +
+                "                                            |___/");
         count_respawns = game_parameters.optBoolean("count_respawns");
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
         jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
@@ -57,6 +64,14 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
         create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
         broadcast_cycle_counter = 0;
     }
+
+    @Override
+      public void process_external_message(String sender, String source, JSONObject message) {
+          if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+          if (!message.getString("button").equalsIgnoreCase("up")) return;
+          super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+      }
+
 
 
     @Override

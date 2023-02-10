@@ -200,18 +200,6 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                                 .matches(_state_FUSED + "|" + _state_LOCKED + "|" + _state_TAKEN));
     }
 
-//    private BigDecimal get_active_ring_percentage() {
-//        long agents_taken = roles.get(rings_in_progress.getFirst()).stream()
-//                .filter(agent ->
-//                        cpFSMs.get(agent).getCurrentState()
-//                                .matches(_state_FUSED + "|" + _state_LOCKED + "|" + _state_TAKEN))
-//                .count();
-//
-//        return new BigDecimal(agents_taken)
-//                .divide(new BigDecimal(roles.get(rings_in_progress.getFirst()).size()), 2, RoundingMode.HALF_UP)
-//                .multiply(new BigDecimal(100));
-//    }
-
     @Override
     protected JSONObject getSpawnPages(String state) {
         if (state.matches(_state_EPILOG)) {

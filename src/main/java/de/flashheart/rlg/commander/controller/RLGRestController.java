@@ -82,6 +82,7 @@ public class RLGRestController {
             Game game = gamesService.load_game(id, description);
             r = new ResponseEntity<>(game.getState().toString(4), HttpStatus.ACCEPTED);
         } catch (Exception e) {
+            // remember the constructor of the game class must be public
             log.warn(e);
             r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
         }

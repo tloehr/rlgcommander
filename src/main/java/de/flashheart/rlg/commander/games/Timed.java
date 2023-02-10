@@ -63,9 +63,6 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
-//        if (message.equals(_msg_PAUSE)) {
-//            deleteJob(game_timer_jobkey);
-//        }
         if (message.equals(_msg_RESUME)) {
             // shift the start and end_time by the number of seconds the pause lasted
             long pause_length_in_seconds = pausing_since.get().until(LocalDateTime.now(), ChronoUnit.SECONDS);
@@ -109,17 +106,6 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
     public void broadcast_score() {
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
     }
-
-//    @Override
-//    protected JSONObject getSpawnPages(String state) {
-//        if (state.equals(_state_EPILOG)) {
-//            return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
-//        }
-//        if (state.equals(_state_RUNNING))
-//            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp}", "${overtime}", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
-//
-//        return MQTT.page("page0", game_description);
-//    }
 
     @Override
     public JSONObject getState() {

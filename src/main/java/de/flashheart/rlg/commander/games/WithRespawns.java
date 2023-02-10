@@ -237,7 +237,10 @@ public abstract class WithRespawns extends Pausable {
     void send_message_to_agent_in_segment(int segment, String agent, String message) {
         spawn_segments.column(segment).values()
                 .stream().filter(stringFSMPair -> stringFSMPair.getLeft().equals(agent))
-                .forEach(stringFSMPair -> stringFSMPair.getValue().ProcessFSM(message));
+                .forEach(stringFSMPair -> {
+                    log.debug(stringFSMPair);
+                    stringFSMPair.getValue().ProcessFSM(message);
+                });
     }
 
     void send_message_to_all_agents(String message) {

@@ -11,6 +11,11 @@
     "line2": "",
     "line3": ""
   },
+  "agents": {
+    "sirens": [
+      "ag50"
+    ]
+  },
   "spawns": {
     "wait4teams2B_ready": false,
     "intro_mp3_file": "<random>",
