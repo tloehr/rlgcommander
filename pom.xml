@@ -23,6 +23,7 @@
         <commons.text.version>1.10.0</commons.text.version>
         <spring.mqtt.version>5.5.15</spring.mqtt.version>
         <dynamicfsm.version>0.01</dynamicfsm.version>
+        <thymeleaf.java8time.version>3.0.4.RELEASE</thymeleaf.java8time.version>
     </properties>
     <dependencies>
         <dependency>
@@ -43,6 +44,15 @@
             <artifactId>spring-integration-mqtt</artifactId>
             <version>${spring.mqtt.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.thymeleaf.extras</groupId>-->
+<!--            <artifactId>thymeleaf-extras-java8time</artifactId>-->
+<!--            <version>${thymeleaf.java8time.version}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

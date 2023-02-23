@@ -360,4 +360,5 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 .put("red_respawns", red_respawns)
                 .put("blue_respawns", blue_respawns);
     }
+
 }

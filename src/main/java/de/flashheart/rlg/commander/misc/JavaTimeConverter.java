@@ -52,6 +52,11 @@ public class JavaTimeConverter {
         return format(millis, pattern);
     }
 
+    public static String format(Instant instant){
+            return format(instant, "HH:mm:ss");
+
+        }
+
     public static String format(Instant instant, String pattern) {
         return ZonedDateTime.ofInstant(instant, TimeZone.getTimeZone("UTC").toZoneId()).format(DateTimeFormatter.ofPattern(pattern));
     }

@@ -1,11 +1,27 @@
-graph D {
-    ag01 -- ag02
-    ag03 -- ag01
-    ag04 -- ag01
-    ag04 -- ag03
-    ag05 -- ag01
-    ag05 -- ag02
-    ag05 -- ag04
-    ag30 -- ag05
-    ag31 -- ag02
-}
+// https://www.geeksforgeeks.org/check-if-a-directed-graph-is-connected-or-not/
+ // Take two bool arrays vis1 and vis2 of size N (number of nodes of a graph) and keep false in all indexes.
+ //Start at a random vertex v of the graph G, and run a DFS(G, v).
+ //Make all visited vertices v as vis1[v] = true.
+ //Now reverse the direction of all the edges.
+ //Start DFS at the vertex which was chosen at step 2.
+ //Make all visited vertices v as vis2[v] = true.
+ //If any vertex v has vis1[v] = false and vis2[v] = false then the graph is not connected.
+
+    strict graph G {
+      ag30;
+      ag05;
+      ag02;
+      ag01;
+      ag04;
+      ag03;
+      ag31;
+      ag30 -- ag05;
+      ag05 -- ag02;
+      ag05 -- ag01;
+      ag05 -- ag04;
+      ag04 -- ag03;
+      ag04 -- ag01;
+      ag01 -- ag03;
+      ag01 -- ag02;
+      ag02 -- ag31;
+    }

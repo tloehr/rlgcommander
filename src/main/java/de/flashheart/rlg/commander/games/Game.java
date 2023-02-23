@@ -64,6 +64,7 @@ public abstract class Game {
     protected final UUID uuid;
     protected final Scheduler scheduler;
     protected final Multimap<String, String> agents, roles;
+
     // what happened, and when ?
     protected final List<JSONObject> in_game_events;
     // main FSM to control the basic states of every game
@@ -134,7 +135,9 @@ public abstract class Game {
     }
 
     /**
-     * if we have a game mode WITHOUT capture points - simply don't use the "capture_points" key in the game_params json
+     * if we have a game mode WITHOUT capture points - simply don't use the "capture_points" key in the game_params
+     * json
+     *
      * @param agent
      * @return
      */
@@ -326,6 +329,11 @@ public abstract class Game {
     public Multimap<String, String> getAgents() {
         return agents;
     }
+
+    public Multimap<String, String> getRoles() {
+        return roles;
+    }
+
 
     /**
      * called whenever cleanup() is called from outside

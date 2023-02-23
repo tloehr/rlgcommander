@@ -1,0 +1,52 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>CenterFlags Score</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<h1 th:text="${comment}+'@'+${pit}"/>
+<p th:text="'Hello, ' + ${mode} + '!'"/>
+<h2>Score</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Agent</th>
+        <th>Blue Score</th>
+        <th>Red Score</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="score : ${scores}">
+        <td th:text="${score.left}"/>
+        <td th:text="${score.middle}"/>
+        <td th:text="${score.right}"/>
+    </tr>
+    <tr>
+        <td><b>SUMs</b></td>
+        <td th:text="'<b>'+${blue_total}+'</b>'"/>
+        <td th:text="'<b>'+${red_total}+'</b>'"/>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Events</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Timestamp</th>
+        <th>Event</th>
+        <th>State</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="event : ${events}">
+        <td th:text="${event.pit}"/>
+        <td th:text="${event.event.message}"/>
+        <td th:text="${event.new_state}"/>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
