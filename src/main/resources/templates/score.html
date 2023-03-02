@@ -3,14 +3,18 @@
 <head>
     <title>CenterFlags Score</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <!-- Bootstrap CSS via Webjars -->
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" type="text/css"/>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
 </head>
 <body>
-<h1 th:text="${comment}+'@'+${pit}"/>
-<p th:text="'Hello, ' + ${mode} + '!'"/>
+<h1 th:text="${comment}+' @ '+${#temporals.format(pit,'dd MMM yyyy HH:mm')}"/>
+<h2 th:text="'Match length: '+${match_length}+', remaining time: '+${remaining}"/>
 <h2>Score</h2>
-<table>
+<table class="table">
     <thead>
-    <tr>
+    <tr class="table-active">
         <th>Agent</th>
         <th>Blue Score</th>
         <th>Red Score</th>
@@ -18,22 +22,22 @@
     </thead>
     <tbody>
     <tr th:each="score : ${scores}">
-        <td th:text="${score.left}"/>
-        <td th:text="${score.middle}"/>
-        <td th:text="${score.right}"/>
+        <td th:attr="class=${score.value0}" th:text="${score.value1}"/>
+        <td class="table-primary" th:text="${score.value2}"/>
+        <td class="table-danger" th:text="${score.value3}"/>
     </tr>
-    <tr>
-        <td><b>SUMs</b></td>
-        <td th:text="'<b>'+${blue_total}+'</b>'"/>
-        <td th:text="'<b>'+${red_total}+'</b>'"/>
+    <tr class="table-active">
+        <th>SUMs</th>
+        <th th:text="${blue_total}"/>
+        <th th:text="${red_total}"/>
     </tr>
     </tbody>
 </table>
 
 <h2>Events</h2>
-<table>
+<table class="table">
     <thead>
-    <tr>
+    <tr class="table-active">
         <th>Timestamp</th>
         <th>Event</th>
         <th>State</th>
@@ -41,12 +45,28 @@
     </thead>
     <tbody>
     <tr th:each="event : ${events}">
-        <td th:text="${event.pit}"/>
-        <td th:text="${event.event.message}"/>
-        <td th:text="${event.new_state}"/>
+        <td th:text="${#temporals.format(event.value0,'dd MMM yyyy HH:mm:ss')}"/>
+        <td th:text="${event.value1}"/>
+        <td th:text="${event.value2}"/>
     </tr>
     </tbody>
 </table>
+
+<h2>Commands</h2>
+<form action="/ui/game/process" method="post">
+    <input type="text" id="id" name="id" value="1"><br><br>
+    <select name="message" id="message">
+        <option value="prepare">Prepare</option>
+        <option value="ready">Ready</option>
+        <option value="run">Run</option>
+        <option value="pause">Pause</option>
+        <option value="resume">Resume</option>
+        <option value="reset">Reset</option>
+        <option value="continue">Continue</option>
+        <option value="game_over">Game Over</option>
+    </select>
+    <input type="submit" value="Submit">
+</form>
 
 </body>
 </html>

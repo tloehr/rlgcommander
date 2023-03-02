@@ -8,6 +8,8 @@ import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -43,14 +45,14 @@ public class AgentsService {
     }
 
     public void agent_reported_status(String agentid, JSONObject status) {
-        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
-        my_agent.setLast_state(status);
+        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid, status));
+        my_agent.setStatus(status);
         if (!live_agents.containsKey(agentid) || status.getInt("netmonitor_cycle") == 0)
             welcome(my_agent); // new agenta receive a default signal setting, so do reconnecting agents
         live_agents.put(agentid, my_agent);
     }
     public boolean agent_belongs_to_game(String agentid, int gameid) {
-        Agent myAgent = live_agents.getOrDefault(agentid, new Agent("dummy"));
+        Agent myAgent = live_agents.getOrDefault(agentid, new Agent());
         return myAgent.getGameid() == gameid;
     }
 
@@ -61,8 +63,12 @@ public class AgentsService {
      */
     public JSONObject get_all_agent_states() {
         final JSONObject jsonObject = new JSONObject();
-        live_agents.values().stream().filter(agent -> !agent.getLast_state().isEmpty()).forEach(agent -> jsonObject.put(agent.getId(), agent.getLast_state()));
+        live_agents.values().stream().filter(agent -> !agent.getStatus().isEmpty()).forEach(agent -> jsonObject.put(agent.getId(), agent.getStatus()));
         return jsonObject;
+    }
+
+    public List<Agent> get_all_agents(){
+        return new ArrayList<>(live_agents.values());
     }
 
     public void welcome(Agent my_agent) {

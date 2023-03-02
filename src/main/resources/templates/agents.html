@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<th:block th:insert="~{fragments/general.html :: head}"/>
+<body>
+<th:block th:insert="~{fragments/general.html :: navbar}"/>
+<th:block th:insert="~{fragments/general.html :: sidebar}"/>
+
+<main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+    <div th:switch="${agents}">
+        <div class="table-responsive">
+            <div class="table table-striped">
+                <h2 th:case="null">No agent data yet...</h2>
+                <div th:case="*">
+                    <h2>Agents</h2>
+                    <table class="table table-striped table-sm">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Version</th>
+                            <th>last seen</th>
+                            <th>AP</th>
+                            <th>WIFI</th>
+                            <th>failed pings</th>
+                            <th>reconnects</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="agent : ${agents}">
+                            <td th:text="${agent.id}"></td>
+                            <td th:text="${agent.software_version}"></td>
+                            <td th:text="${agent.last_seen}"></td>
+                            <td th:text="${agent.ap}"></td>
+                            <td th:text="${agent.wifi}"></td>
+                            <td th:text="${agent.failed_pings}"></td>
+                            <td th:text="${agent.reconnects}"></td>
+                            <!--                                <td><a th:href="@{/edit/{id}(id=${student.id})}" class="btn btn-primary"><i-->
+                            <!--                                        class="fas fa-user-edit ml-2"></i></a></td>-->
+                            <!--                                <td><a th:href="@{/delete/{id}(id=${student.id})}" class="btn btn-primary"><i-->
+                            <!--                                        class="fas fa-user-times ml-2"></i></a></td>-->
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p><a href="/app" class="btn btn-primary"> <span data-feather="file-text"></span></a></p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<th:block th:insert="~{fragments/general.html :: scripts}"/>
+
+</body>
+</html>

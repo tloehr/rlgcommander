@@ -18,6 +18,7 @@ import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.xml.sax.SAXException;
 
+import javax.swing.text.html.HTML;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -359,6 +360,32 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 .put("scores", new JSONObject(scores.columnMap()))
                 .put("red_respawns", red_respawns)
                 .put("blue_respawns", blue_respawns);
+    }
+
+
+    public static String get_in_game_event_description(JSONObject event) {
+        String type = event.getString("type");
+        if (type.equalsIgnoreCase("general_game_state_change")) {
+            return event.getString("message");
+        }
+
+        if (event.getString("item").equals("respawn")) {
+            return "Respawn Team " + event.getString("team") + ": #" + event.getInt("value");
+        }
+
+        if (type.equalsIgnoreCase("in_game_state_change")) {
+            String zeus = (event.has("zeus") ? "<br>/(by the hand of ZEUS)" : "");
+            if (event.getString("item").equals("capture_point")) {
+                return event.getString("agent") + " => " + event.getString("state")
+                        + zeus;
+            }
+            if (event.getString("item").equals("add_seconds")) {
+                String text = event.getLong("amount") >= 0 ? " has been granted %d seconds" : " has lost %d seconds";
+                return "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))
+                        + zeus;
+            }
+        }
+        return "";
     }
 
 }

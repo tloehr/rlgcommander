@@ -47,8 +47,8 @@ public abstract class WithRespawns extends Pausable {
     public static final String RED_SPAWN = "red_spawn";
     public static final String BLUE_SPAWN = "blue_spawn";
 
-    public static final String[] SPREE_ANNOUNCEMENTS = new String[]{"doublekill","triplekill","quadrakill","pentakill","spree"};
-    public static final String[] ENEMY_SPREE_ANNOUNCEMENTS = new String[]{"enemydoublekill","enemytriplekill","enemyquadrakill","enemypentakill","enemyspree"};
+    public static final String[] SPREE_ANNOUNCEMENTS = new String[]{"doublekill", "triplekill", "quadrakill", "pentakill", "spree"};
+    public static final String[] ENEMY_SPREE_ANNOUNCEMENTS = new String[]{"enemydoublekill", "enemytriplekill", "enemyquadrakill", "enemypentakill", "enemyspree"};
 
     private final JobKey deferredRunGameJob, respawnTimerJobkey;
     private final int starter_countdown;
@@ -286,7 +286,10 @@ public abstract class WithRespawns extends Pausable {
      * @param spawn_role spawn role for this agent
      * @param agent      agent id
      */
-    protected void on_respawn_signal_received(String spawn_role, String agent){};
+    protected void on_respawn_signal_received(String spawn_role, String agent) {
+    }
+
+    ;
 
     protected void delete_timed_respawn() {
         if (respawn_timer <= 0) return;
@@ -319,7 +322,7 @@ public abstract class WithRespawns extends Pausable {
         return spawn_segments.row(team).values().stream().map(Pair::getKey).collect(Collectors.toSet());
     }
 
-    protected String get_opposing_team(String spawn){
+    protected String get_opposing_team(String spawn) {
         return spawn.equals(RED_SPAWN) ? BLUE_SPAWN : RED_SPAWN;
     }
 

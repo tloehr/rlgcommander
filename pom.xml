@@ -10,7 +10,7 @@
     </parent>
     <groupId>de.flashheart.rlg</groupId>
     <artifactId>rlgcommander</artifactId>
-    <version>1.6</version>
+    <version>1.7</version>
     <name>rlgcommander</name>
     <description>Command Module for the RLGS2 gaming system.</description>
     <properties>
@@ -48,11 +48,37 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.thymeleaf.extras</groupId>-->
-<!--            <artifactId>thymeleaf-extras-java8time</artifactId>-->
-<!--            <version>${thymeleaf.java8time.version}</version>-->
-<!--        </dependency>-->
+        <!--        Bootstrap Webjars-->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>jquery</artifactId>
+            <version>3.6.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>bootstrap</artifactId>
+            <version>4.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>webjars-locator</artifactId>
+            <version>0.40</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>feather-icons</artifactId>
+            <version>4.28.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>org.thymeleaf.extras</groupId>-->
+        <!--            <artifactId>thymeleaf-extras-java8time</artifactId>-->
+        <!--            <version>${thymeleaf.java8time.version}</version>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
