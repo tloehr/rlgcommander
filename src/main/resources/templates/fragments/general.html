@@ -48,9 +48,9 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="game">
+                <a class="nav-link" href="running_game?id=1">
                     <span data-feather="activity"></span>
-                    Show Game
+                    Game #1
                 </a>
             </li>
         </ul>
@@ -102,15 +102,69 @@
     </div>
 </nav>
 
-<div th:fragment="common_setup">
-    <input type="text" id="id" name="id" value="1">
-    <label for="comment">Comment:</label><br>
-    <input type="text" id="comment" name="comment"><br>
-    <label for="starter_countdown">Starter Countdown:</label><br>
-    <input type="text" id="starter_countdown" name="starter_countdown">
+<div th:fragment="game_params">
+
+    <div class="row">
+        <div class="col">
+            <label for="comment" class="form-label">Comment</label>
+            <input type="text" th:field="*{comment}" class="form-control" id="comment" placeholder="Comment">
+            <div class="invalid-feedback">
+                Thies field must not be empty.
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <label for="starter_countdown" class="form-label">Starter countdown in seconds</label>
+            <input type="text" class="form-control" th:field="*{starter_countdown}" id="starter_countdown"
+                   value="0">
+        </div>
+        <div class="col">
+            <label for="intro_mp3" class="form-label">Intro Music</label>
+            <select name="intro_mp3" id="intro_mp3" class="form-control" th:field="*{intro_mp3}">
+                <option th:each="song : ${songs}" th:value="${song}" th:text="${song}"/>
+            </select>
+        </div>
+        <div class="col">
+            <label for="resume_countdown" class="form-label">Countdown seconds after resume</label>
+            <input type="text" class="form-control" id="resume_countdown" th:field="*{resume_countdown}"
+                   value="0">
+        </div>
+
+    </div>
+
+
+    <div class="row">
+        <div class="form-check">
+            <div class="col">
+                <input id="game_lobby" name="game_lobby" type="checkbox" class="form-check-input"
+                       th:field="*{game_lobby}" value="true">
+                <label for="game_lobby" class="form-check-label">Use Game Lobby</label>
+            </div>
+            <div class="col">
+                <input id="silent_game" name="silent_game" type="checkbox" class="form-check-input" value="true"
+                       th:field="*{silent_game}">
+                <label for="silent_game" class="form-check-label">Silent game</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="spawn_params">
+    <th:block th:insert="~{fragments/general.html :: game_params}"/>
+    <div class="row">
+           <div class="col">
+               <input type="text" class="form-control bg-danger text-white" th:field="*{red_spawn}" id="red_spawn">
+           </div>
+           <div class="col">
+               <input type="text" class="form-control bg-primary text-white" th:field="*{blue_spawn}" id="blue_spawn">
+           </div>
+       </div>
 </div>
 
 
+</div>
 <div th:fragment="scripts">
     <!-- Bootstrap core JavaScript
     ================================================== -->

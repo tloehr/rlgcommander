@@ -1,7 +1,9 @@
 package de.flashheart.rlg.commander.controller;
 
 import de.flashheart.rlg.commander.games.CenterFlags;
-import de.flashheart.rlg.commander.games.params.Common;
+import de.flashheart.rlg.commander.games.params.FarcryParams;
+import de.flashheart.rlg.commander.games.params.GameParams;
+import de.flashheart.rlg.commander.games.params.SpawnParams;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
@@ -9,17 +11,18 @@ import lombok.extern.log4j.Log4j2;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @Controller
@@ -30,6 +33,9 @@ public class WebController {
     AgentsService agentsService;
     ApplicationContext applicationContext;
     BuildProperties buildProperties;
+
+    @Value("${list_of_intro_mp3}")
+    private String[] list_of_intro_mp3;
 
     public WebController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext, BuildProperties buildProperties) {
         this.gamesService = gamesService;
@@ -60,14 +66,24 @@ public class WebController {
     @GetMapping("/setup/farcry")
     public String setup_farcry(Model model) {
         model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
+        model.addAttribute("songs", Arrays.asList(list_of_intro_mp3));
+        model.addAttribute("gameParams", new SpawnParams());
         return "setup/farcry";
     }
 
-    @PostMapping("/load/farcry")
-     public String greetingSubmit(@ModelAttribute Common common, Model model) {
+    @GetMapping("/running_game")
+    public String running_game(@RequestParam(name = "id") int id, Model model) {
         model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
-       return "app";
-     }
+        model.addAttribute("id", id);
+        return "running_game";
+    }
+
+    @PostMapping("/load/farcry")
+    public String greetingSubmit(@ModelAttribute SpawnParams gameParams, Model model) {
+        log.debug(gameParams);
+        model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
+        return "redirect:/ui/app";
+    }
 
 //    @RequestMapping(value = "/load/farcry", method = RequestMethod.POST)
 //    public String load_farcry(@RequestParam(name = "id") int id,
@@ -142,21 +158,22 @@ public class WebController {
     }
 
 
-    @RequestMapping(value = "/game/process", method = RequestMethod.POST)
+    @GetMapping(value = "/process")
     public String run(@RequestParam(name = "id") int id,
-                      @RequestParam(name = "message") String message,
+                      @RequestParam(name = "event") String event,
+                      HttpServletRequest request,
                       Model model) {
         try {
-            gamesService.process_message(id, message);
-            return "redirect:/ui/score?id=" + id;
-        } catch (IllegalStateException ise) {
-            model.addAttribute("message", "This game is not loaded.");
-        } catch (ArrayIndexOutOfBoundsException ae) {
-            model.addAttribute("message", "The server does not allow for a game with the requested id.");
+            model.addAttribute("id", id);
+            log.debug(request.getHeader("Referer"));
+            log.debug("{} {}", id, event);
+            gamesService.process_message(id, event);
+            //todo: error message in running game
+            return "redirect:" + request.getHeader("Referer");
         } catch (Exception e) {
-            model.addAttribute("message", e.getMessage());
+            model.addAttribute("error_message", e.getMessage());
         }
-        return "redirect:/ui/error";
+        return "error";
     }
 
 }

@@ -1,12 +1,19 @@
-<!DOCTYPE HTML>
+<!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>Error</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-</head>
+<th:block th:insert="~{fragments/general.html :: head}"/>
+
 <body>
-<h1 th:text="'Your request for game #'+${id}+'  caused an error.'"/>
-<p th:text="${message}"/>
+<th:block th:insert="~{fragments/general.html :: navbar}"/>
+<div class="container-fluid">
+    <th:block th:insert="~{fragments/general.html :: sidebar}"/>
+    <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+        <h1 th:text="'Your request for game #'+${id}+' caused an error.'"/>
+        <div  th:text="${error_message}" class="alert alert-danger" role="alert"/>
+    </main>
+</div>
+
+<th:block th:insert="~{fragments/general.html :: scripts}"/>
 
 </body>
+
 </html>

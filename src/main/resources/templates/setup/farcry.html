@@ -9,10 +9,11 @@
     <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
         <h1>FarCry Assault Setup</h1>
 
-        <form action="/ui/load/farcry" method="post">
-            <th:block th:insert="~{fragments/general.html :: common_setup}"/>
+        <form th:action="@{/ui/load/farcry}" th:object="${gameParams}" method="post">
+            <th:block th:insert="~{fragments/general.html :: spawn_params}"/>
 
-            <input type="submit" value="Submit">
+            <hr class="my-4"/>
+            <button class="w-100 btn btn-primary btn-lg" type="submit">Load game</button>
         </form>
 
     </main>
