@@ -1,11 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<th:block th:insert="~{fragments/general.html :: head}"/>
-<body>
-<th:block th:insert="~{fragments/general.html :: navbar}"/>
-<th:block th:insert="~{fragments/general.html :: sidebar}"/>
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout.html}">
+<head><title>Agent List</title>
 
-<main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+    <script>
+        function test_agent(agentid, deviceid, pattern) {
+            console.log("agentid: " +agentid);
+            var xhttp = new XMLHttpRequest();
+            var base_url = window.location.origin + "/api/system/test_agent";
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert(this.responseText);
+                }
+            };
+            xhttp.open("POST", base_url + "?agentid=" + agentid + "&deviceid=" + deviceid + "&pattern=" + pattern, true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send("{}");
+        }
+    </script>
+
+</head>
+<body>
+
+<section layout:fragment="content">
     <div th:switch="${agents}">
         <div class="table-responsive">
             <div class="table table-striped">
@@ -22,6 +39,7 @@
                             <th>WIFI</th>
                             <th>failed pings</th>
                             <th>reconnects</th>
+                            <th>test functions</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -33,8 +51,10 @@
                             <td th:text="${agent.wifi}"></td>
                             <td th:text="${agent.failed_pings}"></td>
                             <td th:text="${agent.reconnects}"></td>
-                            <!--                                <td><a th:href="@{/edit/{id}(id=${student.id})}" class="btn btn-primary"><i-->
-                            <!--                                        class="fas fa-user-edit ml-2"></i></a></td>-->
+                            <td>
+                                <button th:onclick="test_agent([[${agent.id}]],'sir1','medium')"><i class="fa-solid fa-moon"></i> About
+                                </button>
+                            </td>
                             <!--                                <td><a th:href="@{/delete/{id}(id=${student.id})}" class="btn btn-primary"><i-->
                             <!--                                        class="fas fa-user-times ml-2"></i></a></td>-->
                         </tr>
@@ -45,9 +65,7 @@
             </div>
         </div>
     </div>
-</main>
-
-<th:block th:insert="~{fragments/general.html :: scripts}"/>
+</section>
 
 </body>
 </html>

@@ -1,8 +1,6 @@
 package de.flashheart.rlg.commander.controller;
 
 import de.flashheart.rlg.commander.games.CenterFlags;
-import de.flashheart.rlg.commander.games.params.FarcryParams;
-import de.flashheart.rlg.commander.games.params.GameParams;
 import de.flashheart.rlg.commander.games.params.SpawnParams;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import de.flashheart.rlg.commander.service.AgentsService;
@@ -44,45 +42,51 @@ public class WebController {
         this.buildProperties = buildProperties;
     }
 
+    @ModelAttribute("server_version")
+    public String getServerVersion() {
+        return String.format("v%s b%s", buildProperties.getVersion(), buildProperties.get("buildNumber"));
+    }
+
     @GetMapping("/greeting")
     public String greeting(@RequestParam(name = "name", required = false, defaultValue = "World") String name, Model model) {
         model.addAttribute("name", name);
         return "greeting";
     }
 
-    @GetMapping("/app")
+    @GetMapping("/about")
     public String app(Model model) {
-        model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
-        return "app";
+        return "about";
+    }
+
+    @GetMapping("/error")
+    public String error(Model model) {
+        return "error";
     }
 
     @GetMapping("/agents")
     public String showStudentList(Model model) {
         model.addAttribute("agents", agentsService.get_all_agents());
-        model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
+//        model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
         return "agents";
     }
 
     @GetMapping("/setup/farcry")
     public String setup_farcry(Model model) {
-        model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
         model.addAttribute("songs", Arrays.asList(list_of_intro_mp3));
         model.addAttribute("gameParams", new SpawnParams());
         return "setup/farcry";
     }
 
-    @GetMapping("/running_game")
+    @GetMapping("/active")
     public String running_game(@RequestParam(name = "id") int id, Model model) {
-        model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
         model.addAttribute("id", id);
-        return "running_game";
+        return "active";
     }
 
     @PostMapping("/load/farcry")
     public String greetingSubmit(@ModelAttribute SpawnParams gameParams, Model model) {
         log.debug(gameParams);
-        model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
-        return "redirect:/ui/app";
+        return "redirect:/ui/about";
     }
 
 //    @RequestMapping(value = "/load/farcry", method = RequestMethod.POST)

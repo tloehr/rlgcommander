@@ -1,19 +1,18 @@
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org">
-<th:block th:insert="~{fragments/general.html :: head}"/>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout.html}">
+
+<head><title>some title from slist</title></head>
 
 <body>
-<th:block th:insert="~{fragments/general.html :: navbar}"/>
-<div class="container-fluid">
-    <th:block th:insert="~{fragments/general.html :: sidebar}"/>
-    <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
-        <h1 th:text="'Your request for game #'+${id}+' caused an error.'"/>
-        <div  th:text="${error_message}" class="alert alert-danger" role="alert"/>
-    </main>
-</div>
 
-<th:block th:insert="~{fragments/general.html :: scripts}"/>
+<section layout:fragment="content">
 
+    <h1>ERROR PAGE</h1>
+    <img src="/img/system-failure-the-matrix.gif"  class="img-fluid"/>
+
+    <p>I am sorry, but there was an error. I know: You deserve better...</p>
+
+</section>
 </body>
-
 </html>
