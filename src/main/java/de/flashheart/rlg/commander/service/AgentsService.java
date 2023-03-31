@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -46,11 +47,12 @@ public class AgentsService {
 
     public void agent_reported_status(String agentid, JSONObject status) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid, status));
-        my_agent.setStatus(status);
+        if (live_agents.containsKey(agentid)) my_agent.setStatus(status);
         if (!live_agents.containsKey(agentid) || status.getInt("netmonitor_cycle") == 0)
-            welcome(my_agent); // new agenta receive a default signal setting, so do reconnecting agents
+            welcome(my_agent);
         live_agents.put(agentid, my_agent);
     }
+
     public boolean agent_belongs_to_game(String agentid, int gameid) {
         Agent myAgent = live_agents.getOrDefault(agentid, new Agent());
         return myAgent.getGameid() == gameid;
@@ -67,7 +69,7 @@ public class AgentsService {
         return jsonObject;
     }
 
-    public List<Agent> get_all_agents(){
+    public List<Agent> get_all_agents() {
         return new ArrayList<>(live_agents.values());
     }
 
@@ -77,7 +79,7 @@ public class AgentsService {
         //mqttOutbound.send("init", agentid);
         mqttOutbound.send("timers", MQTT.toJSON("_clearall", "0"), my_agent.getId());
         mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), my_agent.getId());
-        // welcome signal
+        // welcome-signal
         mqttOutbound.send("visual",
                 MQTT.toJSON(
                         MQTT.WHITE, "60:on,500;off,500",

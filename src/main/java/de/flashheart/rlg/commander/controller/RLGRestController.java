@@ -77,6 +77,7 @@ public class RLGRestController {
     public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) {
         ResponseEntity r;
         try {
+            log.debug(description);
             Game game = gamesService.load_game(id, description);
             r = new ResponseEntity<>(game.getState().toString(4), HttpStatus.ACCEPTED);
         } catch (Exception e) {

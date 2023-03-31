@@ -65,8 +65,7 @@ public class WebController {
 
     @GetMapping("/agents")
     public String showStudentList(Model model) {
-        model.addAttribute("agents", agentsService.get_all_agents());
-//        model.addAttribute("server_version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
+        model.addAttribute("agents", agentsService.get_all_agents().stream().sorted().toList());
         return "agents";
     }
 

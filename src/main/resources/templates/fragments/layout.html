@@ -4,83 +4,91 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Layout Page</title>
-
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" type="text/css"/>
-    <link rel="stylesheet" th:href="@{/webjars/font-awesome/css/fontawesome.min.css}" type="text/css"/>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}" type="text/css"/>
+    <link href="/styles/rlgs.css" rel="stylesheet">
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <link href="/styles/layout.css" rel="stylesheet">
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script src="/js/rlgs.js"></script>
+
 </head>
 
 <body>
-<nav id="navbar" class="navbar navbar-inverse">
+<nav id="navbar" role="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container-fluid">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#">RLG Commander</a>
-        </div>
-        <div class="collapse navbar-collapse" id="myNavbar">
-            <ul class="nav navbar-nav">
-                <li class="active"><a href="#">Home</a></li>
+        <a class="navbar-brand" href="#">
+            <img src="/img/favicon36.png" width="30" height="30" class="d-inline-block align-top" alt="">
+            RLGS</a>
+        <!--        Wenn der Bildschirm zu schmal wird-->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-                <li><a href="#">New Game</a></li>
-                <li><a href="#">Active Game</a></li>
-                <li><a href="agents">Agents</a></li>
-            </ul>
+        <!-- ------------ -->
 
-            <ul class="nav navbar-nav ">
-                <li><a href="#">Link</a></li>
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
-                       aria-expanded="false">Dropdown <span class="caret"></span></a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link " aria-current="page" href="index">Home</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        Game Paramters
+                    </a>
                     <ul class="dropdown-menu">
-                        <li><a href="#">Another action</a></li>
-                        <li><a href="#">Active Game</a></li>
-
-                        <li><a href="#">Something else here</a></li>
-                        -
-                        <li role="separator" class="divider"></li>
-                        <li><a href="#">Separated link</a></li>
+                        <li><a class="dropdown-item" href="#">FarCry Assault</a></li>
+                        <li><a class="dropdown-item" href="#">Conquest</a></li>
+                        <li><a class="dropdown-item" href="center-flags">Center Flags</a></li>
+                        <li><a class="dropdown-item" href="#">Signal</a></li>
+                        <li><a class="dropdown-item" href="#">Timed Only</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="#">Something else here</a></li>
                     </ul>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" href="active">Active Game</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="agents">Agents</a>
+                </li>
             </ul>
+            <div class="col-md-auto me-2">
+                <select class="form-select " id="gameid" value="1"
+                        title="Reserved for future use. Currently RLGS can handle only one game at a time.">
+                    <option value="1">Game #1</option>
+                </select>
+            </div>
+            <div id="game_state"><i class="bi bi-circle-fill bi-lg" style="color: lightgrey">&nbsp;Empty</i></div>
 
-            <ul class="nav navbar-nav navbar-right">
-                <li><a href="about"><span class="glyphicon glyphicon-info-sign"></span> About</a></li>
-                <!--                            <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>-->
-            </ul>
 
+            <!--            <form class="d-flex" role="search">-->
+            <!--                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">-->
+            <!--                <button class="btn btn-outline-success" type="submit">Search</button>-->
+            <!--            </form>-->
         </div>
+
     </div>
 </nav>
 
 
-<div class="container-fluid text-center">
-    <div class="row content">
-        <!--        Sidebar-->
-        <!--        <div class="col-sm-2 sidenav">-->
-        <!--            <p><a href="#">Link</a></p>-->
-        <!--            <p><a href="#">Link</a></p>-->
-        <!--            <p><a href="#">Link</a></p>-->
-        <!--        </div>-->
-
-        <div class="col-sm-8 text-left">
-            <section layout:fragment="content">
-                <!-- Will be replaced by content page -->
-            </section>
-        </div>
-
+<main role="main" class="container">
+    <div class="container-fluid">
+        <section layout:fragment="content">
+            <!-- Will be replaced by content page -->
+        </section>
     </div>
+</main>
 
-    <footer class="container-fluid text-center">
+<footer class="footer navbar-expand-lg navbar-dark bg-dark fixed-bottom">
+    <div class="container">
         <p th:text="'Real Life Gaming System '+${server_version}"/> <a
             href="https://www.flashheart.de#">flashheart.de</a>
-    </footer>
-
+    </div>
+</footer>
 </div>
 </body>
 </html>

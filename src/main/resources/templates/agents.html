@@ -1,32 +1,14 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{fragments/layout.html}">
-<head><title>Agent List</title>
-
-    <script>
-        function test_agent(agentid, deviceid, pattern) {
-            console.log("agentid: " +agentid);
-            var xhttp = new XMLHttpRequest();
-            var base_url = window.location.origin + "/api/system/test_agent";
-            xhttp.onreadystatechange = function () {
-                if (this.readyState == 4 && this.status == 200) {
-                    alert(this.responseText);
-                }
-            };
-            xhttp.open("POST", base_url + "?agentid=" + agentid + "&deviceid=" + deviceid + "&pattern=" + pattern, true);
-            xhttp.setRequestHeader("Content-type", "application/json");
-            xhttp.send("{}");
-        }
-    </script>
-
-</head>
+<head><title>Agent List</title></head>
 <body>
 
 <section layout:fragment="content">
     <div th:switch="${agents}">
         <div class="table-responsive">
             <div class="table table-striped">
-                <h2 th:case="null">No agent data yet...</h2>
+                <h2 th:case="null">No agents, yet...</h2>
                 <div th:case="*">
                     <h2>Agents</h2>
                     <table class="table table-striped table-sm">
@@ -39,7 +21,7 @@
                             <th>WIFI</th>
                             <th>failed pings</th>
                             <th>reconnects</th>
-                            <th>test functions</th>
+                            <th>Test agent</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -52,17 +34,57 @@
                             <td th:text="${agent.failed_pings}"></td>
                             <td th:text="${agent.reconnects}"></td>
                             <td>
-                                <button th:onclick="test_agent([[${agent.id}]],'sir1','medium')"><i class="fa-solid fa-moon"></i> About
-                                </button>
+                                <div class="dropdown">
+                                    <button class="btn btn-light dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false"
+                                            style="border: 1px solid black;">
+                                        Test Agent
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item bg-light" href="#"><i
+                                                class="bi bi-lightbulb-fill bi-lg"></i>&nbsp;White</a></li>
+                                        <li><a class="dropdown-item bg-danger text-white" href="#"><i
+                                                class="bi bi-lightbulb-fill bi-lg"></i>&nbsp;Red</a></li>
+                                        <li><a class="dropdown-item bg-warning" href="#"><i
+                                                class="bi bi-lightbulb-fill bi-lg"></i>&nbsp;Yellow</a></li>
+                                        <li><a class="dropdown-item bg-success  text-white" href="#"><i
+                                                class="bi bi-lightbulb-fill bi-lg"></i>&nbsp;Green</a></li>
+                                        <li><a class="dropdown-item bg-primary  text-white" href="#"><i
+                                                class="bi bi-lightbulb-fill bi-lg"></i>&nbsp;Blue</a></li>
+
+                                        <li><a class="dropdown-item bg-secondary text-white" href="#"><i
+                                                class="bi bi-phone-vibrate-fill bi-lg"></i>&nbsp;Buzzer</a></li>
+                                        <li><a class="dropdown-item bg-secondary text-white" href="#"><i
+                                                class="bi bi-phone-vibrate-fill bi-lg"></i>&nbsp;Siren1</a></li>
+                                        <li><a class="dropdown-item bg-secondary text-white" href="#"><i
+                                                class="bi bi-phone-vibrate-fill bi-lg"></i>&nbsp;Siren2</a></li>
+                                        <li><a class="dropdown-item bg-secondary text-white" href="#"><i
+                                                class="bi bi-phone-vibrate-fill bi-lg"></i>&nbsp;Siren3</a></li>
+                                        <li><a class="dropdown-item bg-secondary text-white" href="#"><i
+                                                class="bi bi-phone-vibrate-fill bi-lg"></i>&nbsp;Siren4</a></li>
+
+                                        <li><a class="dropdown-item bg-success text-white" href="#"><i
+                                                class="bi bi-megaphone-fill bi-lg"></i>&nbsp;Start Signal</a></li>
+                                        <li><a class="dropdown-item bg-danger text-white" href="#"><i
+                                                class="bi bi-megaphone-fill bi-lg"></i>&nbsp;Stop Signal</a></li>
+
+                                        <li><a class="dropdown-item bg-secondary text-white" href="#"><i
+                                                class="bi bi-play-fill bi-lg"></i>&nbsp;Start Signal</a></li>
+                                        <li><a class="dropdown-item bg-dark text-white" href="#"><i
+                                                class="bi bi-stop-fill bi-lg"></i>&nbsp;Stop Signal</a></li>
+
+                                    </ul>
+                                </div>
                             </td>
-                            <!--                                <td><a th:href="@{/delete/{id}(id=${student.id})}" class="btn btn-primary"><i-->
-                            <!--                                        class="fas fa-user-times ml-2"></i></a></td>-->
                         </tr>
                         </tbody>
                     </table>
                 </div>
-                <p><a href="/app" class="btn btn-primary"> <span data-feather="file-text"></span></a></p>
             </div>
+            <button title="Sleep" type="button" class="btn btn-secondary btn-circle btn-lg"><i
+                    class="bi bi-moon-stars-fill bi-lg" onclick="post_rest('system/powersave_agents')"></i></button>
+            <button title="Wake up" type="button" class="btn btn-warning btn-circle btn-lg"><i
+                    class="bi bi-sun-fill bi-lg" onclick="post_rest('system/welcome_agents')"></i></button>
         </div>
     </div>
 </section>
