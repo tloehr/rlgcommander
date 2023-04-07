@@ -1,0 +1,25 @@
+debug: 'false'
+logging:
+  level:
+    de:
+      flashheart: DEBUG
+
+spring:
+  quartz:
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceId: myscheduler
+
+mqtt:
+  cleanSession: 'true'
+  connectionTimeout: '10'
+  automaticReconnect: 'true'
+
+rlgs:
+  intro:
+    bf3: Battlefield 3
+
+  access_points:
+    00223f97a198: NETGEAR

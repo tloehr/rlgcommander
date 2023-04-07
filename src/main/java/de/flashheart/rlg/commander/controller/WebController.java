@@ -1,11 +1,13 @@
 package de.flashheart.rlg.commander.controller;
 
-import de.flashheart.rlg.commander.games.CenterFlags;
+import de.flashheart.rlg.commander.games.*;
 import de.flashheart.rlg.commander.games.params.SpawnParams;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
+import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
+import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 import org.json.JSONObject;
@@ -19,8 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -31,15 +32,46 @@ public class WebController {
     AgentsService agentsService;
     ApplicationContext applicationContext;
     BuildProperties buildProperties;
+    MyYamlConfiguration myYamlConfiguration;
 
-    @Value("${list_of_intro_mp3}")
-    private String[] list_of_intro_mp3;
+    private Map<String, String> game_page_map = Map.of(
+            CenterFlags.class.getName(), "gamestate/notyet",
+            Conquest.class.getName(), "gamestate/notyet",
+            Farcry.class.getName(), "gamestate/notyet",
+            Signal.class.getName(), "gamestate/notyet",
+            Stronghold.class.getName(), "gamestate/notyet",
+            TimedOnly.class.getName(), "gamestate/notyet",
+            "empty", "gamestate/empty"
+    );
 
-    public WebController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext, BuildProperties buildProperties) {
+    private Map<String, String> gamemode_page_map = Map.of(
+            "centerflags", "params/center_flags",
+            "conquest", "error",
+            Farcry.class.getName(), "error",
+            Signal.class.getName(), "error",
+            Stronghold.class.getName(), "error",
+            TimedOnly.class.getName(), "error"
+    );
+
+    private Map<String, String> gamemode_names = Map.of(
+            "centerflags", "Center Flags",
+            "conquest", "error",
+            Farcry.class.getName(), "error",
+            Signal.class.getName(), "error",
+            Stronghold.class.getName(), "error",
+            TimedOnly.class.getName(), "error"
+    );
+
+
+//    @Value("${list_of_intro_mp3}")
+//    private String[] list_of_intro_mp3;
+
+    public WebController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration) {
         this.gamesService = gamesService;
         this.agentsService = agentsService;
         this.applicationContext = applicationContext;
         this.buildProperties = buildProperties;
+        this.myYamlConfiguration = myYamlConfiguration;
     }
 
     @ModelAttribute("server_version")
@@ -53,9 +85,9 @@ public class WebController {
         return "greeting";
     }
 
-    @GetMapping("/about")
+    @GetMapping("/home")
     public String app(Model model) {
-        return "about";
+        return "home";
     }
 
     @GetMapping("/error")
@@ -71,16 +103,11 @@ public class WebController {
 
     @GetMapping("/setup/farcry")
     public String setup_farcry(Model model) {
-        model.addAttribute("songs", Arrays.asList(list_of_intro_mp3));
+        //   model.addAttribute("songs", Arrays.asList(list_of_intro_mp3));
         model.addAttribute("gameParams", new SpawnParams());
         return "setup/farcry";
     }
 
-    @GetMapping("/active")
-    public String running_game(@RequestParam(name = "id") int id, Model model) {
-        model.addAttribute("id", id);
-        return "active";
-    }
 
     @PostMapping("/load/farcry")
     public String greetingSubmit(@ModelAttribute SpawnParams gameParams, Model model) {
@@ -98,6 +125,28 @@ public class WebController {
 //        HttpServletRequest request = null;
 //        return "redirect:" + request.getHeader("Referer");
 //    }
+
+
+    @GetMapping("/active")
+    public String active(@RequestParam(name = "id") int id, Model model) {
+        JSONObject game_state = gamesService.getGameState(id);
+        model.addAttribute("gameid", id);
+        model.addAttribute("game_state", game_state.toString());
+        String classname = game_state.optString("class", "empty");
+        return game_page_map.getOrDefault(classname, "error");
+    }
+
+    @GetMapping("/params")
+    public String params(@RequestParam(name = "id") int id, @RequestParam(name = "gamemode") String gamemode, Model model) {
+        model.addAttribute("gameid", id);
+        model.addAttribute("intros",
+                myYamlConfiguration.getIntro().entrySet().stream()
+                        .map(stringStringEntry -> new Pair<>(stringStringEntry.getKey(), stringStringEntry.getValue()))
+                        .sorted(Comparator.comparing(Pair::getValue1))
+                        .collect(Collectors.toList())
+        );
+        return gamemode_page_map.getOrDefault(gamemode, "error");
+    }
 
     @GetMapping("/score")
     public String scores(@RequestParam(name = "id") int id, Model model) {

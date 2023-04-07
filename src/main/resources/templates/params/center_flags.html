@@ -1,0 +1,92 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{params/with_respawns.html}">
+
+
+<head>
+    <title>Center Flags</title>
+    <script>
+        function check() {
+            const base_url = window.location.origin;
+            $.getJSON(base_url + "/defaults/center_flags.json", function (json) {
+                json.comment = $("#comment").val();
+                json.count_respawns = $("#btn-count-respawns").prop('checked');
+                json.game_time = parseInt($("#gametime").val());
+                json.resume_countdown = parseInt($("#resume_time").val());
+                json.silent_game = $("#btn-check-silent").prop('checked');
+                json.agents.capture_points = from_string_list($("#capture_points").val());
+                json.agents.sirens = from_string_list($("#sirens").val());
+
+                json.spawns.game_lobby = $("#btn-check-lobby").prop('checked');
+                json.spawns.intro_mp3 = $("#intro_mp3").val();
+                if ($("#intro_mp3").val() == '<none>') json.spawns.starter_countdown = 0;
+                else json.spawns.starter_countdown = 30;
+                $.each(json.spawns.teams, function (index, value) {
+                    if (value.role == 'red_spawn') {
+                        value.agents = from_string_segment_list($("#redfor").val());
+                    } else if (value.role == 'blue_spawn') {
+                        value.agents = from_string_segment_list($("#blufor").val());
+                    }
+                });
+                console.log(JSON.stringify(json));
+                post_rest('game/load', {'id': $("#gameid").val()}, JSON.stringify(json));
+            });
+            //location.href = base_url+'active?'+jQuery.param({'id': $("#gameid").val()});
+            return false;
+        }
+
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1>Center Flags</h1>
+    <p>A wonderful game for the whole family from age 8 to 81</p>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mb-3">
+        <div class="col-md-auto">
+            <label for="gametime" class="form-label">Gametime in seconds</label>
+            <input type="number" class="form-control" id="gametime" list="gametimes" value="600" required
+                   min="1" pattern="\d*">
+            <datalist id="gametimes">
+                <option value="120">2 Minuten</option>
+                <option value="300">5 Minuten</option>
+                <option value="600">10 Minuten</option>
+                <option value="900">15 Minuten</option>
+                <option value="1500">25 Minuten</option>
+                <option value="1800">30 Minuten</option>
+                <option value="2700">45 Minuten</option>
+                <option value="3000">50 Minuten</option>
+            </datalist>
+        </div>
+        <div class=" col-md-auto">
+            <label for="capture_points" class="form-label">Capture-Points</label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" value="ag01" id="capture_points" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <div id="cphelp" class="form-text">Agent IDs, comma seperated</div>
+        </div>
+        <div class=" col-md-auto">
+            <label for="sirens" class="form-label">Sirens</label>
+            <input type="text" class="form-control" value="ag50" id="sirens" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <div id="sirenhelp" class="form-text">Agent IDs, comma seperated</div>
+        </div>
+        <div class="col-md-auto align-self-center">
+            <div class="row">
+                <input type="checkbox" class="btn-check" id="btn-count-respawns"
+                       autocomplete="off">
+                <label class="btn btn-outline-info" for="btn-count-respawns">Count respawns</label>
+            </div>
+        </div>
+    </div>
+
+
+</section>
+</body>
+</html>

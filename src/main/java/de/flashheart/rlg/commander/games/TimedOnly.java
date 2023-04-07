@@ -116,10 +116,10 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
                             "Restzeit: ${remaining}",
                             "${line1}",
                             "${line2}",
-                            "${line3}")
-            );
+                            "${line3}"));
             if (count_respawns) MQTT.merge(pages_when_game_runs,
                     MQTT.page("page3",
+
                             "Restzeit: ${remaining}",
                             StringUtils.center("Respawns", 20),
                             "Blau: ${blue_respawns}",

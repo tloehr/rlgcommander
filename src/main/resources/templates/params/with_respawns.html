@@ -1,0 +1,66 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{params/params.html}">
+<body>
+
+
+<section layout:fragment="with_respawns">
+    <hr/>
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label for="intro_mp3" class="form-label">Intro Song</label>
+            <select class="form-select " style="height: 40px;" id="intro_mp3">
+                <option selected value="<none>">No intro</option>
+                <option th:each="intro : ${intros}" th:value="${intro.value0}" th:text="${intro.value1}"/>
+            </select>
+            <div id="intro_help" class="form-text">This song will be played on the Spawn Agents during a
+                30-second countdown.
+            </div>
+        </div>
+        <div class="col-md-2">
+            <label for="resume_time" class="form-label">Resume Time</label>
+            <input type="number" class="form-control" id="resume_time" value="0" required min="0" max="60"
+                   pattern="\d*"/>
+            <div id="resume_help" class="form-text">Seconds before the game continues (after pause ends)
+            </div>
+        </div>
+
+        <div class=" col-md-2">
+            <div class="row mb-2">
+                <input type="checkbox" class="btn-check" id="btn-check-lobby"
+                       autocomplete="off">
+                <label class="btn btn-outline-primary" for="btn-check-lobby">Player Lobby</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" class="btn-check" id="btn-check-silent"
+                       autocomplete="off">
+                <label class="btn btn-outline-secondary" for="btn-check-silent">Silent Game</label>
+            </div>
+
+        </div>
+
+
+    </div>
+
+    <div class="row">
+        <div class="col-md-5 ">
+            <input type="text" class="form-control" style="border: 5px solid red;" id="redfor"
+                   aria-describedby="countdown-help" value="ag32" placeholder="Spawn agents for team red"
+                   required/>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-outline-secondary" onclick="change_of_sides()"
+                    title="change of sides"><i
+                    class="bi bi-arrow-left-right bi-lg"></i></button>
+        </div>
+        <div class=" col-md-5">
+            <input type="text" class="form-control" style="border: 5px solid blue;" id="blufor"
+                   aria-describedby="countdown-help" value="ag33" placeholder="Spawn agents for team blue"
+                   required/>
+        </div>
+    </div>
+
+</section>
+
+</body>
+</html>

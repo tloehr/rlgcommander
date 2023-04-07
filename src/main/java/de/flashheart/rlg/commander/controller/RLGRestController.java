@@ -113,6 +113,11 @@ public class RLGRestController {
         return new ResponseEntity<>(gamesService.getGameState(id).toString(4), HttpStatus.OK);
     }
 
+    @GetMapping("/game/current_state")
+    public ResponseEntity<?> current_state_game(@RequestParam(name = "id") int id) {
+        return new ResponseEntity<>(gamesService.getGameState(id).optString("game_state", "EMPTY"), HttpStatus.OK);
+    }
+
     @GetMapping("/game/parameters")
     public ResponseEntity<?> game_parameters(@RequestParam(name = "id") int id) {
         try {

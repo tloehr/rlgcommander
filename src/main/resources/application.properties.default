@@ -1,6 +1,0 @@
-mqtt.automaticReconnect=true
-mqtt.cleanSession=true
-mqtt.connectionTimeout=10
-debug=false
-logging.level.de.flashheart=INFO
-spring.quartz.properties.org.quartz.scheduler.instanceId=myscheduler

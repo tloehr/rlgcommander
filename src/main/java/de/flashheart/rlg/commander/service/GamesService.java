@@ -8,6 +8,7 @@ import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.misc.Tools;
+import de.flashheart.rlg.commander.websockets.OutputMessage;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,13 +18,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -34,6 +38,8 @@ public class GamesService {
     Scheduler scheduler;
     AgentsService agentsService;
     BuildProperties buildProperties;
+    SimpMessagingTemplate simpMessagingTemplate;
+
     private final Optional<Game>[] loaded_games; // exactly n games are possible
     public static final int MAX_NUMBER_OF_GAMES = 1;
     private final Multimap<Integer, StateReachedListener> gameStateListeners;
@@ -44,11 +50,12 @@ public class GamesService {
     }
 
     @Autowired
-    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties) {
+    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate) {
         this.mqttOutbound = mqttOutbound;
         this.scheduler = scheduler;
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
+        this.simpMessagingTemplate = simpMessagingTemplate;
         this.loaded_games = new Optional[]{Optional.empty()};
         this.gameStateListeners = HashMultimap.create();
     }
@@ -145,6 +152,9 @@ public class GamesService {
     }
 
     private void fireStateReached(int id, StateReachedEvent event) {
+        // todo: IDs mit berücksichtigen.
+        OutputMessage outputMessage = new OutputMessage(event.getState(), new SimpleDateFormat("HH:mm").format(new Date()));
+        simpMessagingTemplate.convertAndSend("/topic/messages", outputMessage);
         gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
     }
 

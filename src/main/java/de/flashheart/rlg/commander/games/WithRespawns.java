@@ -3,7 +3,6 @@ package de.flashheart.rlg.commander.games;
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
@@ -52,8 +51,8 @@ public abstract class WithRespawns extends Pausable {
 
     private final JobKey deferredRunGameJob, respawnTimerJobkey;
     private final int starter_countdown;
-    private final String intro_mp3_file;
-    private final boolean wait4teams2B_ready;
+    private final String intro_mp3;
+    private final boolean game_lobby;
 
     // Table of Teams in rows, segments in cols
     // cells contain pairs of agent names and FSMs
@@ -66,9 +65,9 @@ public abstract class WithRespawns extends Pausable {
         super(game_parameters, scheduler, mqttOutbound);
         this.spawn_parameters = game_parameters.getJSONObject("spawns");
         this.respawn_timer = spawn_parameters.optInt("respawn_time");
-        this.wait4teams2B_ready = spawn_parameters.optBoolean("wait4teams2B_ready");
+        this.game_lobby = spawn_parameters.optBoolean("game_lobby");
         this.starter_countdown = spawn_parameters.optInt("starter_countdown");
-        this.intro_mp3_file = spawn_parameters.optString("intro_mp3_file", "<none>");
+        this.intro_mp3 = spawn_parameters.optString("intro_mp3", "<none>");
         this.deferredRunGameJob = new JobKey("run_the_game", uuid.toString());
         this.respawnTimerJobkey = new JobKey("timed_respawn", uuid.toString());
         this.spawn_segments = HashBasedTable.create();
@@ -150,7 +149,7 @@ public abstract class WithRespawns extends Pausable {
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_START, (state, obj) -> {
             send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
             send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
-            send("play", MQTT.toJSON("subpath", "intro", "soundfile", intro_mp3_file), agent);
+            send("play", MQTT.toJSON("subpath", "intro", "soundfile", intro_mp3), agent);
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_RESUME, (state, obj) -> {
             send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
@@ -216,7 +215,7 @@ public abstract class WithRespawns extends Pausable {
     protected void at_state(String state) {
         super.at_state(state);
         if (state.equals(_state_TEAMS_NOT_READY)) {
-            if (!wait4teams2B_ready) process_internal_message(_msg_READY);
+            if (!game_lobby) process_internal_message(_msg_READY);
             else send_message_to_agents_in_segment(active_segment, _msg_PREPARE);
         }
         if (state.equals(_state_TEAMS_READY)) {
@@ -299,7 +298,7 @@ public abstract class WithRespawns extends Pausable {
     @Override
     public JSONObject getState() {
         final JSONObject statusObject = super.getState()
-                .put("wait4teams2B_ready", wait4teams2B_ready)
+                .put("wait4teams2B_ready", game_lobby)
                 .put("starter_countdown", starter_countdown)
                 .put("active_segment", active_segment);
 

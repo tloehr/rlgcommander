@@ -6,9 +6,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public class OutputMessage {
-
-    private String from;
-    private String text;
+    private String game_state;
     private String time;
 
 }

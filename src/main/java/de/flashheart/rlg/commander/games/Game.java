@@ -376,7 +376,7 @@ public abstract class Game {
     }
 
     /**
-     * pretty self explanatory
+     * pretty self-explanatory
      *
      * @param agent
      * @param role

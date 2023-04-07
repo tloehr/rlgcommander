@@ -1,0 +1,41 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      layout:decorate="~{layout.html}">
+<head><title>Game Parameters</title>
+
+</head>
+<body>
+
+<section layout:fragment="content">
+
+    <section layout:fragment="gamemode_header">
+    </section>
+
+    <hr/>
+
+    <form class="needs-validation" onsubmit="return check()" action="active.html" id="params_form">
+        <div class="col-md-auto">
+            <label for="comment" class="form-label">Game description</label>
+            <input type="text" class="form-control" value="vanilla" id="comment" required minlength="1"
+                   maxlength="20"/>
+            <small id="comment-help" class="form-text">Will be visible on the Spawn-Agent's LCD. 20 chars
+                only.</small>
+        </div>
+
+        <section layout:fragment="params">
+        </section>
+
+        <section layout:fragment="with_respawns">
+        </section>
+
+        <div class="row">
+            <div class="col-md-auto">
+                <button class="btn btn-success" type="submit">POST REST</button>
+            </div>
+        </div>
+    </form>
+</section>
+
+
+</body>
+</html>

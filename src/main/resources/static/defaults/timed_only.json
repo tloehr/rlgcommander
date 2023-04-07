@@ -1,6 +1,6 @@
 {
-  "comment": "Timed Game",
-  "class": "de.flashheart.rlg.commander.games.Timed",
+  "comment": "Timed Only Game",
+  "class": "de.flashheart.rlg.commander.games.TimedOnly",
   "remark": "A generic timed game that only keeps track of the game timer. You can add some textlines to be scrolled at the spawn agents.",
   "game_time": 600,
   "count_respawns": false,
