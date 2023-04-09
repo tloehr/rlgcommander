@@ -28,12 +28,19 @@
         <section layout:fragment="with_respawns">
         </section>
 
-        <div class="row">
-            <div class="col-md-auto">
-                <button class="btn btn-success" type="submit">POST REST</button>
-            </div>
+        <div class="mt-2 col-md-auto">
+            <button class="btn btn-success" type="submit"><span class="bi bi-cloud-upload-fill">&nbsp;Load Game</span>
+            </button>
         </div>
+
     </form>
+    <div class="row mb-2">
+        <div class="col-md-auto">
+            <button class="btn btn-secondary"
+                    onclick="post_rest('game/unload',{'id': $('#gameid').val()})"><span class="bi bi-cloud-slash-fill">Unload Game</span>
+            </button>
+        </div>
+    </div>
 </section>
 
 

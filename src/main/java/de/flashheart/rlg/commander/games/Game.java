@@ -12,15 +12,21 @@ import de.flashheart.rlg.commander.games.events.StateTransitionEvent;
 import de.flashheart.rlg.commander.games.events.StateTransitionListener;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
+import org.javatuples.Triplet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Log4j2
 public abstract class Game {
@@ -37,6 +43,7 @@ public abstract class Game {
     public static final String _msg_CONTINUE = "continue";
     public static final String _msg_GAME_OVER = "game_over";
     public static final String _state_PROLOG = "PROLOG";
+    public static final String _state_EMPTY = "EMPTY";
     public static final String _state_TEAMS_NOT_READY = "TEAMS_NOT_READY";
     public static final String _state_TEAMS_READY = "TEAMS_READY";
     public static final String _state_RUNNING = "RUNNING";
@@ -53,7 +60,7 @@ public abstract class Game {
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
     private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
 
-    // all message must be sent via THIS base classes send method to implement "SILENT_GAME"
+    // all message must be sent via THIS base.html classes send method to implement "SILENT_GAME"
     private final MQTTOutbound mqttOutbound;
     private final boolean silent_game;
 
@@ -70,7 +77,6 @@ public abstract class Game {
     // main FSM to control the basic states of every game
     protected final FSM game_fsm;
     protected final Map<String, FSM> cpFSMs;
-//    protected final Spawns spawns;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         uuid = UUID.randomUUID();
@@ -211,6 +217,10 @@ public abstract class Game {
         log.warn("no zeus function implemented. ignoring.");
     }
 
+    public boolean hasZeus(){
+        return false;
+    }
+
     public void process_internal_message(String message) throws IllegalStateException {
         if (game_fsm.ProcessFSM(message) == null) {
             throw new IllegalStateException(String.format("message not processed. no transition in FSM from %s on message %s.", game_fsm.getCurrentState(), message));
@@ -339,6 +349,30 @@ public abstract class Game {
      * called whenever cleanup() is called from outside
      */
     protected abstract void on_cleanup();
+
+    public String get_in_game_event_description(JSONObject event) {
+        return "not implemented yet...";
+    }
+
+    public void add_model_data(Model model) {
+        model.addAttribute("comment", game_parameters.getString("comment"));
+        final ArrayList<Triplet<String, String, String>> events = new ArrayList<>();
+        in_game_events.forEach(event_object -> {
+            events.add(new Triplet<>(
+                    JavaTimeConverter.from_iso8601(event_object.get("pit").toString()).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)),
+                    get_in_game_event_description(event_object.getJSONObject("event")),
+                    event_object.getString("new_state")));
+        });
+        model.addAttribute("events", events.stream()
+                .sorted((o1, o2) -> o1.compareTo(o2) * -1)
+                .collect(Collectors.toList()));
+        model.addAttribute("current_state", get_current_state());
+        model.addAttribute("has_zeus", hasZeus());
+    }
+
+    public String get_current_state(){
+        return game_fsm.getCurrentState();
+    }
 
     /**
      * call this to initiate the cleanup process before You destroy a loaded game.

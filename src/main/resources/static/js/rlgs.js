@@ -1,7 +1,7 @@
 var stompClient = null;
 var game_state_colors = {
     "EMPTY": "lightgrey",
-    "PROLOG": "red",
+    "PROLOG": "#f7d1d5",
     "TEAMS_NOT_READY": "orange",
     "TEAMS_READY": "yellow",
     "RUNNING": "green",
@@ -23,6 +23,7 @@ function connect() {
         console.log('Connected: ' + frame);
         stompClient.subscribe('/topic/messages', function (messageOutput) {
             update_game_state(JSON.parse(messageOutput.body));
+            if ($(location).attr('pathname') === '/ui/active') location.reload();
         });
     });
 }
@@ -52,16 +53,9 @@ function disconnect() {
 // }
 
 function update_game_state(message) {
-    console.log(message);
-    console.log(game_state_colors['PROLOG']);
     const state = message['game_state'];
     const color = game_state_colors[state];
-    $('#game_state').html('&nbsp;'+state).attr('style', 'color: ' + color);
-    // var response = document.getElementById('response');
-    // var p = document.createElement('p');
-    // p.style.wordWrap = 'break-word';
-    // p.appendChild(document.createTextNode(messageOutput.from + ": " + messageOutput.text + " (" + messageOutput.time + ")"));
-    // response.appendChild(p);
+    $('#game_state').html('&nbsp;' + state).attr('style', 'color: ' + color);
 }
 
 
@@ -87,7 +81,7 @@ function loadJson(url) {
     return data1;
 }
 
-function from_string_segment_list(list){
+function from_string_segment_list(list) {
     var outer = [];
     list.split(/\n|;/).forEach(function (segment) {
         var inner = [];
@@ -100,7 +94,7 @@ function from_string_segment_list(list){
     return outer;
 }
 
-function from_string_list(list){
+function from_string_list(list) {
     var result = [];
     list.split(/\n|,/).forEach(function (item) {
         result.push(item);
@@ -123,7 +117,7 @@ function get_rest(resturi, param_json) {
     xhttp.send('{}');
 }
 
-function post_rest(resturi, param_json, body) {
+function post_rest(resturi, param_json, body, callback) {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = function () {
         if (xhttp.status >= 400) {
@@ -131,6 +125,7 @@ function post_rest(resturi, param_json, body) {
         } else {
             $('#rest_result').html(`&nbsp;${xhttp.status}`).attr('class', 'bi bi-check-circle-fill bi-md text-success');
         }
+        if (callback) callback(xhttp);
     };
     const base_url = window.location.origin + '/api/' + resturi;
     const myuri = base_url + (param_json ? '?' + jQuery.param(param_json) : '');

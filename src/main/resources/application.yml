@@ -12,6 +12,11 @@ spring:
           scheduler:
             instanceId: myscheduler
 
+
+server:
+  error:
+    include-stacktrace: always
+
 mqtt:
   cleanSession: 'true'
   connectionTimeout: '10'
@@ -23,3 +28,4 @@ rlgs:
 
   access_points:
     00223f97a198: NETGEAR
+

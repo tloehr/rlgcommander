@@ -24,8 +24,8 @@
     ]
   },
   "spawns": {
-    "wait4teams2B_ready": true,
-    "intro_mp3_file": "<random>",
+    "game_lobby": true,
+    "intro_mp3": "<random>",
     "starter_countdown": 30,
     "respawn_time": 0,
     "teams": [

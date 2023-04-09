@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SimpleScheduleBuilder;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -298,7 +299,7 @@ public abstract class WithRespawns extends Pausable {
     @Override
     public JSONObject getState() {
         final JSONObject statusObject = super.getState()
-                .put("wait4teams2B_ready", game_lobby)
+                .put("game_lobby", game_lobby)
                 .put("starter_countdown", starter_countdown)
                 .put("active_segment", active_segment);
 

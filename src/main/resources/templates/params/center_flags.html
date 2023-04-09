@@ -28,10 +28,13 @@
                         value.agents = from_string_segment_list($("#blufor").val());
                     }
                 });
-                console.log(JSON.stringify(json));
-                post_rest('game/load', {'id': $("#gameid").val()}, JSON.stringify(json));
+                //console.log(JSON.stringify(json));
+                post_rest('game/load', {'id': $("#gameid").val()}, JSON.stringify(json), function (xhttp) {
+                    console.log('response: ' + xhttp.status);
+                    // if status is good, then redirect to active page
+                    if (xhttp.status < 400) window.location.href = base_url + '/ui/active/base?' + jQuery.param({'id': $("#gameid").val()});
+                });
             });
-            //location.href = base_url+'active?'+jQuery.param({'id': $("#gameid").val()});
             return false;
         }
 

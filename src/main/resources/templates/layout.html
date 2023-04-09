@@ -13,6 +13,13 @@
     <script th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
     <script th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
     <script src="/js/rlgs.js"></script>
+
+    <script>
+        function param_click(gid, gamemode) {
+            const base_url = window.location.origin + '/ui/params/base';
+            location.href = base_url + '?' + jQuery.param({'id': gid, 'gamemode': gamemode});
+        }
+    </script>
 </head>
 
 <body onload="get_rest('game/current_state', {'id':'1'}); connect();">
@@ -32,7 +39,7 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link " aria-current="page" href="home">Home</a>
+                    <a class="nav-link " aria-current="page" href="/ui/home">Home</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
@@ -40,23 +47,30 @@
                         Game Paramters
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="params?id=1&gamemode=farcry">FarCry Assault</a></li>
-                        <li><a class="dropdown-item" href="params?id=1&gamemode=conquest">Conquest</a></li>
-                        <li><a class="dropdown-item" href="params?id=1&gamemode=centerflags">Center Flags</a></li>
-                        <li><a class="dropdown-item" href="params?id=1&gamemode=signal">Signal</a></li>
-                        <li><a class="dropdown-item" href="params?id=1&gamemode=stronghold">Stronghold</a></li>
-                        <li><a class="dropdown-item" href="params?id=1&gamemode=timedonly">Timed Only</a></li>
+                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'farcry')">FarCry
+                            Assault</a></li>
+                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'conquest')">Conquest</a>
+                        </li>
+                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'center_flags')">Center
+                            Flags</a></li>
+                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'signal')">Signal</a>
+                        </li>
+                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'stronghold')">Stronghold</a>
+                        </li>
+                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'timed_only')">Timed
+                            Only</a></li>
                     </ul>
                 </li>
+
                 <li class="nav-item dropdown">
-                    <a class="nav-link" href="active?id=1" +>Active Game</a>
+                    <a class="nav-link" href="/ui/active/base?id=1" +>Active Game</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${agents_active}" href="agents">Agents</a>
+                    <a class="nav-link" th:classappend="${agents_active}" href="/ui/agents">Agents</a>
                 </li>
             </ul>
             <div class="col-md-auto me-2">
-                <select class="form-select " id="gameid" value="1"
+                <select class="form-select" id="gameid" value="1"
                         title="Reserved for future use. Currently RLGS can handle only one game at a time.">
                     <option value="1">Game #1</option>
                 </select>
@@ -77,7 +91,6 @@
     </div>
 </nav>
 
-
 <main role="main" class="container">
     <div class="container-fluid">
         <section layout:fragment="content">
@@ -88,7 +101,7 @@
 
 <footer class="footer navbar-expand-lg navbar-dark bg-dark fixed-bottom">
     <div class="container">
-        <p class="text-center text-light">Real Life Gaming System v1.7 b36 &nbsp; &nbsp; <a
+        <p class="text-center text-light"><span th:text="'Real Life Gaming System '+${server_version}"></span>&nbsp;&nbsp;<a
                 href="https://www.flashheart.de">flashheart.de</a></p>
         <!--        <p th:text="'Real Life Gaming System '+${server_version}"/> <a-->
         <!--            href="https://www.flashheart.de#">flashheart.de</a>-->

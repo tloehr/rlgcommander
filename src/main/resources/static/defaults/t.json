@@ -1,0 +1,82 @@
+{
+  "match_length": 600,
+  "scores": {
+    "red": {
+      "all": 0,
+      "ag01": 0
+    },
+    "blue": {
+      "all": 0,
+      "ag01": 0
+    }
+  },
+  "red_respawns": 0,
+  "silent_game": false,
+  "agent_states": {
+    "ag32": "PROLOG",
+    "ag01": "PROLOG",
+    "ag33": "PROLOG"
+  },
+  "end_time": "don't know yet",
+  "game_lobby": false,
+  "rest_url": "http://localhost:8090/api/game/load",
+  "spawns": {
+    "intro_mp3": "<none>",
+    "game_lobby": false,
+    "starter_countdown": 0,
+    "teams": [
+      {
+        "name": "RedFor",
+        "led": "red",
+        "role": "red_spawn",
+        "agents": [
+          [
+            "ag32"
+          ]
+        ]
+      },
+      {
+        "name": "BlueFor",
+        "led": "blu",
+        "role": "blue_spawn",
+        "agents": [
+          [
+            "ag33"
+          ]
+        ]
+      }
+    ],
+    "respawn_time": 0
+  },
+  "version": "v1.7b276",
+  "remaining": 600,
+  "agents": {
+    "sirens": [
+      "ag50"
+    ],
+    "capture_points": [
+      "ag01"
+    ]
+  },
+  "start_time": "don't know yet",
+  "game_state": "PROLOG",
+  "starter_countdown": 0,
+  "active_segment": 0,
+  "game_time": 600,
+  "in_game_events": [
+    {
+      "event": {
+        "type": "general_game_state_change",
+        "message": "reset"
+      },
+      "new_state": "PROLOG",
+      "pit": "2023-04-07T11:55:38.516674+02:00[Europe/Berlin]"
+    }
+  ],
+  "comment": "vanilla",
+  "count_respawns": false,
+  "class": "de.flashheart.rlg.commander.games.CenterFlags",
+  "resume_countdown": 0,
+  "timestamp": "07.04.23, 11:56:50",
+  "blue_respawns": 0
+}

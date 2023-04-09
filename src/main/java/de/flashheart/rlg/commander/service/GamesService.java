@@ -63,7 +63,8 @@ public class GamesService {
     public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
-        //if (loaded_games[id-1].isPresent()) throw new IllegalAccessException("id "+id+" is in use. Unload first.");
+        if (loaded_games[id - 1].isPresent())
+            throw new IllegalAccessException("id " + id + " is in use. Unload first.");
         log.debug("\n _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
                 "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
                 "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
@@ -98,13 +99,15 @@ public class GamesService {
         agentsService.remove_gameid_from_agents(game_to_unload.getAgents().keySet());
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
+        fireStateReached(id, StateReachedEvent.EMPTY); // pass it on to the RestController
         gameStateListeners.removeAll(id);
         // todo: this welcomes all agents even if they never reported in. not really a problem - kind of an oddity
         agentsService.welcome_unused_agents();
     }
 
-    public Optional<Game> getGame(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
-        check_id(id);
+    public Optional<Game> getGame(int id) throws ArrayIndexOutOfBoundsException {
+        if (id < 1 || id > MAX_NUMBER_OF_GAMES)
+            throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         return loaded_games[id - 1];
     }
 

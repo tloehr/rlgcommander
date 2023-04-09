@@ -11,7 +11,39 @@
     <h1>ERROR PAGE</h1>
     <img src="/img/system-failure-the-matrix.gif"  class="img-fluid"/>
 
-    <p>I am sorry, but there was an error. I know: You deserve better...</p>
+    <h2>Details</h2>
+    <table>
+        <tr>
+            <td>Date</td>
+            <td th:text="${timestamp}"/>
+        </tr>
+        <tr>
+            <td>Path</td>
+            <td th:text="${path}"/>
+        </tr>
+        <tr>
+            <td>Error</td>
+            <td th:text="${error}"/>
+        </tr>
+        <tr>
+            <td>Status</td>
+            <td th:text="${status}"/>
+        </tr>
+        <tr>
+            <td>Message</td>
+            <td th:text="${message}"/>
+        </tr>
+        <tr>
+            <td>Exception</td>
+            <td th:text="${exception}"/>
+        </tr>
+        <tr>
+            <td>Trace</td>
+            <td>
+                <pre th:text="${trace}"/>
+            </td>
+        </tr>
+    </table>
 
 </section>
 </body>

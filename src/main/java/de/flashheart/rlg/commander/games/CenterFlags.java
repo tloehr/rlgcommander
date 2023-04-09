@@ -12,16 +12,19 @@ import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.javatuples.Quartet;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.swing.text.html.HTML;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -234,6 +237,11 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
+    public boolean hasZeus() {
+        return true;
+    }
+
+    @Override
     public void zeus(JSONObject params) throws IllegalStateException, JSONException {
         if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
 
@@ -363,7 +371,37 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
 
-    public static String get_in_game_event_description(JSONObject event) {
+    @Override
+    public void add_model_data(Model model) {
+        super.add_model_data(model);
+        final ArrayList<Quartet<String, String, String, String>> my_scores = new ArrayList<>();
+        cpFSMs.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(agent_fsm -> {
+            String css_classname = "table-light";
+            if (agent_fsm.getValue().getCurrentState().toLowerCase().matches("red|game_over_red"))
+                css_classname = "table-danger";
+            if (agent_fsm.getValue().getCurrentState().toLowerCase().matches("blue|game_over_blue"))
+                css_classname = "table-primary";
+
+            String agent = agent_fsm.getKey();
+
+            my_scores.add(new Quartet<>(css_classname, agent,
+                    JavaTimeConverter.format(Instant.ofEpochMilli(scores.get(agent, "blue"))),
+                    JavaTimeConverter.format(Instant.ofEpochMilli(scores.get(agent, "red")))
+            ));
+        });
+
+        model.addAttribute("scores", my_scores);
+        model.addAttribute("sum_blue", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "blue"))));
+        model.addAttribute("sum_red", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "red"))));
+
+        if (count_respawns) {
+            model.addAttribute("red_respawns", red_respawns);
+            model.addAttribute("blue_respawns", blue_respawns);
+        }
+    }
+
+    @Override
+    public String get_in_game_event_description(JSONObject event) {
         String type = event.getString("type");
         if (type.equalsIgnoreCase("general_game_state_change")) {
             return event.getString("message");
