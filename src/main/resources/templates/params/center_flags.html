@@ -88,8 +88,21 @@
             </div>
         </div>
     </div>
-
-
 </section>
+
+
+<section layout:fragment="load_params_from_file">
+    <script>
+        const game_parameters_string = sessionStorage.getItem("game_parameters");
+        if (game_parameters_string){
+            console.log(game_parameters_string);
+            const game_parameters = JSON.parse(game_parameters_string);
+            console.log(game_parameters);
+            $("#comment").val(game_parameters.comment);
+        }
+
+    </script>
+</section>
+
 </body>
 </html>

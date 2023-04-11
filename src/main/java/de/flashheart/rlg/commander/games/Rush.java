@@ -240,6 +240,11 @@ public class Rush extends Scheduled {
         agentFSMs.clear();
     }
 
+    @Override
+    public String getMode() {
+        return "rush";
+    }
+
 
     @Override
     public JSONObject getState() {

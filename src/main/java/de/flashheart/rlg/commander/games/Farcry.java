@@ -108,6 +108,11 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
+    public String getMode() {
+        return "farcry";
+    }
+
+    @Override
     public void reset_operations() {
         super.reset_operations();
         estimated_end_time = null;

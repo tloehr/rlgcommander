@@ -368,6 +368,7 @@ public abstract class Game {
                 .collect(Collectors.toList()));
         model.addAttribute("current_state", get_current_state());
         model.addAttribute("has_zeus", hasZeus());
+        model.addAttribute("mode", getMode());
     }
 
     public String get_current_state(){
@@ -383,6 +384,8 @@ public abstract class Game {
         on_cleanup();
     }
 
+    public abstract String getMode();
+
     /**
      * returns a JSON Object which describes the current game situation.
      *
@@ -395,6 +398,7 @@ public abstract class Game {
                 .put("class", this.getClass().getName())
                 .put("game_state", game_fsm.getCurrentState())
                 .put("in_game_events", new JSONArray(in_game_events))
+                .put("mode", getMode())
                 .put("agent_states", agent_states);
     }
 
@@ -408,6 +412,8 @@ public abstract class Game {
         game_description.clear();
         game_description.addAll(Arrays.asList(lines));
     }
+
+
 
     /**
      * pretty self-explanatory

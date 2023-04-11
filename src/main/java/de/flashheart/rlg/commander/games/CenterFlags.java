@@ -394,10 +394,17 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         model.addAttribute("sum_blue", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "blue"))));
         model.addAttribute("sum_red", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "red"))));
 
+        model.addAttribute("cps", capture_points);
+
         if (count_respawns) {
             model.addAttribute("red_respawns", red_respawns);
             model.addAttribute("blue_respawns", blue_respawns);
         }
+    }
+
+    @Override
+    public String getMode() {
+        return "center_flags";
     }
 
     @Override

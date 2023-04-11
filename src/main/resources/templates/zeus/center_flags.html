@@ -1,15 +1,41 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout.html}">
+      layout:decorate="~{zeus/base.html}">
 
 <head><title>some title from slist</title></head>
 
 <body>
 
-<section layout:fragment="content">
+<section layout:fragment="gamemode_header">
+    <h1>
+        <img src="/img/zeus.png" height="64" width="64"/>
+        Zeus - Center Flags</h1>
+</section>
+<section layout:fragment="zeus_form">
 
-    <h1>Zeus Divine Intervention</h1>
-    <h2>on center_flags</h2>
+    <form id="zeus_to_neutral" onsubmit="return false">
+
+        <div class="col-md-3">
+            <label for="agents_to_neutral" class="form-label">Set to neutral</label>
+            <select class="form-select " style="height: 40px;" id="agents_to_neutral" required>
+                <option selected value="">Select Agent</option>
+                <option th:each="cp : ${cps}" th:value="${cp}" th:text="${cp}"/>
+            </select>
+            <button class="btn btn-success" type="submit"
+                    onclick="post_rest('game/process', {'id':$('#gameid').val()}, {'operation': 'to_neutral', 'agent':$('#agents_to_neutral').val()})">
+                Back to neutral</button>
+        </div>
+
+        <!--        <button class="d-none" type="submit">hidden_submit</button>-->
+    </form>
+    <div class="row mb-2">
+        <div class="col-md-auto">
+            <button class="btn btn-secondary"
+                    hier weiter
+                    onclick="post_rest('game/zeus',{'id': $('#gameid').val()})"><span class="bi bi-cloud-slash-fill">Unload Game</span>
+            </button>
+        </div>
+    </div>
 
 </section>
 </body>

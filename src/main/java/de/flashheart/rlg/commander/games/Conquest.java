@@ -409,6 +409,11 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
                     .put("zeus", "intervention"));
         }
     }
+    @Override
+    public String getMode() {
+        return "conquest";
+    }
+
 
     @Override
     public JSONObject getState() {

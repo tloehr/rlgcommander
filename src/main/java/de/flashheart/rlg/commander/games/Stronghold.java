@@ -308,6 +308,11 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     @Override
+    public String getMode() {
+        return "stronghold";
+    }
+
+    @Override
     public JSONObject getState() {
         //log.debug("getState");
         return MQTT.merge(super.getState(), get_variables());

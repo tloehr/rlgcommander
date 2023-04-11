@@ -49,4 +49,6 @@ body {
     padding-bottom: 70px;
 }
 
-#game_control{top: 70px;}
+#game_control {
+    top: 75px;
+}

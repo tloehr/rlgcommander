@@ -177,6 +177,11 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     @Override
+    public String getMode() {
+        return "signal";
+    }
+
+    @Override
     public void reset_operations() {
         super.reset_operations();
         // spawn agents are used as display not for a specific team

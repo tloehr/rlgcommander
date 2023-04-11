@@ -21,6 +21,13 @@
             // zeus
             $('#btn_zeus').prop('disabled', !haszeus);
         }
+
+        function goto_zeus(){
+            const mode = '[[${mode}]]';
+            const base_url = window.location.origin + '/ui/zeus/base';
+            location.href = base_url + '?' + jQuery.param({'id':$('#gameid').val()});
+        }
+
     </script>
 </head>
 
@@ -54,8 +61,9 @@
             <button id="btn_game_over" th:onclick="post_rest('game/process', {'id':$('#gameid').val(),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_GAME_OVER}]]});"
                     class="btn btn-outline-secondary me-auto col-sm-auto"><span class="bi bi-stop-circle-fill">&nbsp;Game Over</span>
             </button>
-            <button id="btn_zeus" class="btn btn-outline-danger col-sm-auto"><span class="bi bi-sliders">&nbsp;Zeus Admin</span>
+            <button id="btn_zeus" onclick="goto_zeus()" class="btn btn-outline-danger col-sm-auto"><span class="bi bi-sliders">&nbsp;Zeus Admin</span>
             </button>
+<!--            <a onclick="goto_zeus()" class="btn btn-outline-danger col-sm-auto" id="btn_zeus"  role="button" aria-pressed="true"><span class="bi bi-stop-circle-fill">&nbsp;Zeus</span></a>-->
         </div>
     </div>
     <script>init_buttons();</script>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+<head><title>Active Game</title></head>
+<body>
+
+
+<section layout:fragment="content">
+    <div class="row mb-3">
+        <div class="col-md-auto">
+            <form action="#" id="upload_form">
+                <input class="form-control" id="jsonfile" type="file" accept="application/json">
+                <button type="submit">submit</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        const jsonfileInput = document.getElementById("jsonfile");
+        jsonfileInput.addEventListener(
+            "change",
+            () => {
+                var file = jsonfileInput.files[0];
+                console.log(file);
+                if (file) {
+                    const reader = new FileReader();
+                    reader.readAsText(file, "UTF-8");
+                    reader.onload = function (evt) {
+                        const game_parameters = JSON.parse(evt.target.result);
+                        sessionStorage.setItem("game_parameters", evt.target.result)
+                        location.href = window.location.origin + '/ui/params/base?' + jQuery.param({'id': $('#gameid').val(), 'gamemode': game_parameters.mode});
+                    }
+                    reader.onerror = function (evt) {
+                        console.error(evt);
+                    }
+                }
+            },
+            false
+        );
+    </script>
+</section>
+
+
+
+
+</body>
+</html>

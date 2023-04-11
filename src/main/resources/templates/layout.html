@@ -22,7 +22,7 @@
     </script>
 </head>
 
-<body onload="get_rest('game/current_state', {'id':'1'}); connect();">
+<body onload="get_rest('game/current_state', {'id':$('#gameid').val()}); connect();">
 <nav id="navbar" role="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">
@@ -41,13 +41,18 @@
                 <li class="nav-item">
                     <a class="nav-link " aria-current="page" href="/ui/home">Home</a>
                 </li>
+
+                <li class="nav-item">
+                    <a class="nav-link " aria-current="page" href="/ui/upload">Upload game</a>
+                </li>
+
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                        aria-expanded="false">
-                        Game Paramters
+                        New Game
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'farcry')">FarCry
+                        <li><a class="dropdown-item" onclick="sessionStorage.removeItem('game_parameters'); param_click($('#gameid').val(),'farcry');">FarCry
                             Assault</a></li>
                         <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'conquest')">Conquest</a>
                         </li>
@@ -55,7 +60,8 @@
                             Flags</a></li>
                         <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'signal')">Signal</a>
                         </li>
-                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'stronghold')">Stronghold</a>
+                        <li><a class="dropdown-item"
+                               onclick="param_click($('#gameid').val(),'stronghold')">Stronghold</a>
                         </li>
                         <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'timed_only')">Timed
                             Only</a></li>
@@ -108,5 +114,6 @@
     </div>
 </footer>
 </div>
+
 </body>
 </html>
