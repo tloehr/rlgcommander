@@ -1,0 +1,17 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+
+<head><title>Welcome to the RLGS</title></head>
+
+<body>
+
+<section layout:fragment="content">
+
+  <h1>Server Status</h1>
+
+  <pre id="server_status" th:text="${server_status}"></pre>
+
+</section>
+</body>
+</html>

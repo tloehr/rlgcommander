@@ -22,7 +22,7 @@
                 <option th:each="cp : ${cps}" th:value="${cp}" th:text="${cp}"/>
             </select>
             <button class="btn btn-success" type="submit"
-                    onclick="post_rest('game/process', {'id':$('#gameid').val()}, {'operation': 'to_neutral', 'agent':$('#agents_to_neutral').val()})">
+                    onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid')}, {'operation': 'to_neutral', 'agent':$('#agents_to_neutral').val()})">
                 Back to neutral</button>
         </div>
 
@@ -32,7 +32,7 @@
         <div class="col-md-auto">
             <button class="btn btn-secondary"
                     hier weiter
-                    onclick="post_rest('game/zeus',{'id': $('#gameid').val()})"><span class="bi bi-cloud-slash-fill">Unload Game</span>
+                    onclick="post_rest('game/zeus',{'id': sessionStorage.getItem('gameid')})"><span class="bi bi-cloud-slash-fill">Unload Game</span>
             </button>
         </div>
     </div>

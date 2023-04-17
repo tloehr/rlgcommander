@@ -58,14 +58,6 @@ function update_game_state(message) {
     $('#game_state').html('&nbsp;' + state).attr('style', 'color: ' + color);
 }
 
-
-function switch_sides() {
-    var redfor = $("#redfor").val();
-    var blufor = $("#blufor").val();
-    $("#redfor").val(blufor);
-    $("#blufor").val(redfor);
-}
-
 function loadJson(url) {
     var data1;
     var xhttp = new XMLHttpRequest();

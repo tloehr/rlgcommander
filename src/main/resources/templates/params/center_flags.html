@@ -6,36 +6,25 @@
 <head>
     <title>Center Flags</title>
     <script>
-        function check() {
-            const base_url = window.location.origin;
-            $.getJSON(base_url + "/defaults/center_flags.json", function (json) {
-                json.comment = $("#comment").val();
-                json.count_respawns = $("#btn-count-respawns").prop('checked');
-                json.game_time = parseInt($("#gametime").val());
-                json.resume_countdown = parseInt($("#resume_time").val());
-                json.silent_game = $("#btn-check-silent").prop('checked');
-                json.agents.capture_points = from_string_list($("#capture_points").val());
-                json.agents.sirens = from_string_list($("#sirens").val());
 
-                json.spawns.game_lobby = $("#btn-check-lobby").prop('checked');
-                json.spawns.intro_mp3 = $("#intro_mp3").val();
-                if ($("#intro_mp3").val() == '<none>') json.spawns.starter_countdown = 0;
-                else json.spawns.starter_countdown = 30;
-                $.each(json.spawns.teams, function (index, value) {
-                    if (value.role == 'red_spawn') {
-                        value.agents = from_string_segment_list($("#redfor").val());
-                    } else if (value.role == 'blue_spawn') {
-                        value.agents = from_string_segment_list($("#blufor").val());
-                    }
-                });
-                //console.log(JSON.stringify(json));
-                post_rest('game/load', {'id': $("#gameid").val()}, JSON.stringify(json), function (xhttp) {
-                    console.log('response: ' + xhttp.status);
-                    // if status is good, then redirect to active page
-                    if (xhttp.status < 400) window.location.href = base_url + '/ui/active/base?' + jQuery.param({'id': $("#gameid").val()});
-                });
-            });
+        function check_this_form(){
+            console.log('check_form()');
+            read_json_and_check_for('center_flags');
             return false;
+        }
+
+        function check_form(json) {
+            console.log('check_form(json)');
+            //$.getJSON(window.location.origin + '/defaults/'+mode+'.json', function (json) {
+            json.count_respawns = $("#btn-count-respawns").prop('checked');
+            json.game_time = parseInt($("#gametime").val());
+            json.resume_countdown = parseInt($("#resume_time").val());
+            json.silent_game = $("#btn-check-silent").prop('checked');
+            json.agents.capture_points = from_string_list($("#capture_points").val());
+            json.agents.sirens = from_string_list($("#sirens").val());
+
+            check_form_with_respawns(json);
+            check_form_base(json);
         }
 
 
@@ -94,7 +83,7 @@
 <section layout:fragment="load_params_from_file">
     <script>
         const game_parameters_string = sessionStorage.getItem("game_parameters");
-        if (game_parameters_string){
+        if (game_parameters_string) {
             console.log(game_parameters_string);
             const game_parameters = JSON.parse(game_parameters_string);
             console.log(game_parameters);

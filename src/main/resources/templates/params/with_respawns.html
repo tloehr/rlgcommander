@@ -1,6 +1,42 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{params/base.html}">
+
+
+<head>
+
+    <script>
+
+        function check_form_with_respawns(json) {
+            console.log('check_form_with_respawns(json)');
+            //$.getJSON(window.location.origin + '/defaults/'+mode+'.json', function (json) {
+            json.spawns.game_lobby = document.getElementById('btn-check-lobby').getAttribute('checked');
+            json.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
+            if (json.spawns.intro_mp3 === '<none>') json.spawns.starter_countdown = 0;
+            else json.spawns.starter_countdown = 30;
+            // todo: no jquery
+            $.each(json.spawns.teams, function (index, value) {
+                if (value.role === 'red_spawn') {
+                    value.agents = from_string_segment_list($("#redfor").val());
+                } else if (value.role === 'blue_spawn') {
+                    value.agents = from_string_segment_list($("#blufor").val());
+                }
+            });
+        }
+
+        /**
+         * switches the teams
+         */
+        function switch_sides() {
+            let redfor = document.getElementById('redfor').value;
+            var blufor = document.getElementById('blufor').value;
+            document.getElementById('redfor').value = blufor;
+            document.getElementById('blufor').value = redfor;
+        }
+    </script>
+
+</head>
+
 <body>
 
 
@@ -49,7 +85,7 @@
                    required/>
         </div>
         <div class="col-auto">
-            <button type="button" class="btn btn-outline-secondary" onclick="change_of_sides()"
+            <button type="button" class="btn btn-outline-secondary" onclick="switch_sides()"
                     title="change of sides"><i
                     class="bi bi-arrow-left-right bi-lg"></i></button>
         </div>

@@ -52,19 +52,15 @@ public class WebController {
         return String.format("v%s b%s", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
-    @GetMapping("/greeting")
-    public String greeting(@RequestParam(name = "name", required = false, defaultValue = "World") String name, Model model) {
-        model.addAttribute("name", name);
-        return "greeting";
-    }
-
     @GetMapping("/upload")
     public String upload(Model model) {
+        model.addAttribute("params_active", "active");
         return "upload";
     }
 
     @GetMapping("/home")
     public String app(Model model) {
+        model.addAttribute("home_active", "active");
         return "home";
     }
 
@@ -74,9 +70,17 @@ public class WebController {
     }
 
     @GetMapping("/agents")
-    public String showStudentList(Model model) {
+    public String agents(Model model) {
         model.addAttribute("agents", agentsService.get_all_agents().stream().sorted().toList());
+        model.addAttribute("agents_active", "active");
         return "agents";
+    }
+
+    @GetMapping("/server")
+    public String server(@RequestParam(name = "id") int id, Model model) {
+        model.addAttribute("server_status", gamesService.getGameState(id).toString(4));
+        model.addAttribute("server_active", "active");
+        return "server";
     }
 
     @GetMapping("/zeus/base")
@@ -91,13 +95,15 @@ public class WebController {
 
     @GetMapping("/active/base")
     public String active(@RequestParam(name = "id") int id, Model model) {
+        model.addAttribute("active_active", "active");
         JSONObject game_state = gamesService.getGameState(id);
         String classname = game_state.optString("class", Game._state_EMPTY);
         model.addAttribute("classname", classname);
         model.addAttribute("has_zeus", false);
         model.addAttribute("active_command_buttons_enabled", new JSONArray(active_command_buttons_enabled.get(Game._state_EMPTY)));
+        model.addAttribute("mode", "empty");
+        model.addAttribute("gameid", id);
         gamesService.getGame(id).ifPresent(game -> {
-            model.addAttribute("gameid", id);
             game.add_model_data(model);
             model.addAttribute("active_command_buttons_enabled", new JSONArray(active_command_buttons_enabled.get(game.get_current_state())));
         });
@@ -106,8 +112,8 @@ public class WebController {
     }
 
     @GetMapping("/params/base")
-    public String params(@RequestParam(name = "id") int id, @RequestParam(name = "gamemode") String mode, Model model) {
-        model.addAttribute("gameid", id);
+    public String params(@RequestParam(name = "gamemode") String mode, Model model) {
+        model.addAttribute("params_active", "active");
         model.addAttribute("intros",
                 myYamlConfiguration.getIntro().entrySet().stream()
                         .map(stringStringEntry -> new Pair<>(stringStringEntry.getKey(), stringStringEntry.getValue()))

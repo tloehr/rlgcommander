@@ -15,14 +15,14 @@
     <script src="/js/rlgs.js"></script>
 
     <script>
-        function param_click(gid, gamemode) {
-            const base_url = window.location.origin + '/ui/params/base';
-            location.href = base_url + '?' + jQuery.param({'id': gid, 'gamemode': gamemode});
+        function param_click(uri, params) {
+            const base_url = window.location.origin + '/ui/' + uri;
+            location.href = base_url + '?' + jQuery.param(params);
         }
     </script>
 </head>
 
-<body onload="get_rest('game/current_state', {'id':$('#gameid').val()}); connect();">
+<body onload="get_rest('game/current_state', {'id':sessionStorage.getItem('gameid')}); connect();">
 <nav id="navbar" role="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">
@@ -39,47 +39,81 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link " aria-current="page" href="/ui/home">Home</a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link " aria-current="page" href="/ui/upload">Upload game</a>
+                    <a class="nav-link " aria-current="page" href="/ui/home" th:classappend="${home_active}">Home</a>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                       aria-expanded="false">
-                        New Game
+                       aria-expanded="false"  th:classappend="${params_active}">
+                        Setup Games
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" onclick="sessionStorage.removeItem('game_parameters'); param_click($('#gameid').val(),'farcry');">FarCry
-                            Assault</a></li>
-                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'conquest')">Conquest</a>
+                        <li><a class="dropdown-item"
+                               href="/ui/upload"><span
+                                class="bi bi-upload">&nbsp;Upload Game</span></a></li>
+                        <li><a class="dropdown-item"
+                               onclick="post_rest('game/unload',{'id': sessionStorage.getItem('gameid')})">
+                            <span class="bi bi-cloud-slash-fill">&nbsp;Unload Game</span></a>
                         </li>
-                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'center_flags')">Center
-                            Flags</a></li>
-                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'signal')">Signal</a>
+                        <hr/>
+                        <li><a class="dropdown-item"
+                               onclick="sessionStorage.removeItem('game_parameters'); param_click('params/base', {'gamemode':'farcry'});">
+                            <span class="bi bi-file-earmark-play">&nbsp;FarCry Assault</span></a></li>
+                        <li><a class="dropdown-item"
+                               onclick="sessionStorage.removeItem('game_parameters'); param_click('params/base', {'gamemode':'conquest'});">
+                            <span class="bi bi-file-earmark-play">&nbsp;Conquest</span></a></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="param_click($('#gameid').val(),'stronghold')">Stronghold</a>
+                               onclick="sessionStorage.removeItem('game_parameters'); param_click('params/base', {'gamemode':'center_flags'});">
+                            <span class="bi bi-file-earmark-play">&nbsp;Center Flags</span></a></a></li>
+                        <li><a class="dropdown-item"
+                               onclick="sessionStorage.removeItem('game_parameters'); param_click('params/base', {'gamemode':'signal'});">
+                            <span class="bi bi-file-earmark-play">&nbsp;Signal</span></a></a>
                         </li>
-                        <li><a class="dropdown-item" onclick="param_click($('#gameid').val(),'timed_only')">Timed
-                            Only</a></li>
+                        <li><a class="dropdown-item"
+                               onclick="sessionStorage.removeItem('game_parameters'); param_click('params/base', {'gamemode':'stronghold'});">
+                            <span class="bi bi-file-earmark-play">&nbsp;Stronghold</span></a></a>
+                        </li>
+                        <li><a class="dropdown-item"
+                               onclick="sessionStorage.removeItem('game_parameters'); param_click('params/base', {'gamemode':'timed_only'});">
+                            <span class="bi bi-file-earmark-play">&nbsp;Time Only</span></a></a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link" href="/ui/active/base?id=1" +>Active Game</a>
+                    <a class="nav-link" th:classappend="${active_active}"
+                       onclick="param_click('active/base', {'id': sessionStorage.getItem('gameid')});"
+                       href="#">Active Game</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${server_active}"
+                       onclick="param_click('server', {'id': sessionStorage.getItem('gameid')});"
+                       href="#">Server</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${agents_active}" href="/ui/agents">Agents</a>
                 </li>
             </ul>
-            <div class="col-md-auto me-2">
+            <div class="col-md-auto me-4">
                 <select class="form-select" id="gameid" value="1"
                         title="Reserved for future use. Currently RLGS can handle only one game at a time.">
                     <option value="1">Game #1</option>
+                    <option value="2">Game #2</option>
+                    <option value="3">Game #3</option>
                 </select>
+                <script>
+                    const gameid_sel = document.getElementById('gameid');
+                    // first time init
+                    if (!sessionStorage.getItem('runonce_gameid')) {
+                        sessionStorage.setItem('runonce_gameid', '1');
+                        sessionStorage.setItem('gameid', gameid_sel.value);
+                    }
+                    // on change update
+                    gameid_sel.addEventListener('change', () => {
+                        sessionStorage.setItem('gameid', gameid_sel.value);
+                    }, false);
+                    document.getElementById('gameid').value = sessionStorage.getItem('gameid');
+                </script>
             </div>
         </div>
         <div class="col-auto">

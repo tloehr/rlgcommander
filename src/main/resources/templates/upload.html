@@ -6,16 +6,17 @@
 
 
 <section layout:fragment="content">
-    <div class="row mb-3">
+    <div class="row mt-3">
         <div class="col-md-auto">
-            <form action="#" id="upload_form">
-                <input class="form-control" id="jsonfile" type="file" accept="application/json">
-                <button type="submit">submit</button>
-            </form>
+
+            <input class="form-control" id="jsonfile" type="file" accept="application/json">
+
         </div>
     </div>
     <script>
+        // react on the file upload event
         const jsonfileInput = document.getElementById("jsonfile");
+        sessionStorage.removeItem("game_parameters");
         jsonfileInput.addEventListener(
             "change",
             () => {
@@ -27,7 +28,10 @@
                     reader.onload = function (evt) {
                         const game_parameters = JSON.parse(evt.target.result);
                         sessionStorage.setItem("game_parameters", evt.target.result)
-                        location.href = window.location.origin + '/ui/params/base?' + jQuery.param({'id': $('#gameid').val(), 'gamemode': game_parameters.mode});
+                        location.href = window.location.origin + '/ui/params/base?' + jQuery.param({
+                            'id': sessionStorage.getItem('gameid'),
+                            'gamemode': game_parameters.mode
+                        });
                     }
                     reader.onerror = function (evt) {
                         console.error(evt);
@@ -38,8 +42,6 @@
         );
     </script>
 </section>
-
-
 
 
 </body>
