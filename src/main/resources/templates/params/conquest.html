@@ -1,0 +1,101 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      layout:decorate="~{params/with_respawns.html}">
+
+
+<head>
+    <title>Center Flags</title>
+    <script>
+        sessionStorage.setItem('game_mode', 'conquest');
+
+        function check_form(json) {
+            json.respawn_tickets = parseInt(document.getElementById('respawn_tickets').value);
+            json.not_bleeding_before_cps = parseInt(document.getElementById('first_bleed_interval').value);
+            json.start_bleed_interval = parseInt(document.getElementById('start_bleed_interval').value);
+            json.end_bleed_interval = parseInt(document.getElementById('end_bleed_interval').value);
+            json.ticket_price_for_respawn = parseInt(document.getElementById('ticket_price_for_respawn').value);
+
+            json.agents.capture_points = from_string_list($("#capture_points").val());
+            json.agents.sirens = from_string_list($("#sirens").val());
+
+            check_form_with_respawns(json);
+            check_form_base(json);
+        }
+
+        function preset_gamemode_form(game_parameters) {
+            document.getElementById('respawn_tickets').value = game_parameters.respawn_tickets;
+            document.getElementById('not_bleeding_before_cps').value = game_parameters.not_bleeding_before_cps;
+            document.getElementById('start_bleed_interval').value = game_parameters.start_bleed_interval;
+            document.getElementById('end_bleed_interval').value = game_parameters.end_bleed_interval;
+            document.getElementById('ticket_price_for_respawn').value = game_parameters.ticket_price_for_respawn;
+
+            document.getElementById('capture_points').value = game_parameters.agents.capture_points.join(); // join makes a comma separated list
+            document.getElementById('sirens').value = game_parameters.agents.sirens.join(); // join makes a comma separated list
+
+            preset_respawns_form(game_parameters);
+        }
+
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1>Conquest</h1>
+    <p>Popular game mode inspired by the Battlefield&trade; online game.</p>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mb-3">
+
+        <div class="col-auto">
+            <label for="respawn_tickets" class="form-label">Respawn Tickets</label>
+            <input type="number" class="form-control" id="respawn_tickets" value="250" required
+                   min="10" pattern="\d*">
+        </div>
+
+        <div class="col-auto">
+            <label for="not_bleeding_before_cps" class="form-label">Not bleeding before</label>
+            <input type="number" class="form-control" id="not_bleeding_before_cps" value="1" required
+                   min="1" pattern="\d*">
+        </div>
+        <div class="col-auto">
+            <label for="start_bleed_interval" class="form-label">Start bleed interval</label>
+            <input type="number" class="form-control" id="start_bleed_interval" value="5" required
+                   min="1" pattern="\d*">
+        </div>
+
+        <div class="col-auto">
+            <label for="end_bleed_interval" class="form-label">End bleed interval</label>
+            <input type="number" class="form-control" id="end_bleed_interval" value="0.5" required
+                   min="0.1" pattern="\d*">
+        </div>
+        <div class="col-auto">
+            <label for="ticket_price_for_respawn" class="form-label">Ticket price</label>
+            <input type="number" class="form-control" id="ticket_price_for_respawn" value="1" required
+                   min="1" pattern="\d*">
+        </div>
+
+    </div>
+    <div class="row mb-3">
+        <div class=" col-6">
+            <label for="capture_points" class="form-label">Capture-Points</label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" value="ag01" id="capture_points" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <div id="cphelp" class="form-text">Agent IDs, comma separated</div>
+        </div>
+        <div class=" col-6">
+            <label for="sirens" class="form-label">Sirens</label>
+            <input type="text" class="form-control" value="ag50" id="sirens" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <div id="sirenhelp" class="form-text">Agent IDs, comma separated</div>
+        </div>
+    </div>
+
+</section>
+
+</body>
+</html>

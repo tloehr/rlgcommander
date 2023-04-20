@@ -85,7 +85,8 @@ public class WebController {
 
     @GetMapping("/zeus/base")
     public String zeus(@RequestParam(name = "id") int id, Model model) {
-        JSONObject game_state = gamesService.getGameState(id);
+        model.addAttribute("active_active", "active");
+        //JSONObject game_state = gamesService.getGameState(id);
         gamesService.getGame(id).ifPresent(game -> {
             model.addAttribute("gameid", id);
             game.add_model_data(model);

@@ -269,7 +269,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                     .put("amount", amount)
                     .put("zeus", "intervention"));
         }
-        if (operation.equalsIgnoreCase("add_respawns")) {
+        if (count_respawns && operation.equalsIgnoreCase("add_respawns")) {
             String team = params.getString("team").toLowerCase();
             int amount = params.getInt("amount");
             if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
@@ -419,7 +419,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         }
 
         if (type.equalsIgnoreCase("in_game_state_change")) {
-            String zeus = (event.has("zeus") ? "<br>/(by the hand of ZEUS)" : "");
+            String zeus = (event.has("zeus") ? " (by the hand of ZEUS)" : "");
             if (event.getString("item").equals("capture_point")) {
                 return event.getString("agent") + " => " + event.getString("state")
                         + zeus;

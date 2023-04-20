@@ -3,6 +3,10 @@
       layout:decorate="~{layout.html}">
 <head><title>Game Parameters</title>
     <script>
+        function go_back_to_active_game(){
+            window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('gameid')});
+            return false;
+        }
 
     </script>
 </head>

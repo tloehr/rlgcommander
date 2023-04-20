@@ -21,9 +21,11 @@ function connect() {
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
         console.log('Connected: ' + frame);
-        stompClient.subscribe('/topic/messages', function (messageOutput) {
+        stompClient.subscribe('/topic/messages', messageOutput => {
             update_game_state(JSON.parse(messageOutput.body));
-            if ($(location).attr('pathname') === '/ui/active') location.reload();
+            console.log($(location).attr('pathname'));
+            console.log($(location).attr('pathname') === '/ui/active/base');
+            if ($(location).attr('pathname') === '/ui/active/base') location.reload();
         });
     });
 }
@@ -55,13 +57,14 @@ function disconnect() {
 function update_game_state(message) {
     const state = message['game_state'];
     const color = game_state_colors[state];
+    sessionStorage.setItem('state', state);
     $('#game_state').html('&nbsp;' + state).attr('style', 'color: ' + color);
 }
 
 function loadJson(url) {
     var data1;
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = () => {
         if (this.readyState == 4 && this.status == 200) {
             data1 = JSON.parse(this.responseText);
         }
@@ -73,11 +76,20 @@ function loadJson(url) {
     return data1;
 }
 
+function to_string_segment_list(jsonArray) {
+    let result = [];
+    jsonArray.forEach(segment => {
+        result.push(segment.join(','));
+    });
+    return result.join(';');
+}
+
+
 function from_string_segment_list(list) {
-    var outer = [];
-    list.split(/\n|;/).forEach(function (segment) {
-        var inner = [];
-        segment.split(',').forEach(function (agent) {
+    let outer = [];
+    list.split(/\n|;/).forEach(segment => {
+        let inner = [];
+        segment.split(',').forEach(agent => {
             inner.push(agent);
         });
         outer.push(inner);
@@ -88,7 +100,7 @@ function from_string_segment_list(list) {
 
 function from_string_list(list) {
     var result = [];
-    list.split(/\n|,/).forEach(function (item) {
+    list.split(/\n|,/).forEach(item => {
         result.push(item);
     });
     console.log(result);
@@ -97,7 +109,7 @@ function from_string_list(list) {
 
 function get_rest(resturi, param_json) {
     const xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    xhttp.onreadystatechange = () => {
         if (xhttp.readyState == 4 && xhttp.status == 200) {
             //console.log(xhttp.responseText);
             update_game_state({'game_state': xhttp.responseText})
@@ -111,9 +123,16 @@ function get_rest(resturi, param_json) {
 
 function post_rest(resturi, param_json, body, callback) {
     const xhttp = new XMLHttpRequest();
-    xhttp.onload = function () {
+    xhttp.onload = () => {
         if (xhttp.status >= 400) {
-            $('#rest_result').html(`&nbsp;${xhttp.status}`).attr('class', 'bi bi-lightning-fill bi-md text-danger');
+            $('#rest_result').html(`&nbsp;${xhttp.status}`).attr(
+                {
+                    'class': 'bi bi-lightning-fill bi-md text-danger',
+                    'data-bs-toggle': 'tooltip',
+                    'data-bs-placement': 'bottom',
+                    'data-bs-title': 'oh shit'
+                }
+            );
         } else {
             $('#rest_result').html(`&nbsp;${xhttp.status}`).attr('class', 'bi bi-check-circle-fill bi-md text-success');
         }
@@ -123,6 +142,6 @@ function post_rest(resturi, param_json, body, callback) {
     const myuri = base_url + (param_json ? '?' + jQuery.param(param_json) : '');
     xhttp.open('POST', myuri, true);
     xhttp.setRequestHeader('Content-type', 'application/json');
-    xhttp.send(body ? body : '{}');
+    xhttp.send(body ? JSON.stringify(body) : '{}');
 }
 

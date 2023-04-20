@@ -61,7 +61,7 @@
   ],
   "spawns": {
     "game_lobby": true,
-    "intro_mp3": "<random>",
+    "intro_mp3": "<none>",
     "starter_countdown": 30,
     "respawn_time": 0,
     "teams": [

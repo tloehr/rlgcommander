@@ -10,7 +10,7 @@
         function check_form_with_respawns(json) {
             console.log('check_form_with_respawns(json)');
             //$.getJSON(window.location.origin + '/defaults/'+mode+'.json', function (json) {
-            json.spawns.game_lobby = document.getElementById('btn-check-lobby').getAttribute('checked');
+            json.spawns.game_lobby = document.getElementById('btn-check-lobby').hasAttribute('checked');
             json.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
             if (json.spawns.intro_mp3 === '<none>') json.spawns.starter_countdown = 0;
             else json.spawns.starter_countdown = 30;
@@ -20,6 +20,17 @@
                     value.agents = from_string_segment_list($("#redfor").val());
                 } else if (value.role === 'blue_spawn') {
                     value.agents = from_string_segment_list($("#blufor").val());
+                }
+            });
+        }
+
+        function preset_respawns_form(game_parameters) {
+            document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
+            game_parameters.spawns.teams.forEach(team => {
+                if (team.role === 'red_spawn') {
+                    document.getElementById('redfor').value = to_string_segment_list(team.agents);
+                } else if (team.role === 'blue_spawn') {
+                    document.getElementById('blufor').value = to_string_segment_list(team.agents);
                 }
             });
         }
@@ -41,9 +52,8 @@
 
 
 <section layout:fragment="with_respawns">
-    <hr/>
     <div class="row mb-3">
-        <div class="col-md-3">
+        <div class="col-auto">
             <label for="intro_mp3" class="form-label">Intro Song</label>
             <select class="form-select " style="height: 40px;" id="intro_mp3">
                 <option selected value="<none>">No intro</option>
@@ -53,29 +63,20 @@
                 30-second countdown.
             </div>
         </div>
-        <div class="col-md-2">
-            <label for="resume_time" class="form-label">Resume Time</label>
-            <input type="number" class="form-control" id="resume_time" value="0" required min="0" max="60"
-                   pattern="\d*"/>
-            <div id="resume_help" class="form-text">Seconds before the game continues (after pause ends)
-            </div>
-        </div>
-
-        <div class=" col-md-2">
-            <div class="row mb-2">
-                <input type="checkbox" class="btn-check" id="btn-check-lobby"
-                       autocomplete="off">
-                <label class="btn btn-outline-primary" for="btn-check-lobby">Player Lobby</label>
+        <div class="col-auto">
+            <div class="row">
+                <div class="col-auto form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="btn-check-lobby">
+                    <label class="form-check-label" for="btn-check-lobby">Player Lobby</label>
+                </div>
             </div>
             <div class="row">
-                <input type="checkbox" class="btn-check" id="btn-check-silent"
-                       autocomplete="off">
-                <label class="btn btn-outline-secondary" for="btn-check-silent">Silent Game</label>
+                <div class="col-auto form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="btn-check-silent">
+                    <label class="form-check-label" for="btn-check-silent">Silent Game</label>
+                </div>
             </div>
-
         </div>
-
-
     </div>
 
     <div class="row">

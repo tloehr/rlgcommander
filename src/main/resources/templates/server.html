@@ -8,9 +8,11 @@
 
 <section layout:fragment="content">
 
-  <h1>Server Status</h1>
+    <h1>Server Status</h1>
 
-  <pre id="server_status" th:text="${server_status}"></pre>
+    <div class="p-3 mb-2 bg-dark" style="color: #36FF33">
+        <pre id="server_status" th:text="${server_status}"></pre>
+    </div>
 
 </section>
 </body>

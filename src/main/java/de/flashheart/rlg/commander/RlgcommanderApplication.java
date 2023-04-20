@@ -29,6 +29,4 @@ public class RlgcommanderApplication implements ApplicationRunner {
 //        myYamlConfiguration.getIntro();
 
     }
-
-
 }

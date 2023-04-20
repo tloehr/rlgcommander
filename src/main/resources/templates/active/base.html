@@ -19,13 +19,13 @@
             $('#btn_continue').prop('disabled', !acbe[6]);
             $('#btn_game_over').prop('disabled', !acbe[7]);
             // zeus
-            $('#btn_zeus').prop('disabled', !haszeus);
+            $('#btn_zeus').prop('disabled', !haszeus || sessionStorage.getItem("state") !== 'RUNNING');
         }
 
-        function goto_zeus(){
+        function goto_zeus() {
             const mode = '[[${mode}]]';
             const base_url = window.location.origin + '/ui/zeus/base';
-            location.href = base_url + '?' + jQuery.param({'id':sessionStorage.getItem('gameid')});
+            location.href = base_url + '?' + jQuery.param({'id': sessionStorage.getItem('gameid')});
         }
 
     </script>
@@ -36,34 +36,42 @@
 <section layout:fragment="content">
     <div id="game_control" class="bg-white sticky-top">
         <div class="row">
-            <button id="btn_prepare" th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PREPARE}]]});"
+            <button id="btn_prepare"
+                    th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PREPARE}]]});"
                     class="btn btn-outline-primary col-sm-auto me-1"><span
                     class="bi bi-rocket-takeoff-fill">&nbsp;Prepare</span></button>
             <button th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESET}]]});"
                     class="btn btn-outline-warning  col-sm-auto me-1"><span class="bi bi-skip-backward-circle-fill">&nbsp;Reset</span>
             </button>
-            <button id="btn_ready" th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_READY}]]});"
+            <button id="btn_ready"
+                    th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_READY}]]});"
                     class="btn btn-outline-secondary  col-sm-auto me-1"><span
                     class="bi bi-hand-thumbs-up-fill">&nbsp;Ready</span></button>
-            <button id="btn_run" th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RUN}]]});"
+            <button id="btn_run"
+                    th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RUN}]]});"
                     class="btn btn-outline-success  col-sm-auto me-1"><span
                     class="bi bi-play-circle-fill">&nbsp;Run</span>
             </button>
-            <button id="btn_pause" th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PAUSE}]]});"
+            <button id="btn_pause"
+                    th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PAUSE}]]});"
                     class="btn btn-outline-secondary  col-sm-auto me-1"><span
                     class="bi bi-pause-circle-fill">&nbsp;Pause</span></button>
-            <button id="btn_resume" th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESUME}]]});"
+            <button id="btn_resume"
+                    th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESUME}]]});"
                     class="btn btn-outline-secondary  col-sm-auto me-1"><span class="bi bi-fast-forward-circle-fill">&nbsp;Resume</span>
             </button>
-            <button id="btn_continue" th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_CONTINUE}]]});"
+            <button id="btn_continue"
+                    th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_CONTINUE}]]});"
                     class="btn btn-outline-secondary  col-sm-auto me-1"><span class="bi bi-fast-forward-circle">&nbsp;Continue</span>
             </button>
-            <button id="btn_game_over" th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_GAME_OVER}]]});"
+            <button id="btn_game_over"
+                    th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('gameid'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_GAME_OVER}]]});"
                     class="btn btn-outline-secondary me-auto col-sm-auto"><span class="bi bi-stop-circle-fill">&nbsp;Game Over</span>
             </button>
-            <button id="btn_zeus" onclick="goto_zeus()" class="btn btn-outline-danger col-sm-auto"><span class="bi bi-sliders">&nbsp;Zeus Admin</span>
+            <button id="btn_zeus" onclick="goto_zeus()" class="btn btn-outline-danger col-sm-auto"><span
+                    class="bi bi-sliders">&nbsp;Zeus Admin</span>
             </button>
-<!--            <a onclick="goto_zeus()" class="btn btn-outline-danger col-sm-auto" id="btn_zeus"  role="button" aria-pressed="true"><span class="bi bi-stop-circle-fill">&nbsp;Zeus</span></a>-->
+            <!--            <a onclick="goto_zeus()" class="btn btn-outline-danger col-sm-auto" id="btn_zeus"  role="button" aria-pressed="true"><span class="bi bi-stop-circle-fill">&nbsp;Zeus</span></a>-->
         </div>
     </div>
     <script>init_buttons();</script>
@@ -82,7 +90,7 @@
     </div>
 
     <div class="row" th:unless="${classname eq 'empty'}">
-        <div class="col-6">
+        <div class="col-8">
             <h2>Events</h2>
             <table class="table table-striped table-sm">
                 <thead>
