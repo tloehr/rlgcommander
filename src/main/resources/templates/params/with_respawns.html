@@ -24,6 +24,11 @@
 
         function preset_respawns_form(game_parameters) {
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
+            if (game_parameters.silent_game)
+                document.getElementById('btn-check-silent').setAttribute('checked', '');
+            else
+                document.getElementById('btn-check-silent').removeAttribute('checked');
+
             game_parameters.spawns.teams.forEach(team => {
                 if (team.role === 'red_spawn') {
                     document.getElementById('redfor').value = to_string_segment_list(team.agents);
@@ -78,7 +83,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-5 ">
+        <div class="col-md-5">
             <input type="text" class="form-control" style="border: 5px solid red;" id="redfor"
                    aria-describedby="countdown-help" value="ag32" placeholder="Spawn agents for team red"
                    required/>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{params/with_respawns.html}">
+
+<head>
+
+    <script>
+        function read_sirens_form(game_parameters) {
+            game_parameters.agents.sirens = from_string_list(document.getElementById('sirens').value);
+            read_respawns_form(game_parameters);
+        }
+
+        function preset_sirens_form(game_parameters) {
+            document.getElementById('sirens').value = game_parameters.agents.sirens.join(); // join makes a comma separated list
+            preset_respawns_form(game_parameters);
+        }
+    </script>
+
+</head>
+
+<body>
+
+<div layout:fragment="sirens" class="col-lg-12 col-sm-auto col-md-auto">
+    <label for="sirens" class="form-label">Sirens</label>
+    <input type="text" class="form-control" value="ag50" id="sirens" required
+           pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+    <div id="sirenhelp" class="form-text">Agent IDs, comma separated</div>
+</div>
+
+
+</body>
+</html>

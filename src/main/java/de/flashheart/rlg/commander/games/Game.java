@@ -351,7 +351,16 @@ public abstract class Game {
     protected abstract void on_cleanup();
 
     public String get_in_game_event_description(JSONObject event) {
-        return "not implemented yet...";
+        String type = event.getString("type");
+        if (type.equalsIgnoreCase("general_game_state_change")) {
+            return event.getString("message");
+        }
+
+        if (event.getString("item").equals("respawn")) {
+            return "Respawn Team " + event.getString("team") + ": #" + event.getInt("value");
+        }
+
+        return "";
     }
 
     public void add_model_data(Model model) {

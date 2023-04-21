@@ -10,9 +10,9 @@
 
         function read_form(game_parameters) {
             game_parameters.respawn_tickets = parseInt(document.getElementById('respawn_tickets').value);
-            game_parameters.not_bleeding_before_cps = parseInt(document.getElementById('first_bleed_interval').value);
-            game_parameters.start_bleed_interval = parseInt(document.getElementById('start_bleed_interval').value);
-            game_parameters.end_bleed_interval = parseInt(document.getElementById('end_bleed_interval').value);
+            game_parameters.not_bleeding_before_cps = parseInt(document.getElementById('not_bleeding_before_cps').value);
+            game_parameters.start_bleed_interval = parseFloat(document.getElementById('start_bleed_interval').value);
+            game_parameters.end_bleed_interval = parseFloat(document.getElementById('end_bleed_interval').value);
             game_parameters.ticket_price_for_respawn = parseInt(document.getElementById('ticket_price_for_respawn').value);
 
             read_cps_sirens_form(game_parameters);
@@ -63,7 +63,7 @@
         <div class="col-auto">
             <label for="end_bleed_interval" class="form-label">End bleed interval</label>
             <input type="number" class="form-control" id="end_bleed_interval" value="0.5" required
-                   min="0.1" pattern="\d*">
+                   >
         </div>
         <div class="col-auto">
             <label for="ticket_price_for_respawn" class="form-label">Ticket price</label>

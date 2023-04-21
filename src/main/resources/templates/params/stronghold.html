@@ -1,0 +1,106 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      layout:decorate="~{params/sirens.html}">
+
+
+<head>
+    <title>Signal</title>
+    <script>
+        sessionStorage.setItem('game_mode', 'stronghold');
+
+        function read_form(game_parameters) {
+            game_parameters.agents.blu = from_string_list(document.getElementById('blu').value);
+            game_parameters.agents.grn = from_string_list(document.getElementById('grn').value);
+            game_parameters.agents.ylw = from_string_list(document.getElementById('ylw').value);
+            game_parameters.agents.red = from_string_list(document.getElementById('red').value);
+            game_parameters.game_time = parseInt(document.getElementById('game_time').value);
+            game_parameters.allow_defuse = document.getElementById('check-allow-defuse').hasAttribute('checked');
+            game_parameters.agents.capture_points.concat(
+                game_parameters.agents.red,
+                game_parameters.agents.ylw,
+                game_parameters.agents.grn,
+                game_parameters.agents.blu
+            );
+
+            read_sirens_form(game_parameters);
+        }
+
+        function preset_form(game_parameters) {
+            document.getElementById('red').value = game_parameters.agents.red.join();
+            document.getElementById('ylw').value = game_parameters.agents.ylw.join();
+            document.getElementById('grn').value = game_parameters.agents.grn.join();
+            document.getElementById('blu').value = game_parameters.agents.blu.join();
+            document.getElementById('game_time').value = game_parameters.game_time;
+            if (game_parameters.allow_defuse)
+                document.getElementById('check-allow-defuse').setAttribute('checked', '');
+            else
+                document.getElementById('check-allow-defuse').removeAttribute('checked');
+
+            preset_sirens_form(game_parameters);
+        }
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1>Signal</h1>
+    <p>Very specialized game mode. Ask about it.</p>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="game_time" class="form-label">Gametime in seconds</label>
+            <input type="number" class="form-control" id="game_time" list="game_times" value="600" required
+                   min="1" pattern="\d*">
+            <datalist id="game_times">
+                <option value="120">2 Minuten</option>
+                <option value="300">5 Minuten</option>
+                <option value="600">10 Minuten</option>
+                <option value="900">15 Minuten</option>
+                <option value="1500">25 Minuten</option>
+                <option value="1800">30 Minuten</option>
+                <option value="2700">45 Minuten</option>
+                <option value="3000">50 Minuten</option>
+            </datalist>
+        </div>
+
+
+        <div class="col-auto form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="check-allow-defuse">
+            <label class="form-check-label" for="check-allow-defuse">Allow Defuse</label>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="red" class="form-label"><span class="bi bi-circle-fill bi-md text-danger">&nbsp;Ring 1</span></label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" value="ag01,ag02" id="red" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+        </div>
+        <div class="col-auto">
+            <label for="ylw" class="form-label"><span class="bi bi-circle-fill bi-md text-warning">&nbsp;Ring 2</span></label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" value="ag01,ag02" id="ylw" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+        </div>
+        <div class="col-auto">
+            <label for="grn" class="form-label"><span class="bi bi-circle-fill bi-md text-success">&nbsp;Ring 3</span></label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" value="ag01,ag02" id="grn" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+        </div>
+        <div class="col-auto">
+            <label for="blu" class="form-label"><span class="bi bi-circle-fill bi-md text-primary">&nbsp;Ring 4</span></label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" value="ag01,ag02" id="blu" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

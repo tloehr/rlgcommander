@@ -1,0 +1,76 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      layout:decorate="~{params/cps_and_sirens.html}">
+
+
+<head>
+    <title>Signal</title>
+    <script>
+        sessionStorage.setItem('game_mode', 'signal');
+
+        function read_form(game_parameters) {
+            game_parameters.game_time = parseInt(document.getElementById('game_time').value);
+            game_parameters.lock_time = parseInt(document.getElementById('lock_time').value);
+            game_parameters.unlock_time = parseInt(document.getElementById('unlock_time').value);
+
+            read_cps_sirens_form(game_parameters);
+        }
+
+        function preset_form(game_parameters) {
+            document.getElementById('game_time').value = game_parameters.game_time;
+            document.getElementById('lock_time').value = game_parameters.lock_time;
+            document.getElementById('unlock_time').value = game_parameters.unlock_time;
+
+            preset_cps_sirens_form(game_parameters);
+        }
+
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1>Signal</h1>
+    <p>Very specialized game mode. Ask about it.</p>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mb-3">
+
+        <div class="col-auto">
+            <label for="game_time" class="form-label">Gametime in seconds</label>
+            <input type="number" class="form-control" id="game_time" list="game_times" value="600" required
+                   min="1" pattern="\d*">
+            <datalist id="game_times">
+                <option value="120">2 Minuten</option>
+                <option value="300">5 Minuten</option>
+                <option value="600">10 Minuten</option>
+                <option value="900">15 Minuten</option>
+                <option value="1500">25 Minuten</option>
+                <option value="1800">30 Minuten</option>
+                <option value="2700">45 Minuten</option>
+                <option value="3000">50 Minuten</option>
+            </datalist>
+        </div>
+
+        <div class="col-auto">
+            <label for="lock_time" class="form-label">Lock Time</label>
+            <input type="number" class="form-control" id="lock_time" value="2" required
+                   min="1" pattern="\d*">
+            <small id="lock_time_help" class="form-text">Time in seconds it will take to lock a selected flag color.</small>
+        </div>
+
+        <div class="col-auto">
+            <label for="unlock_time" class="form-label">Unlock Time</label>
+            <input type="number" class="form-control" id="unlock_time" value="10" required
+                   min="1" pattern="\d*">
+            <small id="unlock_time_help" class="form-text">Time in seconds that a locked flag will wait until it is accessible again.</small>
+        </div>
+
+    </div>
+</section>
+
+</body>
+</html>

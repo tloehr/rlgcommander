@@ -7,7 +7,7 @@
 <section layout:fragment="score">
 
     <div class="col-auto">
-        <h2 th:text="'Team Red &#8594;'+$ %s  &#8660; %s &#8592; Team Blue"></h2>
+        <h2 th:text="|Team Red &#8594; ${remaining_red_tickets} &#8660; ${remaining_blue_tickets}  &#8592; Team Blue|"></h2>
 
         <h2>Capture Points</h2>
         <h3>Team Red</h3>

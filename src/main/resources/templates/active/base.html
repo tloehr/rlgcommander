@@ -76,7 +76,8 @@
     </div>
     <script>init_buttons();</script>
 
-    <h1 th:text="${comment}"></h1>
+
+    <h1 class="mt-3" th:text="${comment}"></h1>
     <h2 th:if="${match_length != null && remaining != null}"
         th:text="'Match length: '+${match_length}+', remaining time: '+${remaining}"></h2>
 
