@@ -1,7 +1,6 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{params/with_respawns.html}">
-
+      layout:decorate="~{params/cps_and_sirens.html}">
 
 <head>
     <title>Center Flags</title>
@@ -9,28 +8,21 @@
         sessionStorage.setItem('game_mode', 'center_flags');
 
 
-        function check_form(json) {
-            json.count_respawns = $("#btn-count-respawns").prop('checked');
-            json.game_time = parseInt($("#game_time").val());
-            json.resume_countdown = parseInt($("#resume_time").val());
-            json.silent_game = $("#btn-check-silent").prop('checked');
-            json.agents.capture_points = from_string_list($("#capture_points").val());
-            json.agents.sirens = from_string_list($("#sirens").val());
+        function read_form(game_parameters) {
+            game_parameters.count_respawns = document.getElementById('btn-count-respawns').hasAttribute('checked');
+            game_parameters.game_time = parseInt(document.getElementById('game_time').value);
 
-            check_form_with_respawns(json);
-            check_form_base(json);
+            read_cps_sirens_form(game_parameters);
         }
 
-        function preset_gamemode_form(game_parameters) {
+        function preset_form(game_parameters) {
             document.getElementById('game_time').value = game_parameters.game_time;
-            document.getElementById('capture_points').value = game_parameters.agents.capture_points.join(); // join makes a comma separated list
-            document.getElementById('sirens').value = game_parameters.agents.sirens.join(); // join makes a comma separated list
             if (game_parameters.count_respawns)
                 document.getElementById('btn-count-respawns').setAttribute('checked', '');
             else
                 document.getElementById('btn-count-respawns').removeAttribute('checked');
 
-            preset_respawns_form(game_parameters);
+            preset_cps_sirens_form(game_parameters);
         }
 
 
@@ -42,7 +34,7 @@
 
 <section layout:fragment="gamemode_header">
     <h1>Center Flags</h1>
-    <p>A wonderful game for the whole family from age 8 to 81</p>
+    <p>Time restricted game mode. The team with the most summed-up time wins. To gain score it is necessary to switch the flags to the respective team color.</p>
 </section>
 
 <section layout:fragment="params">
@@ -61,19 +53,6 @@
                 <option value="2700">45 Minuten</option>
                 <option value="3000">50 Minuten</option>
             </datalist>
-        </div>
-        <div class=" col-auto">
-            <label for="capture_points" class="form-label">Capture-Points</label>
-            <!-- only comma separated allowed -->
-            <input type="text" class="form-control" value="ag01" id="capture_points" required
-                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
-            <div id="cphelp" class="form-text">Agent IDs, comma separated</div>
-        </div>
-        <div class=" col-auto">
-            <label for="sirens" class="form-label">Sirens</label>
-            <input type="text" class="form-control" value="ag50" id="sirens" required
-                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
-            <div id="sirenhelp" class="form-text">Agent IDs, comma separated</div>
         </div>
 
         <div class="col-md-auto align-self-center">

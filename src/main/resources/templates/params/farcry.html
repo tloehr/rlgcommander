@@ -1,0 +1,74 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      layout:decorate="~{params/base.html}">
+
+
+<head>
+    <title>Farcry Assault</title>
+    <script>
+        sessionStorage.setItem('game_mode', 'farcry');
+
+        function read_form(game_parameters) {
+            game_parameters.respawn_tickets = parseInt(document.getElementById('respawn_tickets').value);
+            game_parameters.not_bleeding_before_cps = parseInt(document.getElementById('first_bleed_interval').value);
+            game_parameters.start_bleed_interval = parseInt(document.getElementById('start_bleed_interval').value);
+            game_parameters.end_bleed_interval = parseInt(document.getElementById('end_bleed_interval').value);
+            game_parameters.ticket_price_for_respawn = parseInt(document.getElementById('ticket_price_for_respawn').value);
+
+            read_cps_sirens_form(game_parameters);
+        }
+
+        function preset_form(game_parameters) {
+            document.getElementById('respawn_tickets').value = game_parameters.respawn_tickets;
+            document.getElementById('not_bleeding_before_cps').value = game_parameters.not_bleeding_before_cps;
+            document.getElementById('start_bleed_interval').value = game_parameters.start_bleed_interval;
+            document.getElementById('end_bleed_interval').value = game_parameters.end_bleed_interval;
+            document.getElementById('ticket_price_for_respawn').value = game_parameters.ticket_price_for_respawn;
+
+            preset_cps_sirens_form(game_parameters);
+        }
+
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1>FarCry (2004) Assault</h1>
+    <p>Very old online game similar to BF Rush,</p>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mb-3">
+
+        <div class="col-auto">
+            <label for="game_time" class="form-label">Gametime in seconds</label>
+            <input type="number" class="form-control" id="game_time" list="game_times" value="600" required
+                   min="1" pattern="\d*">
+            <datalist id="game_times">
+                <option value="120">2 Minuten</option>
+                <option value="300">5 Minuten</option>
+                <option value="600">10 Minuten</option>
+                <option value="900">15 Minuten</option>
+                <option value="1500">25 Minuten</option>
+                <option value="1800">30 Minuten</option>
+                <option value="2700">45 Minuten</option>
+                <option value="3000">50 Minuten</option>
+            </datalist>
+        </div>
+
+
+        <div class="col-auto">
+            <label for="bomb_time" class="form-label">Bomb Time</label>
+            <input type="number" class="form-control" id="bomb_time" value="60" required
+                   min="10" pattern="\d*">
+            <small id="bomb_time_help" class="form-text">Time period in seconds the attacking team will have to hold the capture point to take it.</small>
+        </div>
+
+    </div>
+</section>
+
+</body>
+</html>

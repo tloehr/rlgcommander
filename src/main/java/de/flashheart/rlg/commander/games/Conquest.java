@@ -7,21 +7,25 @@ import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.games.jobs.DelayedReactionJob;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.games.traits.HasDelayedReaction;
+import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.WordUtils;
+import org.javatuples.Quartet;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -425,5 +429,16 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
                 .put("cps_held_by_red", cps_held_by_red)
                 .put("red_respawns", red_respawns)
                 .put("blue_respawns", blue_respawns);
+    }
+
+    @Override
+    public void add_model_data(Model model) {
+        super.add_model_data(model);
+        model.addAttribute("cps_held_by_blue", cps_held_by_blue);
+        model.addAttribute("cps_held_by_red", cps_held_by_red);
+        model.addAttribute("remaining_blue_tickets", remaining_blue_tickets.intValue());
+        model.addAttribute("remaining_red_tickets", remaining_red_tickets.intValue());
+        model.addAttribute("blue_respawns", blue_respawns);
+        model.addAttribute("red_respawns", red_respawns);
     }
 }

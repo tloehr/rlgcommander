@@ -44,7 +44,7 @@
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                       aria-expanded="false"  th:classappend="${params_active}">
+                       aria-expanded="false" th:classappend="${params_active}">
                         Setup Games
                     </a>
                     <ul class="dropdown-menu">
@@ -56,6 +56,7 @@
                             <span class="bi bi-cloud-slash-fill">&nbsp;Unload Game</span></a>
                         </li>
                         <hr/>
+                        <!-- calls the base.html but clears the game_parameters from storage -->
                         <li><a class="dropdown-item"
                                onclick="sessionStorage.removeItem('game_parameters'); param_click('params/base', {'gamemode':'farcry'});">
                             <span class="bi bi-file-earmark-play">&nbsp;FarCry Assault</span></a></li>
@@ -98,8 +99,8 @@
                 <select class="form-select" id="gameid" value="1"
                         title="Reserved for future use. Currently RLGS can handle only one game at a time.">
                     <option value="1">Game #1</option>
-<!--                    <option value="2">Game #2</option>-->
-<!--                    <option value="3">Game #3</option>-->
+                    <!--                    <option value="2">Game #2</option>-->
+                    <!--                    <option value="3">Game #3</option>-->
                 </select>
                 <script>
                     const gameid_sel = document.getElementById('gameid');
