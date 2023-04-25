@@ -5,19 +5,15 @@
 
     <script>
         function read_base_form() {
-            const mode = sessionStorage.getItem('game_mode');
-            // Always read the default file first, and OVERWRITE it with the values entered by the user.
-            $.getJSON(window.location.origin + '/defaults/' + mode + '.json', function (game_parameters) {
-                // gather all form data (in a hierarchy e.g. center_flags -> with_respawns -> base)
-                game_parameters.comment = document.getElementById('comment').value;
-                read_form(game_parameters);
-                //console.log(JSON.stringify(json));
-                // now we have all data in json and post it to the rest endpoint
-                post_rest('game/load', {'id': sessionStorage.getItem('gameid')}, game_parameters, function (xhttp) {
-                    console.log('response: ' + xhttp.status);
-                    // if status is good, we redirect to the active page
-                    if (xhttp.status < 400) window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('gameid')});
-                });
+            const game_id = sessionStorage.getItem('game_id');
+            const game_parameters = JSON.parse(sessionStorage.getItem('game_parameters_#' + game_id));
+            // read params from cache and overwrite the values with the user entries.
+            game_parameters.comment = document.getElementById('comment').value;
+            read_form(game_parameters);
+            post_rest('game/load', {'id': game_id}, game_parameters, function (xhttp) {
+                console.log('response: ' + xhttp.status);
+                // if status is good, we redirect to the active page
+                if (xhttp.status < 400) window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
             });
             return false;
         }
@@ -28,9 +24,12 @@
          */
         function preset_base_form() {
             const mode = sessionStorage.getItem('game_mode');
-            const game_parameters_string = sessionStorage.getItem('game_parameters');
+            const game_id = sessionStorage.getItem('game_id');
+            const game_parameters_string = sessionStorage.getItem('game_parameters_#' + game_id);
             if (!game_parameters_string) {
+                // nothing loaded yet, will read defaults and store it in cache
                 $.getJSON(window.location.origin + '/defaults/' + mode + '.json', function (game_parameters) {
+                    sessionStorage.setItem('game_parameters_#' + game_id, JSON.stringify(game_parameters));
                     document.getElementById('comment').value = game_parameters.comment;
                     preset_form(game_parameters);
                 });

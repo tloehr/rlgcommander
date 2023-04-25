@@ -4,7 +4,7 @@
 <head><title>Game Parameters</title>
     <script>
         function go_back_to_active_game(){
-            window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('gameid')});
+            window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
             return false;
         }
 

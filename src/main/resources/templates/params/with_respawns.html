@@ -6,9 +6,9 @@
     <script>
 
         function read_respawns_form(game_parameters) {
-            game_parameters.spawns.game_lobby = document.getElementById('btn-check-lobby').hasAttribute('checked');
             game_parameters.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
-            game_parameters.silent_game = document.getElementById('btn-check-silent').hasAttribute('checked')
+            game_parameters.silent_game = document.getElementById('check-silent').checked;
+            game_parameters.spawns.game_lobby = document.getElementById('check-lobby').checked;
 
             if (game_parameters.spawns.intro_mp3 === '<none>') game_parameters.spawns.starter_countdown = 0;
             else game_parameters.spawns.starter_countdown = 30;
@@ -24,10 +24,8 @@
 
         function preset_respawns_form(game_parameters) {
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
-            if (game_parameters.silent_game)
-                document.getElementById('btn-check-silent').setAttribute('checked', '');
-            else
-                document.getElementById('btn-check-silent').removeAttribute('checked');
+            document.getElementById('check-lobby').checked = game_parameters.spawns.game_lobby;
+            document.getElementById('check-silent').checked = game_parameters.silent_game;
 
             game_parameters.spawns.teams.forEach(team => {
                 if (team.role === 'red_spawn') {
@@ -60,7 +58,7 @@
             <label for="intro_mp3" class="form-label">Intro Song</label>
             <select class="form-select " style="height: 40px;" id="intro_mp3">
                 <option selected value="<none>">No intro</option>
-                <option th:each="intro : ${intros}" th:value="${intro.value0}" th:text="${intro.value1}"/>
+                <option th:each="intro : ${intros}" th:value="${intro.value0}" th:text="${intro.value1}"></option>
             </select>
             <div id="intro_help" class="form-text">This song will be played on the Spawn Agents during a
                 30-second countdown.
@@ -69,14 +67,14 @@
         <div class="col-auto">
             <div class="row">
                 <div class="col-auto form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="btn-check-lobby">
-                    <label class="form-check-label" for="btn-check-lobby">Player Lobby</label>
+                    <input class="form-check-input" type="checkbox" role="switch" id="check-lobby">
+                    <label class="form-check-label" for="check-lobby">Player Lobby</label>
                 </div>
             </div>
             <div class="row">
                 <div class="col-auto form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="btn-check-silent">
-                    <label class="form-check-label" for="btn-check-silent">Silent Game</label>
+                    <input class="form-check-input" type="checkbox" role="switch" id="check-silent">
+                    <label class="form-check-label" for="check-silent">Silent Game</label>
                 </div>
             </div>
         </div>

@@ -416,7 +416,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
 
 
     @Override
-    public String getMode() {
+    public String getGameMode() {
         return "conquest";
     }
 
@@ -435,6 +435,23 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
                 .put("cps_held_by_red", cps_held_by_red)
                 .put("red_respawns", red_respawns)
                 .put("blue_respawns", blue_respawns);
+    }
+
+    @Override
+    String get_in_game_event_description(JSONObject event) {
+        String result = super.get_in_game_event_description(event);
+        if (result.isEmpty()) {
+            result = "error";
+            String type = event.getString("type");
+
+            if (type.equalsIgnoreCase("in_game_state_change")) {
+                if (event.getString("item").equals("capture_point")) {
+                    result = event.getString("agent") + " => " + event.getString("state");
+                }
+            }
+        }
+
+        return result;
     }
 
     @Override

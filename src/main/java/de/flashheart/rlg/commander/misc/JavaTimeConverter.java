@@ -39,8 +39,10 @@ public class JavaTimeConverter {
         return to_iso8601(toJavaLocalDateTime(date));
     }
 
-    public static String to_iso8601(LocalDateTime now) {
-        return now.atZone(ZoneId.systemDefault()).toString();
+    public static String to_iso8601(LocalDateTime ldt) {
+        // the replace-part exists to get rid of the zone id.
+        // javascript doesn't like it.
+        return ldt.atZone(ZoneId.systemDefault()).toString().replaceAll("\\[(.*?)\\]","");
     }
 
     public static LocalDateTime from_iso8601(String iso8601) {

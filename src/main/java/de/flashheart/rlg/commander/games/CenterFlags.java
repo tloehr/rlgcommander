@@ -64,9 +64,9 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private void reset_score_table() {
         Lists.newArrayList("blue", "red").forEach(color -> {
             capture_points.forEach(agent -> {
-                scores.put(agent, color, 0l);
+                scores.put(agent, color, 0L);
             });
-            scores.put("all", color, 0l);
+            scores.put("all", color, 0L);
         });
     }
 
@@ -231,7 +231,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         Lists.newArrayList("blue", "red").forEach(color -> {
             long score_for_this_agent_and_color = scores.get(agent, color);
             long sum_score_for_this_color = scores.get("all", color);
-            scores.put(agent, color, 0l);
+            scores.put(agent, color, 0L);
             scores.put("all", color, sum_score_for_this_color - score_for_this_agent_and_color);
         });
     }
@@ -246,6 +246,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
 
         String operation = params.getString("operation").toLowerCase();
+
         if (operation.equalsIgnoreCase("to_neutral")) {
             String agent = params.getString("agent");
             if (!cpFSMs.containsKey(agent)) throw new IllegalStateException(agent + " unknown");
@@ -370,7 +371,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 .put("blue_respawns", blue_respawns);
     }
 
-
     @Override
     public void add_model_data(Model model) {
         super.add_model_data(model);
@@ -403,34 +403,31 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public String getMode() {
+    public String getGameMode() {
         return "center_flags";
     }
 
     @Override
     public String get_in_game_event_description(JSONObject event) {
-        String type = event.getString("type");
-        if (type.equalsIgnoreCase("general_game_state_change")) {
-            return event.getString("message");
-        }
+        String result = super.get_in_game_event_description(event);
+        if (result.isEmpty()) {
+            result = "error";
+            String type = event.getString("type");
 
-        if (event.getString("item").equals("respawn")) {
-            return "Respawn Team " + event.getString("team") + ": #" + event.getInt("value");
-        }
 
-        if (type.equalsIgnoreCase("in_game_state_change")) {
-            String zeus = (event.has("zeus") ? " (by the hand of ZEUS)" : "");
-            if (event.getString("item").equals("capture_point")) {
-                return event.getString("agent") + " => " + event.getString("state")
-                        + zeus;
-            }
-            if (event.getString("item").equals("add_seconds")) {
-                String text = event.getLong("amount") >= 0 ? " has been granted %d seconds" : " has lost %d seconds";
-                return "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))
-                        + zeus;
+            if (type.equalsIgnoreCase("in_game_state_change")) {
+                String zeus = (event.has("zeus") ? " (by the hand of ZEUS)" : "");
+                if (event.getString("item").equals("capture_point")) {
+                    result = event.getString("agent") + " => " + event.getString("state")
+                            + zeus;
+                }
+                if (event.getString("item").equals("add_seconds")) {
+                    String text = event.getLong("amount") >= 0 ? " has been granted %d seconds" : " has lost %d seconds";
+                    result = "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))
+                            + zeus;
+                }
             }
         }
-        return "";
+        return result;
     }
-
 }

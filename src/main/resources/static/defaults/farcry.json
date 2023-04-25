@@ -4,7 +4,7 @@
   "game_time": 600,
   "bomb_time": 60,
   "resume_countdown": 0,
-  "silent_game": true,
+  "silent_game": false,
   "agents": {
     "capture_points": [
       "ag01",
@@ -18,7 +18,7 @@
     ]
   },
   "spawns": {
-    "game_lobby": false,
+    "game_lobby": true,
     "intro_mp3": "<none>",
     "starter_countdown": 0,
     "respawn_time": 0,

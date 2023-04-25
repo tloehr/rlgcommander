@@ -8,7 +8,7 @@
   "end_bleed_interval": 0.5,
   "ticket_price_for_respawn": 1,
   "resume_countdown": 0,
-  "silent_game": true,
+  "silent_game": false,
   "agents": {
     "capture_points": [
       "ag01",

@@ -12,6 +12,7 @@ import de.flashheart.rlg.commander.games.events.StateTransitionEvent;
 import de.flashheart.rlg.commander.games.events.StateTransitionListener;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
+import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,7 +23,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
@@ -77,9 +78,11 @@ public abstract class Game {
     // main FSM to control the basic states of every game
     protected final FSM game_fsm;
     protected final Map<String, FSM> cpFSMs;
+    private LocalDateTime game_init_at;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         uuid = UUID.randomUUID();
+        game_init_at = LocalDateTime.now();
         this.game_parameters = game_parameters;
         this.scheduler = scheduler;
         this.mqttOutbound = mqttOutbound;
@@ -217,7 +220,7 @@ public abstract class Game {
         log.warn("no zeus function implemented. ignoring.");
     }
 
-    public boolean hasZeus(){
+    public boolean hasZeus() {
         return false;
     }
 
@@ -237,12 +240,14 @@ public abstract class Game {
     public abstract void process_external_message(String sender, String item, JSONObject message);
 
     public void reset_operations() {
+        game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
         send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
         send("visual", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
     }
 
     public void run_operations() {
+
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
         send("acoustic", MQTT.toJSON(MQTT.SIR1, "game_starts"), roles.get("sirens"));
     }
@@ -350,7 +355,7 @@ public abstract class Game {
      */
     protected abstract void on_cleanup();
 
-    public String get_in_game_event_description(JSONObject event) {
+    String get_in_game_event_description(JSONObject event) {
         String type = event.getString("type");
         if (type.equalsIgnoreCase("general_game_state_change")) {
             return event.getString("message");
@@ -365,22 +370,27 @@ public abstract class Game {
 
     public void add_model_data(Model model) {
         model.addAttribute("comment", game_parameters.getString("comment"));
-        final ArrayList<Triplet<String, String, String>> events = new ArrayList<>();
-        in_game_events.forEach(event_object -> {
-            events.add(new Triplet<>(
+        final ArrayList<Quartet<String, String, String, LocalDateTime>> events = new ArrayList<>();
+        // toArray to avoid concurrent modification exception when things get busy.
+        Arrays.stream(in_game_events.toArray()).forEach(array_element -> {
+            JSONObject event_object = (JSONObject) array_element;
+            events.add(new Quartet<>(
                     JavaTimeConverter.from_iso8601(event_object.get("pit").toString()).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)),
                     get_in_game_event_description(event_object.getJSONObject("event")),
-                    event_object.getString("new_state")));
+                    event_object.getString("new_state"),
+                    JavaTimeConverter.from_iso8601(event_object.get("pit").toString())
+            ));
         });
         model.addAttribute("events", events.stream()
-                .sorted((o1, o2) -> o1.compareTo(o2) * -1)
+                .sorted((o1, o2) -> o1.getValue3().compareTo(o2.getValue3()) * -1)
                 .collect(Collectors.toList()));
         model.addAttribute("current_state", get_current_state());
         model.addAttribute("has_zeus", hasZeus());
-        model.addAttribute("mode", getMode());
+        model.addAttribute("game_mode", getGameMode());
+        model.addAttribute("game_init_at", JavaTimeConverter.to_iso8601(game_init_at));
     }
 
-    public String get_current_state(){
+    public String get_current_state() {
         return game_fsm.getCurrentState();
     }
 
@@ -393,7 +403,7 @@ public abstract class Game {
         on_cleanup();
     }
 
-    public abstract String getMode();
+    public abstract String getGameMode();
 
     /**
      * returns a JSON Object which describes the current game situation.
@@ -407,7 +417,8 @@ public abstract class Game {
                 .put("class", this.getClass().getName())
                 .put("game_state", game_fsm.getCurrentState())
                 .put("in_game_events", new JSONArray(in_game_events))
-                .put("mode", getMode())
+                .put("mode", getGameMode())
+                .put("game_init_at", JavaTimeConverter.to_iso8601(game_init_at))
                 .put("agent_states", agent_states);
     }
 
@@ -421,7 +432,6 @@ public abstract class Game {
         game_description.clear();
         game_description.addAll(Arrays.asList(lines));
     }
-
 
 
     /**

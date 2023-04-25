@@ -23,7 +23,7 @@
                 </select>
                 <button class="btn btn-secondary" type="submit"
                         onclick="post_rest('game/zeus',
-                        {'id':sessionStorage.getItem('gameid')},
+                        {'id':sessionStorage.getItem('game_id')},
                         {
                             'operation': 'to_neutral',
                             'agent':document.getElementById('agents_to_neutral').value
@@ -49,7 +49,7 @@
 
                 <button class="btn btn-secondary" type="submit"
                         onclick="post_rest('game/zeus',
-                        {'id':sessionStorage.getItem('gameid')},
+                        {'id':sessionStorage.getItem('game_id')},
                         {
                             'operation': 'add_seconds',
                             'team': document.getElementById('s_blufor').checked ? 'blue' : 'red',
@@ -78,7 +78,7 @@
 
                 <button class="btn btn-secondary" type="submit"
                         onclick="post_rest('game/zeus',
-                        {'id':sessionStorage.getItem('gameid')},
+                        {'id':sessionStorage.getItem('game_id')},
                         {
                             'operation': 'add_respawns',
                             'team': document.getElementById('r_blufor').checked ? 'blue' : 'red',

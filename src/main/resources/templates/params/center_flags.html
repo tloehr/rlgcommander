@@ -9,7 +9,7 @@
 
 
         function read_form(game_parameters) {
-            game_parameters.count_respawns = document.getElementById('btn-count-respawns').hasAttribute('checked');
+            game_parameters.count_respawns = document.getElementById('btn-count-respawns').checked;
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
 
             read_cps_sirens_form(game_parameters);
@@ -17,10 +17,11 @@
 
         function preset_form(game_parameters) {
             document.getElementById('game_time').value = game_parameters.game_time;
-            if (game_parameters.count_respawns)
-                document.getElementById('btn-count-respawns').setAttribute('checked', '');
-            else
-                document.getElementById('btn-count-respawns').removeAttribute('checked');
+            document.getElementById('btn-count-respawns').checked = game_parameters.count_respawns;
+            // if (game_parameters.count_respawns)
+            //     document.getElementById('btn-count-respawns').setAttribute('checked', '');
+            // else
+            //     document.getElementById('btn-count-respawns').removeAttribute('checked');
 
             preset_cps_sirens_form(game_parameters);
         }

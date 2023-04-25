@@ -88,7 +88,7 @@ public class WebController {
         model.addAttribute("active_active", "active");
         //JSONObject game_state = gamesService.getGameState(id);
         gamesService.getGame(id).ifPresent(game -> {
-            model.addAttribute("gameid", id);
+            model.addAttribute("game_id", id);
             game.add_model_data(model);
         });
         return model.containsAttribute("mode") ? "zeus/" + model.getAttribute("mode") : "error";
@@ -97,23 +97,27 @@ public class WebController {
     @GetMapping("/active/base")
     public String active(@RequestParam(name = "id") int id, Model model) {
         model.addAttribute("active_active", "active");
-        JSONObject game_state = gamesService.getGameState(id);
-        String classname = game_state.optString("class", Game._state_EMPTY);
-        model.addAttribute("classname", classname);
-        model.addAttribute("has_zeus", false);
-        model.addAttribute("active_command_buttons_enabled", new JSONArray(active_command_buttons_enabled.get(Game._state_EMPTY)));
-        model.addAttribute("mode", "empty");
-        model.addAttribute("gameid", id);
-        gamesService.getGame(id).ifPresent(game -> {
+        String game_mode = "";
+
+        if (gamesService.getGame(id).isEmpty()) {
+            game_mode = "empty";
+            model.addAttribute("classname", Game._state_EMPTY);
+            model.addAttribute("has_zeus", false);
+            model.addAttribute("active_command_buttons_enabled", new JSONArray(active_command_buttons_enabled.get(Game._state_EMPTY)));
+            model.addAttribute("game_mode", "empty");
+        } else {
+            //log.debug("add_model_data from webcontroller");
+            Game game = gamesService.getGame(id).get();
             game.add_model_data(model);
             model.addAttribute("active_command_buttons_enabled", new JSONArray(active_command_buttons_enabled.get(game.get_current_state())));
-        });
+            game_mode = game.getGameMode();
+        }
 
-        return model.containsAttribute("mode") ? "active/" + model.getAttribute("mode") : "error";
+        return "active/" + game_mode;
     }
 
     @GetMapping("/params/base")
-    public String params(@RequestParam(name = "gamemode") String mode, Model model) {
+    public String params(@RequestParam(name = "game_mode") String game_mode, Model model) {
         model.addAttribute("params_active", "active");
         model.addAttribute("intros",
                 myYamlConfiguration.getIntro().entrySet().stream()
@@ -121,7 +125,7 @@ public class WebController {
                         .sorted(Comparator.comparing(Pair::getValue1))
                         .collect(Collectors.toList())
         );
-        return "params/" + mode;
+        return "params/" + game_mode;
     }
 
 }

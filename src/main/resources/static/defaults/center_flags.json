@@ -5,7 +5,7 @@
   "game_time": 1800,
   "count_respawns": true,
   "resume_countdown": 0,
-  "silent_game": true,
+  "silent_game": false,
   "agents": {
     "capture_points": [
       "ag01",

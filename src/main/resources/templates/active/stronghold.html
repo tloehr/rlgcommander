@@ -1,0 +1,62 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{active/base.html}">
+<head><title>Active Game</title></head>
+<body>
+
+<section layout:fragment="score">
+    <h2>Progress</h2>
+    <div class="col-auto">
+        <div th:if="${total_rings} gt 1" class="progress mb-2">
+            <div id="my_main_bar" class="progress-bar bg-secondary" role="progressbar" aria-label="mypb"
+                 style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+
+        <div class="progress">
+            <div id="my_segment_bar" class="progress-bar" role="progressbar" aria-label="mypb1"
+                 style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <div class="d-inline-block">
+            <span class="me-2" th:if="${broken_agents.size} gt 0"> Broken Capture Points:&nbsp;<del id="broken_agents_list"></del>
+            </span>
+            <span th:if="${stable_agents.size} gt 0">Stable Capture Points:&nbsp;<strong
+                    id="stable_agents_list"></strong>
+            </span>
+        </div>
+    </div>
+
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const segment_colors = ['bg-danger', 'bg-warning', 'bg-success', 'bg-primary'];
+        const rings_taken = parseInt(/*[[${rings_taken}]]*/ 'default');
+        const total_rings = parseInt(/*[[${total_rings}]]*/ 'default');
+        const rings_to_go = total_rings - rings_taken;
+        const remain_in_this_segment = parseInt(/*[[${remain_in_this_segment}]]*/ 'default');
+        const total_in_this_segment = parseInt(/*[[${total_in_this_segment}]]*/ 'default');
+        const segment_progress = remain_in_this_segment / total_in_this_segment * 100;
+        const broken_agents = /*[[${broken_agents}]]*/ 'default';
+        const stable_agents = /*[[${stable_agents}]]*/ 'default';
+
+        if (total_rings > 1) {
+            const total_progress = rings_taken / total_rings * 100;
+            // we need an additional main progessbar
+            console.log('total_progress: ' + total_progress);
+            document.getElementById("my_main_bar").style.width = Math.max(total_progress, 2) + "%";
+        }
+        document.getElementById("my_segment_bar").style.width = Math.max(segment_progress, 2) + "%";
+        document.getElementById("my_segment_bar").classList.add(segment_colors[total_rings - rings_taken - 1]);
+
+        if (broken_agents.length > 0)
+            document.getElementById("broken_agents_list").innerHTML = broken_agents.join();
+
+        if (stable_agents.length > 0)
+            document.getElementById("stable_agents_list").innerHTML = stable_agents.join();
+        /*]]>*/
+    </script>
+</section>
+
+</body>
+</html>

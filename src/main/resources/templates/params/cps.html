@@ -1,0 +1,33 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{params/with_respawns.html}">
+
+<head>
+
+    <script>
+        function read_cps_form(game_parameters) {
+            game_parameters.agents.capture_points = from_string_list(document.getElementById('capture_points').value);
+            read_respawns_form(game_parameters);
+        }
+
+        function preset_cps_form(game_parameters) {
+            document.getElementById('capture_points').value = game_parameters.agents.capture_points.join(); // join makes a comma separated list
+            preset_respawns_form(game_parameters);
+        }
+    </script>
+
+</head>
+
+<body>
+
+
+<div layout:fragment="capture_points" class="col-sm-auto col-md-auto col-lg-6">
+    <label for="capture_points" class="form-label">Capture-Points</label>
+    <!-- only comma separated allowed -->
+    <input type="text" class="form-control" value="ag01" id="capture_points" required
+           pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+    <div id="cphelp" class="form-text">Agent IDs, comma separated</div>
+</div>
+
+</body>
+</html>

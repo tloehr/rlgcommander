@@ -1,0 +1,15 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{active/base.html}">
+<head><title>Active Game</title></head>
+<body>
+
+<section layout:fragment="score">
+    <div class="col-auto">
+        <h2 th:text="|Capture Points taken: ${capture_points_taken} out of ${max_capture_points}|"></h2>
+        <h3 th:text="${current_game_situation}"></h3>
+    </div>
+</section>
+
+</body>
+</html>

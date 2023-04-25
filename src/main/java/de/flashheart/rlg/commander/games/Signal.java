@@ -177,7 +177,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     @Override
-    public String getMode() {
+    public String getGameMode() {
         return "signal";
     }
 

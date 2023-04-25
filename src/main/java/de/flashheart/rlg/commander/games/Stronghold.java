@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -243,7 +244,6 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     JSONObject get_variables() {
-        //log.debug("get_variables");
         JSONObject variables = new JSONObject();
 
         String progress = rings_taken.stream().collect(Collectors.joining(","));
@@ -253,12 +253,15 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
             progress += rings_in_progress.subList(1, rings_in_progress.size()).stream().collect(Collectors.joining(","));
 
         if (!rings_in_progress.isEmpty()) {
-            int total = roles.get(rings_in_progress.getFirst()).size();
-            int remain = Math.toIntExact(roles.get(rings_in_progress.getFirst()).stream()
+            int total_in_this_segment = roles.get(rings_in_progress.getFirst()).size();
+            int remain_in_this_segment = Math.toIntExact(roles.get(rings_in_progress.getFirst()).stream()
                     .filter(agent ->
                             cpFSMs.get(agent).getCurrentState()
                                     .matches(_state_FUSED + "|" + _state_LOCKED + "|" + _state_TAKEN))
                     .count());
+
+            variables.put("total_in_this_segment", total_in_this_segment);
+            variables.put("remain_in_this_segment", remain_in_this_segment);
 
             // todo: change to two lines of agents like in CenterFlags Lists.partition
             String stable_agents = roles.get(rings_in_progress.getFirst()).stream()
@@ -268,11 +271,11 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                     .sorted()
                     .collect(Collectors.joining(","));
 
-            variables.put("active_progress", Tools.get_progress_bar(total - remain, total));
+
+            variables.put("active_progress", Tools.get_progress_bar(total_in_this_segment - remain_in_this_segment, total_in_this_segment));
             variables.put("stable_agents", stable_agents);
 
         }
-
 
         variables.put("active_ring", rings_in_progress.isEmpty() ? "" : rings_in_progress.getFirst());
         variables.put("rings_taken", rings_taken.size());
@@ -308,8 +311,65 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public String getMode() {
+    public String getGameMode() {
         return "stronghold";
+    }
+
+
+    @Override
+    String get_in_game_event_description(JSONObject event) {
+        String result = super.get_in_game_event_description(event);
+        if (result.isEmpty()) {
+            result = "error";
+            String type = event.getString("type");
+
+            if (type.equalsIgnoreCase("in_game_state_change")) {
+                String zeus = (event.has("zeus") ? "&nbsp;(by the hand of ZEUS)" : "");
+                if (event.getString("item").equals("capture_point")) {
+                    return event.getString("agent") + " => " + event.getString("state")
+                            + zeus;
+                }
+                if (event.getString("item").equals("ring")) {
+                    return event.getString("ring") + " => " + event.getString("state")
+                            + zeus;
+                }
+                if (event.getString("item").equals("add_seconds")) {
+                    String text = event.getLong("amount") >= 0 ? " has been granted %d seconds" : " has lost %d seconds";
+                    return "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))
+                            + zeus;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public void add_model_data(Model model) {
+        super.add_model_data(model);
+        // everything is prepared already. simply copying over.
+        JSONObject vars = get_variables();
+        model.addAttribute("active_ring", vars.optString("active_ring"));
+        model.addAttribute("rings_taken", vars.optInt("rings_taken"));
+        model.addAttribute("rings_to_go", vars.optInt("rings_to_go"));
+        model.addAttribute("rings_progress", vars.optString("rings_progress"));
+        model.addAttribute("total_rings", vars.optInt("rings_in_use"));
+        model.addAttribute("total_in_this_segment", vars.optInt("total_in_this_segment"));
+        model.addAttribute("remain_in_this_segment", vars.optInt("remain_in_this_segment"));
+        model.addAttribute("stable_agents", rings_in_progress.isEmpty() ? new ArrayList<>() : roles.get(
+                        rings_in_progress.getFirst()).stream().filter(agent ->
+                        cpFSMs.get(agent).getCurrentState()
+                                .matches(_state_DEFUSED))
+                .sorted()
+                .collect(Collectors.toList())
+        );
+        model.addAttribute("broken_agents", rings_in_progress.isEmpty() ? new ArrayList<>() : roles.get(
+                        rings_in_progress.getFirst()).stream().filter(agent ->
+                        cpFSMs.get(agent).getCurrentState()
+                                .matches(_state_FUSED + "|" + _state_LOCKED + "|" + _state_TAKEN))
+                .sorted()
+                .collect(Collectors.toList())
+        );
     }
 
     @Override

@@ -150,7 +150,7 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public String getMode() {
+    public String getGameMode() {
         return "timed_only";
     }
 

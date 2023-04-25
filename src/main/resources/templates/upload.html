@@ -28,7 +28,7 @@
                         const game_parameters = JSON.parse(evt.target.result);
                         sessionStorage.setItem("game_parameters", evt.target.result)
                         location.href = window.location.origin + '/ui/params/base?' + jQuery.param({
-                            'id': sessionStorage.getItem('gameid'),
+                            'id': sessionStorage.getItem('game_id'),
                             'gamemode': game_parameters.mode
                         });
                     }

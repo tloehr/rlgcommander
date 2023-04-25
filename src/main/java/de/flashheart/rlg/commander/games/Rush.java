@@ -241,7 +241,7 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    public String getMode() {
+    public String getGameMode() {
         return "rush";
     }
 

@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -82,6 +83,7 @@ public class Farcry extends Timed implements HasBombtimer {
 
     /**
      * checks whether the spawn segment definitions are valid
+     *
      * @throws JSONException
      */
     void check_segment_sizes() throws JSONException {
@@ -108,7 +110,7 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
-    public String getMode() {
+    public String getGameMode() {
         return "farcry";
     }
 
@@ -270,6 +272,18 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
+    public void add_model_data(Model model) {
+        super.add_model_data(model);
+        String current_active_agent = capture_points.get(Math.max(
+                active_capture_point,
+                cpFSMs.size()-1
+        )).toString();
+        model.addAttribute("capture_points_taken", active_capture_point);
+        model.addAttribute("max_capture_points", cpFSMs.size());
+        model.addAttribute("current_game_situation", String.format("%s: %s, %s", current_active_agent, cpFSMs.get(current_active_agent).getCurrentState(), get_next_cp()));
+    }
+
+    @Override
     protected JSONObject getSpawnPages(String state) {
         if (state.equals(_state_EPILOG)) {
             return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
@@ -298,14 +312,36 @@ public class Farcry extends Timed implements HasBombtimer {
         if (capture_points.size() == 1) return "";
         return active_capture_point == capture_points.size() - 1 ? "This is the LAST" : "Next: " + capture_points.get(active_capture_point + 1);
     }
+
     @Override
     public void bomb_time_is_up(String bombid) {
         log.info("Bomb has exploded");
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_BOMB_TIME_IS_UP));
     }
+
     @Override
     public void game_time_is_up() {
         log.info("Game time is up");
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_TIME_IS_UP));
+    }
+
+    @Override
+    String get_in_game_event_description(JSONObject event) {
+        String result = super.get_in_game_event_description(event);
+        if (result.isEmpty()){
+            result = "error";
+            String type = event.getString("type");
+
+            if (type.equalsIgnoreCase("in_game_state_change")) {
+                if (event.getString("item").equals("capture_point")) {
+                    result = event.getString("agent") + " => " + event.getString("state");
+                }
+                if (event.getString("item").equals("overtime")) {
+                    result = "overtime";
+                }
+            }
+        }
+
+        return result;
     }
 }
