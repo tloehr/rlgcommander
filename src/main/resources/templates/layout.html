@@ -60,7 +60,7 @@
                                href="/ui/upload"><span
                                 class="bi bi-upload">&nbsp;Upload Game</span></a></li>
                         <li><a class="dropdown-item"
-                               onclick="post_rest('game/unload',{'id': sessionStorage.getItem('game_id')})">
+                               onclick="post_rest('game/unload',{'id': sessionStorage.getItem('game_id')}); go_back_to_active_game();">
                             <span class="bi bi-cloud-slash-fill">&nbsp;Unload Game</span></a>
                         </li>
                         <hr/>

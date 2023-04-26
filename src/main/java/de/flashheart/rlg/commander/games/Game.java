@@ -360,10 +360,16 @@ public abstract class Game {
         if (type.equalsIgnoreCase("general_game_state_change")) {
             return event.getString("message");
         }
-
         if (event.getString("item").equals("respawn")) {
             return "Respawn Team " + event.getString("team") + ": #" + event.getInt("value");
         }
+        String zeus = (event.has("zeus") ? " (by the hand of ZEUS)" : "");
+        if (type.equalsIgnoreCase("in_game_state_change")) {
+            if (event.getString("item").equals("capture_point")) {
+                return event.getString("agent") + " => " + event.getString("state") + zeus;
+            }
+        }
+
 
         return "";
     }

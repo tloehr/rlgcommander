@@ -7,39 +7,33 @@
             // get an array of 1 and 0 to decide which button to enable or not. depending on the current state.
             const acbe = [[${active_command_buttons_enabled}]];
             const haszeus = [[${has_zeus}]];
-            // console.log('Current State: [[${current_state}]])');
-            // console.log(acbe);
-            // 0, -0, and NaN turn into false; other numbers turn into true.
-            $('#btn_prepare').prop('disabled', !acbe[0]); // there is no enabled
-            $('#btn_reset').prop('disabled', !acbe[1]);
-            $('#btn_ready').prop('disabled', !acbe[2]);
-            $('#btn_run').prop('disabled', !acbe[3]);
-            $('#btn_pause').prop('disabled', !acbe[4]);
-            $('#btn_resume').prop('disabled', !acbe[5]);
-            $('#btn_continue').prop('disabled', !acbe[6]);
-            $('#btn_game_over').prop('disabled', !acbe[7]);
+            
+            document.getElementById('btn_prepare').disabled = !acbe[0];
+            document.getElementById('btn_reset').disabled = !acbe[1];
+            document.getElementById('btn_ready').disabled = !acbe[2];
+            document.getElementById('btn_run').disabled = !acbe[3];
+            document.getElementById('btn_pause').disabled = !acbe[4];
+            document.getElementById('btn_resume').disabled = !acbe[5];
+            document.getElementById('btn_continue').disabled = !acbe[6];
+            document.getElementById('btn_game_over').disabled = !acbe[7];
 
-            document.getElementById('btn_prepare2').setAttribute('disabled', !acbe[0]);
-            document.getElementById('btn_reset2').setAttribute('disabled', !acbe[1]);
-            document.getElementById('btn_ready2').setAttribute('disabled', !acbe[2]);
-            document.getElementById('btn_run2').setAttribute('disabled', !acbe[3]);
-            document.getElementById('btn_pause2').setAttribute('disabled', !acbe[4]);
-            document.getElementById('btn_resume2').setAttribute('disabled', !acbe[5]);
-            document.getElementById('btn_continue2').setAttribute('disabled', !acbe[6]);
-            document.getElementById('btn_game_over2').setAttribute('disabled', !acbe[7]);
+            document.getElementById('btn_prepare2').disabled = !acbe[0];
+            document.getElementById('btn_reset2').disabled = !acbe[1];
+            document.getElementById('btn_ready2').disabled = !acbe[2];
+            document.getElementById('btn_run2').disabled = !acbe[3];
+            document.getElementById('btn_pause2').disabled = !acbe[4];
+            document.getElementById('btn_resume2').disabled = !acbe[5];
+            document.getElementById('btn_continue2').disabled = !acbe[6];
+            document.getElementById('btn_game_over2').disabled = !acbe[7];
 
             // zeus
-            $('#btn_zeus').prop('disabled', !haszeus || sessionStorage.getItem("state") !== 'RUNNING');
+            document.getElementById('btn_zeus').disabled = !haszeus || sessionStorage.getItem("state") !== 'RUNNING';
         }
 
         function goto_zeus() {
-            const mode = '[[${mode}]]';
+            //const mode = '[[${mode}]]';
             const base_url = window.location.origin + '/ui/zeus/base';
             location.href = base_url + '?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
-        }
-
-        function create_header_for_game(comment, date) {
-            return comment
         }
 
     </script>

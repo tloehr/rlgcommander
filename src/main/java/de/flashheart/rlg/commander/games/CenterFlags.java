@@ -417,10 +417,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
             if (type.equalsIgnoreCase("in_game_state_change")) {
                 String zeus = (event.has("zeus") ? " (by the hand of ZEUS)" : "");
-                if (event.getString("item").equals("capture_point")) {
-                    result = event.getString("agent") + " => " + event.getString("state")
-                            + zeus;
-                }
                 if (event.getString("item").equals("add_seconds")) {
                     String text = event.getLong("amount") >= 0 ? " has been granted %d seconds" : " has lost %d seconds";
                     result = "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))

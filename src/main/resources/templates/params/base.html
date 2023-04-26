@@ -4,18 +4,22 @@
 <head><title>Game Parameters</title>
 
     <script>
+
+        function load_game(game_parameters) {
+            const game_id = sessionStorage.getItem('game_id');
+            post_rest('game/load', {'id': game_id}, game_parameters, function (xhttp) {
+                if (xhttp.status < 400) window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
+            });
+        }
+
         function read_base_form() {
             const game_id = sessionStorage.getItem('game_id');
             const game_parameters = JSON.parse(sessionStorage.getItem('game_parameters_#' + game_id));
             // read params from cache and overwrite the values with the user entries.
             game_parameters.comment = document.getElementById('comment').value;
             read_form(game_parameters);
-            post_rest('game/load', {'id': game_id}, game_parameters, function (xhttp) {
-                console.log('response: ' + xhttp.status);
-                // if status is good, we redirect to the active page
-                if (xhttp.status < 400) window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
-            });
-            return false;
+
+            return game_parameters;
         }
 
         /**
@@ -41,15 +45,12 @@
         }
 
         // https://stackoverflow.com/a/30800715
-        function downloadGameModeAsJson() {
-            const game_parameters_string = sessionStorage.getItem('game_parameters');
-            if (!game_parameters_string) return;
-
+        function download_json(game_parameters) {
             const mode = sessionStorage.getItem('game_mode');
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(game_parameters_string);
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(game_parameters, null, 4));
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", exportName + ".json");
+            downloadAnchorNode.setAttribute("download", mode + ".json");
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
         }
@@ -65,7 +66,7 @@
 
     <hr/>
     <div class="row mb-2">
-        <form class="needs-validation" onsubmit="return read_base_form()" id="params_form">
+        <form class="needs-validation" onsubmit="load_game(read_base_form()); return false;" id="params_form">
             <div class="col-md-auto">
                 <label for="comment" class="form-label">Game description</label>
                 <input type="text" class="form-control" value="vanilla" id="comment" required minlength="1"
@@ -105,7 +106,7 @@
         </div>
         <div class="col-md-auto">
             <button class="btn btn-outline-info" type="button"
-                    onclick="downloadGameModeAsJson()"><span
+                    onclick="download_json(read_base_form())"><span
                     class="bi bi-download">&nbsp;Download Game</span>
             </button>
         </div>

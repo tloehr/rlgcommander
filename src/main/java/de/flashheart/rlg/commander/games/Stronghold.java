@@ -345,6 +345,11 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     @Override
+    public boolean hasZeus() {
+        return true;
+    }
+
+    @Override
     public void add_model_data(Model model) {
         super.add_model_data(model);
         // everything is prepared already. simply copying over.

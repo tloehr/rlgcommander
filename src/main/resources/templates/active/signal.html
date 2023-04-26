@@ -1,13 +1,14 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{active/base.html}">
-<head><title>FarCry Game</title></head>
+<head><title>Signal Game</title></head>
 <body>
 
 <section layout:fragment="score">
+
     <div class="col-auto">
-        <h2 th:text="|Capture Points taken: ${capture_points_taken} out of ${max_capture_points}|"></h2>
-        <h3 th:text="${current_game_situation}"></h3>
+        <h2 th:text="|Team Red &#8594; ${red_points} &#8660; ${blue_points}  &#8592; Team Blue|"></h2>
+
     </div>
 </section>
 

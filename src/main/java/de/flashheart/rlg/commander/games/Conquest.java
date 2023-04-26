@@ -438,23 +438,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     }
 
     @Override
-    String get_in_game_event_description(JSONObject event) {
-        String result = super.get_in_game_event_description(event);
-        if (result.isEmpty()) {
-            result = "error";
-            String type = event.getString("type");
-
-            if (type.equalsIgnoreCase("in_game_state_change")) {
-                if (event.getString("item").equals("capture_point")) {
-                    result = event.getString("agent") + " => " + event.getString("state");
-                }
-            }
-        }
-
-        return result;
-    }
-
-    @Override
     public void add_model_data(Model model) {
         super.add_model_data(model);
         model.addAttribute("cps_held_by_blue", cps_held_by_blue);

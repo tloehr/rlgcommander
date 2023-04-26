@@ -1,7 +1,7 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{active/base.html}">
-<head><title>Active Game</title></head>
+<head><title>Conquest Game</title></head>
 <body>
 
 <section layout:fragment="score">
@@ -21,10 +21,6 @@
             <li th:text="${cp}"></li>
         </ul>
 
-
-        <h2>Number of Respawns</h2>
-        <h3 class="text-danger" th:text="'Team Red: '+${red_respawns}"></h3>
-        <h3 class="text-primary" th:text="'Team Blue: '+${blue_respawns}"></h3>
     </div>
 </section>
 

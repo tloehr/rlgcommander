@@ -1,0 +1,38 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{zeus/base.html}">
+
+<head><title>some title from slist</title></head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1 class="mt-2">
+        <img src="/img/zeus.png" height="64" width="64"/>
+        Zeus - Stronghold</h1>
+</section>
+
+<section layout:fragment="zeus_form">
+
+    <h2>Reset Flag</h2>
+    <div class="row mb-2">
+        <form id="zeus_to_neutral" onsubmit="return false" href="#">
+            <div class="input-group">
+                <select class="form-select " style="height: 40px;" id="defuse_agent" required>
+                    <option th:each="cp : ${cps}" th:value="${cp}" th:text="${cp}"/>
+                </select>
+                <button class="btn btn-secondary" type="submit"
+                        onclick="post_rest('game/zeus',
+                        {'id':sessionStorage.getItem('game_id')},
+                        {
+                            'operation': 'defuse',
+                            'agent':document.getElementById('defuse_agent').value
+                        }); go_back_to_active_game();">
+                    Back to neutral
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+</body>
+</html>

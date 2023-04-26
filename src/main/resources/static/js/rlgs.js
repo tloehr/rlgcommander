@@ -98,12 +98,17 @@ function from_string_segment_list(list) {
     return outer;
 }
 
+function isEmpty(str) {
+    return !str.trim().length;
+}
+
 function from_string_list(list) {
     var result = [];
-    list.split(/\n|,/).forEach(item => {
-        result.push(item);
-    });
-    console.log(result);
+    if (list !== '') {
+        list.split(/\n|,/).forEach(item => {
+            result.push(item);
+        });
+    }
     return result;
 }
 
@@ -130,11 +135,20 @@ function post_rest(resturi, param_json, body, callback) {
                     'class': 'bi bi-lightning-fill bi-md text-danger',
                     'data-bs-toggle': 'tooltip',
                     'data-bs-placement': 'bottom',
-                    'data-bs-title': 'oh shit'
+                    'data-bs-title': 'oh shit',
+                    'title': JSON.parse(xhttp.responseText).message
                 }
             );
         } else {
-            $('#rest_result').html(`&nbsp;${xhttp.status}`).attr('class', 'bi bi-check-circle-fill bi-md text-success');
+            $('#rest_result').html(`&nbsp;${xhttp.status}`).attr(
+                {
+                    'class': 'bi bi-check-circle-fill bi-md text-success',
+                    'data-bs-toggle': 'tooltip',
+                    'data-bs-placement': 'bottom',
+                    'data-bs-title': 'oh shit',
+                    'title': JSON.parse(xhttp.responseText).message
+                }
+            );
         }
         if (callback) callback(xhttp);
     };
@@ -143,5 +157,10 @@ function post_rest(resturi, param_json, body, callback) {
     xhttp.open('POST', myuri, true);
     xhttp.setRequestHeader('Content-type', 'application/json');
     xhttp.send(body ? JSON.stringify(body) : '{}');
+}
+
+function go_back_to_active_game(){
+    window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
+    return false;
 }
 

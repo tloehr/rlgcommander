@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -75,7 +76,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 int index_of_agent = capture_points.indexOf(agent) + 1;
                 String color = state.equals("BLUE_LOCKED") ? "BLAU" : "ROT";
                 line_variables.put("line" + index_of_agent, agent + ": " + color);
-                addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", color));
+                addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", state));
                 broadcast_score();
                 String led = state.equals("BLUE_LOCKED") ? MQTT.BLUE : MQTT.RED;
                 send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
@@ -107,6 +108,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "unlocked"));
         int index_of_agent = capture_points.indexOf(agent) + 1;
         line_variables.put("line" + index_of_agent, "");
         broadcast_score();
@@ -219,6 +221,13 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         return super.getState()
                 .put("red_points", red_points)
                 .put("blue_points", blue_points);
+    }
+
+    @Override
+    public void add_model_data(Model model) {
+        super.add_model_data(model);
+        model.addAttribute("red_points", red_points);
+        model.addAttribute("blue_points", blue_points);
     }
 
 }
