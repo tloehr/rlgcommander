@@ -7,12 +7,10 @@ import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.games.jobs.DelayedReactionJob;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.games.traits.HasDelayedReaction;
-import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.WordUtils;
-import org.javatuples.Quartet;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
@@ -25,7 +23,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -305,8 +302,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     }
 
     @Override
-    public void run_operations() {
-        super.run_operations();
+    public void on_run() {
+        super.on_run();
         // setup and start bleeding job
         long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
         create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
@@ -314,8 +311,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         deleteJob(ticketBleedingJobkey);
         blue_respawns = 0;
         red_respawns = 0;
@@ -330,8 +327,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast, HasDela
     }
 
     @Override
-    public void game_over_operations() {
-        super.game_over_operations();
+    public void on_game_over() {
+        super.on_game_over();
         deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
 //        log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
         broadcast_score(); // one last time

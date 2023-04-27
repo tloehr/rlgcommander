@@ -78,12 +78,12 @@ public class Rush extends Scheduled {
 
 
     @Override
-    public void run_operations() {
+    public void on_run() {
 
     }
 
     @Override
-    public void reset_operations() {
+    public void on_reset() {
 
     }
 
@@ -130,12 +130,12 @@ public class Rush extends Scheduled {
     }
 
 
-    public void on_reset() {
-
-        active_sector = -1;
-        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
-        sectors.forEach(fsm -> fsm.ProcessFSM("reset"));
-    }
+//    public void on_reset() {
+//
+//        active_sector = -1;
+//        agentFSMs.values().forEach(fsm -> fsm.ProcessFSM("reset"));
+//        sectors.forEach(fsm -> fsm.ProcessFSM("reset"));
+//    }
 
     /**
      * @param sector_number

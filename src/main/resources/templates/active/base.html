@@ -4,6 +4,18 @@
 <head><title>Active Game</title>
     <script>
         function init_buttons() {
+
+            /**
+             * .blink_me {
+             *   animation: blinker 2s linear infinite;
+             * }
+             *
+             * @keyframes blinker {
+             *   50% { opacity: 0; }
+             * }
+             * @type {*[][]}
+             */
+
             // get an array of 1 and 0 to decide which button to enable or not. depending on the current state.
             const acbe = [[${active_command_buttons_enabled}]];
             const haszeus = [[${has_zeus}]];

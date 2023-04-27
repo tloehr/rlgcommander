@@ -3,7 +3,6 @@ package de.flashheart.rlg.commander.games;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.GameTimeIsUpJob;
-import de.flashheart.rlg.commander.games.traits.HasBombtimer;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
@@ -74,24 +73,24 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    public void run_operations() {
-        super.run_operations();
+    public void on_run() {
+        super.on_run();
         start_time = LocalDateTime.now();
         end_time = start_time.plusSeconds(game_time);
         create_resumable_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class, Optional.empty());
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         start_time = null;
         end_time = null;
         deleteJob(game_timer_jobkey);
     }
 
     @Override
-    public void game_over_operations() {
-        super.game_over_operations();
+    public void on_game_over() {
+        super.on_game_over();
         deleteJob(game_timer_jobkey);
     }
 

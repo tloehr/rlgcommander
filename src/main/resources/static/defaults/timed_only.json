@@ -5,6 +5,7 @@
   "game_time": 600,
   "count_respawns": false,
   "resume_countdown": 0,
+  "game_mode": "timed_only",
   "silent_game": false,
   "display": {
     "line1": "",

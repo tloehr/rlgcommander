@@ -2,6 +2,7 @@
   "comment": "FarCry Assault",
   "class": "de.flashheart.rlg.commander.games.Farcry",
   "game_time": 600,
+  "game_mode": "farcry",
   "bomb_time": 60,
   "resume_countdown": 0,
   "silent_game": false,

@@ -19,7 +19,6 @@ import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SimpleScheduleBuilder;
-import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -175,8 +174,8 @@ public abstract class WithRespawns extends Pausable {
     }
 
     @Override
-    public void run_operations() {
-        super.run_operations();
+    public void on_run() {
+        super.on_run();
         deleteJob(deferredRunGameJob);
         // create timed respawn if necessary
         if (respawn_timer > 0) {
@@ -189,8 +188,8 @@ public abstract class WithRespawns extends Pausable {
     }
 
     @Override
-    public void game_over_operations() {
-        super.game_over_operations();
+    public void on_game_over() {
+        super.on_game_over();
         send_message_to_all_agents(_msg_GAME_OVER);
     }
 
@@ -202,8 +201,8 @@ public abstract class WithRespawns extends Pausable {
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), get_active_spawn_agents());
         active_segment = 0;
         deleteJob(deferredRunGameJob);

@@ -47,8 +47,8 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         deleteJob(broadcastScoreJobkey);
         broadcast_cycle_counter = 0l;
         last_job_broadcast = 0l;
@@ -58,8 +58,8 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void run_operations() {
-        super.run_operations();
+    public void on_run() {
+        super.on_run();
         long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
         create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
         broadcast_cycle_counter = 0;

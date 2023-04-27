@@ -2,6 +2,7 @@
   "mode": "stronghold",
   "game_time": "600",
   "silent_game": false,
+  "game_mode": "stronghold",
   "comment": "Stronghold",
   "allow_defuse": false,
   "spawns": {

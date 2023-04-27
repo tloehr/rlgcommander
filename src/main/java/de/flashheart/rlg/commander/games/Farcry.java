@@ -47,6 +47,7 @@ public class Farcry extends Timed implements HasBombtimer {
     // which CP to take next
     private int active_capture_point;
     boolean overtime;
+    private boolean ran_once_already;
 
     public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -69,6 +70,7 @@ public class Farcry extends Timed implements HasBombtimer {
         // additional parsing agents and sirens
         map_of_agents_and_sirens = new HashMap<>();
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList();
+        ran_once_already = false;
 
         if (capture_points.size() > MAX_CAPTURE_POINTS)
             throw new ArrayIndexOutOfBoundsException("max number of capture points is " + MAX_CAPTURE_POINTS);
@@ -101,13 +103,6 @@ public class Farcry extends Timed implements HasBombtimer {
             throw new JSONException("number of segments mismatch. number of CPs, sirens and spawn_segments must match");
     }
 
-    @Override
-    public void run_operations() {
-        super.run_operations();
-        estimated_end_time = end_time;
-        // activate first cp
-        cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
-    }
 
     @Override
     public String getGameMode() {
@@ -115,12 +110,13 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         estimated_end_time = null;
         deleteJob(bombTimerJobkey);
         active_capture_point = 0;
         overtime = false;
+        ran_once_already = false;
         send("vars", MQTT.toJSON("overtime", ""), get_all_spawn_agents());
     }
 
@@ -241,6 +237,25 @@ public class Farcry extends Timed implements HasBombtimer {
         }
     }
 
+    @Override
+    public void on_run() {
+        super.on_run();
+        estimated_end_time = end_time;
+    }
+
+    @Override
+    protected void at_state(String state) {
+        super.at_state(state);
+        if (state.equals(_state_RUNNING)) {
+            // activate first cp
+            log.debug("AT_RUNNING");
+            if (!ran_once_already){
+                ran_once_already = true;
+                cpFSMs.get(capture_points.get(0)).ProcessFSM(_msg_ACTIVATE);
+            }
+        }
+    }
+
     private void overtime() {
         addEvent(new JSONObject().put("item", "overtime"));
         send("vars", MQTT.toJSON("overtime", "overtime"), get_all_spawn_agents());
@@ -274,13 +289,17 @@ public class Farcry extends Timed implements HasBombtimer {
     @Override
     public void add_model_data(Model model) {
         super.add_model_data(model);
-        String current_active_agent = capture_points.get(Math.max(
+        String current_active_agent = capture_points.get(Math.min(
                 active_capture_point,
                 cpFSMs.size()-1
         )).toString();
         model.addAttribute("capture_points_taken", active_capture_point);
         model.addAttribute("max_capture_points", cpFSMs.size());
-        model.addAttribute("current_game_situation", String.format("%s: %s, %s", current_active_agent, cpFSMs.get(current_active_agent).getCurrentState(), get_next_cp()));
+        if (game_fsm.getCurrentState().equals(_state_EPILOG)){
+            model.addAttribute("current_game_situation", "GAME OVER");
+        } else {
+            model.addAttribute("current_game_situation", String.format("%s: %s, %s", current_active_agent, cpFSMs.get(current_active_agent).getCurrentState(), get_next_cp()));
+        }
     }
 
     @Override
@@ -309,7 +328,7 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     private String get_next_cp() {
-        if (capture_points.size() == 1) return "";
+        if (capture_points.size() == 1) return "This is the only one";
         return active_capture_point == capture_points.size() - 1 ? "This is the LAST" : "Next: " + capture_points.get(active_capture_point + 1);
     }
 
@@ -333,9 +352,6 @@ public class Farcry extends Timed implements HasBombtimer {
             String type = event.getString("type");
 
             if (type.equalsIgnoreCase("in_game_state_change")) {
-                if (event.getString("item").equals("capture_point")) {
-                    result = event.getString("agent") + " => " + event.getString("state");
-                }
                 if (event.getString("item").equals("overtime")) {
                     result = "overtime";
                 }

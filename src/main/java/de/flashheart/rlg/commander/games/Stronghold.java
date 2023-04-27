@@ -146,8 +146,8 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
 
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         rings_in_progress.clear();
         rings_taken.clear();
         rings_in_progress.addAll(rings_in_use);
@@ -155,14 +155,14 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void run_operations() {
-        super.run_operations();
+    public void on_run() {
+        super.on_run();
         activate_ring();
     }
 
     @Override
-    public void game_over_operations() {
-        super.game_over_operations();
+    public void on_game_over() {
+        super.on_game_over();
         broadcast_score();
     }
 

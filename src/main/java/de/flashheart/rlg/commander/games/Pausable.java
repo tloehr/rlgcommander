@@ -73,14 +73,14 @@ public abstract class Pausable extends Scheduled {
     }
 
     @Override
-    public void run_operations() {
-        super.run_operations();
+    public void on_run() {
+        super.on_run();
         deleteJob(continueGameJob);
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         deleteJob(continueGameJob);
         pausing_since = Optional.empty();
     }

@@ -3,6 +3,7 @@
   "rest_url": "http://localhost:8090/api/game/load?id=1",
   "class": "de.flashheart.rlg.commander.games.Signal",
   "lock_time": 2,
+  "game_mode": "signal",
   "unlock_time": 10,
   "game_time": 600,
   "resume_countdown": 0,

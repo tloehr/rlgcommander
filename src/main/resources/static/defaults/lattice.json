@@ -3,6 +3,7 @@
   "rest_url": "http://localhost:8090/api/game/load?id=1",
   "class": "de.flashheart.rlg.commander.games.Lattice",
   "respawn_tickets": 250,
+  "game_mode": "planetside",
   "not_bleeding_before_cps": 1,
   "start_bleed_interval": 5,
   "end_bleed_interval": 0.5,

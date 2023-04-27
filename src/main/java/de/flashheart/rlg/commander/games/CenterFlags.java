@@ -20,7 +20,6 @@ import org.quartz.Scheduler;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
-import javax.swing.text.html.HTML;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -140,16 +139,16 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void game_over_operations() {
-        super.game_over_operations();
+    public void on_game_over() {
+        super.on_game_over();
         deleteJob(broadcastScoreJobkey); // this cycle has no use anymore
         //todo: this is not called the last time. agents show an outdated score after game over - WHY ?
         broadcast_score(); // one last time
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         deleteJob(broadcastScoreJobkey);
         broadcast_cycle_counter = 0l;
         last_job_broadcast = 0l;
@@ -160,8 +159,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void run_operations() {
-        super.run_operations();
+    public void on_run() {
+        super.on_run();
         long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
         create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
         broadcast_cycle_counter = 0;

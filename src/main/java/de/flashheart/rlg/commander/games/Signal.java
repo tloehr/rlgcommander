@@ -18,7 +18,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -173,8 +172,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     @Override
-    public void run_operations() {
-        super.run_operations();
+    public void on_run() {
+        super.on_run();
         send("visual", MQTT.toJSON(MQTT.ALL, "off"), get_all_spawn_agents());
     }
 
@@ -184,8 +183,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     @Override
-    public void reset_operations() {
-        super.reset_operations();
+    public void on_reset() {
+        super.on_reset();
         // spawn agents are used as display not for a specific team
         empty_lines();
         blue_points = 0;

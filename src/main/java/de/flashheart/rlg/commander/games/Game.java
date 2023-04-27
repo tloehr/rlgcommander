@@ -13,7 +13,6 @@ import de.flashheart.rlg.commander.games.events.StateTransitionListener;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.extern.log4j.Log4j2;
 import org.javatuples.Quartet;
-import org.javatuples.Triplet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -187,9 +186,9 @@ public abstract class Game {
      * @param new_state after the transition
      */
     protected void on_transition(String old_state, String message, String new_state) {
-        if (message.equals(_msg_RUN)) run_operations();
-        if (message.equals(_msg_GAME_OVER)) game_over_operations();
-        if (message.equals(_msg_RESET)) reset_operations();
+        if (message.equals(_msg_RUN)) on_run();
+        if (message.equals(_msg_GAME_OVER)) on_game_over();
+        if (message.equals(_msg_RESET)) on_reset();
     }
 
 
@@ -239,20 +238,19 @@ public abstract class Game {
      */
     public abstract void process_external_message(String sender, String item, JSONObject message);
 
-    public void reset_operations() {
+    public void on_reset() {
         game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
         send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
         send("visual", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
     }
 
-    public void run_operations() {
-
+    public void on_run() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
         send("acoustic", MQTT.toJSON(MQTT.SIR1, "game_starts"), roles.get("sirens"));
     }
 
-    public void game_over_operations() {
+    public void on_game_over() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
         send("acoustic", MQTT.toJSON(MQTT.ALL, "off", MQTT.SIR1, "game_ends"), roles.get("sirens"));
         log.info(getState().toString(4));

@@ -1,0 +1,55 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{params/cps_and_sirens.html}">
+
+<head>
+    <title>Time Only</title>
+    <script>
+        sessionStorage.setItem('game_mode', 'timed_only');
+
+
+        function read_form(game_parameters) {
+
+            read_cps_sirens_form(game_parameters);
+        }
+
+        function preset_form(game_parameters) {
+
+            preset_cps_sirens_form(game_parameters);
+        }
+
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1>Time Only</h1>
+    <p>A game mode only to keep the time for You.</p>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="game_time" class="form-label">Gametime in seconds</label>
+            <input type="number" class="form-control" id="game_time" list="game_times" value="600" required
+                   min="1" pattern="\d*">
+            <datalist id="game_times">
+                <option value="120">2 Minuten</option>
+                <option value="300">5 Minuten</option>
+                <option value="600">10 Minuten</option>
+                <option value="900">15 Minuten</option>
+                <option value="1500">25 Minuten</option>
+                <option value="1800">30 Minuten</option>
+                <option value="2700">45 Minuten</option>
+                <option value="3000">50 Minuten</option>
+            </datalist>
+        </div>
+    </div>
+</section>
+
+
+</body>
+</html>
