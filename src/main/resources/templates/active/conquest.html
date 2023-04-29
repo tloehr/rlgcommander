@@ -11,15 +11,15 @@
         <h2>Capture Points</h2>
         <h3 class="text-danger">Team Red</h3>
         <h4 th:if="${cps_held_by_red.size} eq 0">None</h4>
-        <ul th:if="${cps_held_by_red.size} gt 0" th:each="cp : ${cps_held_by_red}">
-            <li th:text="${cp}"></li>
-        </ul>
+        <div class="row" th:if="${cps_held_by_red.size} gt 0" th:remove="tag" th:each="cp : ${cps_held_by_red}">
+            <span th:text="'&nbsp;'+${cp}" class="bi bi-flag-fill text-danger"></span>
+        </div>
 
         <h3 class="text-primary">Team Blue</h3>
         <h4 th:if="${cps_held_by_blue.size} eq 0">None</h4>
-        <ul th:if="${cps_held_by_blue.size} gt 0" th:each="cp : ${cps_held_by_blue}">
-            <li th:text="${cp}"></li>
-        </ul>
+        <div class="d-flex flex-row" th:if="${cps_held_by_blue.size} gt 0" th:remove="tag" th:each="cp : ${cps_held_by_blue}">
+            <span th:text="'&nbsp;'+${cp}" class="bi bi-flag-fill text-primary p-2"></span>
+        </div>
 
     </div>
 </section>

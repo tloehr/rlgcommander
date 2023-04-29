@@ -61,6 +61,7 @@
     ]
   ],
   "spawns": {
+    "count_respawns": true,
     "game_lobby": true,
     "intro_mp3": "<none>",
     "starter_countdown": 30,

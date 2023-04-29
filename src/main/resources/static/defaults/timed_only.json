@@ -1,48 +1,36 @@
 {
-  "comment": "Timed Only Game",
-  "class": "de.flashheart.rlg.commander.games.TimedOnly",
-  "remark": "A generic timed game that only keeps track of the game timer. You can add some textlines to be scrolled at the spawn agents.",
-  "game_time": 600,
-  "count_respawns": false,
-  "resume_countdown": 0,
   "game_mode": "timed_only",
-  "silent_game": false,
+  "game_time": "600",
+  "silent_game": "false",
   "display": {
-    "line1": "",
-    "line2": "",
-    "line3": ""
+    "line3": "uphold the law",
+    "line2": "protect the innocent",
+    "line1": "serve the public"
   },
-  "agents": {
-    "sirens": [
-      "ag50"
-    ]
-  },
+  "comment": "Timed Game",
   "spawns": {
-    "game_lobby": false,
-    "intro_mp3": "<none>",
-    "starter_countdown": 0,
-    "respawn_time": 0,
+    "starter_countdown": "0",
+    "count_respawns": false,
+    "announce_sprees": true,
     "teams": [
       {
         "role": "red_spawn",
-        "led": "red",
         "name": "RedFor",
-        "agents": [
-          [
-            "ag30"
-          ]
-        ]
+        "led": "red",
+        "agents": [["ag30"]]
       },
       {
         "role": "blue_spawn",
+        "name": "BluFor",
         "led": "blu",
-        "name": "BlueFor",
-        "agents": [
-          [
-            "ag31"
-          ]
-        ]
+        "agents": [["ag31"]]
       }
-    ]
-  }
+    ],
+    "respawn_time": 0,
+    "game_lobby": "false",
+    "intro_mp3": "<none>"
+  },
+  "class": "de.flashheart.rlg.commander.games.TimedOnly",
+  "resume_countdown": "0",
+  "agents": {"sirens": ["ag50"]}
 }

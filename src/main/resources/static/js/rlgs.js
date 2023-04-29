@@ -146,7 +146,7 @@ function post_rest(resturi, param_json, body, callback) {
                     'data-bs-toggle': 'tooltip',
                     'data-bs-placement': 'bottom',
                     'data-bs-title': 'oh shit',
-                    'title': JSON.parse(xhttp.responseText).message
+                    'title': 'OK'
                 }
             );
         }

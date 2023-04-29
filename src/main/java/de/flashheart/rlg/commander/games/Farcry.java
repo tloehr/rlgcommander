@@ -51,7 +51,9 @@ public class Farcry extends Timed implements HasBombtimer {
 
     public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
+        count_respawns = false;
         estimated_end_time = null;
+
         log.info("\n    ______\n" +
                 "   / ____/___ __________________  __\n" +
                 "  / /_  / __ `/ ___/ ___/ ___/ / / /\n" +
@@ -249,7 +251,7 @@ public class Farcry extends Timed implements HasBombtimer {
         if (state.equals(_state_RUNNING)) {
             // activate first cp
             log.debug("AT_RUNNING");
-            if (!ran_once_already){
+            if (!ran_once_already) {
                 ran_once_already = true;
                 cpFSMs.get(capture_points.get(0)).ProcessFSM(_msg_ACTIVATE);
             }
@@ -291,11 +293,11 @@ public class Farcry extends Timed implements HasBombtimer {
         super.add_model_data(model);
         String current_active_agent = capture_points.get(Math.min(
                 active_capture_point,
-                cpFSMs.size()-1
+                cpFSMs.size() - 1
         )).toString();
         model.addAttribute("capture_points_taken", active_capture_point);
         model.addAttribute("max_capture_points", cpFSMs.size());
-        if (game_fsm.getCurrentState().equals(_state_EPILOG)){
+        if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
             model.addAttribute("current_game_situation", "GAME OVER");
         } else {
             model.addAttribute("current_game_situation", String.format("%s: %s, %s", current_active_agent, cpFSMs.get(current_active_agent).getCurrentState(), get_next_cp()));
@@ -315,9 +317,9 @@ public class Farcry extends Timed implements HasBombtimer {
 
     @Override
     protected void on_respawn_signal_received(String role, String agent) {
-        // the last part of this message is a delayed buzzer sound, so its end lines up with the end of the respawn period
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, String.format("1:off,%d;on,75;off,500;on,75;off,500;on,75;off,500;on,1200;off,1", respawn_timer * 1000 - 2925 - 100)), get_active_spawn_agents());
-        send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
+        // todo: think this over
+//        send("acoustic", MQTT.toJSON(MQTT.BUZZER, String.format("1:off,%d;on,75;off,500;on,75;off,500;on,75;off,500;on,1200;off,1", respawn_timer * 1000 - 2925 - 100)), get_active_spawn_agents());
+//        send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
     }
 
     @Override
@@ -347,7 +349,7 @@ public class Farcry extends Timed implements HasBombtimer {
     @Override
     String get_in_game_event_description(JSONObject event) {
         String result = super.get_in_game_event_description(event);
-        if (result.isEmpty()){
+        if (result.isEmpty()) {
             result = "error";
             String type = event.getString("type");
 

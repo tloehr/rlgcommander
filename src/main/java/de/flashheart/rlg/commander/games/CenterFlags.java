@@ -39,8 +39,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private final Table<String, String, Long> scores;
     private final JobKey broadcastScoreJobkey;
     private long last_job_broadcast;
-    private int blue_respawns, red_respawns;
-    private final boolean count_respawns;
+
 
     public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -53,7 +52,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 "                                            /____/");
 
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
-        count_respawns = game_parameters.optBoolean("count_respawns");
         scores = HashBasedTable.create();
         reset_score_table();
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
@@ -152,8 +150,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         deleteJob(broadcastScoreJobkey);
         broadcast_cycle_counter = 0l;
         last_job_broadcast = 0l;
-        blue_respawns = 0;
-        red_respawns = 0;
         reset_score_table();
         broadcast_score();
     }
@@ -345,24 +341,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    protected void on_respawn_signal_received(String spawn_role, String agent) {
-        if (!count_respawns) return;
-
-        if (spawn_role.equals(RED_SPAWN)) {
-            red_respawns++;
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
-            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
-            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
-        }
-        if (spawn_role.equals(BLUE_SPAWN)) {
-            blue_respawns++;
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
-            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
-            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
-        }
-    }
-
-    @Override
     public JSONObject getState() {
         return super.getState()
                 .put("scores", new JSONObject(scores.columnMap()))
@@ -393,7 +371,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         model.addAttribute("sum_blue", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "blue"))));
         model.addAttribute("sum_red", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "red"))));
 
-        model.addAttribute("cps", capture_points);
+//        model.addAttribute("cps", capture_points);
 
         if (count_respawns) {
             model.addAttribute("red_respawns", red_respawns);

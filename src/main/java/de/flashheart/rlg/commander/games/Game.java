@@ -392,6 +392,7 @@ public abstract class Game {
         model.addAttribute("has_zeus", hasZeus());
         model.addAttribute("game_mode", getGameMode());
         model.addAttribute("game_init_at", JavaTimeConverter.to_iso8601(game_init_at));
+        model.addAttribute("cps", game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList()));
     }
 
     public String get_current_state() {

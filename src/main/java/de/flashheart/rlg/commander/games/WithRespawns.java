@@ -6,8 +6,10 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.games.jobs.DelayedReactionJob;
 import de.flashheart.rlg.commander.games.jobs.RespawnTimerJob;
 import de.flashheart.rlg.commander.games.jobs.RunGameJob;
+import de.flashheart.rlg.commander.games.traits.HasDelayedReaction;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -16,6 +18,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SimpleScheduleBuilder;
@@ -29,10 +32,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Log4j2
-/**
+/*
  * Games deriving from this class will have team respawn agents with optional countdown functions.
  */
-public abstract class WithRespawns extends Pausable {
+public abstract class WithRespawns extends Pausable implements HasDelayedReaction {
     public static final String _state_WE_ARE_PREPARING = "WE_ARE_PREPARING";
     public static final String _state_STANDBY = "STAND_BY";
     public static final String _state_WE_ARE_READY = "WE_ARE_READY";
@@ -53,23 +56,36 @@ public abstract class WithRespawns extends Pausable {
     private final int starter_countdown;
     private final String intro_mp3;
     private final boolean game_lobby;
+    private final boolean announce_sprees;
+    private int red_killing_spree_length;
+    private int blue_killing_spree_length;
+    private Optional<Pair<String, Integer>> team_on_a_spree;
+    private boolean announced_long_spree_already;
+    private final JobKey spree_announcement_jobkey;
+    protected boolean count_respawns;
 
     // Table of Teams in rows, segments in cols
     // cells contain pairs of agent names and FSMs
     protected final Table<String, Integer, Pair<String, FSM>> spawn_segments;
     protected final int respawn_timer;
     protected int active_segment;
-    private final JSONObject spawn_parameters;
+    protected int blue_respawns, red_respawns;
 
     public WithRespawns(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        this.spawn_parameters = game_parameters.getJSONObject("spawns");
+
+        final JSONObject spawn_parameters = game_parameters.getJSONObject("spawns");
         this.respawn_timer = spawn_parameters.optInt("respawn_time");
         this.game_lobby = spawn_parameters.optBoolean("game_lobby");
+        this.announce_sprees = spawn_parameters.optBoolean("announce_sprees");
         this.starter_countdown = spawn_parameters.optInt("starter_countdown");
         this.intro_mp3 = spawn_parameters.optString("intro_mp3", "<none>");
+        this.count_respawns = spawn_parameters.optBoolean("count_respawns");
+
         this.deferredRunGameJob = new JobKey("run_the_game", uuid.toString());
         this.respawnTimerJobkey = new JobKey("timed_respawn", uuid.toString());
+        this.spree_announcement_jobkey = new JobKey("spreeannounce", uuid.toString());
+
         this.spawn_segments = HashBasedTable.create();
         active_segment = 0;
 
@@ -204,6 +220,12 @@ public abstract class WithRespawns extends Pausable {
     public void on_reset() {
         super.on_reset();
         send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), get_active_spawn_agents());
+        blue_respawns = 0;
+        red_respawns = 0;
+        blue_killing_spree_length = 0;
+        red_killing_spree_length = 0;
+        team_on_a_spree = Optional.empty();
+        announced_long_spree_already = false;
         active_segment = 0;
         deleteJob(deferredRunGameJob);
         delete_timed_respawn();
@@ -274,7 +296,7 @@ public abstract class WithRespawns extends Pausable {
         if (sender.equals(RespawnTimerJob._sender_TIMED_RESPAWN))
             send_message_to_agents_in_segment(active_segment, _msg_RESPAWN_SIGNAL);
         else
-            // there is no other class above us which cares about external messages
+            // there is no other class above us which cares about external messages,
             // so we simply consume it
             send_message_to_agent_in_segment(active_segment, sender, item);
     }
@@ -286,9 +308,72 @@ public abstract class WithRespawns extends Pausable {
      * @param agent      agent id
      */
     protected void on_respawn_signal_received(String spawn_role, String agent) {
+        if (!count_respawns) return;
+
+        if (spawn_role.equals(RED_SPAWN)) {
+            red_respawns++;
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
+            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
+            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
+        }
+        if (spawn_role.equals(BLUE_SPAWN)) {
+            blue_respawns++;
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
+            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
+            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
+        }
+
+        if (!announce_sprees) return;
+        if (spawn_role.equals(RED_SPAWN)) {
+            // a respawn here resets the spree of the other tea
+            blue_killing_spree_length = 0;
+            red_killing_spree_length++;
+            if (red_killing_spree_length == 1) announced_long_spree_already = false;
+        }
+        if (spawn_role.equals(BLUE_SPAWN)) {
+            red_killing_spree_length = 0;
+            blue_killing_spree_length++;
+            if (blue_killing_spree_length == 1) announced_long_spree_already = false;
+        }
+        first_blood_announcement();
+        prepare_spree_announcement();
     }
 
-    ;
+    private void prepare_spree_announcement() {
+        team_on_a_spree = Optional.empty();
+        deleteJob(spree_announcement_jobkey);
+        if (red_killing_spree_length > 1)
+            team_on_a_spree = Optional.of(new ImmutablePair<>(RED_SPAWN, red_killing_spree_length));
+        if (blue_killing_spree_length > 1)
+            team_on_a_spree = Optional.of(new ImmutablePair<>(BLUE_SPAWN, blue_killing_spree_length));
+        team_on_a_spree.ifPresent(stringIntegerPair -> {
+            if (!announced_long_spree_already)
+                create_job(spree_announcement_jobkey, LocalDateTime.now().plusSeconds(3), DelayedReactionJob.class, Optional.empty());
+        });
+    }
+
+    @Override
+    public void delayed_reaction(JobDataMap map) {
+        // spree announcement when necessary
+        team_on_a_spree.ifPresent(stringIntegerPair -> {
+            int spree = stringIntegerPair.getRight();
+            String team = stringIntegerPair.getLeft();
+            String enemy = get_opposing_team(team);
+            log.trace("spree {}", spree);
+            log.trace("{}({}) says {}", team, get_active_spawn_agents(team), ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]);
+            log.trace("{}({}) says {}", enemy, get_active_spawn_agents(enemy), SPREE_ANNOUNCEMENTS[spree - 2]);
+
+            send("play", MQTT.toJSON("subpath", "announce", "soundfile", ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(team));
+            send("play", MQTT.toJSON("subpath", "announce", "soundfile", SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(enemy));
+            announced_long_spree_already = spree >= 6;
+        });
+    }
+
+    private void first_blood_announcement() {
+        if (blue_respawns + red_respawns == 1)
+            send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), get_active_spawn_agents());
+    }
+
 
     protected void delete_timed_respawn() {
         if (respawn_timer <= 0) return;

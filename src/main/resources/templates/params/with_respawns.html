@@ -9,6 +9,8 @@
             game_parameters.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
             game_parameters.silent_game = document.getElementById('check-silent').checked;
             game_parameters.spawns.game_lobby = document.getElementById('check-lobby').checked;
+            if (game_parameters.spawns.announce_sprees)
+                game_parameters.spawns.announce_sprees = document.getElementById('check-spree').checked;
 
             if (game_parameters.spawns.intro_mp3 === '<none>') game_parameters.spawns.starter_countdown = 0;
             else game_parameters.spawns.starter_countdown = 30;
@@ -25,6 +27,11 @@
         function preset_respawns_form(game_parameters) {
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
             document.getElementById('check-lobby').checked = game_parameters.spawns.game_lobby;
+            if (game_parameters.spawns.hasOwnProperty('announce_sprees')) {
+                document.getElementById('check-spree').checked = game_parameters.spawns.announce_sprees;
+            } else {
+                document.getElementById('check-spree-widget').classList.add("d-none");
+            }
             document.getElementById('check-silent').checked = game_parameters.silent_game;
 
             game_parameters.spawns.teams.forEach(team => {
@@ -64,21 +71,24 @@
                 30-second countdown.
             </div>
         </div>
-        <div class="col-auto">
-            <div class="row">
-                <div class="col-auto form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="check-lobby">
-                    <label class="form-check-label" for="check-lobby">Player Lobby</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-auto form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="check-silent">
-                    <label class="form-check-label" for="check-silent">Silent Game</label>
-                </div>
-            </div>
+
+        <div class="col-auto align-self-center form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="check-lobby">
+            <label class="form-check-label" for="check-lobby">Player Lobby</label>
         </div>
+
+        <div  id="check-spree-widget" class="col-auto align-self-center form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="check-spree">
+            <label class="form-check-label" for="check-spree">Announce Killing Sprees</label>
+        </div>
+
+        <div class="col-auto align-self-center form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="check-silent">
+            <label class="form-check-label" for="check-silent">Silent Game</label>
+        </div>
+
     </div>
+
 
     <div class="row">
         <div class="col-md-5">

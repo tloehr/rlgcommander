@@ -26,7 +26,6 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
     private final boolean count_respawns;
-    private int blue_respawns, red_respawns;
     private final JobKey broadcastScoreJobkey;
     private long last_job_broadcast;
     JSONObject vars;
@@ -34,7 +33,7 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     public TimedOnly(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         log.info("\n" +
-                      " _____ _                    _  ___        _\n" +
+                " _____ _                    _  ___        _\n" +
                 "|_   _(_)_ __ ___   ___  __| |/ _ \\ _ __ | |_   _\n" +
                 "  | | | | '_ ` _ \\ / _ \\/ _` | | | | '_ \\| | | | |\n" +
                 "  | | | | | | | | |  __/ (_| | |_| | | | | | |_| |\n" +
@@ -52,8 +51,6 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
         deleteJob(broadcastScoreJobkey);
         broadcast_cycle_counter = 0l;
         last_job_broadcast = 0l;
-        blue_respawns = 0;
-        red_respawns = 0;
         broadcast_score();
     }
 
@@ -66,30 +63,10 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-      public void process_external_message(String sender, String source, JSONObject message) {
-          if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-          if (!message.getString("button").equalsIgnoreCase("up")) return;
-          super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
-      }
-
-
-
-    @Override
-    protected void on_respawn_signal_received(String spawn_role, String agent) {
-        if (!count_respawns) return;
-
-        if (spawn_role.equals(RED_SPAWN)) {
-            red_respawns++;
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
-            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
-            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
-        }
-        if (spawn_role.equals(BLUE_SPAWN)) {
-            blue_respawns++;
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
-            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
-            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
-        }
+    public void process_external_message(String sender, String source, JSONObject message) {
+        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+        if (!message.getString("button").equalsIgnoreCase("up")) return;
+        super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
     }
 
     @Override
