@@ -22,6 +22,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SimpleScheduleBuilder;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -392,6 +393,15 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                 .forEach(stringFSMPair -> statusObject.getJSONObject("agent_states").put(stringFSMPair.getLeft(), stringFSMPair.getRight().getCurrentState()));
 
         return statusObject;
+    }
+
+    @Override
+    public void add_model_data(Model model) {
+        super.add_model_data(model);
+        if (count_respawns) {
+            model.addAttribute("red_respawns", red_respawns);
+            model.addAttribute("blue_respawns", blue_respawns);
+        }
     }
 
     protected Collection<String> get_active_spawn_agents() {

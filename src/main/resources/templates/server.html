@@ -8,11 +8,27 @@
 
 <section layout:fragment="content">
 
-    <h1>Server Status</h1>
+    <h1>Current Server Status</h1>
 
     <div class="p-3 mb-2 bg-dark" style="color: #36FF33">
         <pre id="server_status" th:text="${server_status}"></pre>
     </div>
+
+    <div id="div_rest_result">
+        <h1>POST REST Error Result</h1>
+        <div class="p-3 mb-2 bg-dark" style="color: #36FF33">
+            <pre id="last_rest_result"></pre>
+        </div>
+    </div>
+
+    <script>
+        if (sessionStorage.hasOwnProperty('last_rest_result')) {
+            document.getElementById('last_rest_result').innerHTML = sessionStorage.getItem('last_rest_result');
+        } else {
+            document.getElementById('div_rest_result').className = 'd-none';
+        }
+    </script>
+
 
 </section>
 </body>

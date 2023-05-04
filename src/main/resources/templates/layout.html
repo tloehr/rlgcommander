@@ -126,14 +126,10 @@
             </div>
         </div>
         <div class="col-auto">
-            <div class="row">
-                <div class="col-auto"><span id="game_state" class="bi bi-circle-fill bi-md">&nbsp;Empty</span>
-                </div>
+
+            <div class="col-auto"><span id="game_state" class="bi bi-circle-fill bi-md">&nbsp;Empty</span>
             </div>
-            <div class="row">
-                <div class="col-auto"><span data-toggle="tooltip" title="Some tooltip text!" id="rest_result">&nbsp;</span>
-                </div>
-            </div>
+
 
         </div>
 
@@ -149,12 +145,14 @@
 </main>
 
 <footer class="footer navbar-expand-lg navbar-dark bg-dark fixed-bottom">
-    <div class="container">
-        <p class="text-center text-light"><span th:text="'Real Life Gaming System '+${server_version}"></span>&nbsp;&nbsp;<a
-                href="https://www.flashheart.de">flashheart.de</a></p>
-        <!--        <p th:text="'Real Life Gaming System '+${server_version}"/> <a-->
-        <!--            href="https://www.flashheart.de#">flashheart.de</a>-->
+    <div class="text-center text-light  col-auto"><span th:text="'Real Life Gaming System '+${server_version}"></span>&nbsp;&nbsp;<a
+            href="https://www.flashheart.de">flashheart.de</a></div>
+    <div class="text-center col-auto"><span id="rest_result"></span>
     </div>
+    <script>
+        document.getElementById('rest_result').innerHTML = sessionStorage.getItem('rest_result_html') || '&nbsp;No REST status, yet.';
+        document.getElementById('rest_result').className = sessionStorage.getItem('rest_result_class') || 'bi bi-question-circle-fill bi-md text-secondary';
+    </script>
 </footer>
 </div>
 

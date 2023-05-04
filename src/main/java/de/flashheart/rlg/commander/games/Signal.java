@@ -100,6 +100,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
         if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING))
             cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
+        else
+            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
     }
 
     private void cp_to_neutral(String agent) {

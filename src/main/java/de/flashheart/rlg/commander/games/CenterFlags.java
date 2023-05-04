@@ -236,49 +236,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         return true;
     }
 
-    @Override
-    public void zeus(JSONObject params) throws IllegalStateException, JSONException {
-        if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
 
-        String operation = params.getString("operation").toLowerCase();
-
-        if (operation.equalsIgnoreCase("to_neutral")) {
-            String agent = params.getString("agent");
-            if (!cpFSMs.containsKey(agent)) throw new IllegalStateException(agent + " unknown");
-            if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red"))
-                throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be BLUE or RED");
-            cpFSMs.get(agent).ProcessFSM(operation);
-            addEvent(new JSONObject()
-                    .put("item", "capture_point")
-                    .put("agent", agent)
-                    .put("state", "neutral")
-                    .put("zeus", "intervention"));
-        }
-        if (operation.equalsIgnoreCase("add_seconds")) {
-            String team = params.getString("team").toLowerCase();
-            long amount = params.getLong("amount");
-            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
-            scores.put("all", team, scores.get("all", team) + amount * 1000L);
-            addEvent(new JSONObject()
-                    .put("item", "add_seconds")
-                    .put("team", team)
-                    .put("amount", amount)
-                    .put("zeus", "intervention"));
-        }
-        if (count_respawns && operation.equalsIgnoreCase("add_respawns")) {
-            String team = params.getString("team").toLowerCase();
-            int amount = params.getInt("amount");
-            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
-            if (team.equalsIgnoreCase("blue")) blue_respawns += amount;
-            if (team.equalsIgnoreCase("red")) red_respawns += amount;
-            scores.put("all", team, scores.get("all", team) + amount * 1000L);
-            addEvent(new JSONObject()
-                    .put("item", "add_respawns")
-                    .put("team", team)
-                    .put("amount", amount)
-                    .put("zeus", "intervention"));
-        }
-    }
 
     @Override
     public void process_external_message(String sender, String source, JSONObject message) {
@@ -372,11 +330,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         model.addAttribute("sum_red", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "red"))));
 
 //        model.addAttribute("cps", capture_points);
-
-        if (count_respawns) {
-            model.addAttribute("red_respawns", red_respawns);
-            model.addAttribute("blue_respawns", blue_respawns);
-        }
     }
 
     @Override
@@ -391,7 +344,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             result = "error";
             String type = event.getString("type");
 
-
             if (type.equalsIgnoreCase("in_game_state_change")) {
                 String zeus = (event.has("zeus") ? " (by the hand of ZEUS)" : "");
                 if (event.getString("item").equals("add_seconds")) {
@@ -402,5 +354,49 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             }
         }
         return result;
+    }
+
+    @Override
+    public void zeus(JSONObject params) throws IllegalStateException, JSONException {
+        if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
+
+        String operation = params.getString("operation").toLowerCase();
+
+        if (operation.equalsIgnoreCase("to_neutral")) {
+            String agent = params.getString("agent");
+            if (!cpFSMs.containsKey(agent)) throw new IllegalStateException(agent + " unknown");
+            if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red"))
+                throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be BLUE or RED");
+            cpFSMs.get(agent).ProcessFSM(operation);
+            addEvent(new JSONObject()
+                    .put("item", "capture_point")
+                    .put("agent", agent)
+                    .put("state", "neutral")
+                    .put("zeus", "intervention"));
+        }
+        if (operation.equalsIgnoreCase("add_seconds")) {
+            String team = params.getString("team").toLowerCase();
+            long amount = params.getLong("amount");
+            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
+            scores.put("all", team, scores.get("all", team) + amount * 1000L);
+            addEvent(new JSONObject()
+                    .put("item", "add_seconds")
+                    .put("team", team)
+                    .put("amount", amount)
+                    .put("zeus", "intervention"));
+        }
+        if (count_respawns && operation.equalsIgnoreCase("add_respawns")) {
+            String team = params.getString("team").toLowerCase();
+            int amount = params.getInt("amount");
+            if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
+            if (team.equalsIgnoreCase("blue")) blue_respawns += amount;
+            if (team.equalsIgnoreCase("red")) red_respawns += amount;
+            scores.put("all", team, scores.get("all", team) + amount * 1000L);
+            addEvent(new JSONObject()
+                    .put("item", "add_respawns")
+                    .put("team", team)
+                    .put("amount", amount)
+                    .put("zeus", "intervention"));
+        }
     }
 }

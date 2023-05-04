@@ -173,10 +173,10 @@
     <section layout:fragment="score">
     </section>
 
-    <div th:if="${red_spawns != null && blue_spawns != null}">
+    <div th:if="${red_respawns != null && blue_respawns != null}">
         <h2>Number of Respawns</h2>
-        <p class="text-danger" th:text="'Team Red:&nbsp;' + ${red_spawns}"></p>
-        <p class="text-primary" th:text="'Team Blue:&nbsp;' + ${blue_spawns}"></p>
+        <h3 class="text-danger" th:text="'Team Red:&nbsp;' + ${red_respawns}"></h3>
+        <h3 class="text-primary" th:text="'Team Blue:&nbsp;' + ${blue_respawns}"></h3>
     </div>
 
     <div class="col-auto" th:unless="${classname eq 'empty'}">
@@ -192,7 +192,7 @@
             <tbody>
             <tr th:each="event : ${events}">
                 <td th:text="${event.value0}"></td>
-                <td th:text="${event.value1}"></td>
+                <td th:text="${#strings.replace(event.value1,'=>','&rArr;')}"></td>
                 <td th:text="${event.value2}"></td>
             </tr>
             </tbody>

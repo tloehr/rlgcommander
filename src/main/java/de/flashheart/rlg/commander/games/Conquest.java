@@ -150,23 +150,14 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
 
 
     @Override
-    public void process_external_message(String sender, String item, JSONObject message) {
-        if (!item.equalsIgnoreCase(_msg_BUTTON_01)) {
-            log.trace("no btn01 message. discarding.");
-            return;
-        }
-        if (!message.getString("button").equalsIgnoreCase("up")) {
-            log.trace("only reacting on button UP. discarding.");
-            return;
-        }
-        // if(spawns.process_message(sender, item, message)) return; // true if successful - we are done
-        //
-        if (hasRole(sender, "capture_points")) {
-            if (game_fsm.getCurrentState().equals(_state_RUNNING)) cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
-        } else {
-            // _msg_BUTTON_01 is replaced with _msg_RESPAWN_SIGNAL
+    public void process_external_message(String sender, String source, JSONObject message) {
+        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+        if (!message.getString("button").equalsIgnoreCase("up")) return;
+
+        if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING))
+            cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
+        else
             super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
-        }
     }
 
     @Override
@@ -375,7 +366,5 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         model.addAttribute("cps_held_by_red", cps_held_by_red.stream().sorted().collect(Collectors.toList()));
         model.addAttribute("remaining_blue_tickets", remaining_blue_tickets.intValue());
         model.addAttribute("remaining_red_tickets", remaining_red_tickets.intValue());
-        model.addAttribute("blue_respawns", blue_respawns);
-        model.addAttribute("red_respawns", red_respawns);
     }
 }

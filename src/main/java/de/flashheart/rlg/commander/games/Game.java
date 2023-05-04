@@ -368,6 +368,11 @@ public abstract class Game {
             }
         }
 
+        if (event.getString("item").equals("add_respawns")) {
+            String text = event.getLong("amount") >= 0 ? ": %d respawns have been added" : ": %d respawns have been removed";
+            return "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))
+                    + zeus;
+        }
 
         return "";
     }
@@ -392,7 +397,8 @@ public abstract class Game {
         model.addAttribute("has_zeus", hasZeus());
         model.addAttribute("game_mode", getGameMode());
         model.addAttribute("game_init_at", JavaTimeConverter.to_iso8601(game_init_at));
-        model.addAttribute("cps", game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList()));
+        model.addAttribute("cps", new JSONArray(cpFSMs.keySet().stream().sorted(String::compareTo).collect(Collectors.toList())));
+                //game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList()));
     }
 
     public String get_current_state() {

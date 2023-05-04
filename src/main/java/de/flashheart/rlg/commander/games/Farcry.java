@@ -266,19 +266,16 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
-    public void process_external_message(String sender, String item, JSONObject message) {
-        if (!item.equalsIgnoreCase(_msg_BUTTON_01)) {
-            log.trace("no button message. discarding.");
-            return;
-        }
-        if (!message.getString("button").equalsIgnoreCase("up")) {
-            log.trace("only reacting on button UP. discarding.");
-            return;
-        }
-        if (hasRole(sender, "capture_points")) {
-            if (cpFSMs.get(sender).getCurrentState().matches(_state_FUSED + "|" + _state_DEFUSED + "|" + _state_OVERTIME))
-                cpFSMs.get(sender).ProcessFSM(item.toLowerCase());
-        } else super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+    public void process_external_message(String sender, String source, JSONObject message) {
+        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+        if (!message.getString("button").equalsIgnoreCase("up")) return;
+
+        if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING)
+                && cpFSMs.get(sender).getCurrentState().
+                matches(_state_FUSED + "|" + _state_DEFUSED + "|" + _state_OVERTIME))
+            cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
+        else
+            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
     }
 
     @Override

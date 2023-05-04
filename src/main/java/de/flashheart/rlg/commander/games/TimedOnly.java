@@ -25,9 +25,7 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     private final BigDecimal SCORE_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
     private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
-    private final boolean count_respawns;
     private final JobKey broadcastScoreJobkey;
-    private long last_job_broadcast;
     JSONObject vars;
 
     public TimedOnly(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
@@ -39,7 +37,6 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
                 "  | | | | | | | | |  __/ (_| | |_| | | | | | |_| |\n" +
                 "  |_| |_|_| |_| |_|\\___|\\__,_|\\___/|_| |_|_|\\__, |\n" +
                 "                                            |___/");
-        count_respawns = game_parameters.optBoolean("count_respawns");
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
         jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
         vars = game_parameters.getJSONObject("display");
@@ -50,7 +47,6 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
         super.on_reset();
         deleteJob(broadcastScoreJobkey);
         broadcast_cycle_counter = 0l;
-        last_job_broadcast = 0l;
         broadcast_score();
     }
 
@@ -110,14 +106,11 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     @Override
     public void broadcast_score() {
         final long now = ZonedDateTime.now().toInstant().toEpochMilli();
-        last_job_broadcast = now;
-
         broadcast_cycle_counter++;
         if (!game_fsm.getCurrentState().equals(_state_RUNNING) || broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
             send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_active_spawn_agents());
             send("vars", vars, agents.keySet());
         }
-
     }
 
     @Override
