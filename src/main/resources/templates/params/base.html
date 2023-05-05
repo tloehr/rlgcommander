@@ -8,7 +8,11 @@
         function load_game(game_parameters) {
             const game_id = sessionStorage.getItem('game_id');
             post_rest('game/load', {'id': game_id}, game_parameters, function (xhttp) {
-                if (xhttp.status < 400) window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
+                if (xhttp.status < 400) {
+                    window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
+                } else {
+                    update_rest_status_line();
+                }
             });
         }
 

@@ -150,8 +150,7 @@
     <div class="text-center col-auto"><span id="rest_result"></span>
     </div>
     <script>
-        document.getElementById('rest_result').innerHTML = sessionStorage.getItem('rest_result_html') || '&nbsp;No REST status, yet.';
-        document.getElementById('rest_result').className = sessionStorage.getItem('rest_result_class') || 'bi bi-question-circle-fill bi-md text-secondary';
+        update_rest_status_line();
     </script>
 </footer>
 </div>

@@ -111,7 +111,6 @@ public abstract class Game {
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
         send("paged", MQTT.page("page0",
                 "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
-
     }
 
     protected void addEvent(JSONObject in_game_event) {
@@ -190,7 +189,6 @@ public abstract class Game {
         if (message.equals(_msg_GAME_OVER)) on_game_over();
         if (message.equals(_msg_RESET)) on_reset();
     }
-
 
     /**
      * sandwich method to implement silent game function

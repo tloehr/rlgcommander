@@ -7,21 +7,22 @@
  //Make all visited vertices v as vis2[v] = true.
  //If any vertex v has vis1[v] = false and vis2[v] = false then the graph is not connected.
 
-    strict graph G {
-      ag30;
-      ag05;
-      ag02;
-      ag01;
-      ag04;
-      ag03;
-      ag31;
-      ag30 -- ag05;
-      ag05 -- ag02;
-      ag05 -- ag01;
-      ag05 -- ag04;
-      ag04 -- ag03;
-      ag04 -- ag01;
-      ag01 -- ag03;
-      ag01 -- ag02;
-      ag02 -- ag31;
-    }
+strict graph G {
+    layout = circo
+    ag30 [fillcolor = "red" fontcolor = "yellow" style = filled];
+    ag05;
+    ag02;
+    ag01;
+    ag04;
+    ag03;
+    ag31 [fillcolor = "blue" fontcolor = "yellow" style = filled];
+    ag30 -- ag05;
+    ag05 -- ag01;
+    ag05 -- ag02;
+    ag05 -- ag04;
+    ag04 -- ag03;
+    ag04 -- ag01;
+    ag01 -- ag03;
+    ag01 -- ag02;
+    ag02 -- ag31;
+}

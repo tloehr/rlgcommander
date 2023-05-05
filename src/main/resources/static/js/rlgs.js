@@ -175,6 +175,12 @@ function update_rest_status_in_session(xhttp) {
     sessionStorage.setItem('rest_result_class', xhttp.status >= 400 ? 'bi bi-lightning-fill bi-md text-danger' : 'bi bi-check-circle-fill bi-md text-success');
 }
 
+function update_rest_status_line() {
+    document.getElementById('rest_result').innerHTML = sessionStorage.getItem('rest_result_html') || '&nbsp;No REST status, yet.';
+    document.getElementById('rest_result').className = sessionStorage.getItem('rest_result_class') || 'bi bi-question-circle-fill bi-md text-secondary';
+}
+
+
 function post_rest(resturi, param_json, body, callback) {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = () => {

@@ -88,14 +88,11 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     public FSM create_CP_FSM(final String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
-            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
-            fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
-                cp_to_neutral(agent);
-            });
+//            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
+            fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition((new ArrayList<>(Arrays.asList("BLUE", "RED"))), (state, obj) -> {
                 if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
                 else cp_to_red(agent);
-//                process_message(_msg_IN_GAME_EVENT_OCCURRED);
             });
 
             fsm.setAction("to_neutral", new FSMAction() {   // admin function
@@ -118,8 +115,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                         "I am ${agentname}...", "...and Your Flag", "Blue: ${" + get_agent_key(agent, "blue") + "}", "Red: ${" + get_agent_key(agent, "red") + "}"),
                 agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
-        if (game_fsm.getCurrentState().equals(_state_RUNNING))
-            addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
+        //if (game_fsm.getCurrentState().equals(_state_RUNNING))
+        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
     }
 
     private void cp_to_blue(String agent) {
@@ -235,8 +232,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     public boolean hasZeus() {
         return true;
     }
-
-
 
     @Override
     public void process_external_message(String sender, String source, JSONObject message) {
