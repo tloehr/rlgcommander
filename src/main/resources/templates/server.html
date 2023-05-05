@@ -15,7 +15,7 @@
     </div>
 
     <div id="div_rest_result">
-        <h1>POST REST Error Result</h1>
+        <h2 id="rest_result_message">POST REST Error Result</h2>
         <div class="p-3 mb-2 bg-dark" style="color: #36FF33">
             <pre id="last_rest_result"></pre>
         </div>
@@ -23,6 +23,7 @@
 
     <script>
         if (sessionStorage.hasOwnProperty('last_rest_result')) {
+            document.getElementById('rest_result_message').innerHTML = JSON.parse(sessionStorage.getItem('last_rest_result')).message;
             document.getElementById('last_rest_result').innerHTML = sessionStorage.getItem('last_rest_result');
         } else {
             document.getElementById('div_rest_result').className = 'd-none';

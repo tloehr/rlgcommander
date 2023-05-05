@@ -78,23 +78,15 @@ const statusMessages = {
     '598': 'Network read timeout error',
     '599': 'Network connect timeout error'
 };
-// function setConnected(connected) {
-//     document.getElementById('connect').disabled = connected;
-//     document.getElementById('disconnect').disabled = !connected;
-//     document.getElementById('conversationDiv').style.visibility = connected ? 'visible' : 'hidden';
-//     document.getElementById('response').innerHTML = '';
-// }
 
 function connect() {
     var socket = new SockJS('/chat');
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
-        console.log('Connected: ' + frame);
         stompClient.subscribe('/topic/messages', messageOutput => {
             update_game_state(JSON.parse(messageOutput.body));
-            console.log($(location).attr('pathname'));
-            console.log($(location).attr('pathname') === '/ui/active/base');
-            if ($(location).attr('pathname') === '/ui/active/base') location.reload();
+            if (location.pathname === '/ui/active/base') location.reload();
+            //if ($(location).attr('pathname') === '/ui/active/base') location.reload();
         });
     });
 }
@@ -106,43 +98,21 @@ function connect() {
 window.onbeforeunload = function () {
     // disable onclose handler first
     disconnect();
-    console.log("unload");
 };
 
 function disconnect() {
     if (stompClient != null) {
         stompClient.disconnect();
     }
-    console.log("Disconnected");
 }
-
-//
-// function sendMessage() {
-//     var from = document.getElementById('from').value;
-//     var text = document.getElementById('text').value;
-//     stompClient.send("/app/chat", {}, JSON.stringify({'from': from, 'text': text}));
-// }
 
 function update_game_state(message) {
     const state = message['game_state'];
     const color = game_state_colors[state];
     sessionStorage.setItem('state', state);
-    $('#game_state').html('&nbsp;' + state).attr('style', 'color: ' + color);
-}
-
-function loadJson(url) {
-    var data1;
-    let xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = () => {
-        if (this.readyState == 4 && this.status == 200) {
-            data1 = JSON.parse(this.responseText);
-        }
-        update_rest_status_in_session(xhttp);
-    };
-    xhttp.open("GET", url, true);
-    xhttp.send();
-    console.log(data1);
-    return data1;
+    document.getElementById('game_state').innerHTML = '&nbsp;' + state;
+    document.getElementById('game_state').setAttribute('style', 'color: ' + color);
+    //$('#game_state').html('&nbsp;' + state).attr('style', 'color: ' + color);
 }
 
 function to_string_segment_list(jsonArray) {
@@ -195,7 +165,7 @@ function get_rest(resturi, param_json) {
     }
     const base_url = window.location.origin + '/api/' + resturi;
     const myuri = base_url + (param_json ? '?' + jQuery.param(param_json) : '');
-    xhttp.open("GET", myuri, true); // true for asynchronous
+    xhttp.open("GET", myuri, false); // true for asynchronous
     xhttp.send('{}');
 }
 
@@ -223,7 +193,9 @@ function post_rest(resturi, param_json, body, callback) {
 
     const base_url = window.location.origin + '/api/' + resturi;
     const myuri = base_url + (param_json ? '?' + jQuery.param(param_json) : '');
-    xhttp.open('POST', myuri, true);
+    // async needs to be false, otherwise, Safari and Firefox will have wrong status reports on the xhttp.status
+    // https://stackoverflow.com/a/61587856/1171329
+    xhttp.open('POST', myuri, false);
     xhttp.setRequestHeader('Content-type', 'application/json');
     xhttp.send(body ? JSON.stringify(body) : '{}');
 }
