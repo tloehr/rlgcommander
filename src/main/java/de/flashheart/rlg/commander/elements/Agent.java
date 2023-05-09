@@ -9,14 +9,15 @@ import org.json.JSONObject;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Log4j2
 @Getter
+@Setter
 public class Agent implements Comparable<Agent> {
+    private final Map<String, String> wifi_icon = Map.of("no_wifi", "bi-wifi-off", "bad", "bi-wifi-1", "fair", "bi-wifi-2", "good", "bi-wifi", "perfect", "bi-wifi");
     String id;
-
     JSONObject status;
-
     int gameid; // this agent may or may not belong to a gameid. gameid < 1 means not assigned
     String software_version;
     LocalDateTime timestamp;
@@ -24,6 +25,7 @@ public class Agent implements Comparable<Agent> {
     String wifi;
     int failed_pings;
     int reconnects;
+    String bi_wifi_icon;
 
     public Agent() {
         this("dummy");
@@ -44,8 +46,9 @@ public class Agent implements Comparable<Agent> {
         software_version = status.optString("version", "dummy");
         reconnects = status.optInt("reconnects");
         failed_pings = status.optInt("failed_pings");
-        wifi = status.optString("wifi", "no_wifi");
-        ap = status.optString("ap", "no_ap");
+        wifi = status.optString("wifi", "no_wifi").toLowerCase();
+        bi_wifi_icon = wifi_icon.getOrDefault(wifi, "bi-question-circle-fill");
+        ap = status.optString("ap", "no_ap").toLowerCase();
         timestamp = LocalDateTime.now();
     }
 
@@ -53,11 +56,9 @@ public class Agent implements Comparable<Agent> {
         this.gameid = gameid;
     }
 
-
     public String getLast_seen() {
         return Duration.between(timestamp, LocalDateTime.now()).toSeconds() + "s ago";
     }
-
 
     @Override
     public int compareTo(Agent o) {

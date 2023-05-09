@@ -71,7 +71,7 @@ public class WebController {
 
     @GetMapping("/agents")
     public String agents(Model model) {
-        model.addAttribute("agents", agentsService.get_all_agents().stream().sorted().toList());
+        model.addAttribute("agents", agentsService.get_all_agents());
         model.addAttribute("agents_active", "active");
         return "agents";
     }

@@ -3,7 +3,9 @@ package de.flashheart.rlg.commander.service;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Agent;
+import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
 import lombok.extern.log4j.Log4j2;
+import org.checkerframework.checker.units.qual.A;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
@@ -21,11 +23,13 @@ public class AgentsService {
     ConcurrentHashMap<String, Agent> live_agents; // see MyConfiguration.java
     MQTTOutbound mqttOutbound;
     BuildProperties buildProperties;
+    MyYamlConfiguration myYamlConfiguration;
 
-    public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents) {
+    public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration) {
         this.mqttOutbound = mqttOutbound;
         this.buildProperties = buildProperties;
         this.live_agents = live_agents;
+        this.myYamlConfiguration = myYamlConfiguration;
     }
 
 
@@ -70,7 +74,12 @@ public class AgentsService {
     }
 
     public List<Agent> get_all_agents() {
-        return new ArrayList<>(live_agents.values());
+        ArrayList<Agent> prepared_agent_list = new ArrayList<>();
+        live_agents.values().stream().sorted().forEach(agent -> {
+            agent.setAp(myYamlConfiguration.getAccess_points().getOrDefault(agent.getAp().toLowerCase(), agent.getAp().toLowerCase()));
+            prepared_agent_list.add(agent);
+        });
+        return prepared_agent_list;
     }
 
     public void welcome(Agent my_agent) {
