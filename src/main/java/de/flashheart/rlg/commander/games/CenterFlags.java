@@ -88,13 +88,12 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     public FSM create_CP_FSM(final String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
-//            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
+            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition((new ArrayList<>(Arrays.asList("BLUE", "RED"))), (state, obj) -> {
                 if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
                 else cp_to_red(agent);
             });
-
             fsm.setAction("to_neutral", new FSMAction() {   // admin function
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
