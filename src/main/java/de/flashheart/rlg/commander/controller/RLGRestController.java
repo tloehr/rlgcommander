@@ -83,6 +83,7 @@ public class RLGRestController {
         } catch (Exception e) {
             // remember the constructor of the game class must be public
             log.warn(e);
+            e.printStackTrace();
             r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
         }
         return r;

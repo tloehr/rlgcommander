@@ -74,6 +74,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
      */
     public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+        int number_of_cps = roles.get("capture_points").size();
+        if (number_of_cps < 3) throw new ArrayIndexOutOfBoundsException("Minimum number of CPs: 3");
         count_respawns = true;
 
         log.info("\n   ______                                  __\n" +
@@ -94,7 +96,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
 
         // calculate ticket losses per captured flags
         // see https://docs.google.com/spreadsheets/d/12n3uIMWDDaWNhwpBvZZj6vMfb8PXBTtxsnlT8xJ9M2k/edit?usp=sharing
-        int number_of_cps = roles.get("capture_points").size();
         BigDecimal[] interval_table = new BigDecimal[number_of_cps + 1];
         ticket_bleed_table = new BigDecimal[number_of_cps + 1];
         BigDecimal between = start_bleed_interval.subtract(end_bleed_interval);

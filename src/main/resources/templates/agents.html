@@ -30,7 +30,7 @@
                                     <td th:text="${agent.last_seen}"></td>
                                     <td>
                                         <div class="col-auto">
-                                            <span th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'" th:text="${agent.ap}"></span>
+                                            <span th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'" th:text="'&nbsp;'+${agent.ap}"></span>
                                             <b>
                                                 <span th:text="${agent.failed_pings}" class="text-black"></span>/
                                                 <span th:text="${agent.reconnects}" class="text-danger">></span>

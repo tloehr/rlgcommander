@@ -357,22 +357,26 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     public void delayed_reaction(JobDataMap map) {
         // spree announcement when necessary
         team_on_a_spree.ifPresent(stringIntegerPair -> {
-            int spree = stringIntegerPair.getRight();
+            int spree = Math.min(stringIntegerPair.getRight(), ENEMY_SPREE_ANNOUNCEMENTS.length + 1);
             String team = stringIntegerPair.getLeft();
             String enemy = get_opposing_team(team);
-            log.trace("spree {}", spree);
-            log.trace("{}({}) says {}", team, get_active_spawn_agents(team), ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]);
-            log.trace("{}({}) says {}", enemy, get_active_spawn_agents(enemy), SPREE_ANNOUNCEMENTS[spree - 2]);
+
+            log.debug("spree {}", spree);
+            log.debug("{}({}) says {}", team, get_active_spawn_agents(team), ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]);
+            log.debug("{}({}) says {}", enemy, get_active_spawn_agents(enemy), SPREE_ANNOUNCEMENTS[spree - 2]);
 
             send("play", MQTT.toJSON("subpath", "announce", "soundfile", ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(team));
             send("play", MQTT.toJSON("subpath", "announce", "soundfile", SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(enemy));
+
             announced_long_spree_already = spree >= 6;
         });
     }
 
     private void first_blood_announcement() {
-        if (blue_respawns + red_respawns == 1)
+        if (blue_respawns + red_respawns == 1) {
             send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), get_active_spawn_agents());
+            log.debug("Announcing FIRST BLOOD");
+        }
     }
 
 
