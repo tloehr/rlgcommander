@@ -32,7 +32,6 @@ public class AgentsService {
         this.myYamlConfiguration = myYamlConfiguration;
     }
 
-
     public void assign_gameid_to_agents(int gameid, Set<String> agentids) {
         agentids.forEach(agentid -> {
             Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
@@ -49,12 +48,27 @@ public class AgentsService {
         return live_agents.values().stream().filter(agent -> agent.getGameid() == gameid).collect(Collectors.toSet());
     }
 
+    /**
+     * remove an agent from the list.
+     * @param agentid
+     */
+    public void remove_agent(String agentid) {
+        live_agents.remove(agentid);
+    }
+
     public void agent_reported_status(String agentid, JSONObject status) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid, status));
         if (live_agents.containsKey(agentid)) my_agent.setStatus(status);
         if (!live_agents.containsKey(agentid) || status.getInt("netmonitor_cycle") == 0)
             welcome(my_agent);
         live_agents.put(agentid, my_agent);
+    }
+
+    public void agent_reported_button(String agentid, String button, JSONObject message) {
+        if (!message.getString("button").equalsIgnoreCase("up")) return;
+        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+        my_agent.button_pressed(button);
+        live_agents.putIfAbsent(agentid, my_agent);
     }
 
     public boolean agent_belongs_to_game(String agentid, int gameid) {
@@ -76,7 +90,7 @@ public class AgentsService {
     public List<Agent> get_all_agents() {
         ArrayList<Agent> prepared_agent_list = new ArrayList<>();
         live_agents.values().stream().sorted().forEach(agent -> {
-            agent.setAp(myYamlConfiguration.getAccess_points().getOrDefault(agent.getAp().toLowerCase(), agent.getAp().toLowerCase()));
+            agent.setAp(myYamlConfiguration.getAccess_points().getOrDefault(agent.getAp(), agent.getAp()));
             prepared_agent_list.add(agent);
         });
         return prepared_agent_list;

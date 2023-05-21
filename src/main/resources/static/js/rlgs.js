@@ -91,7 +91,6 @@ function connect() {
     });
 }
 
-
 /**
  * Registers cleanup functions before we navigate to a different page.
  */
@@ -122,7 +121,6 @@ function to_string_segment_list(jsonArray) {
     });
     return result.join(';');
 }
-
 
 function from_string_segment_list(list) {
     let outer = [];
@@ -179,7 +177,6 @@ function update_rest_status_line() {
     document.getElementById('rest_result').innerHTML = sessionStorage.getItem('rest_result_html') || '&nbsp;No REST status, yet.';
     document.getElementById('rest_result').className = sessionStorage.getItem('rest_result_class') || 'bi bi-question-circle-fill bi-md text-secondary';
 }
-
 
 function post_rest(resturi, param_json, body, callback) {
     const xhttp = new XMLHttpRequest();

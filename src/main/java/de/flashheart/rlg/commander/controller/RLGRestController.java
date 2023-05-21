@@ -147,6 +147,12 @@ public class RLGRestController {
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
+    @PostMapping("/system/remove_agent")
+    public ResponseEntity<?> remove_agent(@RequestParam(name = "agentid") String agentid) {
+        agentsService.remove_agent(agentid);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
     @PostMapping("/system/powersave_agents")
     public ResponseEntity<?> powersave() {
         agentsService.powersave_unused_agents();

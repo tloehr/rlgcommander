@@ -15,13 +15,15 @@ import java.util.Map;
 @Getter
 @Setter
 public class Agent implements Comparable<Agent> {
-    private final Map<String, String> wifi_icon = Map.of("no_wifi", "bi-wifi-off", "bad", "bi-wifi-1", "fair", "bi-wifi-2", "good", "bi-wifi", "perfect", "bi-wifi");
+    private final Map<String, String> wifi_icon = Map.of("no_wifi", "bi-reception-0", "bad", "bi-reception-1", "fair", "bi-reception-2", "good", "bi-reception-3", "perfect", "bi-reception-4");
     String id;
     JSONObject status;
     int gameid; // this agent may or may not belong to a gameid. gameid < 1 means not assigned
     String software_version;
-    LocalDateTime timestamp;
+    LocalDateTime timestamp; // last message from Agent
+    String last_button_pressed;
     String ap;
+    String ip;
     String wifi;
     int failed_pings;
     int reconnects;
@@ -38,6 +40,7 @@ public class Agent implements Comparable<Agent> {
     public Agent(String id, JSONObject status) {
         this.id = id;
         gameid = -1;
+        last_button_pressed = "none";
         setStatus(status);
     }
 
@@ -46,10 +49,20 @@ public class Agent implements Comparable<Agent> {
         software_version = status.optString("version", "dummy");
         reconnects = status.optInt("reconnects");
         failed_pings = status.optInt("failed_pings");
+        ip = status.optString("ip", "unknown");
         wifi = status.optString("wifi", "no_wifi").toLowerCase();
         bi_wifi_icon = wifi_icon.getOrDefault(wifi, "bi-question-circle-fill");
-        ap = status.optString("ap", "no_ap").toLowerCase();
+        setAp(status.optString("ap", "no_ap"));
         timestamp = LocalDateTime.now();
+    }
+
+    public void button_pressed(String button) {
+        last_button_pressed = button;
+        timestamp = LocalDateTime.now();
+    }
+
+    public void setAp(String ap) {
+        this.ap = ap.toLowerCase();
     }
 
     public void setGameid(int gameid) {

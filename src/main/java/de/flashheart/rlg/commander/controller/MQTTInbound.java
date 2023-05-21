@@ -91,10 +91,13 @@ public class MQTTInbound {
             } else {
                 log.trace(message.toString());
                 log.trace(message.getPayload().toString());
-                int gameid = live_agents.getOrDefault(agentid, new Agent()).getGameid();
-                if (gameid > 0) {
+                int game_id = live_agents.getOrDefault(agentid, new Agent()).getGameid();
+                // always remember last button event
+                agentsService.agent_reported_button(agentid, source, new JSONObject(payload));
+                // report to running game
+                if (game_id > 0) {
                     try {
-                        gamesService.process_message(gameid, agentid, source, new JSONObject(payload));
+                        gamesService.process_message(game_id, agentid, source, new JSONObject(payload));
                     } catch (IllegalStateException ise) {
                         log.warn(ise.getMessage());
                     } catch (Exception e) {

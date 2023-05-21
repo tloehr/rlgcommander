@@ -1,116 +1,103 @@
 <!doctype html>
-<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
       layout:decorate="~{layout.html}">
 <head><title>Agent List</title></head>
 <body>
 
 <section layout:fragment="content">
-    <div class="row">
-        <div class="col">
-            <div th:switch="${agents}">
-                <div class="table-responsive">
-                    <div class="table table-striped">
-                        <h2 th:case="null">No agents, yet...</h2>
-                        <div th:case="*">
-                            <h2>Agents</h2>
-                            <table class="table table-striped table-sm">
-                                <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Version</th>
-                                    <th>last seen</th>
-                                    <th>Network</th>
-                                    <th>Test agent</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr th:each="agent : ${agents}">
-                                    <th th:text="${agent.id}"></th>
-                                    <td th:text="${agent.software_version}"></td>
-                                    <td th:text="${agent.last_seen}"></td>
-                                    <td>
-                                        <div class="col-auto">
-                                            <span th:class="'bi bi-lg '+${agent.bi_wifi_icon}+' bi-lg'"
-                                                  th:text="'&nbsp;'+${agent.ap}+'&nbsp;'+${agent.wifi}'"></span>
-                                            <b>
-                                                <span th:text="${agent.failed_pings}" class="text-black"></span>/
-                                                <span th:text="${agent.reconnects}" class="text-danger">></span>
-                                            </b>
 
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="row">
-                                            <button th:id="${agent.id}+'_btn_white'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'wht','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-lightbulb-fill text-secondary"></span></button>
-                                            <button th:id="${agent.id}+'_btn_red'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'red','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-lightbulb-fill text-danger"></span></button>
-                                            <button th:id="${agent.id}+'_btn_yellow'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'ylw','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-lightbulb-fill text-warning"></span></button>
-                                            <button th:id="${agent.id}+'_btn_green'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'grn','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-lightbulb-fill text-success"></span></button>
-                                            <button th:id="${agent.id}+'_btn_blue'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'blu','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-lightbulb-fill text-primary"></span></button>
-                                            <button th:id="${agent.id}+'_btn_buzzer'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'buzzer','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-phone-vibrate-fill text-black"></span></button>
-                                            <button th:id="${agent.id}+'_btn_sir1'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir1','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-volume-up text-info"></span></button>
-                                            <button th:id="${agent.id}+'_btn_sir2'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir2','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-volume-up text-success"></span></button>
-                                            <button th:id="${agent.id}+'_btn_sir3'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir3','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-volume-up text-secondary"></span></button>
-                                            <button th:id="${agent.id}+'_btn_sir4'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir4','pattern':'medium'});"><span
-                                                    class="bi bi-lg bi-volume-up text-primary"></span></button>
-                                            <button th:id="${agent.id}+'_btn_start'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir1','pattern':'game_starts'});"><span
-                                                    class="bi bi-lg bi-megaphone-fill text-success"></span></button>
-                                            <button th:id="${agent.id}+'_btn_end'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir1','pattern':'game_ends'});"><span
-                                                    class="bi bi-lg bi-megaphone-fill text-danger"></span></button>
-                                            <button th:id="${agent.id}+'_btn_play'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'play','pattern':''});"><span
-                                                    class="bi bi-lg bi-play text-success"></span></button>
-                                            <button th:id="${agent.id}+'_btn_stop'"
-                                                    class="btn btn-outline-primary col-auto "
-                                                    th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'stop','pattern':''});"><span
-                                                    class="bi bi-lg bi-stop text-danger"></span></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+    <div class="row">
+        <div th:each="agent : ${agents}" class="card" style="width: 18rem;">
+            <div class="card-body">
+                <h5 class="card-title" th:text="${agent.id}+'&nbsp;('+${agent.last_seen}+')'"></h5>
+
+                <p>
+                    <span class="card-text" th:text="${agent.software_version}"></span>
+                    <img src="/img/buzzer.png" height="28" width="28"/>
+                    <span th:text="${agent.last_button_pressed}"></span>
+                </p>
+                <p class="card-text">
+                    <button th:id="${agent.id}+'_delete'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/remove_agent', {'agentid':[[${agent.id}]]}); location.reload();"><span
+                            class="bi bi-lg bi-x-circle-fill text-danger"></span></button>
+                    <span th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'" th:text="${agent.ap}"></span>
+                    <b>
+                        <span th:text="${agent.failed_pings}" class="text-black"></span>/<span
+                            th:text="${agent.reconnects}" class="text-danger">></span>
+                    </b>
+                </p>
+                <p class="card-text">
+                    <span th:text="${agent.ip}"></span>
+                </p>
+                <p>
+                    <button th:id="${agent.id}+'_btn_white'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'wht','pattern':'medium'});"><span
+                            class="bi bi-lg bi-lightbulb-fill text-secondary"></span></button>
+                    <button th:id="${agent.id}+'_btn_red'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'red','pattern':'medium'});"><span
+                            class="bi bi-lg bi-lightbulb-fill text-danger"></span></button>
+                    <button th:id="${agent.id}+'_btn_yellow'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'ylw','pattern':'medium'});"><span
+                            class="bi bi-lg bi-lightbulb-fill text-warning"></span></button>
+                    <button th:id="${agent.id}+'_btn_green'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'grn','pattern':'medium'});"><span
+                            class="bi bi-lg bi-lightbulb-fill text-success"></span></button>
+                    <button th:id="${agent.id}+'_btn_blue'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'blu','pattern':'medium'});"><span
+                            class="bi bi-lg bi-lightbulb-fill text-primary"></span></button>
+                    <button th:id="${agent.id}+'_btn_buzzer'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'buzzer','pattern':'medium'});"><span
+                            class="bi bi-lg bi-phone-vibrate-fill text-black"></span></button>
+                    <button th:id="${agent.id}+'_btn_sir1'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir1','pattern':'medium'});"><span
+                            class="bi bi-lg bi-volume-up text-info"></span></button>
+                    <button th:id="${agent.id}+'_btn_sir2'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir2','pattern':'medium'});"><span
+                            class="bi bi-lg bi-volume-up text-success"></span></button>
+                    <button th:id="${agent.id}+'_btn_sir3'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir3','pattern':'medium'});"><span
+                            class="bi bi-lg bi-volume-up text-secondary"></span></button>
+                    <button th:id="${agent.id}+'_btn_sir4'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir4','pattern':'medium'});"><span
+                            class="bi bi-lg bi-volume-up text-primary"></span></button>
+                    <button th:id="${agent.id}+'_btn_start'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir1','pattern':'game_starts'});"><span
+                            class="bi bi-lg bi-megaphone-fill text-success"></span></button>
+                    <button th:id="${agent.id}+'_btn_end'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'sir1','pattern':'game_ends'});"><span
+                            class="bi bi-lg bi-megaphone-fill text-danger"></span></button>
+                    <button th:id="${agent.id}+'_btn_play'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'play','pattern':''});"><span
+                            class="bi bi-lg bi-play text-success"></span></button>
+                    <button th:id="${agent.id}+'_btn_stop'"
+                            class="btn btn-outline-primary"
+                            th:onclick="post_rest('system/test_agent', {'agentid':[[${agent.id}]],'deviceid':'stop','pattern':''});"><span
+                            class="bi bi-lg bi-stop text-danger"></span></button>
+                </p>
             </div>
-            <button title="Sleep" type="button" class="btn btn-secondary btn-circle btn-lg"><i
-                    class="bi bi-moon-stars-fill bi-lg" onclick="post_rest('system/powersave_agents')"></i></button>
-            <button title="Wake up" type="button" class="btn btn-warning btn-circle btn-lg"><i
-                    class="bi bi-sun-fill bi-lg" onclick="post_rest('system/welcome_agents')"></i></button>
         </div>
+    </div>
+
+    <div class="row mt-2">
+        <button title="Sleep" type="button" class="btn btn-secondary btn-circle btn-lg col-auto me-2"><i
+                class="bi bi-moon-stars-fill bi-lg" onclick="post_rest('system/powersave_agents')"></i></button>
+        <button title="Wake up" type="button" class="btn btn-warning btn-circle btn-lg col-auto"><i
+                class="bi bi-sun-fill bi-lg" onclick="post_rest('system/welcome_agents')"></i></button>
+
     </div>
 </section>
 

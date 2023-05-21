@@ -33,9 +33,11 @@
 <body onload="get_rest('game/current_state', {'id':sessionStorage.getItem('game_id')}); connect();">
 <nav id="navbar" role="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="#" data-bs-toggle="tooltip" data-bs-placement="top"
+           data-bs-custom-class="custom-tooltip"
+           data-bs-title="This top tooltip is themed via CSS variables.">
             <img src="/img/favicon36.png" width="30" height="30" class="d-inline-block align-top" alt="">
-            RLGS</a>
+            RLGS2</a>
         <!--        Wenn der Bildschirm zu schmal wird-->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -145,7 +147,7 @@
 </main>
 
 <footer class="footer navbar-expand-lg navbar-dark bg-dark fixed-bottom">
-    <div class="text-center text-light  col-auto"><span th:text="'Real Life Gaming System '+${server_version}"></span>&nbsp;&nbsp;<a
+    <div class="text-center text-light  col-auto"><span th:text="'RLG Commander '+${server_version}"></span>&nbsp;&nbsp;<a
             href="https://www.flashheart.de">flashheart.de</a></div>
     <div class="text-center col-auto"><span id="rest_result"></span>
     </div>

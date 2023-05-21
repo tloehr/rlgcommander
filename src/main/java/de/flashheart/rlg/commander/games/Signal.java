@@ -195,7 +195,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         red_points = 0;
     }
 
-
     void empty_lines() {
         line_variables = MQTT.toJSON("line1", "", "line2", "", "line3", "", "line4", "");
     }
