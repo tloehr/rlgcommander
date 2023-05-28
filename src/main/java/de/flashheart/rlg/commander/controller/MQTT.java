@@ -1,6 +1,5 @@
 package de.flashheart.rlg.commander.controller;
 
-import lombok.Getter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,9 +20,31 @@ public class MQTT {
     public static final String SIR2 = "sir2";
     public static final String SIR3 = "sir3";
     public static final String SIR4 = "sir4";
+    public static final String START_STOP_SIREN = SIR1;
+    public static final String ALERT_SIREN = SIR2;
+    public static final String SHUTDOWN_SIREN = SIR3;
+    public static final String EVENT_SIREN = SIR4;
     public static final String BUZZER = "buzzer";
     public static final String ACOUSTICS = SIR1 + "|" + SIR2 + "|" + SIR3 + "|" + SIR4 + "|" + BUZZER;
 
+
+    public static final String SCHEME_VEY_LONG = "very_long";
+    public static final String SCHEME_LONG = "long";
+    public static final String SCHEME_MEDIUM = "medium";
+    public static final String SCHEME_SHORT = "short";
+    public static final String SCHEME_VERY_SHORT = "very_short";
+    public static final String RECURRING_SCHEME_VERY_SLOW = "very_slow";
+    public static final String RECURRING_SCHEME_SLOW = "slow";
+    public static final String RECURRING_SCHEME_NORMAL = "normal";
+    public static final String RECURRING_SCHEME_FAST = "fast";
+    public static final String RECURRING_SCHEME_VERY_FAST = "very_fast";
+    public static final String RECURRING_SCHEME_NETSTATUS = "netstatus";
+    public static final String SINGLE_BUZZ = "single_buzz";
+    public static final String DOUBLE_BUZZ = "double_buzz";
+    public static final String TRIPLE_BUZZ = "triple_buzz";
+
+    public static final String GAME_STARTS = "game_starts";
+    public static final String GAME_ENDS = "game_ends";
 
     /**
      * helper method to create a set_page command

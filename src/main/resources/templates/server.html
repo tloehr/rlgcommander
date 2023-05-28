@@ -23,7 +23,11 @@
 
     <script>
         if (sessionStorage.hasOwnProperty('last_rest_result')) {
-            document.getElementById('rest_result_message').innerHTML = JSON.parse(sessionStorage.getItem('last_rest_result')).message;
+            let result = JSON.parse(sessionStorage.getItem('last_rest_result'));
+            if (result.message)
+                document.getElementById('rest_result_message').innerHTML = result.message;
+            else
+                document.getElementById('rest_result_message').innerHTML = result.targetException.message;
             document.getElementById('last_rest_result').innerHTML = sessionStorage.getItem('last_rest_result');
         } else {
             document.getElementById('div_rest_result').className = 'd-none';

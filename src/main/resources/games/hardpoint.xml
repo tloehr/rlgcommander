@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FSM>
+    <STATE id="PROLOG" type="ID">
+        <MESSAGE id="run" nextState="STAND_BY"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="STAND_BY">
+        <MESSAGE id="prepare" nextState="GET_READY"/>
+        <MESSAGE id="go" nextState="NEUTRAL"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+    </STATE>
+    <STATE id="GET_READY">
+        <MESSAGE id="go" nextState="NEUTRAL"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="NEUTRAL">
+        <MESSAGE id="btn01" nextState="BLUE"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="next_flag" nextState="STAND_BY"/>
+    </STATE>
+    <STATE id="BLUE">
+        <MESSAGE id="btn01" nextState="RED"/>
+        <MESSAGE id="flag_time_is_up" nextState="AFTER_FLAG_TIME_IS_UP"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="RED">
+        <MESSAGE id="btn01" nextState="BLUE"/>
+        <MESSAGE id="flag_time_is_up" nextState="AFTER_FLAG_TIME_IS_UP"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="AFTER_FLAG_TIME_IS_UP">
+        <MESSAGE id="next_flag" nextState="STAND_BY"/>
+    </STATE>
+    <STATE id="GAME_OVER">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+</FSM>
+

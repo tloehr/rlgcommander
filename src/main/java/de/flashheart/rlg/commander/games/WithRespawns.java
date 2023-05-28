@@ -28,7 +28,9 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -40,12 +42,14 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     public static final String _state_WE_ARE_PREPARING = "WE_ARE_PREPARING";
     public static final String _state_STANDBY = "STAND_BY";
     public static final String _state_WE_ARE_READY = "WE_ARE_READY";
+    public static final String _state_HURRY_UP = "HURRY_UP";
     public static final String _state_IN_GAME = "IN_GAME";
     public static final String _state_COUNTDOWN_TO_START = "COUNTDOWN_TO_START";
     public static final String _state_COUNTDOWN_TO_RESUME = "COUNTDOWN_TO_RESUME";
     public static final String _msg_START_COUNTDOWN = "start_countdown";
     public static final String _msg_STANDBY = "stand_by";
     public static final String _msg_ACTIVATE = "activate";
+    public static final String _msg_ANOTHER_TEAM_IS_READY = "another_team_is_ready";
     public static final String _msg_RESPAWN_SIGNAL = "respawn_signal";
     public static final String RED_SPAWN = "red_spawn";
     public static final String BLUE_SPAWN = "blue_spawn";
@@ -150,6 +154,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                     MQTT.page("page1", " !! GAME LOBBY !! ", "", "", "")
             ), agent);
         });
+        fsm.setStatesAfterTransition(_state_HURRY_UP, (state, obj) -> cp_hurry_up(agent));
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,100;on,400;off,1"), agent);
             // if ALL teams are ready, the GAME is READY to start
@@ -157,13 +162,20 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             if (spawn_segments.column(active_segment).values().stream()
                     .allMatch(stringFSMPair -> stringFSMPair.getValue().getCurrentState().equals(_state_WE_ARE_READY)))
                 game_fsm.ProcessFSM(_msg_READY);
-            else
+            else {
                 send("paged", MQTT.merge(
                         MQTT.page("page0", " !! GAME LOBBY !! ", "WE ARE READY", "", ""),
                         MQTT.page("page1", " !! GAME LOBBY !! ", "WE ARE READY", "WAITING FOR", "OTHER TEAM")
                 ), agent);
+                // inform the other spawn agents, that we are ready.
+                spawn_segments.column(active_segment).values().stream()
+                        // but only those who are not ready yet
+                        .filter(stringFSMPair -> stringFSMPair.getValue().getCurrentState().equals(_state_WE_ARE_PREPARING))
+                        .forEach(stringFSMPair -> stringFSMPair.getValue().ProcessFSM(_msg_ANOTHER_TEAM_IS_READY));
+            }
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_START, (state, obj) -> {
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), agent);
             send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
             send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
             send("play", MQTT.toJSON("subpath", "intro", "soundfile", intro_mp3), agent);
@@ -173,6 +185,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             send("paged", MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
         });
         fsm.setStatesAfterTransition(_state_IN_GAME, (state, obj) -> {
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), agent);
             send("visual", MQTT.toJSON(MQTT.ALL, "off", led_device_id, "fast"), agent);
             send("paged", getSpawnPages(_state_RUNNING), agent);
         });
@@ -189,6 +202,15 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
 
         return fsm;
     }
+
+    private void cp_hurry_up(String agent) {
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "infty:on,75;off,75;on,75;off,5000"), agent);
+        send("paged", MQTT.merge(
+                MQTT.page("page0", " !! GAME LOBBY !! ", "Hurry up!", "Press button", "when ready"),
+                MQTT.page("page1", " !! GAME LOBBY !! ", "", "The other Team", "is waiting....")
+        ), agent);
+    }
+
 
     @Override
     public void on_run() {
@@ -260,7 +282,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         spawn_segments.column(segment).values()
                 .stream().filter(stringFSMPair -> stringFSMPair.getLeft().equals(agent))
                 .forEach(stringFSMPair -> {
-                    log.debug(stringFSMPair);
                     stringFSMPair.getValue().ProcessFSM(message);
                 });
     }

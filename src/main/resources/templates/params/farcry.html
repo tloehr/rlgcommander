@@ -33,6 +33,45 @@
 
 <section layout:fragment="gamemode_header">
     <h1>FarCry (2004) Assault</h1>
+    <div class="accordion" id="accordionExample">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne"
+                        aria-expanded="false" aria-controls="collapseOne">
+                    Explain
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse " aria-labelledby="headingOne"
+                 data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    <h3>Explanation</h3>
+                    <ul>
+                        <li>In <a href="https://farcry.fandom.com/wiki/Far_Cry#Multiplayer">Assault</a>,
+                            we have two teams with different roles. Attackers and defenders. Every flag starts in the
+                            <strong>COLD</strong> state.
+                        </li>
+                        <li>
+                            The attackers try to activate the next flag by pushing its button and
+                            changing the state to <strong>HOT</strong>. To capture that point, the flag must stay <strong>HOT</strong>
+                            until the flag-timer runs out.
+                        </li>
+                        <li>If the button is pushed again <em>before</em> the flag-timer ran out, the flag
+                            returns back to the <strong>COLD</strong> state.
+                        </li>
+                        <li>There is a time limit to capture all flags. When the game time is nearly over, and
+                            the attacking team turns a flag to the <strong>HOT</strong> state,
+                            that last attack can be finished, even if the flag-timer exceeds the remaining game-time.
+                            In that case we go into <strong>OVERTIME</strong>.
+                        </li>
+                        <li>
+                            When a flag is deactivated in <strong>OVERTIME</strong>, it is <strong>GAME OVER</strong>
+                            immediately.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
     <p>Very old online game similar to BF Rush.</p>
 </section>
 
@@ -42,7 +81,7 @@
         <div class="col-auto">
             <label for="game_time" class="form-label">Gametime in seconds</label>
             <input type="number" class="form-control" id="game_time" list="game_times" value="600" required
-                   min="1" pattern="\d*">
+                   min="1" inputmode="decimal" pattern="\d*">
             <datalist id="game_times">
                 <option value="120">2 Minuten</option>
                 <option value="300">5 Minuten</option>
@@ -58,8 +97,9 @@
         <div class="col-auto">
             <label for="bomb_time" class="form-label">Bomb Time</label>
             <input type="number" class="form-control" id="bomb_time" value="60" required
-                   min="10" pattern="\d*">
-            <small id="bomb_time_help" class="form-text">Time period in seconds the attacking team will have to hold the capture point to take it.</small>
+                   min="10" inputmode="decimal" pattern="\d*">
+            <small id="bomb_time_help" class="form-text">Time period in seconds the attacking team will have to hold the
+                capture point to take it.</small>
         </div>
 
         <div layout:fragment="sirens" class="col-lg-12 col-sm-auto col-md-auto">

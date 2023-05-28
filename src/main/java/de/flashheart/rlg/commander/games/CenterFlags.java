@@ -60,9 +60,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     private void reset_score_table() {
         Lists.newArrayList("blue", "red").forEach(color -> {
-            capture_points.forEach(agent -> {
-                scores.put(agent, color, 0L);
-            });
+            capture_points.forEach(agent -> scores.put(agent, color, 0L));
             scores.put("all", color, 0L);
         });
     }

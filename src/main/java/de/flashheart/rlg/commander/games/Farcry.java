@@ -4,8 +4,8 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.traits.HasBombtimer;
-import de.flashheart.rlg.commander.games.jobs.BombTimerJob;
+import de.flashheart.rlg.commander.games.traits.HasFlagTimer;
+import de.flashheart.rlg.commander.games.jobs.FlagTimerJob;
 import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
@@ -29,7 +29,7 @@ import java.util.*;
  * Implementation for the FarCry 1 (2004) Assault Game Mode.
  */
 @Log4j2
-public class Farcry extends Timed implements HasBombtimer {
+public class Farcry extends Timed implements HasFlagTimer {
     public static final String _state_DEFUSED = "DEFUSED";
     public static final String _state_FUSED = "FUSED";
     public static final String _state_DEFENDED = "DEFENDED";
@@ -130,7 +130,7 @@ public class Farcry extends Timed implements HasBombtimer {
         final JobDataMap jdm = new JobDataMap();
         jdm.put("bombid", agent);
         estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
-        create_resumable_job(bombTimerJobkey, estimated_end_time, BombTimerJob.class, Optional.of(jdm));
+        create_resumable_job(bombTimerJobkey, estimated_end_time, FlagTimerJob.class, Optional.of(jdm));
         addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
         send("play", MQTT.toJSON("subpath", "announce", "soundfile", "selfdestruct"), get_active_spawn_agents());
         send("acoustic", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
@@ -332,9 +332,9 @@ public class Farcry extends Timed implements HasBombtimer {
     }
 
     @Override
-    public void bomb_time_is_up(String bombid) {
+    public void flag_time_is_up(String bombid) {
         log.info("Bomb has exploded");
-        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_BOMB_TIME_IS_UP));
+        cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_FLAG_TIME_IS_UP));
     }
 
     @Override

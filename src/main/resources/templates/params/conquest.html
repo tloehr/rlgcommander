@@ -4,7 +4,7 @@
 
 
 <head>
-    <title>Conquest</title>
+    <title>Setup Conquest</title>
     <script>
         sessionStorage.setItem('game_mode', 'conquest');
 
@@ -46,13 +46,13 @@
         <div class="col-auto">
             <label for="respawn_tickets" class="form-label">Respawn Tickets</label>
             <input type="number" class="form-control" id="respawn_tickets" value="250" required
-                   min="10" inputmode="numeric" pattern="\d*">
+                   min="10" inputmode="decimal" pattern="\d*">
         </div>
 
         <div class="col-auto">
             <label for="not_bleeding_before_cps" class="form-label">Not bleeding before</label>
             <input type="number" class="form-control" id="not_bleeding_before_cps" value="1" required
-                   min="1" inputmode="numeric" pattern="\d*">
+                   min="1" inputmode="decimal" pattern="\d*">
         </div>
         <div class="col-auto">
             <label for="start_bleed_interval" class="form-label">Start bleed interval</label>
@@ -70,7 +70,7 @@
         <div class="col-auto">
             <label for="ticket_price_for_respawn" class="form-label">Ticket price</label>
             <input type="number" class="form-control" id="ticket_price_for_respawn" value="1" required
-                   min="1" pattern="\d*" inputmode="numeric">
+                   min="1" pattern="\d*" inputmode="decimal">
         </div>
 
     </div>

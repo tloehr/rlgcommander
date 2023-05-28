@@ -25,6 +25,7 @@
     <STATE id="WE_ARE_PREPARING">
         <MESSAGE id="respawn_signal" nextState="WE_ARE_READY"/>
         <MESSAGE id="ready" nextState="WE_ARE_READY"/>
+        <MESSAGE id="another_team_is_ready" nextState="HURRY_UP"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
@@ -32,9 +33,18 @@
     </STATE>
     <!--    we are ready - waiting for the others -->
     <STATE id="WE_ARE_READY">
-        <MESSAGE id="respawn_signal" nextState="WE_ARE_PREPARING"/>
+<!--        <MESSAGE id="respawn_signal" nextState="WE_ARE_PREPARING"/>-->
         <!-- Admin shortcuts -->
         <MESSAGE id="start_countdown" nextState="COUNTDOWN_TO_START"/>
+        <MESSAGE id="run" nextState="IN_GAME"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="stand_by" nextState="STAND_BY"/>
+    </STATE>
+    <!-- the others are waiting for us -->
+    <STATE id="HURRY_UP">
+        <MESSAGE id="start_countdown" nextState="COUNTDOWN_TO_START"/>
+        <MESSAGE id="respawn_signal" nextState="WE_ARE_READY"/>
+        <MESSAGE id="ready" nextState="WE_ARE_READY"/>
         <MESSAGE id="run" nextState="IN_GAME"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
         <MESSAGE id="stand_by" nextState="STAND_BY"/>

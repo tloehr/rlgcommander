@@ -1,0 +1,22 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{active/base.html}">
+<head><title>Hardpoint</title></head>
+<body>
+
+<section layout:fragment="score">
+
+    <div class="col-auto">
+        <h2 th:text="|Team Red &#8594; ${score_red} &#8660; ${score_blue} &#8592; Team Blue|"></h2>
+        <h2>Capture Points</h2>
+        <ul>
+            <li th:text="|Active Agent ${active_agent} (${active_state})|"></li>
+            <li th:text="|Next Agent ${next_agent}|"></li>
+        </ul>
+
+
+    </div>
+</section>
+
+</body>
+</html>

@@ -23,6 +23,9 @@ mqtt:
   automaticReconnect: 'true'
 
 rlgs:
+  score_broadcast:
+    every_seconds: '0.5'
+    cycle_counter: '10'
   intro:
     bf3: Battlefield 3
 

@@ -28,12 +28,12 @@
     <STATE id="FUSED">
         <MESSAGE id="btn01" nextState="DEFUSED"/>
         <MESSAGE id="game_time_is_up" nextState="OVERTIME"/>
-        <MESSAGE id="bomb_time_is_up" nextState="TAKEN"/>
+        <MESSAGE id="flag_time_is_up" nextState="TAKEN"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="OVERTIME">
         <MESSAGE id="btn01" nextState="DEFENDED"/>
-        <MESSAGE id="bomb_time_is_up" nextState="TAKEN"/>
+        <MESSAGE id="flag_time_is_up" nextState="TAKEN"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <!-- ENDING STATES -->

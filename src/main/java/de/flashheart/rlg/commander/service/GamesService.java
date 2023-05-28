@@ -7,6 +7,7 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
+import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
 import de.flashheart.rlg.commander.misc.Tools;
 import de.flashheart.rlg.commander.websockets.OutputMessage;
 import lombok.extern.log4j.Log4j2;
@@ -15,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
@@ -22,6 +24,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -39,6 +42,7 @@ public class GamesService {
     AgentsService agentsService;
     BuildProperties buildProperties;
     SimpMessagingTemplate simpMessagingTemplate;
+    MyYamlConfiguration myYamlConfiguration;
 
     private final Optional<Game>[] loaded_games; // exactly n games are possible
     public static final int MAX_NUMBER_OF_GAMES = 1;
@@ -50,7 +54,7 @@ public class GamesService {
     }
 
     @Autowired
-    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate) {
+    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate, MyYamlConfiguration myYamlConfiguration) {
         this.mqttOutbound = mqttOutbound;
         this.scheduler = scheduler;
         this.agentsService = agentsService;
@@ -58,6 +62,7 @@ public class GamesService {
         this.simpMessagingTemplate = simpMessagingTemplate;
         this.loaded_games = new Optional[]{Optional.empty()};
         this.gameStateListeners = HashMultimap.create();
+        this.myYamlConfiguration = myYamlConfiguration;
     }
 
     public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException {
@@ -71,6 +76,11 @@ public class GamesService {
                 "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
         log.debug("\n" + Tools.fignums[id]);
         JSONObject game_description = new JSONObject(json);
+        
+        // add parameters from application.yml
+        game_description.put("SCORE_CALCULATION_EVERY_N_SECONDS", myYamlConfiguration.getScore_broadcast().get("every_seconds"));
+        game_description.put("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", myYamlConfiguration.getScore_broadcast().get("cycle_counter"));
+
         loaded_games[id - 1].ifPresent(game -> game.cleanup());
         // todo: check for agent conflicts when loading. reject if necessary
         Game game = (Game) Class
