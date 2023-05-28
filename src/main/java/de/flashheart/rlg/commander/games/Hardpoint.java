@@ -63,6 +63,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         SCORE_CALCULATION_EVERY_N_SECONDS = new BigDecimal(game_parameters.optString("SCORE_CALCULATION_EVERY_N_SECONDS","0.5"));
         REPEAT_EVERY_MS = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
 
+
         log.info("\n    __  __               __            _       __\n" +
                 "   / / / /___ __________/ /___  ____  (_)___  / /_\n" +
                 "  / /_/ / __ `/ ___/ __  / __ \\/ __ \\/ / __ \\/ __/\n" +
