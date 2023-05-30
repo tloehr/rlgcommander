@@ -42,9 +42,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     public static final String _flag_state_BLUE = "BLUE";
     private static final String _flag_state_GET_READY = "GET_READY";
     private static final long SIREN_DELAY_AFTER_COLOR_CHANGE = 1L;
-    private final BigDecimal SCORE_CALCULATION_EVERY_N_SECONDS;
-    private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES;
-    private final long REPEAT_EVERY_MS;
     private long broadcast_cycle_counter;
     private final long winning_score, flag_time_up, flag_time_out, delay_until_next_flag;
     private final List<String> capture_points;
@@ -58,11 +55,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
     public Hardpoint(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-
-        BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = Long.parseLong(game_parameters.optString("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", "10"));
-        SCORE_CALCULATION_EVERY_N_SECONDS = new BigDecimal(game_parameters.optString("SCORE_CALCULATION_EVERY_N_SECONDS","0.5"));
-        REPEAT_EVERY_MS = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
-
 
         log.info("\n    __  __               __            _       __\n" +
                 "   / / / /___ __________/ /___  ____  (_)___  / /_\n" +

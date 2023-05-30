@@ -22,8 +22,6 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
 @Log4j2
 public class TimedOnly extends Timed implements HasScoreBroadcast {
-    private final BigDecimal SCORE_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
-    private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
     private long broadcast_cycle_counter;
     private final JobKey broadcastScoreJobkey;
     JSONObject vars;

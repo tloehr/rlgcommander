@@ -10,6 +10,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Optional;
@@ -22,10 +23,18 @@ import static org.quartz.TriggerBuilder.newTrigger;
  */
 @Log4j2
 public abstract class Scheduled extends Game {
+    protected final BigDecimal SCORE_CALCULATION_EVERY_N_SECONDS;
+    protected final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES;
+    protected final long REPEAT_EVERY_MS;
     final HashMap<JobKey, Trigger> jobs;
 
     public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+
+        BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = Long.parseLong(game_parameters.optString("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", "10"));
+        SCORE_CALCULATION_EVERY_N_SECONDS = new BigDecimal(game_parameters.optString("SCORE_CALCULATION_EVERY_N_SECONDS","0.5"));
+        REPEAT_EVERY_MS = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
+
         jobs = new HashMap<>();
         try {
             scheduler.getContext().put(uuid.toString(), this);

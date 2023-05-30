@@ -31,8 +31,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 @Log4j2
 public class Conquest extends WithRespawns implements HasScoreBroadcast {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
-    private final BigDecimal TICKET_CALCULATION_EVERY_N_SECONDS = BigDecimal.valueOf(0.5d);
-    private final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = 10;
+    
     private long broadcast_cycle_counter;
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
 
@@ -110,23 +109,23 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         // not_bleeding_before_cps is the first index when we need a bleeding calculation
         int start_index = not_bleeding_before_cps.intValue();
         interval_table[start_index] = start_bleed_interval;
-        ticket_bleed_table[start_index] = TICKET_CALCULATION_EVERY_N_SECONDS.divide(start_bleed_interval, 4, RoundingMode.HALF_UP);
+        ticket_bleed_table[start_index] = SCORE_CALCULATION_EVERY_N_SECONDS.divide(start_bleed_interval, 4, RoundingMode.HALF_UP);
         BigDecimal min_bleeding = ticket_bleed_table[start_index];
         BigDecimal max_bleeding = BigDecimal.ZERO;
         for (int flag = start_index + 1; flag <= number_of_cps; flag++) {
             interval_table[flag] = interval_table[flag - 1].subtract(interval_reduction_per_cp);
-            ticket_bleed_table[flag] = TICKET_CALCULATION_EVERY_N_SECONDS.divide(interval_table[flag], 4, RoundingMode.HALF_UP);
+            ticket_bleed_table[flag] = SCORE_CALCULATION_EVERY_N_SECONDS.divide(interval_table[flag], 4, RoundingMode.HALF_UP);
             max_bleeding = ticket_bleed_table[flag].max(max_bleeding);
         }
 
         // min and max game time (once the minimum amount of flag has been captured, no bleeding before that point in time). see parameter: not_bleeding_before_cps
-        BigDecimal min_seconds_gametime = respawn_tickets.divide(max_bleeding, 4, RoundingMode.HALF_UP).multiply(TICKET_CALCULATION_EVERY_N_SECONDS);
-        BigDecimal max_seconds_gametime = respawn_tickets.divide(min_bleeding, 4, RoundingMode.HALF_UP).multiply(TICKET_CALCULATION_EVERY_N_SECONDS);
+        BigDecimal min_seconds_gametime = respawn_tickets.divide(max_bleeding, 4, RoundingMode.HALF_UP).multiply(SCORE_CALCULATION_EVERY_N_SECONDS);
+        BigDecimal max_seconds_gametime = respawn_tickets.divide(min_bleeding, 4, RoundingMode.HALF_UP).multiply(SCORE_CALCULATION_EVERY_N_SECONDS);
         LocalTime min_time = LocalTime.ofSecondOfDay(min_seconds_gametime.intValue());
         LocalTime max_time = LocalTime.ofSecondOfDay(max_seconds_gametime.intValue());
 
         log.trace("Interval Table: {}", Arrays.toString(interval_table));
-        log.trace("Ticket Bleeding per {} seconds: {}", TICKET_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
+        log.trace("Ticket Bleeding per {} seconds: {}", SCORE_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
         log.trace("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
         ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
@@ -235,7 +234,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     public void on_run() {
         super.on_run();
         // setup and start bleeding job
-        long repeat_every_ms = TICKET_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
+        long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
         create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
         broadcast_cycle_counter = 0;
     }
