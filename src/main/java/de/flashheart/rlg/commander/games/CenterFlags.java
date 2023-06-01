@@ -111,20 +111,20 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
         //if (game_fsm.getCurrentState().equals(_state_RUNNING))
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
     }
 
     private void cp_to_blue(String agent) {
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
         broadcast_score();
     }
 
     private void cp_to_red(String agent) {
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
         broadcast_score();
     }
 
@@ -358,7 +358,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red"))
                 throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be BLUE or RED");
             cpFSMs.get(agent).ProcessFSM(operation);
-            addEvent(new JSONObject()
+            add_in_game_event(new JSONObject()
                     .put("item", "capture_point")
                     .put("agent", agent)
                     .put("state", "neutral")
@@ -369,7 +369,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             long amount = params.getLong("amount");
             if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
             scores.put("all", team, scores.get("all", team) + amount * 1000L);
-            addEvent(new JSONObject()
+            add_in_game_event(new JSONObject()
                     .put("item", "add_seconds")
                     .put("team", team)
                     .put("amount", amount)
@@ -382,7 +382,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             if (team.equalsIgnoreCase("blue")) blue_respawns += amount;
             if (team.equalsIgnoreCase("red")) red_respawns += amount;
             scores.put("all", team, scores.get("all", team) + amount * 1000L);
-            addEvent(new JSONObject()
+            add_in_game_event(new JSONObject()
                     .put("item", "add_respawns")
                     .put("team", team)
                     .put("amount", amount)

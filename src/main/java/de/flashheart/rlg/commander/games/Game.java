@@ -113,14 +113,19 @@ public abstract class Game {
                 "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
     }
 
-    protected void addEvent(JSONObject in_game_event) {
-        in_game_event.put("type", "in_game_state_change");
+
+    protected void add_in_game_event(JSONObject in_game_event, String type) {
+        in_game_event.put("type", type);
         in_game_events.add(new JSONObject()
                 .put("pit", JavaTimeConverter.to_iso8601())
                 .put("event", in_game_event)
                 .put("new_state", game_fsm.getCurrentState())
         );
         if (game_fsm.getCurrentState().equals(_state_RUNNING)) process_internal_message(_msg_IN_GAME_EVENT_OCCURRED);
+    }
+
+    protected void add_in_game_event(JSONObject in_game_event) {
+        add_in_game_event(in_game_event, "in_game_state_change");
     }
 
     /**
@@ -356,6 +361,9 @@ public abstract class Game {
         if (type.equalsIgnoreCase("general_game_state_change")) {
             return event.getString("message");
         }
+        if (type.equalsIgnoreCase("free_text")) {
+            return event.getString("message");
+        }
         if (event.getString("item").equals("respawn")) {
             return "Respawn Team " + event.getString("team") + ": #" + event.getInt("value");
         }
@@ -365,7 +373,6 @@ public abstract class Game {
                 return event.getString("agent") + " => " + event.getString("state") + zeus;
             }
         }
-
         if (event.getString("item").equals("add_respawns")) {
             String text = event.getLong("amount") >= 0 ? ": %d respawns have been added" : ": %d respawns have been removed";
             return "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))
@@ -396,7 +403,7 @@ public abstract class Game {
         model.addAttribute("game_mode", getGameMode());
         model.addAttribute("game_init_at", JavaTimeConverter.to_iso8601(game_init_at));
         model.addAttribute("cps", new JSONArray(cpFSMs.keySet().stream().sorted(String::compareTo).collect(Collectors.toList())));
-                //game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList()));
+        //game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList()));
     }
 
     public String get_current_state() {

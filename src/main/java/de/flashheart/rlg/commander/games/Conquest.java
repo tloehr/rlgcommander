@@ -31,7 +31,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 @Log4j2
 public class Conquest extends WithRespawns implements HasScoreBroadcast {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
-    
+
     private long broadcast_cycle_counter;
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
 
@@ -188,13 +188,13 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     private void cp_to_blue(String agent) {
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 
     public void ticket_bleeding_cycle() {
@@ -270,6 +270,9 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         vars.put("blue_l1", blue_flags[0]);
         vars.put("blue_l2", blue_flags[1]);
 
+        vars.put("red_flags", cps_held_by_red.size());
+        vars.put("blue_flags", cps_held_by_blue.size());
+
         send("vars", vars, get_active_spawn_agents());
 
         log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
@@ -300,18 +303,26 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
             return MQTT.page("page0", "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome);
         }
+//        if (state.equals(_state_RUNNING)) {
+//            return MQTT.merge(
+//                    MQTT.page("page0",
+//                            "  >>> RED Flags <<< ",
+//                            "${red_l1}",
+//                            "${red_l2}",
+//                            "Red->${red_tickets}:${blue_tickets}<-Blue"),
+//                    MQTT.page("page1",
+//                            " >>> BLUE Flags <<< ",
+//                            "${blue_l1}",
+//                            "${blue_l2}",
+//                            "Red->${red_tickets}:${blue_tickets}<-Blue"));
+//        }
         if (state.equals(_state_RUNNING)) {
-            return MQTT.merge(
+            return
                     MQTT.page("page0",
-                            "  >>> RED Flags <<< ",
-                            "${red_l1}",
-                            "${red_l2}",
-                            "Red->${red_tickets}:${blue_tickets}<-Blue"),
-                    MQTT.page("page1",
-                            " >>> BLUE Flags <<< ",
-                            "${blue_l1}",
-                            "${blue_l2}",
-                            "Red->${red_tickets}:${blue_tickets}<-Blue"));
+                            "RED Flags: ${red_flags}",
+                            "BLUE Flags: ${blue_flags}",
+                            "",
+                            "Red->${red_tickets}:${blue_tickets}<-Blue");
         }
         return MQTT.page("page0", game_description);
     }
@@ -326,7 +337,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("blue|red"))
                 throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be BLUE or RED");
             cpFSMs.get(agent).ProcessFSM(operation);
-            addEvent(new JSONObject()
+            add_in_game_event(new JSONObject()
                     .put("item", "capture_point")
                     .put("agent", agent)
                     .put("state", "neutral")

@@ -77,7 +77,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 int index_of_agent = capture_points.indexOf(agent) + 1;
                 String color = state.equals("BLUE_LOCKED") ? "BLAU" : "ROT";
                 line_variables.put("line" + index_of_agent, agent + ": " + color);
-                addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", state));
+                add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", state));
                 broadcast_score();
                 String led = state.equals("BLUE_LOCKED") ? MQTT.BLUE : MQTT.RED;
                 send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
@@ -111,7 +111,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "unlocked"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "unlocked"));
         int index_of_agent = capture_points.indexOf(agent) + 1;
         line_variables.put("line" + index_of_agent, "");
         broadcast_score();

@@ -97,7 +97,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // start siren for the next flag - starting with the second flag
-                    addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
+                    add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     return true;
                 }
             });
@@ -120,12 +120,12 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
 
     private void taken(String agent) {
         send("visual", MQTT.toJSON(MQTT.ALL, "medium"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
     }
 
     private void fused(String agent) {
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_FUSED));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_FUSED));
         if (!allow_defuse) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
         if (active_ring_taken()) {
             // the others are still locked. Need to be TAKEN now
@@ -134,7 +134,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                     .filter(s -> !cpFSMs.get(s).equals(_state_TAKEN)) // only those which are not already taken
                     .forEach(other_agents_in_this_ring -> cpFSMs.get(other_agents_in_this_ring).ProcessFSM(_msg_TAKEN)
                     );
-            addEvent(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", _state_TAKEN));
+            add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", _state_TAKEN));
             rings_taken.add(rings_in_progress.pop());
             if (rings_in_progress.isEmpty()) game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
             else activate_ring();
@@ -170,7 +170,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
         roles.get(rings_in_progress.getFirst()).forEach(agent -> cpFSMs.get(agent).ProcessFSM(_msg_ACTIVATE));
         if (rings_in_progress.size() < rings_in_use.size() && rings_in_use.size() > 1) // not with the first or only ring
             send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), roles.get("sirens"));
-        addEvent(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", "activated"));
+        add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", "activated"));
         broadcast_score();
     }
 
@@ -181,7 +181,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     private void nearly_defused(String agent) {
         cpFSMs.get(agent).ProcessFSM(_msg_DEFUSE);
         send("acoustic", MQTT.toJSON(MQTT.SIR2, "off", MQTT.SIR3, "medium"), roles.get("sirens"));
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_DEFUSED));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_DEFUSED));
         broadcast_score();
     }
 
@@ -302,7 +302,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
             if (!cpFSMs.get(agent).getCurrentState().toLowerCase().matches("fused|locked"))
                 throw new IllegalStateException(agent + " is in state " + cpFSMs.get(agent).getCurrentState() + " must be FUSED or LOCKED");
             cpFSMs.get(agent).ProcessFSM(operation);
-            addEvent(new JSONObject()
+            add_in_game_event(new JSONObject()
                     .put("item", "capture_point")
                     .put("agent", agent)
                     .put("state", operation)

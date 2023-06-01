@@ -131,7 +131,7 @@ public class Farcry extends Timed implements HasFlagTimer {
         jdm.put("bombid", agent);
         estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
         create_resumable_job(bombTimerJobkey, estimated_end_time, FlagTimerJob.class, Optional.of(jdm));
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
         send("play", MQTT.toJSON("subpath", "announce", "soundfile", "selfdestruct"), get_active_spawn_agents());
         send("acoustic", MQTT.toJSON("sir2", Tools.getProgressTickingScheme(bomb_timer * 1000)), map_of_agents_and_sirens.get(agent).toString());
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
@@ -142,21 +142,21 @@ public class Farcry extends Timed implements HasFlagTimer {
     private void defused(String agent) {
         estimated_end_time = end_time;
         deleteJob(bombTimerJobkey);
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defused"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defused"));
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "timer:remaining"), agent);
         send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), get_all_spawn_agents());
     }
 
     private void defended(String agent) {
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
         send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "very_fast"), agent);
         send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), get_all_spawn_agents());
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
 
     private void taken(String agent) {
-        addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "taken"));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "taken"));
         active_capture_point++;
         send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
 
@@ -226,7 +226,7 @@ public class Farcry extends Timed implements HasFlagTimer {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // start siren for the next flag - starting with the second flag
                     send("vars", MQTT.toJSON("active_cp", agent), get_all_spawn_agents());
-                    addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
+                    add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     if (active_capture_point > 0)
                         send("acoustic", MQTT.toJSON(MQTT.SIR2, "long"), map_of_agents_and_sirens.get(agent).toString());
                     return true;
@@ -259,7 +259,7 @@ public class Farcry extends Timed implements HasFlagTimer {
     }
 
     private void overtime() {
-        addEvent(new JSONObject().put("item", "overtime"));
+        add_in_game_event(new JSONObject().put("item", "overtime"));
         send("vars", MQTT.toJSON("overtime", "overtime"), get_all_spawn_agents());
         send("play", MQTT.toJSON("subpath", "announce", "soundfile", "overtime"), get_active_spawn_agents());
         overtime = true;
@@ -307,7 +307,7 @@ public class Farcry extends Timed implements HasFlagTimer {
             return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
         }
         if (state.equals(_state_RUNNING))
-            return MQTT.page("page0", "Remaining: ${remaining}", "Actv: ${active_cp}->${fused}", "${next_cp}", "${overtime}", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
+            return MQTT.page("page0", "Remaining: ${remaining} ${overtime}", "${active_cp}->${fused}", "", respawn_timer > 0 ? "Next respawn: ${respawn}" : "");
 
         return MQTT.page("page0", game_description);
     }

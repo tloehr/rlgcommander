@@ -12,6 +12,7 @@
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
             game_parameters.bomb_time = parseInt(document.getElementById('bomb_time').value);
             game_parameters.agents.capture_sirens = from_string_list(document.getElementById('capture_sirens').value);
+            game_parameters.spawns.respawn_time = document.getElementById('respawn_time').value;
 
             read_cps_form(game_parameters);
         }
@@ -20,6 +21,8 @@
             document.getElementById('game_time').value = game_parameters.game_time;
             document.getElementById('bomb_time').value = game_parameters.bomb_time;
             document.getElementById('capture_sirens').value = game_parameters.agents.capture_sirens;
+            document.getElementById('respawn_time').value = game_parameters.spawns.respawn_time;
+            game_parameters.spawns.respawn_time = document.getElementById('respawn_time').value;
 
             preset_cps_form(game_parameters);
         }
@@ -52,7 +55,8 @@
                         </li>
                         <li>
                             The attackers try to activate the next flag by pushing its button and
-                            changing the state to <strong>HOT</strong>. To capture that point, the flag must stay <strong>HOT</strong>
+                            changing the state to <strong>HOT</strong>. To capture that point, the flag must stay
+                            <strong>HOT</strong>
                             until the flag-timer runs out.
                         </li>
                         <li>If the button is pushed again <em>before</em> the flag-timer ran out, the flag
@@ -95,11 +99,17 @@
         </div>
 
         <div class="col-auto">
-            <label for="bomb_time" class="form-label">Bomb Time</label>
+            <label for="bomb_time" class="form-label" title="Time period in seconds the attacking team will have to hold the
+                capture point to take it."><span class="bi bi-md bi-info-circle-fill"></span> Bomb Time</label>
             <input type="number" class="form-control" id="bomb_time" value="60" required
                    min="10" inputmode="decimal" pattern="\d*">
-            <small id="bomb_time_help" class="form-text">Time period in seconds the attacking team will have to hold the
-                capture point to take it.</small>
+        </div>
+
+        <div class="col-auto">
+            <label for="respawn_time" class="form-label" title="Time period between each respawn signal. If 0, no signal will be sent.">
+                <span class="bi bi-md bi-info-circle-fill"></span> Respawn timer</label>
+            <input type="number" class="form-control" id="respawn_time" value="30" required
+                   min="0" inputmode="decimal" pattern="\d*">
         </div>
 
         <div layout:fragment="sirens" class="col-lg-12 col-sm-auto col-md-auto">

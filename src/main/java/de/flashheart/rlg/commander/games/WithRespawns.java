@@ -28,9 +28,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -315,9 +313,10 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
 
     @Override
     public void process_external_message(String sender, String item, JSONObject message) {
-        if (sender.equals(RespawnTimerJob._sender_TIMED_RESPAWN))
-            send_message_to_agents_in_segment(active_segment, _msg_RESPAWN_SIGNAL);
-        else
+        if (sender.equals(RespawnTimerJob._sender_TIMED_RESPAWN)) {
+            // this is SOOOOO wrong
+            // send_message_to_agents_in_segment(active_segment, _msg_RESPAWN_SIGNAL);
+        } else
             // there is no other class above us which cares about external messages,
             // so we simply consume it
             send_message_to_agent_in_segment(active_segment, sender, item);
@@ -336,13 +335,13 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             red_respawns++;
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
             send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
-            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
+            add_in_game_event(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "red").put("value", red_respawns));
         }
         if (spawn_role.equals(BLUE_SPAWN)) {
             blue_respawns++;
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), agent);
             send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), agent);
-            addEvent(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
+            add_in_game_event(new JSONObject().put("item", "respawn").put("agent", agent).put("team", "blue").put("value", blue_respawns));
         }
 
         if (!announce_sprees) return;

@@ -28,7 +28,6 @@ rlgs:
     cycle_counter: '10'
   intro:
     bf3: Battlefield 3
-
   access_points:
     00223f97a198: NETGEAR
 
