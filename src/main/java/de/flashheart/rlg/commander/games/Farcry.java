@@ -257,6 +257,12 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     }
 
     @Override
+    public void on_game_over() {
+        super.on_game_over();
+        delete_timed_respawn();
+    }
+
+    @Override
     protected void at_state(String state) {
         super.at_state(state);
         if (state.equals(_state_RUNNING)) {

@@ -81,6 +81,7 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
             return epilog_pages;
         }
 
+        // todo: show number of respawns
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             JSONObject pages_when_game_runs = MQTT.merge(
                     MQTT.page("page0",
