@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.games.jobs;
 
 import de.flashheart.rlg.commander.games.WithRespawns;
+import de.flashheart.rlg.commander.games.traits.HasTimedRespawn;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;
@@ -17,8 +18,8 @@ public class RespawnTimerJob extends QuartzJobBean implements InterruptableJob {
         try {
             log.debug(jobExecutionContext.getJobDetail().getKey() + " executed");
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("uuid");
-            WithRespawns game = (WithRespawns) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
-            game.process_external_message(_sender_TIMED_RESPAWN, null, null);
+            HasTimedRespawn game = (HasTimedRespawn) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
+            game.on_time_to_respawn(jobExecutionContext.getMergedJobDataMap());
         } catch (SchedulerException e) {
             log.error(e);
         }

@@ -55,7 +55,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     public static final String[] SPREE_ANNOUNCEMENTS = new String[]{"doublekill", "triplekill", "quadrakill", "pentakill", "spree"};
     public static final String[] ENEMY_SPREE_ANNOUNCEMENTS = new String[]{"enemydoublekill", "enemytriplekill", "enemyquadrakill", "enemypentakill", "enemyspree"};
 
-    private final JobKey deferredRunGameJob, respawnTimerJobkey;
+    private final JobKey deferredRunGameJob;
     private final int starter_countdown;
     private final String intro_mp3;
     private final boolean game_lobby;
@@ -86,7 +86,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         this.count_respawns = spawn_parameters.optBoolean("count_respawns");
 
         this.deferredRunGameJob = new JobKey("run_the_game", uuid.toString());
-        this.respawnTimerJobkey = new JobKey("timed_respawn", uuid.toString());
         this.spree_announcement_jobkey = new JobKey("spreeannounce", uuid.toString());
 
         this.spawn_segments = HashBasedTable.create();
@@ -214,13 +213,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     public void on_run() {
         super.on_run();
         deleteJob(deferredRunGameJob);
-        // create timed respawn if necessary
-        if (respawn_timer > 0) {
-            create_resumable_job(respawnTimerJobkey,
-                    SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
-                    RespawnTimerJob.class, Optional.empty());
-            send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_all_spawn_agents());
-        }
         send_message_to_agents_in_segment(active_segment, _msg_RUN);
     }
 
@@ -249,7 +241,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         announced_long_spree_already = false;
         active_segment = 0;
         deleteJob(deferredRunGameJob);
-        delete_timed_respawn();
         send_message_to_all_agents(_msg_STANDBY);
         send_message_to_agents_in_segment(active_segment, _msg_RESET);
     }
@@ -314,8 +305,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     @Override
     public void process_external_message(String sender, String item, JSONObject message) {
         if (sender.equals(RespawnTimerJob._sender_TIMED_RESPAWN)) {
-            // this is SOOOOO wrong
-            // send_message_to_agents_in_segment(active_segment, _msg_RESPAWN_SIGNAL);
+             send_message_to_agents_in_segment(active_segment, _msg_RESPAWN_SIGNAL);
         } else
             // there is no other class above us which cares about external messages,
             // so we simply consume it
@@ -397,12 +387,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), get_active_spawn_agents());
             log.debug("Announcing FIRST BLOOD");
         }
-    }
-
-
-    protected void delete_timed_respawn() {
-        if (respawn_timer <= 0) return;
-        deleteJob(respawnTimerJobkey);
     }
 
     @Override
