@@ -33,6 +33,10 @@ import java.util.stream.Collectors;
 
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
+/**
+ * Gamemode inspired by Call Of Duty Hardpoint or Headquarters.
+ * <p>Suggested back in 2019 by <a href="https://woodlandforum.com/board/index.php/User/14458-Chronoxon/?s=a70741ca9836656e56796bbf1461625052338da9">Chronoxon</a> on the <a href="https://woodlandforum.com/board/index.php/Thread/39784-Ideen-f%C3%BCr-elektronisches-Spielsystem/?postID=666001#post666001">Woodlandforum</a></p>
+ */
 @Log4j2
 public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasScoreBroadcast, HasActivation, HasTimeOut, HasFlagTimer {
     public static final String _msg_TO_NEUTRAL = "to_neutral";

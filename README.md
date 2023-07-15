@@ -3,7 +3,7 @@ RLG Commander
 
 ---
 # Preface
-The purpose of the **RLGS** (Real Life Gaming System) is to realize games for **tactical sports** like paintball, airsoft, Nerf or Laser Tag. RLGS adapts well known multiplayer modes from games like Battlefield, Call of Duty, FarCry, Planetside 2 oder Counterstrike to be played in real life.
+The purpose of the **RLGS** (Real Life Gaming System) is to realize games for **tactical sports** like paintball, airsoft, Nerf or Laser Tag.
 
 The RLGS concept consists of two basic elements: the commander (this project) and one or more [agents](https://github.com/tloehr/rlgagent)
 
@@ -23,14 +23,14 @@ We are using the Bootstrap CSS framework, so the web client is fully responsive 
 
 # Main Releases
 * pre 1.1 - development versions never used in RL
-* 1.1 First version to run on a real paintball field. BF Conquest only.
-* 1.2 Added **FarCry Assault**.
+* 1.1 First version to run on a real paintball field. Conquest only.
+* 1.2 Added **Assault**.
 * 1.3 Redesign of spawn agent concept
 * 1.4 Added **Signal** and **Center Flags**
 * 1.5 Added **Stronghold**
 * 1.6 Added **Timed Only**
 * 1.7 Added a webinterface to replace the old **rlgrc** software.
-* 1.8 Added **Hardpoint**
+* 1.8 Added **Hardpoint - King of the Hill**
 
 
 

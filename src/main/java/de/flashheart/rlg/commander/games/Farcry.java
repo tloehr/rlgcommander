@@ -4,9 +4,11 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.games.jobs.Misc1Job;
 import de.flashheart.rlg.commander.games.jobs.RespawnTimerJob;
 import de.flashheart.rlg.commander.games.traits.HasFlagTimer;
 import de.flashheart.rlg.commander.games.jobs.FlagTimerJob;
+import de.flashheart.rlg.commander.games.traits.HasMisc1Job;
 import de.flashheart.rlg.commander.games.traits.HasTimedRespawn;
 import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
@@ -32,7 +34,7 @@ import java.util.*;
  * Implementation for the FarCry 1 (2004) Assault Game Mode.
  */
 @Log4j2
-public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
+public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn, HasMisc1Job {
     public static final String _state_DEFUSED = "DEFUSED";
     public static final String _state_FUSED = "FUSED";
     public static final String _state_DEFENDED = "DEFENDED";
@@ -42,7 +44,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     private final int bomb_timer;
 
-    private final JobKey bombTimerJobkey, respawnTimerJobkey;
+    private final JobKey bombTimerJobkey, respawnTimerJobkey, misc1JobKey;
     private final List<Object> capture_points;
     private final List<Object> sirs;
     private LocalDateTime estimated_end_time;
@@ -65,6 +67,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
                 "                           /____/");
         this.bombTimerJobkey = new JobKey("bomb_timer", uuid.toString());
         this.respawnTimerJobkey = new JobKey("timed_respawn", uuid.toString());
+        this.misc1JobKey = new JobKey("misc1_job", uuid.toString());
         this.bomb_timer = game_parameters.getInt("bomb_time");
         LocalDateTime ldtFlagTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(bomb_timer), TimeZone.getTimeZone("UTC").toZoneId());
         LocalDateTime ldtRespawn = LocalDateTime.ofInstant(Instant.ofEpochSecond(respawn_timer), TimeZone.getTimeZone("UTC").toZoneId());
@@ -297,8 +300,20 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     @Override
     public void on_time_to_respawn(JobDataMap map) {
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, String.format("1:off,%d;on,75;off,500;on,75;off,500;on,75;off,500;on,1200;off,1", respawn_timer * 1000 - 2925)), get_active_spawn_agents());
+        if (respawn_timer > 3)
+            create_job(misc1JobKey, LocalDateTime.now().plusSeconds(respawn_timer - 3), Misc1Job.class, Optional.empty());
         send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
+    }
+
+    /**
+     * used to send a deferred respawn signal to the agents
+     *
+     * @param map
+     */
+    @Override
+    public void exec_misc1_job(JobDataMap map) {
+        // this signal lasts 3 seconds
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,500;on,75;off,500;on,150;off,500;on,1200;off,1"), get_active_spawn_agents());
     }
 
     @Override
@@ -337,6 +352,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     protected void delete_timed_respawn() {
         deleteJob(respawnTimerJobkey);
+        deleteJob(misc1JobKey);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), get_active_spawn_agents());
         send("timers", MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
     }
