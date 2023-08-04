@@ -36,7 +36,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
 
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
-    private HashSet<String> cps_held_by_blue, cps_held_by_red;
+    private final HashSet<String> cps_held_by_blue, cps_held_by_red;
     private final JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
 
@@ -73,6 +73,9 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
      */
     public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+
+        assert_two_teams_red_and_blue();
+
         int number_of_cps = roles.get("capture_points").size();
         if (number_of_cps < 3) throw new ArrayIndexOutOfBoundsException("Minimum number of CPs: 3");
         count_respawns = true;
@@ -140,10 +143,10 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     @Override
     protected void on_respawn_signal_received(String spawn, String agent) {
         super.on_respawn_signal_received(spawn, agent);
-        if (spawn.equals(RED_SPAWN)) {
+        if (spawn.equals("red_spawn")) {
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
         }
-        if (spawn.equals(BLUE_SPAWN)) {
+        if (spawn.equals("blue_spawn")) {
             remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_price_for_respawn);
         }
     }
@@ -163,7 +166,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     @Override
     public FSM create_CP_FSM(final String agent) {
         try {
-            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
+            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
                 broadcast_score();
@@ -303,19 +306,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
             return MQTT.page("page0", "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome);
         }
-//        if (state.equals(_state_RUNNING)) {
-//            return MQTT.merge(
-//                    MQTT.page("page0",
-//                            "  >>> RED Flags <<< ",
-//                            "${red_l1}",
-//                            "${red_l2}",
-//                            "Red->${red_tickets}:${blue_tickets}<-Blue"),
-//                    MQTT.page("page1",
-//                            " >>> BLUE Flags <<< ",
-//                            "${blue_l1}",
-//                            "${blue_l2}",
-//                            "Red->${red_tickets}:${blue_tickets}<-Blue"));
-//        }
         if (state.equals(_state_RUNNING)) {
             return
                     MQTT.page("page0",
@@ -363,9 +353,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
                 .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
                 .put("remaining_red_tickets", remaining_red_tickets.intValue())
                 .put("cps_held_by_blue", cps_held_by_blue)
-                .put("cps_held_by_red", cps_held_by_red)
-                .put("red_respawns", red_respawns)
-                .put("blue_respawns", blue_respawns);
+                .put("cps_held_by_red", cps_held_by_red);
     }
 
     @Override

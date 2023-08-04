@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Finite State Machine to implement a capture point for MESHED type of games
+
+  https://github.com/Ankzz/easyfsm
+-->
+
+<FSM>
+    <STATE id="PROLOG" type="ID">
+        <MESSAGE id="run" nextState="NEUTRAL"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="NEUTRAL">
+        <!-- As we have only one button it always starts with blue. red players have to push twice.-->
+        <MESSAGE id="btn01" nextState="BLUE"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="BLUE">
+        <MESSAGE id="btn01" nextState="RED"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER_BLUE"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <!-- to correct in game rule violation -->
+        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
+        <MESSAGE id="to_red" nextState="RED"/>
+        <MESSAGE id="to_yellow" nextState="YELLOW"/>
+    </STATE>
+    <STATE id="RED">
+        <MESSAGE id="btn01" nextState="YELLOW"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER_RED"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <!-- to correct in game rule violation -->
+        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
+        <MESSAGE id="to_blue" nextState="BLUE"/>
+        <MESSAGE id="to_yellow" nextState="YELLOW"/>
+    </STATE>
+    <STATE id="YELLOW">
+        <MESSAGE id="btn01" nextState="BLUE"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER_YELLOW"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <!-- to correct in game rule violation -->
+        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
+        <MESSAGE id="to_blue" nextState="BLUE"/>
+        <MESSAGE id="to_red" nextState="RED"/>
+    </STATE>
+    <!-- These may seem useless, but I want to show the last flag colors AFTER the game ended for statistics. -->
+    <STATE id="GAME_OVER_RED">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="GAME_OVER_BLUE">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="GAME_OVER_YELLOW">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="GAME_OVER">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+</FSM>
+

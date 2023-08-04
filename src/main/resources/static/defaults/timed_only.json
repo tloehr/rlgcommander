@@ -17,13 +17,41 @@
         "role": "red_spawn",
         "name": "RedFor",
         "led": "red",
-        "agents": [["ag30"]]
+        "agents": [
+          [
+            "ag30"
+          ]
+        ]
       },
       {
         "role": "blue_spawn",
         "name": "BluFor",
         "led": "blu",
-        "agents": [["ag31"]]
+        "agents": [
+          [
+            "ag31"
+          ]
+        ]
+      },
+      {
+        "role": "yellow_spawn",
+        "led": "ylw",
+        "name": "YellowFor",
+        "agents": [
+          [
+            "ag32"
+          ]
+        ]
+      },
+      {
+        "role": "green_spawn",
+        "led": "grn",
+        "name": "GreenFor",
+        "agents": [
+          [
+            "ag33"
+          ]
+        ]
       }
     ],
     "respawn_time": 0,
@@ -32,5 +60,9 @@
   },
   "class": "de.flashheart.rlg.commander.games.TimedOnly",
   "resume_countdown": "0",
-  "agents": {"sirens": ["ag50"]}
+  "agents": {
+    "sirens": [
+      "ag50"
+    ]
+  }
 }

@@ -35,6 +35,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     public Signal(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+        assert_two_teams_red_and_blue();
         count_respawns = false;
 
         log.info("\n" +

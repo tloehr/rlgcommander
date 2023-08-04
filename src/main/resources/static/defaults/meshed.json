@@ -1,12 +1,9 @@
 {
-  "comment": "Lattice 5",
+  "comment": "Mesh 5",
   "rest_url": "http://localhost:8090/api/game/load?id=1",
-  "class": "de.flashheart.rlg.commander.games.Lattice",
-  "respawn_tickets": 250,
-  "game_mode": "planetside",
-  "not_bleeding_before_cps": 1,
-  "start_bleed_interval": 5,
-  "end_bleed_interval": 0.5,
+  "class": "de.flashheart.rlg.commander.games.Meshed",
+  "game_time": 600,
+  "game_mode": "meshed",
   "ticket_price_for_respawn": 1,
   "resume_countdown": 0,
   "silent_game": false,
@@ -19,10 +16,12 @@
       "ag05"
     ],
     "sirens": [
-      "ag50"
+      "ag50",
+      "ag51",
+      "ag52"
     ]
   },
-  "lattice": [
+  "mesh": [
     [
       "ag30",
       "ag05"
@@ -64,7 +63,8 @@
     "count_respawns": true,
     "game_lobby": true,
     "intro_mp3": "<none>",
-    "starter_countdown": 30,
+    "starter_countdown": 0,
+    "announce_sprees": false,
     "respawn_time": 0,
     "teams": [
       {
@@ -84,6 +84,16 @@
         "agents": [
           [
             "ag31"
+          ]
+        ]
+      },
+      {
+        "role": "yellow_spawn",
+        "led": "ylw",
+        "name": "YellowFor",
+        "agents": [
+          [
+            "ag32"
           ]
         ]
       }

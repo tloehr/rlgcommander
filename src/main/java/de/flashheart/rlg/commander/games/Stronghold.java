@@ -44,6 +44,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
 
     public Stronghold(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+        assert_two_teams_red_and_blue();
         log.info("\n" +
                 " ____  _                         _           _     _\n" +
                 "/ ___|| |_ _ __ ___  _ __   __ _| |__   ___ | | __| |\n" +

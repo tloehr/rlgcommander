@@ -41,6 +41,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+        assert_two_teams_red_and_blue();
         log.info("\n" +
                 "   ______           __            ________\n" +
                 "  / ____/__  ____  / /____  _____/ ____/ /___ _____ ______\n" +
@@ -70,8 +71,9 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 vars.put(get_agent_key(agent, color), JavaTimeConverter.format(scores.get(agent, color)));
             });
             vars.put("score_" + color, JavaTimeConverter.format(scores.get("all", color)));
-            vars.put("red_respawns", red_respawns);
-            vars.put("blue_respawns", blue_respawns);
+
+            vars.put("red_respawns", team_registry.get("red").respawns);
+            vars.put("blue_respawns", team_registry.get("blue").respawns);
         });
         return vars;
     }
@@ -83,7 +85,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     @Override
     public FSM create_CP_FSM(final String agent) {
         try {
-            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest_cp.xml"), null);
+            FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition((new ArrayList<>(Arrays.asList("BLUE", "RED"))), (state, obj) -> {
@@ -291,9 +293,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     @Override
     public JSONObject getState() {
         return super.getState()
-                .put("scores", new JSONObject(scores.columnMap()))
-                .put("red_respawns", red_respawns)
-                .put("blue_respawns", blue_respawns);
+                .put("scores", new JSONObject(scores.columnMap()));
     }
 
     @Override
@@ -379,8 +379,9 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             String team = params.getString("team").toLowerCase();
             int amount = params.getInt("amount");
             if (!team.toLowerCase().matches("blue|red")) throw new IllegalStateException("team must be blue or red");
-            if (team.equalsIgnoreCase("blue")) blue_respawns += amount;
-            if (team.equalsIgnoreCase("red")) red_respawns += amount;
+
+            team_registry.get(team.toLowerCase() + "_spawn").add_respawn(amount);
+
             scores.put("all", team, scores.get("all", team) + amount * 1000L);
             add_in_game_event(new JSONObject()
                     .put("item", "add_respawns")

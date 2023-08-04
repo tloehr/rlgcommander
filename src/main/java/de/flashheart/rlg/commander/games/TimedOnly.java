@@ -123,11 +123,5 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
         return "timed_only";
     }
 
-    @Override
-    public JSONObject getState() {
-        return super.getState()
-                .put("red_respawns", red_respawns)
-                .put("blue_respawns", blue_respawns);
-    }
 
 }

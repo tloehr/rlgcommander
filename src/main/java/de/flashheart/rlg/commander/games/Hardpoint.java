@@ -27,7 +27,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -67,6 +66,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
     public Hardpoint(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
+        assert_two_teams_red_and_blue();
 
         log.info("\n    __  __               __            _       __\n" +
                 "   / / / /___ __________/ /___  ____  (_)___  / /_\n" +

@@ -101,12 +101,14 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn, HasM
         log.debug(spawn_segments);
         // all segments must have the same size
 
-        if (!spawn_segments.containsRow(RED_SPAWN)) throw new JSONException(RED_SPAWN + " missing");
-        if (!spawn_segments.containsRow(BLUE_SPAWN)) throw new JSONException(BLUE_SPAWN + " missing");
+//        if (team_registry.size() != 2) throw new JSONException("we need exactly 2 teams");
+//        if (!spawn_segments.containsRow("red_spawn")) throw new JSONException("red_spawn missing");
+//        if (!spawn_segments.containsRow("blue_spawn")) throw new JSONException("blue_spawn missing");
+        assert_two_teams_red_and_blue();
         if (spawn_segments.rowMap().values().stream().map(integerPairMap -> integerPairMap.keySet().size()).distinct().count() > 1)
             throw new JSONException("all teams must have the same number of spawn segments");
 
-        int num_of_spawn_segments = spawn_segments.row(RED_SPAWN).size();
+        int num_of_spawn_segments = spawn_segments.row("red_spawn").size();
 
         if (!(num_of_spawn_segments == capture_points.size() && num_of_spawn_segments == sirs.size()))
             throw new JSONException("number of segments mismatch. number of CPs, sirens and spawn_segments must match");
