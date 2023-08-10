@@ -6,9 +6,11 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import de.flashheart.rlg.commander.games.jobs.AudioJob;
 import de.flashheart.rlg.commander.games.jobs.DelayedReactionJob;
 import de.flashheart.rlg.commander.games.jobs.RespawnTimerJob;
 import de.flashheart.rlg.commander.games.jobs.RunGameJob;
+import de.flashheart.rlg.commander.games.traits.HasAudio;
 import de.flashheart.rlg.commander.games.traits.HasDelayedReaction;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -18,6 +20,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -27,6 +30,9 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,7 +40,7 @@ import java.util.stream.Collectors;
 /*
  * Games deriving from this class will have team respawn agents with optional countdown functions.
  */
-public abstract class WithRespawns extends Pausable implements HasDelayedReaction {
+public abstract class WithRespawns extends Pausable implements HasDelayedReaction, HasAudio {
     public static final String _state_WE_ARE_PREPARING = "WE_ARE_PREPARING";
     public static final String _state_STANDBY = "STAND_BY";
     public static final String _state_WE_ARE_READY = "WE_ARE_READY";
@@ -51,7 +57,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     public static final String[] SPREE_ANNOUNCEMENTS = new String[]{"doublekill", "triplekill", "quadrakill", "pentakill", "spree"};
     public static final String[] ENEMY_SPREE_ANNOUNCEMENTS = new String[]{"enemydoublekill", "enemytriplekill", "enemyquadrakill", "enemypentakill", "enemyspree"};
 
-    private final JobKey deferredRunGameJob;
     private final int starter_countdown;
     private final String intro_mp3;
     private final boolean game_lobby;
@@ -61,7 +66,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     private String TEAM1, TEAM2;
     private Optional<Pair<String, Integer>> team_on_a_spree;
     private boolean announced_long_spree_already;
-    private final JobKey spree_announcement_jobkey;
+    private final JobKey delayed_announcement_jobkey, deferredRunGameJob;
+    private final HashMap<String, JobKey> audio_jobs;
     protected boolean count_respawns;
 
     // Table of Teams in rows, segments in cols
@@ -82,8 +88,9 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         this.intro_mp3 = spawn_parameters.optString("intro_mp3", "<none>");
         this.count_respawns = spawn_parameters.optBoolean("count_respawns");
 
+        this.audio_jobs = new HashMap<>();
         this.deferredRunGameJob = new JobKey("run_the_game", uuid.toString());
-        this.spree_announcement_jobkey = new JobKey("spreeannounce", uuid.toString());
+        this.delayed_announcement_jobkey = new JobKey("delayedannounce", uuid.toString());
 
         this.spawn_segments = HashBasedTable.create();
         active_segment = 0;
@@ -135,8 +142,9 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     @SneakyThrows
     private FSM create_Spawn_FSM(final String agent, String spawn_role, final String led_device_id, final String teamname) {
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
+        audio_jobs.put(agent, new JobKey(agent, uuid.toString()));
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
-            send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
+            send("play", MQTT.toJSON("channel", "all", "subpath", "intro", "soundfile", "<none>"), agent);
             send("visual", MQTT.toJSON(MQTT.ALL, "off", led_device_id, MQTT.RECURRING_SCHEME_NORMAL), agent);
             send("paged", MQTT.merge(
                     MQTT.page("page0",
@@ -145,7 +153,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             );
         });
         fsm.setStatesAfterTransition(_state_STANDBY, (state, obj) -> {
-            send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), agent);
+            send("play", MQTT.toJSON("channel", "all", "subpath", "intro", "soundfile", "<none>"), agent);
             send("acoustic", MQTT.toJSON("all", "off"), agent);
             send("visual", MQTT.toJSON("all", "off"), agent);
             send("paged", MQTT.merge(
@@ -183,7 +191,14 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), agent);
             send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
             send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
-            send("play", MQTT.toJSON("subpath", "intro", "soundfile", intro_mp3), agent);
+            send("play", MQTT.toJSON("channel", "music", "subpath", "music", "soundfile", "jam"), agent);
+            JobDataMap jobDataMap = new JobDataMap();
+            jobDataMap.put("channel", "voice1");
+            jobDataMap.put("subpath", "countdown");
+            jobDataMap.put("soundfile", "sharon");
+            jobDataMap.put("agent", agent);
+            // 6080 meaning 6:08 seconds - delay for the countdown intro voice
+            create_job(audio_jobs.get(agent), LocalDateTime.now().plus(6080, ChronoUnit.MILLIS), AudioJob.class, Optional.of(jobDataMap));
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_RESUME, (state, obj) -> {
             send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
@@ -253,7 +268,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     @Override
     public void on_reset() {
         super.on_reset();
-        send("play", MQTT.toJSON("subpath", "intro", "soundfile", "<none>"), get_active_spawn_agents());
+        send("play", MQTT.toJSON("channel", "all", "subpath", "intro", "soundfile", "<none>"), get_active_spawn_agents());
         if (count_respawns) {
             team_registry.forEach((s, team) -> team.reset_respawns());
             if (announce_sprees) {
@@ -265,6 +280,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         }
         active_segment = 0;
         deleteJob(deferredRunGameJob);
+        audio_jobs.forEach((s, jobKey) -> deleteJob(jobKey));
         send_message_to_all_agents(_msg_STANDBY);
         send_message_to_agents_in_segment(active_segment, _msg_RESET);
     }
@@ -319,6 +335,15 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         send_message_to_agents_in_segment(active_segment, _msg_ACTIVATE);
     }
 
+
+    @Override
+    public void audio(JobDataMap map) {
+        send("play",
+                MQTT.toJSON("channel", map.getString("channel"), "subpath",
+                        map.getString("subpath"), "soundfile",
+                        map.getString("soundfile")),
+                map.getString("agent"));
+    }
 
     @Override
     protected void on_cleanup() {
@@ -376,14 +401,14 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
 
     private void prepare_spree_announcement() {
         team_on_a_spree = Optional.empty();
-        deleteJob(spree_announcement_jobkey);
+        deleteJob(delayed_announcement_jobkey);
         if (team1_killing_spree_length > 1)
             team_on_a_spree = Optional.of(new ImmutablePair<>(TEAM1, team1_killing_spree_length));
         if (team2_killing_spree_length > 1)
             team_on_a_spree = Optional.of(new ImmutablePair<>(TEAM2, team2_killing_spree_length));
         team_on_a_spree.ifPresent(stringIntegerPair -> {
             if (!announced_long_spree_already)
-                create_job(spree_announcement_jobkey, LocalDateTime.now().plusSeconds(3), DelayedReactionJob.class, Optional.empty());
+                create_job(delayed_announcement_jobkey, LocalDateTime.now().plusSeconds(3), DelayedReactionJob.class, Optional.empty());
         });
     }
 
@@ -399,8 +424,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             log.debug("{}({}) says {}", team, get_active_spawn_agents(team), ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]);
             log.debug("{}({}) says {}", enemy, get_active_spawn_agents(enemy), SPREE_ANNOUNCEMENTS[spree - 2]);
 
-            send("play", MQTT.toJSON("subpath", "announce", "soundfile", ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(team));
-            send("play", MQTT.toJSON("subpath", "announce", "soundfile", SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(enemy));
+            send("play", MQTT.toJSON("channel", "voice1", "subpath", "announce", "soundfile", ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(team));
+            send("play", MQTT.toJSON("channel", "voice1", "subpath", "announce", "soundfile", SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(enemy));
 
             announced_long_spree_already = spree >= 6;
         });
@@ -409,7 +434,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     private void first_blood_announcement() {
         // if the sum of all respwans equals 1 then this must be the first one
         if (team_registry.values().stream().mapToInt(Team::getRespawns).sum() == 1) {
-            send("play", MQTT.toJSON("subpath", "announce", "soundfile", "firstblood"), get_active_spawn_agents());
+            send("play", MQTT.toJSON("channel", "voice2", "subpath", "announce", "soundfile", "firstblood"), get_active_spawn_agents());
             log.debug("Announcing FIRST BLOOD");
         }
     }
@@ -441,6 +466,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         super.add_model_data(model);
         // deviceid+_respawns = "red_respawns" "blue_respawns" etc
         team_registry.forEach((s, team) -> model.addAttribute(team.getColor() + "_respawns", team.getRespawns()));
+
     }
 
     protected Collection<String> get_active_spawn_agents() {

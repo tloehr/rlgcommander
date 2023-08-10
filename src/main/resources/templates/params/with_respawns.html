@@ -20,6 +20,10 @@
                     team.agents = from_string_segment_list(document.getElementById('redfor').value);
                 } else if (team.role === 'blue_spawn') {
                     team.agents = from_string_segment_list(document.getElementById('blufor').value);
+                } else if (team.role === 'yellow_spawn') {
+                    team.agents = from_string_segment_list(document.getElementById('yellowfor').value);
+                } else if (team.role === 'green_spawn') {
+                    team.agents = from_string_segment_list(document.getElementById('greenfor').value);
                 }
             });
         }
@@ -39,19 +43,34 @@
                     document.getElementById('redfor').value = to_string_segment_list(team.agents);
                 } else if (team.role === 'blue_spawn') {
                     document.getElementById('blufor').value = to_string_segment_list(team.agents);
+                } else if (team.role === 'yellow_spawn') {
+                    document.getElementById('yellowfor').value = to_string_segment_list(team.agents);
+                } else if (team.role === 'green_spawn') {
+                    document.getElementById('greenfor').value = to_string_segment_list(team.agents);
                 }
             });
+
+            // hide spawn entries if not needed
+            if (game_parameters.spawns.teams.length < 3) {
+                document.getElementById('yellow_spawn').classList.add("d-none");
+            }
+            if (game_parameters.spawns.teams.length < 4) {
+                document.getElementById('green_spawn').classList.add("d-none");
+            }
+
         }
 
         /**
          * switches the teams
          */
-        function switch_sides() {
+        function swap_teams() {
+            // todo: implement rotation
             const redfor = document.getElementById('redfor').value;
             const blufor = document.getElementById('blufor').value;
             document.getElementById('redfor').value = blufor;
             document.getElementById('blufor').value = redfor;
         }
+
     </script>
 
 </head>
@@ -77,7 +96,7 @@
             <label class="form-check-label" for="check-lobby">Player Lobby</label>
         </div>
 
-        <div  id="check-spree-widget" class="col-auto align-self-center form-check form-switch">
+        <div id="check-spree-widget" class="col-auto align-self-center form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="check-spree">
             <label class="form-check-label" for="check-spree">Announce Killing Sprees</label>
         </div>
@@ -91,19 +110,29 @@
 
 
     <div class="row">
-        <div class="col-md-5">
+        <div class="col-auto" id="red_spawn">
             <input type="text" class="form-control" style="border: 5px solid red;" id="redfor"
-                   aria-describedby="countdown-help" value="ag32" placeholder="Spawn agents for team red"
+                   value="ag30" placeholder="Spawn agents for team red"
                    required/>
         </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-outline-secondary" onclick="switch_sides()"
-                    title="change of sides"><i
-                    class="bi bi-arrow-left-right bi-lg"></i></button>
-        </div>
-        <div class=" col-md-5">
+        <!--        <div class="col-auto" id="swap_teams">-->
+        <!--            <button type="button" class="btn btn-outline-secondary" onclick="swap_teams()"-->
+        <!--                    title="swap teams"><i-->
+        <!--                    class="bi bi-arrow-left-right bi-lg"></i></button>-->
+        <!--        </div>-->
+        <div class=" col-auto" id="blue_spawn">
             <input type="text" class="form-control" style="border: 5px solid blue;" id="blufor"
-                   aria-describedby="countdown-help" value="ag33" placeholder="Spawn agents for team blue"
+                   value="ag31" placeholder="Spawn agents for team blue"
+                   required/>
+        </div>
+        <div class=" col-auto" id="yellow_spawn">
+            <input type="text" class="form-control" style="border: 5px solid yellow;" id="yellowfor"
+                   value="ag32" placeholder="Spawn agents for team yellow"
+                   required/>
+        </div>
+        <div class=" col-auto" id="green_spawn">
+            <input type="text" class="form-control" style="border: 5px solid green;" id="greenfor"
+                   value="ag33" placeholder="Spawn agents for team green"
                    required/>
         </div>
     </div>
