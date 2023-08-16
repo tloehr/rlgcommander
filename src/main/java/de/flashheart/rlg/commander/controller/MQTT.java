@@ -46,6 +46,12 @@ public class MQTT {
     public static final String GAME_STARTS = "game_starts";
     public static final String GAME_ENDS = "game_ends";
 
+    public static final String CMD_ACOUSTIC = "acoustic";
+    public static final String CMD_PLAY = "play";
+    public static final String CMD_VISUAL = "visual";
+    public static final String CMD_DISPLAY = "paged";
+    public static final String VAR_TIMERS = "timers";
+
     /**
      * helper method to create a set_page command
      *

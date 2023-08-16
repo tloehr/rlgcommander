@@ -49,6 +49,9 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     public static final String _flag_state_RED_SCORING = "RED_SCORING";
     public static final String _flag_state_BLUE_SCORING = "BLUE_SCORING";
     private static final String _flag_state_GET_READY = "GET_READY";
+    private static final String _flag_state_STAND_BY = "STAND_BY";
+    private static final String _flag_state_AFTER_FLAG_TIME_UP = "AFTER_FLAG_TIME_IS_UP";
+    private static final String _flag_state_PROLOG = _state_PROLOG;
     private long broadcast_cycle_counter;
     private final long winning_score, flag_time_up, flag_time_out, delay_until_next_flag;
     private final BigDecimal delay_after_color_change;
@@ -119,11 +122,11 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     public FSM create_CP_FSM(final String agent) {
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/hardpoint.xml"), null);
-            fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_prolog(agent));
-            fsm.setStatesAfterTransition("GET_READY", (state, obj) -> cp_get_ready(agent));
-            fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> cp_to_neutral(agent));
-            fsm.setStatesAfterTransition("STAND_BY", (state, obj) -> cp_to_stand_by(agent));
-            fsm.setStatesAfterTransition("AFTER_FLAG_TIME_IS_UP", (state, obj) -> next_flag());
+            fsm.setStatesAfterTransition(_flag_state_PROLOG, (state, obj) -> cp_prolog(agent));
+            fsm.setStatesAfterTransition(_flag_state_GET_READY, (state, obj) -> cp_get_ready(agent));
+            fsm.setStatesAfterTransition(_flag_state_NEUTRAL, (state, obj) -> cp_to_neutral(agent));
+            fsm.setStatesAfterTransition(_flag_state_STAND_BY, (state, obj) -> cp_to_stand_by(agent));
+            fsm.setStatesAfterTransition(_flag_state_AFTER_FLAG_TIME_UP, (state, obj) -> next_flag());
             fsm.setStatesAfterTransition(Lists.newArrayList(_flag_state_RED, _flag_state_BLUE), (state, obj) ->
                     cp_to_color(agent, StringUtils.left(state.toLowerCase(), 3))
             );
@@ -213,14 +216,19 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
     private void cp_get_ready(String agent) {
         log.trace("getting ready ({})", get_active_flag());
-        create_job(flag_activation_jobkey, LocalDateTime.now().plusSeconds(delay_until_next_flag), ActivationJob.class, Optional.empty());
-        send("timers", MQTT.toJSON("timer", Long.toString(delay_until_next_flag)), agents.keySet());
-        send("vars", MQTT.toJSON("timelabel", "Next READY in"), agents.keySet());
-        send("paged",
-                MQTT.page("page0",
-                        "I am ${agentname}", "", "", "Flag is preparing"),
-                agent);
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "infty:on,75;off,75;on,75;off,2500"), agent); // short flashes
+        if (delay_until_next_flag > 0) {
+            create_job(flag_activation_jobkey, LocalDateTime.now().plusSeconds(delay_until_next_flag), ActivationJob.class, Optional.empty());
+            send("timers", MQTT.toJSON("timer", Long.toString(delay_until_next_flag)), agents.keySet());
+            send("vars", MQTT.toJSON("timelabel", "Next READY in"), agents.keySet());
+            send("paged",
+                    MQTT.page("page0",
+                            "I am ${agentname}", "", "", "Flag is preparing"),
+                    agent);
+            send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "infty:on,75;off,75;on,75;off,2500"), agent); // short flashes
+        } else {
+            // delay is 0 - activate at once
+            activate(new JobDataMap());
+        }
     }
 
     @Override

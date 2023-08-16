@@ -36,6 +36,9 @@ import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static de.flashheart.rlg.commander.controller.MQTT.CMD_ACOUSTIC;
+import static de.flashheart.rlg.commander.controller.MQTT.CMD_DISPLAY;
+
 @Log4j2
 /*
  * Games deriving from this class will have team respawn agents with optional countdown functions.
@@ -146,7 +149,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
             send("play", MQTT.toJSON("channel", "all", "subpath", "intro", "soundfile", "<none>"), agent);
             send("visual", MQTT.toJSON(MQTT.ALL, "off", led_device_id, MQTT.RECURRING_SCHEME_NORMAL), agent);
-            send("paged", MQTT.merge(
+            send(CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0",
                             "I am ${agentname} and will", "be Your spawn.", "You are " + teamname, "!! Standby !!"),
                     MQTT.page("page1", game_description)), agent
@@ -154,29 +157,29 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         });
         fsm.setStatesAfterTransition(_state_STANDBY, (state, obj) -> {
             send("play", MQTT.toJSON("channel", "all", "subpath", "intro", "soundfile", "<none>"), agent);
-            send("acoustic", MQTT.toJSON("all", "off"), agent);
+            send(CMD_ACOUSTIC, MQTT.toJSON("all", "off"), agent);
             send("visual", MQTT.toJSON("all", "off"), agent);
-            send("paged", MQTT.merge(
+            send(CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0", "", "THIS SPAWN IS", "", "INACTIVE"),
                     MQTT.page("page1", "THIS SPAWN IS", "", "INACTIVE", "")), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_PREPARING, (state, obj) -> {
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
-            send("paged", MQTT.merge(
+            send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,200;on,400;off,75;on,100;off,1"), agent);
+            send(CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0", " !! GAME LOBBY !! ", "", "Press button", "when ready"),
                     MQTT.page("page1", " !! GAME LOBBY !! ", "", "", "")
             ), agent);
         });
         fsm.setStatesAfterTransition(_state_HURRY_UP, (state, obj) -> cp_hurry_up(agent));
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,100;on,400;off,1"), agent);
+            send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,100;on,400;off,1"), agent);
             // if ALL teams are ready, the GAME is READY to start
             // we filter on all agents in the active segment for both teams
             if (spawn_segments.column(active_segment).values().stream()
                     .allMatch(stringFSMPair -> stringFSMPair.getValue().getCurrentState().equals(_state_WE_ARE_READY)))
                 game_fsm.ProcessFSM(_msg_READY);
             else {
-                send("paged", MQTT.merge(
+                send(CMD_DISPLAY, MQTT.merge(
                         MQTT.page("page0", " !! GAME LOBBY !! ", "WE ARE READY", "", ""),
                         MQTT.page("page1", " !! GAME LOBBY !! ", "WE ARE READY", "WAITING FOR", "OTHER TEAM")
                 ), agent);
@@ -188,9 +191,9 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             }
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_START, (state, obj) -> {
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), agent);
+            send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "off"), agent);
             send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
-            send("paged", MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
+            send(CMD_DISPLAY, MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
             send("play", MQTT.toJSON("channel", "music", "subpath", "music", "soundfile", "jam"), agent);
             JobDataMap jobDataMap = new JobDataMap();
             jobDataMap.put("channel", "voice1");
@@ -202,10 +205,10 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_RESUME, (state, obj) -> {
             send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
-            send("paged", MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
+            send(CMD_DISPLAY, MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
         });
-        fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> send("paged", MQTT.merge(getSpawnPages(_state_RUNNING), MQTT.page("pause", "", "      PAUSE      ", "", "")), agent));
-        fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> send("paged", getSpawnPages(state), agent));
+        fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> send(CMD_DISPLAY, MQTT.merge(getSpawnPages(_state_RUNNING), MQTT.page("pause", "", "      PAUSE      ", "", "")), agent));
+        fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> send(CMD_DISPLAY, getSpawnPages(state), agent));
 
         fsm.setAction(_state_IN_GAME, _msg_RESPAWN_SIGNAL, new FSMAction() {
             @Override
@@ -219,8 +222,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         fsm.setAction(new ArrayList<>(List.of(_state_HURRY_UP, _state_WE_ARE_READY, _state_PROLOG, _state_STANDBY, _state_COUNTDOWN_TO_START)), _msg_RUN, new FSMAction() {
             @Override
             public boolean action(String s, String s1, String s2, Object o) {
-                send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), agent);
-                send("paged", getSpawnPages(_state_RUNNING), agent);
+                send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "off"), agent);
+                send(CMD_DISPLAY, getSpawnPages(_state_RUNNING), agent);
                 return true;
             }
         });
@@ -228,8 +231,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         fsm.setAction(new ArrayList<>(List.of(_state_PAUSING, _state_COUNTDOWN_TO_RESUME)), _msg_CONTINUE, new FSMAction() {
             @Override
             public boolean action(String s, String s1, String s2, Object o) {
-                send("acoustic", MQTT.toJSON(MQTT.BUZZER, "off"), agent);
-                send("paged", getSpawnPages(_state_RUNNING), agent);
+                send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "off"), agent);
+                send(CMD_DISPLAY, getSpawnPages(_state_RUNNING), agent);
                 return true;
             }
         });
@@ -238,8 +241,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     }
 
     private void cp_hurry_up(String agent) {
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "infty:on,75;off,75;on,75;off,5000"), agent);
-        send("paged", MQTT.merge(
+        send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "infty:on,75;off,75;on,75;off,5000"), agent);
+        send(CMD_DISPLAY, MQTT.merge(
                 MQTT.page("page0", " !! GAME LOBBY !! ", "Hurry up!", "Press button", "when ready"),
                 MQTT.page("page1", " !! GAME LOBBY !! ", "", "The other Team", "is waiting....")
         ), agent);
@@ -377,7 +380,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                 .put("team", this_team.getLed_device_id())
                 .put("value", this_team.getRespawns())
         );
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_SHORT), agent);
+        send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_SHORT), agent);
         send("visual", MQTT.toJSON(MQTT.WHITE, MQTT.SCHEME_SHORT), agent);
 
         log.debug(this_team);
