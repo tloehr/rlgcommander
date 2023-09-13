@@ -5,6 +5,7 @@ import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 
+import java.awt.*;
 import java.time.LocalDateTime;
 
 @Log4j2
@@ -109,4 +110,23 @@ public class Tools {
     }
 
 
+
+    /**
+     * http://stackoverflow.com/questions/8741479/automatically-determine-optimal-fontcolor-by-backgroundcolor
+     *
+     * @param background
+     * @return
+     */
+    public static Color getForeground(Color background) {
+        int red = 0;
+        int green = 0;
+        int blue = 0;
+
+        if (background.getRed() + background.getGreen() + background.getBlue() < 383) {
+            red = 255;
+            green = 255;
+            blue = 255;
+        }
+        return new Color(red, green, blue);
+    }
 }

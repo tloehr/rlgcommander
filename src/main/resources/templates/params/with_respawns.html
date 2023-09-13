@@ -29,6 +29,7 @@
         }
 
         function preset_respawns_form(game_parameters) {
+            sessionStorage.setItem('number_of_teams', game_parameters.spawns.teams.length);
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
             document.getElementById('check-lobby').checked = game_parameters.spawns.game_lobby;
             if (game_parameters.spawns.hasOwnProperty('announce_sprees')) {
@@ -57,19 +58,53 @@
             if (game_parameters.spawns.teams.length < 4) {
                 document.getElementById('green_spawn').classList.add("d-none");
             }
+            if (game_parameters.spawns.teams.length === 2) {
+                document.getElementById('swap_teams').className = "col-auto";
+            }
 
         }
 
         /**
          * switches the teams
          */
-        function swap_teams() {
-            // todo: implement rotation
+        function swap_2teams() {
             const redfor = document.getElementById('redfor').value;
             const blufor = document.getElementById('blufor').value;
             document.getElementById('redfor').value = blufor;
             document.getElementById('blufor').value = redfor;
         }
+
+        function swap_3teams() {
+            const redfor = document.getElementById('redfor').value;
+            const blufor = document.getElementById('blufor').value;
+            const yellowfor = document.getElementById('yellowfor').value;
+            document.getElementById('redfor').value = blufor;
+            document.getElementById('blufor').value = yellowfor;
+            document.getElementById('yellowfor').value = redfor;
+        }
+
+        function swap_4teams() {
+            const redfor = document.getElementById('redfor').value;
+            const blufor = document.getElementById('blufor').value;
+            const yellowfor = document.getElementById('yellowfor').value;
+            const greenfor = document.getElementById('greenfor').value;
+            document.getElementById('redfor').value = blufor;
+            document.getElementById('blufor').value = yellowfor;
+            document.getElementById('yellowfor').value = greenfor;
+            document.getElementById('greenfor').value = redfor;
+        }
+
+        function swap_teams() {
+
+            if (sessionStorage.getItem('number_of_teams') === '4') {
+                swap_4teams();
+            } else if (sessionStorage.getItem('number_of_teams') === '3') {
+                swap_3teams();
+            } else if (sessionStorage.getItem('number_of_teams') === '2') {
+                swap_2teams();
+            }
+        }
+
 
     </script>
 
@@ -115,11 +150,11 @@
                    value="ag30" placeholder="Spawn agents for team red"
                    required/>
         </div>
-        <!--        <div class="col-auto" id="swap_teams">-->
-        <!--            <button type="button" class="btn btn-outline-secondary" onclick="swap_teams()"-->
-        <!--                    title="swap teams"><i-->
-        <!--                    class="bi bi-arrow-left-right bi-lg"></i></button>-->
-        <!--        </div>-->
+        <div class="d-none" id="swap_teams">
+            <button type="button" class="btn btn-outline-secondary" onclick="swap_teams()"
+                    title="swap teams"><i
+                    class="bi bi-arrow-left-right bi-lg"></i></button>
+        </div>
         <div class=" col-auto" id="blue_spawn">
             <input type="text" class="form-control" style="border: 5px solid blue;" id="blufor"
                    value="ag31" placeholder="Spawn agents for team blue"
@@ -136,6 +171,7 @@
                    required/>
         </div>
     </div>
+
 
 </section>
 

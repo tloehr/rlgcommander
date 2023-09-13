@@ -208,3 +208,40 @@ function go_back_to_active_game() {
     return false;
 }
 
+/**
+ * Durstenfeld Shuffle
+ * https://stackoverflow.com/a/12646864/1171329
+ * shuffles array in place
+ * @param {Array} array items An array containing the items.
+ * @returns the array
+ */
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+/**
+ * Kryten's list shuffle algorithm.
+ * @returns {*[]}
+ */
+function krytens_shuffle(lstAgents, nrCycles, nrLookback) {
+    shuffle(lstAgents);
+    let seqAgents = [...lstAgents]; // ES6 way to clone an array
+
+    for (x = 0; x < nrCycles-1; x++) {
+        const lookBack = lstAgents.slice(-nrLookback);
+        const eligibleItems = lstAgents.slice(0, -nrLookback);
+        shuffle(eligibleItems);
+        lstAgents = eligibleItems.slice(0, nrLookback);
+        lookBack.push(...eligibleItems.slice(nrLookback));
+        shuffle(lookBack);
+        lstAgents.push(...lookBack);
+        seqAgents.push(...lstAgents);
+    }
+
+    return seqAgents;
+}
+

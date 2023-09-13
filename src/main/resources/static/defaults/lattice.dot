@@ -6,6 +6,9 @@
  //Start DFS at the vertex which was chosen at step 2.
  //Make all visited vertices v as vis2[v] = true.
  //If any vertex v has vis1[v] = false and vis2[v] = false then the graph is not connected.
+ //
+ //
+ // https://www.baeldung.com/java-graphs
 
 strict graph G {
     layout = circo

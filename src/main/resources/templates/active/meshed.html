@@ -1,0 +1,33 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{active/base.html}">
+<head><title>Meshed</title>
+    <!-- https://github.com/mdaines/viz-js/wiki/Differences-between-Viz.js-2.x-and-3.x -->
+    <script th:src="@{/webjars/viz.js-graphviz-java/viz.js}"></script>
+    <script th:src="@{/webjars/viz.js-graphviz-java/full.render.js}"></script>
+</head>
+<body>
+<section layout:fragment="score">
+
+    <div class="col-auto" id="vizdot">
+    </div>
+
+    <script>
+        let viz = new Viz();
+        var vizdot = `[[${vizdot}]]`;
+
+        viz.renderSVGElement(vizdot)
+            .then(element => {
+                var oldElement = document.getElementById('vizdot');
+                element.classList.add("col-auto");
+                oldElement.replaceWith(element);
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    </script>
+
+</section>
+
+</body>
+</html>

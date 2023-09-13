@@ -16,29 +16,51 @@
             document.getElementById('sirens').value = game_parameters.agents.sirens.join(); // join makes a comma separated list
             preset_respawns_form(game_parameters);
         }
+
+        function shuffle_agents() {
+            document.getElementById('capture_points').value =
+                krytens_shuffle(
+                    from_string_list(document.getElementById('capture_points').value),
+                    5,
+                    2
+                ).join();
+        }
     </script>
 
 </head>
 
 <body>
 
-
-<div layout:fragment="capture_points" class="col-sm-auto col-md-auto col-lg-6">
+<div layout:fragment="capture_points" class="col-auto col-md-6">
     <label for="capture_points" class="form-label">Capture-Points</label>
     <!-- only comma separated allowed -->
-    <input type="text" class="form-control" value="ag01" id="capture_points" required
-           pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+    <textarea type="text" class="form-control" value="ag01" id="capture_points" required
+              pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$" rows="1"> </textarea>
     <div id="cphelp" class="form-text">Agent IDs, comma separated</div>
 </div>
 
+<div layout:fragment="shuffle_agents" id="agent_shuffle_button" class="d-none">
+    <button class="btn btn-primary none" type="button"
+            onclick="shuffle_agents()"><span
+            class="bi bi-shuffle">&nbsp;Shuffle agents</span>
+    </button>
+    <script>
+        if (sessionStorage.getItem('show_agent_shuffle_button')) {
+            document.getElementById('agent_shuffle_button').className = "col-auto align-self-center";
+            document.getElementById('capture_points').rows = 3;
+        }
+    </script>
+</div>
 
-<div layout:fragment="sirens" class="col-sm-auto col-md-auto col-lg-6">
+
+<div layout:fragment="sirens" class="col-auto  col-md-4">
+
     <label for="sirens" class="form-label">Sirens</label>
     <input type="text" class="form-control" value="ag50" id="sirens" required
            pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
     <div id="sirenhelp" class="form-text">Agent IDs, comma separated</div>
-</div>
 
+</div>
 
 </body>
 </html>

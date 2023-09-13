@@ -12,13 +12,18 @@
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="NEUTRAL">
+        <MESSAGE id="to_blue" nextState="BLUE"/>
+        <MESSAGE id="to_red" nextState="RED"/>
+        <MESSAGE id="to_yellow" nextState="YELLOW"/>
         <!-- As we have only one button it always starts with blue. red players have to push twice.-->
         <MESSAGE id="btn01" nextState="BLUE"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="BLUE">
-        <MESSAGE id="btn01" nextState="RED"/>
+        <!-- The transition logic depends on the current state of the match.
+        Cycles are directly controlled by the class and not via the FSM -->
+<!--        <MESSAGE id="btn01" nextState="RED"/>-->
         <MESSAGE id="game_over" nextState="GAME_OVER_BLUE"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
         <!-- to correct in game rule violation -->
@@ -27,7 +32,7 @@
         <MESSAGE id="to_yellow" nextState="YELLOW"/>
     </STATE>
     <STATE id="RED">
-        <MESSAGE id="btn01" nextState="YELLOW"/>
+<!--        <MESSAGE id="btn01" nextState="YELLOW"/>-->
         <MESSAGE id="game_over" nextState="GAME_OVER_RED"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
         <!-- to correct in game rule violation -->
@@ -36,7 +41,7 @@
         <MESSAGE id="to_yellow" nextState="YELLOW"/>
     </STATE>
     <STATE id="YELLOW">
-        <MESSAGE id="btn01" nextState="BLUE"/>
+<!--        <MESSAGE id="btn01" nextState="BLUE"/>-->
         <MESSAGE id="game_over" nextState="GAME_OVER_YELLOW"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
         <!-- to correct in game rule violation -->

@@ -4,6 +4,8 @@
 <head><title>Game Parameters</title>
 
     <script>
+        sessionStorage.removeItem('show_agent_shuffle_button');
+        sessionStorage.removeItem('number_of_teams');
 
         function load_game(game_parameters) {
             const game_id = sessionStorage.getItem('game_id');
@@ -84,13 +86,18 @@
             <section layout:fragment="params">
             </section>
 
-            <div class="row">
+
+            <div class="row mb-3">
                 <div layout:fragment="capture_points">
                 </div>
 
-                <div layout:fragment="sirens">
+                <div layout:fragment="shuffle_agents">
+                </div>
+
+                <div layout:fragment="sirens" >
                 </div>
             </div>
+
 
             <div class="col-md-auto">
                 <button class="d-none" id="btn_submit_param" type="submit"></button>
