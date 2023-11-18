@@ -15,8 +15,7 @@
             <li>A <strong class="text-primary">BLUE</strong> or <strong class="text-danger">RED</strong> flag stays online for <strong th:text="${flag_time_up}"/> seconds, before we move on to the next one.</li>
             <li th:if="${delay_until_next_flag > 0}">There is a cool down period of <strong th:text="${delay_until_next_flag}"/> seconds between two flags."</li>
             <li th:text="|Active Flag ${active_agent} (${active_state})|"></li>
-            <li th:if="${!random_flag_selection}" th:text="|Next Agent ${next_agent}|"></li>
-            <li th:if="${random_flag_selection}">Flags are chosen <em>randomly</em>, so we don't know which will be the next flag.</li>
+            <li th:text="|Next Agent ${next_agent}|"></li>
         </ul>
     </div>
 </section>

@@ -1,12 +1,17 @@
 {
   "comment": "Mesh 5",
-  "rest_url": "http://localhost:8090/api/game/load?id=1",
   "class": "de.flashheart.rlg.commander.games.Meshed",
   "game_time": 600,
   "game_mode": "meshed",
   "ticket_price_for_respawn": 1,
   "resume_countdown": 0,
   "silent_game": false,
+  "signals" : {
+    "flag_immutable" : "off",
+    "flag_mutable" : "on:60000;off:100",
+    "adjacent_color_hint" : "on:150;off:850",
+    "spawn_team_hint" : "normal"
+  },
   "agents": {
     "capture_points": [
       "ag01",
@@ -41,6 +46,10 @@
     [
       "ag04",
       "ag03"
+    ],
+    [
+      "ag32",
+      "ag04"
     ],
     [
       "ag04",

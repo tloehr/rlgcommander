@@ -111,20 +111,20 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                 MQTT.page("page0",
                         "I am ${agentname}...", "...and Your Flag", "Blue: ${" + get_agent_key(agent, "blue") + "}", "Red: ${" + get_agent_key(agent, "red") + "}"),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
         //if (game_fsm.getCurrentState().equals(_state_RUNNING))
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
     }
 
     private void cp_to_blue(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal"), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
         broadcast_score();
     }
 
     private void cp_to_red(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal"), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
         broadcast_score();

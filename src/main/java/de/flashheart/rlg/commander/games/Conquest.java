@@ -185,18 +185,18 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
     }
 
     private void cp_to_blue(String agent) {
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 

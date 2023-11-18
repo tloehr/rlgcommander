@@ -1,6 +1,5 @@
 {
   "comment": "Conquest 7",
-  "rest_url": "http://localhost:8090/api/game/load?id=1",
   "class": "de.flashheart.rlg.commander.games.Conquest",
   "respawn_tickets": 250,
   "not_bleeding_before_cps": 1,

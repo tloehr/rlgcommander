@@ -96,8 +96,36 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         active_segment = 0;
         team_registry = new HashMap<>();
 
-        // split up spawn description by teams
-        // one definition for each side
+        /*
+            This is how a team/spawn definition looks like. Taken from FarCry.
+            Here we have 3 spawn segments (for wandering spawns). ag30, ag31, ag32.
+            There only one segment active during the game. Starting at segment 0.
+
+                {
+                    "role": "red_spawn",
+                    "led": "red",
+                    "name": "RedFor",
+                    "agents": [
+                      [
+                        "ag30"
+                      ],
+                      [
+                        "ag31"
+                      ],
+                      [
+                        "ag32"
+                      ]
+                    ]
+                }
+
+            next_spawn_segment() to progress through the segments.
+
+            split up spawn description by teams
+            one definition for each side
+
+            No yet used, but prepared: you can have more than one agent within a segment, just in case
+            You have more than one agent in a spawn.
+         */
         spawn_parameters.getJSONArray("teams").forEach(j -> {
             JSONObject teams = (JSONObject) j;
             final String spawn_role = teams.getString("role");
@@ -145,7 +173,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         audio_jobs.put(agent, new JobKey(agent, uuid.toString()));
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
             send(CMD_PLAY, MQTT.toJSON("channel", "all", "subpath", "music", "soundfile", "<none>"), agent);
-            send(CMD_VISUAL, MQTT.toJSON(MQTT.ALL, "off", led_device_id, MQTT.RECURRING_SCHEME_NORMAL), agent);
+            send(CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", led_device_id, MQTT.RECURRING_SCHEME_NORMAL), agent);
             send(CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0",
                             "I am ${agentname} and will", "be Your spawn.", "You are " + teamname, "!! Standby !!"),
@@ -177,14 +205,28 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
 //            }
 //        });
 
-        fsm.setStatesAfterTransition(_state_HURRY_UP, (state, obj) -> cp_hurry_up(agent));
+        fsm.setStatesAfterTransition(_state_HURRY_UP, (state, obj) -> {
+            ///send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "infty:on,75;off,75;on,75;off,5000"), agent);
+            send(CMD_ACOUSTIC, new JSONObject("""
+                    "buzzer": {
+                        "repeat": -1,
+                        "scheme": [75,-75,75,-5000]
+                    }
+                    """), agent);
+            send(CMD_PLAY, MQTT.toJSON("channel", "sound1", "subpath", "events", "soundfile", "bell"), agent);
+            send(CMD_DISPLAY, MQTT.merge(
+                    MQTT.page("page0", " !! GAME LOBBY !! ", "Hurry up!", "Press button", "when ready"),
+                    MQTT.page("page1", " !! GAME LOBBY !! ", "", "The other Team", "is waiting....")
+            ), agent);
+        });
+        
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
             send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,100;on,400;off,1"), agent);
             send(CMD_PLAY, MQTT.toJSON("channel", "sound1", "subpath", "events", "soundfile", "bell"), agent);
-            // if ALL teams are ready, the GAME is READY to start
-            // we filter on all agents in the active segment for both teams
-            if (spawn_segments.column(active_segment).values().stream()
+
+            if (spawn_segments.column(active_segment).values().stream() // checking all agents for all teams in ACTIVE_SEGMENT
                     .allMatch(stringFSMPair -> stringFSMPair.getValue().getCurrentState().equals(_state_WE_ARE_READY)))
+                // if ALL teams are ready, the GAME is READY to start
                 game_fsm.ProcessFSM(_msg_READY);
             else {
                 send(CMD_DISPLAY, MQTT.merge(
@@ -192,6 +234,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                         MQTT.page("page1", " !! GAME LOBBY !! ", "WE ARE READY", "WAITING FOR", "OTHER TEAM")
                 ), agent);
                 // inform the other spawn agents, that we are ready.
+                // this will move those agents to the HURRY_UP state
                 spawn_segments.column(active_segment).values().stream()
                         // but only those who are not ready yet
                         .filter(stringFSMPair -> stringFSMPair.getValue().getCurrentState().equals(_state_WE_ARE_PREPARING))
@@ -202,7 +245,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "off"), agent);
             send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
             send(CMD_DISPLAY, MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
-            send(CMD_PLAY, MQTT.toJSON("channel", "music", "subpath", "music", "soundfile", "jam"), agent);
+            send(CMD_PLAY, MQTT.toJSON("channel", "music", "subpath", "music", "soundfile", intro_mp3), agent);
             JobDataMap jobDataMap = new JobDataMap();
             jobDataMap.put("channel", "voice1");
             jobDataMap.put("subpath", "countdown");
@@ -249,14 +292,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         return fsm;
     }
 
-    private void cp_hurry_up(String agent) {
-        send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "infty:on,75;off,75;on,75;off,5000"), agent);
-        send(CMD_PLAY, MQTT.toJSON("channel", "sound1", "subpath", "events", "soundfile", "bell"), agent);
-        send(CMD_DISPLAY, MQTT.merge(
-                MQTT.page("page0", " !! GAME LOBBY !! ", "Hurry up!", "Press button", "when ready"),
-                MQTT.page("page1", " !! GAME LOBBY !! ", "", "The other Team", "is waiting....")
-        ), agent);
-    }
 
     @Override
     public void on_run() {
@@ -341,6 +376,12 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         }
     }
 
+    /**
+     * will progress to the next spawn segment. it cycles through the segments,
+     * hence returning to the beginning, when progressing beyond the end of the list.
+     * the agents belonging to the current segment will be sent to STANDBY, the
+     * now active agents will be activated.
+     */
     void next_spawn_segment() {
         send_message_to_agents_in_segment(active_segment, _msg_STANDBY);
         active_segment++;

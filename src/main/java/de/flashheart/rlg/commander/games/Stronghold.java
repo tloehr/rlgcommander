@@ -120,12 +120,12 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void taken(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "medium"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "medium"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
     }
 
     private void fused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_FUSED));
         if (!allow_defuse) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
         if (active_ring_taken()) {
@@ -176,7 +176,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void defused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", map_agent_to_ring_color.get(agent), "fast"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), "fast"), agent);
     }
 
     private void nearly_defused(String agent) {
@@ -187,12 +187,12 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void standby(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
         //addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_STANDBY));
     }
 
     private void prolog(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", map_agent_to_ring_color.get(agent), "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), "normal"), agent);
     }
 
     private boolean active_ring_taken() {

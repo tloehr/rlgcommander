@@ -20,9 +20,7 @@
         function shuffle_agents() {
             document.getElementById('capture_points').value =
                 krytens_shuffle(
-                    from_string_list(document.getElementById('capture_points').value),
-                    5,
-                    2
+                    from_string_list(document.getElementById('capture_points').value), 5, 2
                 ).join();
         }
     </script>
@@ -39,6 +37,13 @@
     <div id="cphelp" class="form-text">Agent IDs, comma separated</div>
 </div>
 
+<div layout:fragment="reset_agents" id="agent_reset_button" class="col-auto align-self-center">
+    <button class="btn btn-secondary none" type="button"
+            onclick="document.getElementById('capture_points').value = game_parameters.agents.capture_points.join()"><span
+            class="bi bi-rewind">&nbsp;Reset agents</span>
+    </button>
+</div>
+
 <div layout:fragment="shuffle_agents" id="agent_shuffle_button" class="d-none">
     <button class="btn btn-primary none" type="button"
             onclick="shuffle_agents()"><span
@@ -52,8 +57,7 @@
     </script>
 </div>
 
-
-<div layout:fragment="sirens" class="col-auto  col-md-4">
+<div layout:fragment="sirens" class="col-auto col-md-4">
 
     <label for="sirens" class="form-label">Sirens</label>
     <input type="text" class="form-control" value="ag50" id="sirens" required

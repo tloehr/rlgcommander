@@ -1,6 +1,5 @@
 {
   "comment": "Center Flags x3",
-  "rest_url": "http://localhost:8090/api/game/load",
   "class": "de.flashheart.rlg.commander.games.CenterFlags",
   "game_time": 1800,
   "game_mode": "center_flags",

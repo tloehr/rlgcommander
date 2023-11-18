@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 
 @Log4j2
 public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadcast {
-    public static final int MAX_CAPTURE_POINTS = 2;
     public static final String _msg_LOCK = "lock";
     public static final String _msg_TO_NEUTRAL = "to_neutral";
     private final List<String> capture_points;
@@ -32,6 +31,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     private long UNLOCK_TIME, LOCK_TIME;
     private JSONObject line_variables;
     private int blue_points, red_points;
+
+    // todo: add a lock all option that will prevent ANY flag from being changed during a lock period
 
     public Signal(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -51,9 +52,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         line_variables = new JSONObject();
 
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
-
-        if (capture_points.size() > MAX_CAPTURE_POINTS)
-            throw new ArrayIndexOutOfBoundsException("max number of capture points is " + MAX_CAPTURE_POINTS);
 
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
         LOCK_TIME = game_parameters.optLong("lock_time");
@@ -111,7 +109,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 MQTT.page("page0",
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "unlocked"));
         int index_of_agent = capture_points.indexOf(agent) + 1;
         line_variables.put("line" + index_of_agent, "");
@@ -120,7 +118,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     private void cp_to_blue(String agent) {
         deleteJob(cpLockJobs.get(agent));
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.BLUE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal"), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         JobDataMap map = new JobDataMap();
         map.put("agent", agent);
@@ -130,7 +128,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     private void cp_to_red(String agent) {
         deleteJob(cpLockJobs.get(agent));
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.RED, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal"), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
         JobDataMap map = new JobDataMap();
         map.put("agent", agent);
@@ -172,14 +170,14 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
             broadcast_score();
-            send("visual", MQTT.toJSON(MQTT.ALL, "off"), get_all_spawn_agents());
+            send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), get_all_spawn_agents());
         }
     }
 
     @Override
     public void on_run() {
         super.on_run();
-        send("visual", MQTT.toJSON(MQTT.ALL, "off"), get_all_spawn_agents());
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), get_all_spawn_agents());
     }
 
     @Override
@@ -206,7 +204,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         String state = cpFSMs.get(agent).getCurrentState().toLowerCase();
         if (state.matches("red_locked|blue_locked")) {
             send("acoustic", MQTT.toJSON(MQTT.SIR3, "long"), roles.get("sirens"));
-            send("visual", MQTT.toJSON(MQTT.ALL, "off"), get_all_spawn_agents());
+            send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), get_all_spawn_agents());
             cpFSMs.get(map.getString("agent")).ProcessFSM(_msg_TO_NEUTRAL);
         } else
             cpFSMs.get(map.getString("agent")).ProcessFSM(_msg_LOCK);

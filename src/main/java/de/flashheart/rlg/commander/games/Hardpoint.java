@@ -43,9 +43,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     public static final String _msg_GO = "go";
     public static final String _msg_ACCEPTED = "accepted";
     public static final String _msg_NEXT_FLAG = "next_flag";
-    public static final String _flag_state_NEUTRAL = "NEUTRAL";
-    public static final String _flag_state_RED = "RED";
-    public static final String _flag_state_BLUE = "BLUE";
     public static final String _flag_state_RED_SCORING = "RED_SCORING";
     public static final String _flag_state_BLUE_SCORING = "BLUE_SCORING";
     private static final String _flag_state_GET_READY = "GET_READY";
@@ -61,7 +58,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     private final JobKey broadcastScoreJobkey, flag_activation_jobkey, delayed_reaction_jobkey, flag_time_up_jobkey, flag_time_out_jobkey;
     private long last_job_broadcast;
     private int active_capture_point;
-    private final boolean random_flag_selection;
     private final CircularFifoQueue<String> recently_activated_flags;
     private final Random random = new Random(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
     // number of the current iteration of the flag cycle - in short "how many times did we activate a flag so far ?"
@@ -89,7 +85,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).collect(Collectors.toList());
 
         // random makes no sense with less than 4 flags
-        this.random_flag_selection = capture_points.size() > 3 && game_parameters.optBoolean("random_flag_selection", false);
+        //this.random_flag_selection = capture_points.size() > 3 && game_parameters.optBoolean("random_flag_selection", false);
 
         scores = HashBasedTable.create();
         recently_activated_flags = new CircularFifoQueue<>(2);
@@ -108,7 +104,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
         String last_line_in_description = "";
         if (delay_until_next_flag > 0L) last_line_in_description = String.format("Delay %s", delay_until_next_flag);
-        if (random_flag_selection) last_line_in_description += " Random";
         setGameDescription(
                 game_parameters.getString("comment"),
                 String.format("Winning@ %s", winning_score),
@@ -175,7 +170,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     private void cp_prolog(String agent) {
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send("paged",
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "PROLOG"),
@@ -186,24 +181,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         cpFSMs.get(get_active_flag()).ProcessFSM(_msg_NEXT_FLAG);
         deleteJob(flag_time_out_jobkey);
 
-        if (random_flag_selection) {
-            log.trace("recently activated flags before {}", recently_activated_flags);
-            recently_activated_flags.add(get_active_flag());
-            log.trace("recently activated flags no with me {}", recently_activated_flags);
-            List<String> not_recently_used = new ArrayList<>(capture_points);
-            not_recently_used.removeAll(recently_activated_flags);
-            log.trace("not recently used {}", not_recently_used);
-            int random_position = random.nextInt(not_recently_used.size());
-            log.trace("random position {}", random_position);
-            String random_flag = not_recently_used.get(random_position);
-            log.trace("fresh random flag {}", random_flag);
-            active_capture_point = capture_points.indexOf(random_flag);
-            log.trace("original list {}", capture_points);
-            log.trace("new flag found on position {}", active_capture_point);
-        } else {
-            active_capture_point++;
-            if (active_capture_point >= capture_points.size()) active_capture_point = 0;
-        }
+        active_capture_point++;
+        if (active_capture_point >= capture_points.size()) active_capture_point = 0;
 
         cpFSMs.get(get_active_flag()).ProcessFSM(_msg_PREPARE);
     }
@@ -224,7 +203,14 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                     MQTT.page("page0",
                             "I am ${agentname}", "", "", "Flag is preparing"),
                     agent);
-            send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, "infty:on,75;off,75;on,75;off,2500"), agent); // short flashes
+            //send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "infty:on,75;off,75;on,75;off,2500"), agent); // short flashes
+            send("visual",new JSONObject("""
+                    "led_all" : "off",
+                    "wht": {
+                        "repeat": -1,
+                        "scheme": [75,-75,75,-2500]
+                    }
+                    """), agent); // short flashes
         } else {
             // delay is 0 - activate at once
             activate(new JobDataMap());
@@ -247,11 +233,10 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag standing by"),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
     }
 
     private String peek_next_flag() {
-        if (random_flag_selection) return "???";
         int peek = active_capture_point + 1 >= capture_points.size() ? 0 : active_capture_point + 1;
         return capture_points.get(peek);
     }
@@ -271,7 +256,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag is NEUTRAL"),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "NEUTRAL"));
     }
 
@@ -286,7 +271,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         create_job(delayed_reaction_jobkey,
                 LocalDateTime.now().plus(delay_after_color_change.multiply(new BigDecimal(1000L)).longValue(), ChronoUnit.MILLIS),
                 DelayedReactionJob.class, Optional.empty());
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", color, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
     }
 
@@ -294,7 +279,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         String COLOR = (color.equalsIgnoreCase("blu") ? "BLUE" : "RED");
         deleteJob(flag_time_out_jobkey);
         send("acoustic", MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.SCHEME_MEDIUM), roles.get("sirens"));
-        send("visual", MQTT.toJSON(MQTT.ALL, "off", color, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send("paged",
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag is " + COLOR),
@@ -324,7 +309,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
         broadcast_cycle_counter = 0L;
         last_job_broadcast = 0L;
-        active_capture_point = random_flag_selection ? random.nextInt(capture_points.size()) : 0;
+        active_capture_point = 0;
         recently_activated_flags.clear();
         iteration = 0;
         reset_score_table();
@@ -459,8 +444,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         model.addAttribute("flag_time_out", flag_time_out);
         model.addAttribute("flag_time_up", flag_time_up);
         model.addAttribute("delay_until_next_flag", delay_until_next_flag);
-        model.addAttribute("random_flag_selection", random_flag_selection);
-
 
         model.addAttribute("active_state", cpFSMs.get(get_active_flag()).getCurrentState());
 

@@ -13,7 +13,9 @@ public class MQTT {
     public static final String YELLOW = "ylw";
     public static final String GREEN = "grn";
     public static final String BLUE = "blu";
-    public static final String ALL = "all";
+    public static final String LED_ALL = "led_all";
+    // public static final String LED_ALL = "led_all";
+    public static final String SIR_ALL = "sir_all";
     public static final String VISUALS = WHITE + "|" + RED + "|" + YELLOW + "|" + GREEN + "|" + BLUE;
 
     public static final String SIR1 = "sir1";

@@ -60,6 +60,8 @@
             }
             if (game_parameters.spawns.teams.length === 2) {
                 document.getElementById('swap_teams').className = "col-auto";
+            } else {
+                document.getElementById('cycle_teams').className = "col-auto";
             }
 
         }
@@ -78,9 +80,9 @@
             const redfor = document.getElementById('redfor').value;
             const blufor = document.getElementById('blufor').value;
             const yellowfor = document.getElementById('yellowfor').value;
-            document.getElementById('redfor').value = blufor;
-            document.getElementById('blufor').value = yellowfor;
-            document.getElementById('yellowfor').value = redfor;
+            document.getElementById('redfor').value = yellowfor;
+            document.getElementById('blufor').value = redfor;
+            document.getElementById('yellowfor').value = blufor;
         }
 
         function swap_4teams() {
@@ -88,10 +90,10 @@
             const blufor = document.getElementById('blufor').value;
             const yellowfor = document.getElementById('yellowfor').value;
             const greenfor = document.getElementById('greenfor').value;
-            document.getElementById('redfor').value = blufor;
-            document.getElementById('blufor').value = yellowfor;
-            document.getElementById('yellowfor').value = greenfor;
-            document.getElementById('greenfor').value = redfor;
+            document.getElementById('redfor').value = greenfor;
+            document.getElementById('blufor').value = redfor;
+            document.getElementById('yellowfor').value = blufor;
+            document.getElementById('greenfor').value = yellowfor;
         }
 
         function swap_teams() {
@@ -169,6 +171,11 @@
             <input type="text" class="form-control" style="border: 5px solid green;" id="greenfor"
                    value="ag33" placeholder="Spawn agents for team green"
                    required/>
+        </div>
+        <div class="d-none" id="cycle_teams">
+            <button type="button" class="btn btn-outline-secondary" onclick="swap_teams()"
+                    title="cycle teams"><i
+                    class="bi bi-recycle bi-lg"></i></button>
         </div>
     </div>
 

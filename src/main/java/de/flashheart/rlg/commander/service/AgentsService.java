@@ -4,12 +4,17 @@ import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Agent;
 import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.FileUtils;
 import org.checkerframework.checker.units.qual.A;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,12 +29,39 @@ public class AgentsService {
     MQTTOutbound mqttOutbound;
     BuildProperties buildProperties;
     MyYamlConfiguration myYamlConfiguration;
+//    @Value("classpath:/welcome_scheme.json")
+//    Resource resourceFile;
+    final JSONObject welcome_signal;
 
+    @SneakyThrows
     public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration) {
         this.mqttOutbound = mqttOutbound;
         this.buildProperties = buildProperties;
         this.live_agents = live_agents;
         this.myYamlConfiguration = myYamlConfiguration;
+        welcome_signal = new JSONObject("""
+                {  "wht": {
+                    "repeat": 100,
+                    "scheme": [250,-250,-250,-250,-250,-250,-250,-250]
+                  },
+                  "red": {
+                    "repeat": 100,
+                    "scheme": [-250,250,-250,-250,-250,-250,-250,250]
+                  },
+                  "ylw": {
+                    "repeat": 100,
+                    "scheme": [-250,-250,250,-250,-250,-250,250,-250]
+                  },
+                  "grn": {
+                    "repeat": 100,
+                    "scheme": [-250,-250,-250,250,-250,250,-250,-250]
+                  },
+                  "blu": {
+                    "repeat": 100,
+                    "scheme": [-250,-250,-250,-250,250,-250,-250,-250]
+                  }
+                }
+                """);
     }
 
     public void assign_gameid_to_agents(int gameid, Set<String> agentids) {
@@ -101,15 +133,10 @@ public class AgentsService {
         log.info("Sending welcome message to newly attached agent {}", my_agent.getId());
         //mqttOutbound.send("init", agentid);
         mqttOutbound.send("timers", MQTT.toJSON("_clearall", "0"), my_agent.getId());
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), my_agent.getId());
+        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), my_agent.getId());
         // welcome-signal
         mqttOutbound.send("visual",
-                MQTT.toJSON(
-                        MQTT.WHITE, "60:on,500;off,500",
-                        MQTT.YELLOW, "60:on,500;off,500",
-                        MQTT.BLUE, "60:on,500;off,500",
-                        MQTT.RED, "60:off,500;on,500;off,1",
-                        MQTT.GREEN, "60:off,500;on,500;off,1"),
+                welcome_signal,
                 my_agent.getId());
         mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
                 "cmdr " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),
@@ -140,8 +167,8 @@ public class AgentsService {
      */
     public void powersave_unused_agents() {
         get_agents_for_gameid(-1).forEach(agent -> {
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.ALL, "off"), agent.getId());
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), agent.getId());
+            mqttOutbound.send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent.getId());
+            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), agent.getId());
         });
     }
 

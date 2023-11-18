@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander;
 
 import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
+import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -27,6 +28,7 @@ public class RlgcommanderApplication implements ApplicationRunner {
     public void run(ApplicationArguments arg0) throws Exception {
 //        System.out.println("Hello World from Application Runner");
 //        myYamlConfiguration.getIntro();
-
+        Tools.getProgressTickingScheme("superled",30000);
+        Tools.getProgressTickingScheme("superled",120000);
     }
 }

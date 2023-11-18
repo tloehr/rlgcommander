@@ -55,8 +55,16 @@ public abstract class Game {
     public static final String OUT_LED_BLUE = MQTT.BLUE;
     public static final String OUT_LED_YELLOW = MQTT.YELLOW;
     public static final String OUT_LED_GREEN = MQTT.GREEN;
-    public static final String[] ALL_LEDS = new String[]{OUT_LED_WHITE, OUT_LED_RED, OUT_LED_YELLOW, OUT_LED_GREEN, OUT_LED_BLUE};
-    public static final String[] _state_ALL_STATES = new String[]{_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG};
+    public static final String _flag_state_NEUTRAL = "NEUTRAL";
+    public static final String _flag_state_PROLOG = _state_PROLOG;
+    public static final String _flag_state_RED = "RED";
+    public static final String _flag_state_BLUE = "BLUE";
+    public static final String _flag_state_YELLOW = "YELLOW";
+    public static final String _flag_state_GREEN = "GREEN";
+    public static final String[] OUT_ALL_LEDS = new String[]{OUT_LED_WHITE, OUT_LED_RED, OUT_LED_BLUE, OUT_LED_YELLOW, OUT_LED_GREEN};
+    public static final List<String> _flag_ALL_RUNNING_STATES = List.of(_flag_state_RED, _flag_state_YELLOW, _flag_state_GREEN, _flag_state_BLUE);
+    public static final List<String> ALL_LEDS = List.of(OUT_LED_WHITE, OUT_LED_RED, OUT_LED_YELLOW, OUT_LED_GREEN, OUT_LED_BLUE);
+    public static final List<String> _state_ALL_STATES = List.of(_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG);
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
     private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
 
@@ -71,6 +79,7 @@ public abstract class Game {
     protected final UUID uuid;
     protected final Scheduler scheduler;
     protected final Multimap<String, String> agents, roles;
+    protected final HashMap<String, String> map_flag_state_to_led_color;
 
     // what happened, and when ?
     protected final List<JSONObject> in_game_events;
@@ -90,6 +99,8 @@ public abstract class Game {
         this.in_game_events = new ArrayList<>();
         this.silent_game = game_parameters.optBoolean("silent_game");
         this.cpFSMs = new HashMap<>();
+        this.map_flag_state_to_led_color = new HashMap<>();
+
 
         JSONObject agts = game_parameters.getJSONObject("agents");
         Set<String> rls = agts.keySet();
@@ -244,8 +255,8 @@ public abstract class Game {
     public void on_reset() {
         game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-        send("acoustic", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
-        send("visual", MQTT.toJSON(MQTT.ALL, "off"), roles.get("sirens"));
+        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), roles.get("sirens"));
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), roles.get("sirens"));
     }
 
     public void on_run() {
@@ -255,7 +266,7 @@ public abstract class Game {
 
     public void on_game_over() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
-        send("acoustic", MQTT.toJSON(MQTT.ALL, "off", MQTT.SIR1, "game_ends"), roles.get("sirens"));
+        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off", MQTT.SIR1, "game_ends"), roles.get("sirens"));
         log.info(getState().toString(4));
     }
 
@@ -335,7 +346,7 @@ public abstract class Game {
                 return true;
             }
         });
-        fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList(_state_ALL_STATES)), (state, obj) -> {
+        fsm.setStatesAfterTransition(new ArrayList<>(_state_ALL_STATES), (state, obj) -> {
             fireStateReached(new StateReachedEvent(state));
         });
 
@@ -459,6 +470,15 @@ public abstract class Game {
      */
     public boolean hasRole(String agent, String role) {
         return agents.get(agent).contains(role);
+    }
+
+    protected String get_signal(String key) {
+        return get_signal(key, MQTT.RECURRING_SCHEME_NORMAL);
+    }
+
+    protected String get_signal(String key, String def) {
+        if (game_parameters.has(key)) return game_parameters.getJSONObject(key).optString(def);
+        else return def;
     }
 
     public JSONObject getGame_parameters() {

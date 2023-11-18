@@ -1,0 +1,162 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      layout:decorate="~{params/sirens.html}">
+
+
+<head>
+    <title>Setup Meshed</title>
+    <!-- https://github.com/mdaines/viz-js/wiki/Differences-between-Viz.js-2.x-and-3.x -->
+    <script th:src="@{/webjars/viz.js-graphviz-java/viz.js}"></script>
+    <script th:src="@{/webjars/viz.js-graphviz-java/full.render.js}"></script>
+
+    <script>
+        sessionStorage.setItem('game_mode', 'meshed');
+
+        function read_form(game_parameters) {
+            game_parameters.ticket_price_for_respawn = parseInt(document.getElementById('ticket_price_for_respawn').value);
+
+            read_sirens_form(game_parameters);
+        }
+
+        function preset_form(game_parameters) {
+            document.getElementById('ticket_price_for_respawn').value = game_parameters.ticket_price_for_respawn;
+
+            const mesh_array = game_parameters.mesh;
+            console.log(mesh_array);
+            //console.log(create_edge_list_for_textarea(mesh_array));
+            document.getElementById('capture_points').value = create_edge_list_for_textarea(mesh_array);
+
+            //document.getElementById('mesh').value =
+
+            preset_sirens_form(game_parameters);
+        }
+
+
+        /**
+         * uses the entries from the capture points textarea
+         * and renders the graph
+         */
+        function update_graph(vizdot_file) {
+            let viz = new Viz();
+            if (vizdot_file.length === 0) {
+                document.getElementById('cp_error').className = 'col-auto';
+                document.getElementById('graph_alert').innerHTML = 'Can\'t render empty file';
+                return;
+            }
+            //var vizdot = `[[${vizdot}]]`;
+
+            viz.renderSVGElement(vizdot_file)
+                .then(element => {
+                    document.getElementById('cp_error').className = 'd-none';
+                    var oldElement = document.getElementById('vizdot');
+                    element.classList.add("col-auto");
+                    element.setAttribute('id', 'vizdot');
+                    oldElement.replaceWith(element);
+                })
+                .catch(error => {
+                    document.getElementById('cp_error').className = 'col-auto';
+                    document.getElementById('graph_alert').innerHTML = error.toString();
+                    console.error(error);
+                });
+        }
+
+        /**
+         * reads the json array from the game preset and creates
+         * a string representation of it
+         * @param mesh
+         * @returns {string}
+         */
+        function create_edge_list_for_textarea(mesh) {
+            let mylist = "";
+            mesh.forEach(edge => mylist += edge + "\n");
+            return mylist;
+        }
+
+
+        /**
+         * reads the value of the element elemid
+         * and creates a dot representation of the
+         * comma separated edges list.
+         * @param elemid element to query for input data
+         * @returns {string} dot file content
+         */
+        function create_vizdot(elemid) {
+            const cps = document.getElementById(elemid).value;
+            const nodes = new Set();
+            const edges = new Set();
+
+            // prepare
+            cps.split(/\n/).forEach(item => {
+                if (item === "") return;
+                const left = item.split(/,/)[0];
+                const right = item.split(/,/)[1];
+                edges.add(left + " -- " + right);
+                nodes.add(left);
+                nodes.add(right);
+            });
+
+            let vizdot = '';
+
+            if (cps != '') {
+                // create DOT file
+                vizdot = "strict graph G {\nlayout = circo\n";
+                nodes.forEach(node => {
+                    let node_dot_style = '';
+                    if (node === document.getElementById('redfor').value)
+                        node_dot_style = ' [fillcolor=red fontcolor=yellow style=filled shape=box]';
+                    else if (node === document.getElementById('blufor').value)
+                        node_dot_style = ' [fillcolor=blue fontcolor=yellow style=filled shape=box]';
+                    else if (node === document.getElementById('yellowfor').value)
+                        node_dot_style = ' [fillcolor=yellow fontcolor=black style=filled shape=box]';
+                    vizdot += node + node_dot_style + ";\n";
+                });
+                edges.forEach(edge => vizdot += edge + ";\n");
+                vizdot += "}"
+            }
+            return vizdot;
+        }
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1>Conquest</h1>
+    <p>Popular game mode inspired by the Battlefield&trade; online game.</p>
+</section>
+
+<section layout:fragment="params">
+
+    <div class="col-auto">
+        <label for="capture_points" class="form-label">Meshed Capture-Points</label>
+        <!-- only comma separated allowed -->
+        <textarea type="text" class="form-control" value="ag01" id="capture_points" required
+                  pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$" rows="10"></textarea>
+        <div id="cphelp" class="form-text">Define edges by pairs of agent IDs. One edge per line.</div>
+    </div>
+
+    <div class="d-none" id="cp_error">
+        <div class="alert alert-danger" role="alert" id="graph_alert"></div>
+    </div>
+
+    <div class="col-auto" id="render_graph">
+        <button type="button" class="btn btn-primary" onclick="update_graph(create_vizdot('capture_points'))"
+                title="update graph"><i
+                class="bi bi-diagram-3-fill bi-lg"></i></button>
+    </div>
+
+    <div class="col-auto" id="vizdot"></div>
+
+    <div class="col-auto">
+        <label for="ticket_price_for_respawn" class="form-label">Ticket price</label>
+        <input type="number" class="form-control" id="ticket_price_for_respawn" value="1" required
+               min="1" pattern="\d*" inputmode="decimal">
+    </div>
+
+
+</section>
+
+</body>
+</html>

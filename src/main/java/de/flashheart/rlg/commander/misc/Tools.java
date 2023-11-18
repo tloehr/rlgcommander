@@ -3,10 +3,17 @@ package de.flashheart.rlg.commander.misc;
 
 import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.checkerframework.checker.units.qual.A;
+import org.json.JSONObject;
 
 import java.awt.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Vector;
 
 @Log4j2
 public class Tools {
@@ -56,34 +63,78 @@ public class Tools {
 
 
     // todo: this should be in the rlgagent
-    public static String getProgressTickingScheme(int time_period_in_millis) {
-        if (time_period_in_millis <= 30000l)
-            return "1:on,2000;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000;on,100;off,5000";
+    public static JSONObject getProgressTickingScheme(String deviceid, int time_period_in_millis) {
+        if (time_period_in_millis <= 30000L) {
+            JSONObject signal = new JSONObject().put(deviceid, new JSONObject("""
+                    {
+                        "repeat": 1,
+                        "scheme": [2000,-5000,100,-5000,100,-5000,100,-5000,100,-5000,100,-5000,100,-5000]
+                    }
+                    """));
+            log.debug("Progress Ticking Scheme {} with Period {}", signal.toString(4), time_period_in_millis);
+            return signal;
+        }
+
         // increasing siren signals during bomb time. repeated beeps signals the quarter were in
         int segment_time_in_millis = time_period_in_millis / 4;
-        String siren_tick = "on,100;off,100;";
-        String signal = "1:on,2000;off,10000;";
-        int period_intro = 12000;
+        ArrayList<Integer> scheme = new ArrayList<>(Arrays.asList(2000, -10000));
+        ArrayList<Integer> siren_tick = new ArrayList<>(Arrays.asList(100, -100));
+
+        //String siren_tick = "on,100;off,100;";
+        //String signal = "1:on,2000;off,10000;";
+        //int period_intro = 12000;
         int q1_tick = 10200;
         int q2_tick = 10400;
         int q3_tick = 10600;
         int q4_tick = 10800;
 
-        int period_q1 = segment_time_in_millis - period_intro;
+        //int period_q1 = segment_time_in_millis - period_intro;
         // the rest will be added up with 10200ms chunks ticks
         int q1_repeat = segment_time_in_millis / q1_tick;
         int q2_repeat = segment_time_in_millis / q2_tick;
         int q3_repeat = segment_time_in_millis / q3_tick;
         int q4_repeat = segment_time_in_millis / q4_tick;
-        signal += StringUtils.repeat(siren_tick + "off,10000;", q1_repeat) + String.format("off,%s;", segment_time_in_millis - q1_repeat * q1_tick);
-        signal += StringUtils.repeat(siren_tick + siren_tick + "off,10000;", q2_repeat) + String.format("off,%s;", segment_time_in_millis - q2_repeat * q2_tick);
-        signal += StringUtils.repeat(siren_tick + siren_tick + siren_tick + "off,10000;", q3_repeat) + String.format("off,%s;", segment_time_in_millis - q3_repeat * q3_tick);
-        signal += StringUtils.repeat(siren_tick + siren_tick + siren_tick + siren_tick + "off,10000;", q4_repeat) + String.format("off,%s;", segment_time_in_millis - q4_repeat * q4_tick);
 
-        log.debug("Progress Ticking Scheme {} with Period {}", signal, time_period_in_millis);
+        for (int rep = 0; rep < q1_repeat; rep++) {
+            scheme.addAll(siren_tick);
+            scheme.add(-10000);
+        }
+        scheme.add(-(segment_time_in_millis - q1_repeat * q1_tick));
+        for (int rep = 0; rep < q2_repeat; rep++) {
+            scheme.addAll(siren_tick);
+            scheme.addAll(siren_tick);
+            scheme.add(-10000);
+        }
+        scheme.add(-(segment_time_in_millis - q2_repeat * q2_tick));
+        for (int rep = 0; rep < q3_repeat; rep++) {
+            scheme.addAll(siren_tick);
+            scheme.addAll(siren_tick);
+            scheme.addAll(siren_tick);
+            scheme.add(-10000);
+        }
+        scheme.add(-(segment_time_in_millis - q3_repeat * q3_tick));
+        for (int rep = 0; rep < q4_repeat; rep++) {
+            scheme.addAll(siren_tick);
+            scheme.addAll(siren_tick);
+            scheme.addAll(siren_tick);
+            scheme.addAll(siren_tick);
+            scheme.add(-10000);
+        }
+        scheme.add(-(segment_time_in_millis - q4_repeat * q4_tick));
+
+
+//        signal += StringUtils.repeat(siren_tick + "off,10000;", q1_repeat) + String.format("off,%s;", segment_time_in_millis - q1_repeat * q1_tick);
+//        signal += StringUtils.repeat(siren_tick + siren_tick + "off,10000;", q2_repeat) + String.format("off,%s;", segment_time_in_millis - q2_repeat * q2_tick);
+//        signal += StringUtils.repeat(siren_tick + siren_tick + siren_tick + "off,10000;", q3_repeat) + String.format("off,%s;", segment_time_in_millis - q3_repeat * q3_tick);
+//        signal += StringUtils.repeat(siren_tick + siren_tick + siren_tick + siren_tick + "off,10000;", q4_repeat) + String.format("off,%s;", segment_time_in_millis - q4_repeat * q4_tick);
+//
+        JSONObject signal = new JSONObject().put(deviceid, new JSONObject().put("repeat",1).put("scheme", scheme));
+
+        log.debug("Progress Ticking Scheme {} with Period {}", signal.toString(4), time_period_in_millis);
 
         return signal;
     }
+
 
     /**
      * https://stackoverflow.com/a/43381186
@@ -108,7 +159,6 @@ public class Tools {
         String bareRemain = bare.substring(remainProcent);
         return bareDone + bareRemain + " " + remainProcent * 10 + "%";
     }
-
 
 
     /**

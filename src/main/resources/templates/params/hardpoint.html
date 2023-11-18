@@ -14,7 +14,6 @@
             game_parameters.flag_time_up = parseInt(document.getElementById('flag_time_up').value);
             game_parameters.delay_until_next_flag = parseInt(document.getElementById('delay_until_next_flag').value);
             game_parameters.delay_after_color_change = parseInt(document.getElementById('delay_after_color_change').value);
-            // game_parameters.random_flag_selection = document.getElementById('random_flag_selection').checked;
 
             read_cps_sirens_form(game_parameters);
         }
@@ -25,7 +24,6 @@
             document.getElementById('flag_time_up').value = game_parameters.flag_time_up;
             document.getElementById('delay_until_next_flag').value = game_parameters.delay_until_next_flag;
             document.getElementById('delay_after_color_change').value = game_parameters.delay_after_color_change;
-            // document.getElementById('random_flag_selection').checked = game_parameters.random_flag_selection;
 
             preset_cps_sirens_form(game_parameters);
         }
@@ -112,13 +110,6 @@
             <input type="number" class="form-control" id="delay_after_color_change" value="1" required
                    min="0.5" max="2.5" step="0.5" inputmode="decimal" pattern="\d*">
         </div>
-<!--        <div class="col-auto align-self-center form-check form-switch">-->
-<!--            <input class="form-check-input" type="checkbox" role="switch" id="random_flag_selection">-->
-<!--            <label class="form-check-label" aria-describedby="randomHelp" for="random_flag_selection">Random Flag-->
-<!--                Selection</label>-->
-<!--        </div>-->
-
-
 
     </div>
 </section>
