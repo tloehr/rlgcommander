@@ -28,7 +28,7 @@ public class RlgcommanderApplication implements ApplicationRunner {
     public void run(ApplicationArguments arg0) throws Exception {
 //        System.out.println("Hello World from Application Runner");
 //        myYamlConfiguration.getIntro();
-        Tools.getProgressTickingScheme("superled",30000);
-        Tools.getProgressTickingScheme("superled",120000);
+       // Tools.getProgressTickingScheme("superled",30000);
+        // Tools.getProgressTickingScheme("superled",120000);
     }
 }

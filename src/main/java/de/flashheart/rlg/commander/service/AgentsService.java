@@ -31,7 +31,7 @@ public class AgentsService {
     MyYamlConfiguration myYamlConfiguration;
 //    @Value("classpath:/welcome_scheme.json")
 //    Resource resourceFile;
-    final JSONObject welcome_signal;
+//    final JSONObject welcome_signal;
 
     @SneakyThrows
     public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration) {
@@ -39,29 +39,6 @@ public class AgentsService {
         this.buildProperties = buildProperties;
         this.live_agents = live_agents;
         this.myYamlConfiguration = myYamlConfiguration;
-        welcome_signal = new JSONObject("""
-                {  "wht": {
-                    "repeat": 100,
-                    "scheme": [250,-250,-250,-250,-250,-250,-250,-250]
-                  },
-                  "red": {
-                    "repeat": 100,
-                    "scheme": [-250,250,-250,-250,-250,-250,-250,250]
-                  },
-                  "ylw": {
-                    "repeat": 100,
-                    "scheme": [-250,-250,250,-250,-250,-250,250,-250]
-                  },
-                  "grn": {
-                    "repeat": 100,
-                    "scheme": [-250,-250,-250,250,-250,250,-250,-250]
-                  },
-                  "blu": {
-                    "repeat": 100,
-                    "scheme": [-250,-250,-250,-250,250,-250,-250,-250]
-                  }
-                }
-                """);
     }
 
     public void assign_gameid_to_agents(int gameid, Set<String> agentids) {
@@ -136,7 +113,7 @@ public class AgentsService {
         mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), my_agent.getId());
         // welcome-signal
         mqttOutbound.send("visual",
-                welcome_signal,
+                "welcome_signal",
                 my_agent.getId());
         mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
                 "cmdr " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),

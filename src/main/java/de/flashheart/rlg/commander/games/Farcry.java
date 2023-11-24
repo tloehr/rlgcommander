@@ -43,15 +43,19 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn, HasM
     public static final String _state_OVERTIME = "OVERTIME";
     private static final int MAX_CAPTURE_POINTS = 6;
     // this signal lasts 3 seconds
-    private final JSONObject respawn_signal = new JSONObject().put(MQTT.BUZZER, new JSONObject()
-            .put("repeat", 1)
-            .put("scheme", new JSONArray(new Integer[]{75, -500, 75, -500, 150, -500, 1200})
-            )
-    );
-    private final JSONObject signal_after_capture = new JSONObject().put(MQTT.RED, new JSONObject()
-            .put("repeat", 10)
-            .put("scheme", new JSONArray(new Integer[]{250, -250}))
-    );
+//    private final JSONObject respawn_signal = new JSONObject("""
+//            {"buzzer": {
+//                "repeat": 1,
+//                "scheme": [75, -500, 75, -500, 150, -500, 1200]
+//            }}
+//            """);
+//
+//    private final JSONObject signal_after_capture = new JSONObject("""
+//            {"red": {
+//                "repeat": 10,
+//                "scheme": [250, -250]
+//            }}
+//            """);
 
     private final int bomb_timer;
 
@@ -156,7 +160,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn, HasM
         send("play", MQTT.toJSON("subpath", "announce", "soundfile", "selfdestruct"), get_active_spawn_agents());
         send("acoustic", Tools.getProgressTickingScheme("sir2", bomb_timer * 1000), map_of_agents_and_sirens.get(agent).toString());
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "progress:remaining"), agent);
+        send("visual", new JSONObject().put("progress","remaining"), agent);
         send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), get_all_spawn_agents());
     }
 
@@ -187,7 +191,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn, HasM
             send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "very_fast"), agent);
             game_fsm.ProcessFSM(_msg_GAME_OVER);
         } else {
-            send("visual", MQTT.merge(MQTT.toJSON(MQTT.LED_ALL, "off") , signal_after_capture), agent);
+            send("visual",  "signal_after_capture", agent);
             send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), map_of_agents_and_sirens.get(agent).toString());
             next_spawn_segment();
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
@@ -319,8 +323,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn, HasM
      */
     @Override
     public void exec_misc1_job(JobDataMap map) {
-        // send("acoustic", MQTT.toJSON(MQTT.BUZZER, "1:on,75;off,500;on,75;off,500;on,150;off,500;on,1200;off,1"), get_active_spawn_agents());
-        send("acoustic", respawn_signal, get_active_spawn_agents());
+        send("acoustic", "respawn_signal", get_active_spawn_agents());
     }
 
     @Override

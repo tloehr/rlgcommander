@@ -71,7 +71,7 @@ public class Tools {
                         "scheme": [2000,-5000,100,-5000,100,-5000,100,-5000,100,-5000,100,-5000,100,-5000]
                     }
                     """));
-            log.debug("Progress Ticking Scheme {} with Period {}", signal.toString(4), time_period_in_millis);
+            log.trace("Progress Ticking Scheme {} with Period {}", signal.toString(4), time_period_in_millis);
             return signal;
         }
 
@@ -80,8 +80,6 @@ public class Tools {
         ArrayList<Integer> scheme = new ArrayList<>(Arrays.asList(2000, -10000));
         ArrayList<Integer> siren_tick = new ArrayList<>(Arrays.asList(100, -100));
 
-        //String siren_tick = "on,100;off,100;";
-        //String signal = "1:on,2000;off,10000;";
         //int period_intro = 12000;
         int q1_tick = 10200;
         int q2_tick = 10400;
@@ -128,9 +126,9 @@ public class Tools {
 //        signal += StringUtils.repeat(siren_tick + siren_tick + siren_tick + "off,10000;", q3_repeat) + String.format("off,%s;", segment_time_in_millis - q3_repeat * q3_tick);
 //        signal += StringUtils.repeat(siren_tick + siren_tick + siren_tick + siren_tick + "off,10000;", q4_repeat) + String.format("off,%s;", segment_time_in_millis - q4_repeat * q4_tick);
 //
-        JSONObject signal = new JSONObject().put(deviceid, new JSONObject().put("repeat",1).put("scheme", scheme));
+        JSONObject signal = new JSONObject().put(deviceid, new JSONObject().put("repeat", 1).put("scheme", scheme));
 
-        log.debug("Progress Ticking Scheme {} with Period {}", signal.toString(4), time_period_in_millis);
+        log.trace("Progress Ticking Scheme {} with Period {}", signal.toString(4), time_period_in_millis);
 
         return signal;
     }

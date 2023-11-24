@@ -217,6 +217,15 @@ public abstract class Game {
         if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
         mqttOutbound.send(cmd, payload, agent);
     }
+    protected void send(String cmd, String signal_key, String agent) {
+        if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
+        mqttOutbound.send(cmd, signal_key, agent);
+    }
+
+    protected void send(String cmd, String signal_key, Collection<String> agents) {
+        if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
+        mqttOutbound.send(cmd, signal_key, agents);
+    }
 
     protected void send(String cmd, JSONObject payload, Collection<String> agents) {
         if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;

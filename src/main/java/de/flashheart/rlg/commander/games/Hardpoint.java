@@ -203,7 +203,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                     MQTT.page("page0",
                             "I am ${agentname}", "", "", "Flag is preparing"),
                     agent);
-            //send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "infty:on,75;off,75;on,75;off,2500"), agent); // short flashes
             send("visual",new JSONObject("""
                     "led_all" : "off",
                     "wht": {

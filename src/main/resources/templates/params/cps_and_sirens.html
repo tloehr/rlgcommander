@@ -17,6 +17,12 @@
             preset_respawns_form(game_parameters);
         }
 
+        function reset_agents() {
+            const game_parameters_string = sessionStorage.getItem('game_parameters_#' + sessionStorage.getItem('game_id'));
+            const game_parameters = JSON.parse(game_parameters_string);
+            document.getElementById('capture_points').value = game_parameters.agents.capture_points.join()
+        }
+
         function shuffle_agents() {
             document.getElementById('capture_points').value =
                 krytens_shuffle(
@@ -39,7 +45,7 @@
 
 <div layout:fragment="reset_agents" id="agent_reset_button" class="col-auto align-self-center">
     <button class="btn btn-secondary none" type="button"
-            onclick="document.getElementById('capture_points').value = game_parameters.agents.capture_points.join()"><span
+            onclick="reset_agents()"><span
             class="bi bi-rewind">&nbsp;Reset agents</span>
     </button>
 </div>

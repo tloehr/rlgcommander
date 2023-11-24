@@ -11,6 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.springframework.core.io.Resource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -39,7 +40,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     private final HashSet<String> cps_held_by_blue, cps_held_by_red;
     private final JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
-
 
     /**
      * This class creates a conquest style game as known from Battlefield.

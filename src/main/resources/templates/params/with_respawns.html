@@ -7,6 +7,7 @@
 
         function read_respawns_form(game_parameters) {
             game_parameters.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
+            game_parameters.agents.audio = from_string_list(document.getElementById('audio_group').value);
             game_parameters.silent_game = document.getElementById('check-silent').checked;
             game_parameters.spawns.game_lobby = document.getElementById('check-lobby').checked;
             if (game_parameters.spawns.announce_sprees)
@@ -31,6 +32,7 @@
         function preset_respawns_form(game_parameters) {
             sessionStorage.setItem('number_of_teams', game_parameters.spawns.teams.length);
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
+            document.getElementById('audio_group').value = game_parameters.agents.audio ? game_parameters.agents.audio.join() : "";
             document.getElementById('check-lobby').checked = game_parameters.spawns.game_lobby;
             if (game_parameters.spawns.hasOwnProperty('announce_sprees')) {
                 document.getElementById('check-spree').checked = game_parameters.spawns.announce_sprees;
@@ -117,14 +119,21 @@
 
 <section layout:fragment="with_respawns">
     <div class="row mb-3">
-        <div class="col-auto">
+        <div class="col-md-3 col-sm-auto">
             <label for="intro_mp3" class="form-label">Intro Song</label>
             <select class="form-select " style="height: 40px;" id="intro_mp3">
                 <option selected value="<none>">No intro</option>
                 <option th:each="intro : ${intros}" th:value="${intro.value0}" th:text="${intro.value1}"></option>
             </select>
-            <div id="intro_help" class="form-text">This song will be played on the Spawn Agents during a
-                30-second countdown.
+            <div id="intro_help" class="form-text">This song will be played on all agents in the AUDIO group.
+            </div>
+        </div>
+
+        <div class="col-md-3  col-sm-auto">
+            <label for="audio_group" class="form-label">Audio Group</label>
+            <input type="text" class="form-control"  id="audio_group"
+                   placeholder="agents for playing audio files"/>
+            <div id="audio_group_help" class="form-text">Spawn agents always playing sound.
             </div>
         </div>
 
