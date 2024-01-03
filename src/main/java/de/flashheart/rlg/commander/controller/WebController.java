@@ -5,7 +5,10 @@ import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.IOUtils;
+import org.checkerframework.checker.units.qual.A;
 import org.javatuples.Pair;
+import org.javatuples.Triplet;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
@@ -14,6 +17,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,6 +78,19 @@ public class WebController {
     public String agents(Model model) {
         model.addAttribute("agents", agentsService.get_all_agents());
         model.addAttribute("agents_active", "active");
+        // adding test list for the agents web interface
+        ArrayList<Triplet<String, String, JSONObject>> list_of_tests = new ArrayList<>();
+        try {
+            JSONArray tests = new JSONObject(IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("agent_test_commands.json"), StandardCharsets.UTF_8)).getJSONArray("tests");
+            for (int test_i = 0; test_i < tests.length(); test_i ++) {
+                JSONObject test = tests.getJSONObject(test_i);
+                list_of_tests.add(new Triplet<>(test.getString("name"), test.getString("command"), test.getJSONObject("scheme")));
+            }
+        } catch (Exception ignored) {
+            log.error(ignored);
+        } finally {
+            model.addAttribute("test_list", list_of_tests);
+        }
         return "agents";
     }
 
@@ -116,7 +134,13 @@ public class WebController {
     public String params(@RequestParam(name = "game_mode") String game_mode, Model model) {
         model.addAttribute("params_active", "active");
         model.addAttribute("intros",
-                myYamlConfiguration.getIntro().entrySet().stream()
+                myYamlConfiguration.getIntros().entrySet().stream()
+                        .map(stringStringEntry -> new Pair<>(stringStringEntry.getKey(), stringStringEntry.getValue()))
+                        .sorted(Comparator.comparing(Pair::getValue1))
+                        .collect(Collectors.toList())
+        );
+        model.addAttribute("voices",
+                myYamlConfiguration.getVoices().entrySet().stream()
                         .map(stringStringEntry -> new Pair<>(stringStringEntry.getKey(), stringStringEntry.getValue()))
                         .sorted(Comparator.comparing(Pair::getValue1))
                         .collect(Collectors.toList())

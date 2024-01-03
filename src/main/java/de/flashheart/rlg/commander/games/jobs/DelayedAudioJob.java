@@ -1,7 +1,6 @@
 package de.flashheart.rlg.commander.games.jobs;
 
-import de.flashheart.rlg.commander.games.traits.HasActivation;
-import de.flashheart.rlg.commander.games.traits.HasAudio;
+import de.flashheart.rlg.commander.games.traits.HasDelayedAudio;
 import lombok.extern.log4j.Log4j2;
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;
@@ -10,14 +9,14 @@ import org.quartz.UnableToInterruptJobException;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 
 @Log4j2
-public class AudioJob extends QuartzJobBean implements InterruptableJob {
+public class DelayedAudioJob extends QuartzJobBean implements InterruptableJob {
 
     @Override
     protected void executeInternal(JobExecutionContext jobExecutionContext) {
         try {
             String name_of_the_game = jobExecutionContext.getMergedJobDataMap().getString("uuid");
-            HasAudio game = (HasAudio) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
-            game.audio(jobExecutionContext.getMergedJobDataMap());
+            HasDelayedAudio game = (HasDelayedAudio) jobExecutionContext.getScheduler().getContext().get(name_of_the_game);
+            game.play_later(jobExecutionContext.getMergedJobDataMap());
         } catch (SchedulerException e) {
             log.error(e);
         }

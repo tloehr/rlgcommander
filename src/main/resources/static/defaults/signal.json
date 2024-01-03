@@ -19,6 +19,7 @@
   "spawns": {
     "game_lobby": false,
     "intro_mp3": "<none>",
+    "intro_voice": "sharon",
     "starter_countdown": 0,
     "respawn_time": 0,
     "teams": [

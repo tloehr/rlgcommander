@@ -45,11 +45,6 @@ public class Rush extends Scheduled {
 
     public Rush(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException {
         super(game_parameters, scheduler, mqttOutbound);
-        log.debug("    ____             __\n" +
-                "   / __ \\__  _______/ /_\n" +
-                "  / /_/ / / / / ___/ __ \\\n" +
-                " / _, _/ /_/ (__  ) / / /\n" +
-                "/_/ |_|\\__,_/____/_/ /_/\n");
 
         this.bomb_timer = game_parameters.getInt("bomb_timer"); // in seconds
         this.respawn_tickets = game_parameters.getInt("respawn_tickets");
@@ -210,8 +205,8 @@ public class Rush extends Scheduled {
             agentFSMs.get(sender).ProcessFSM(message.getString("button"));
         } else if (hasRole(sender, "attacker_spawn") && message.getString("button").equalsIgnoreCase("up")) {
             // red respawn button was pressed
-            send("acoustic", MQTT.toJSON(MQTT.BUZZER, "single_buzz"), sender);
-            send("visual", MQTT.toJSON(MQTT.WHITE, "single_buzz"), sender);
+            send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.SINGLE_BUZZ), sender);
+            send("visual", MQTT.toJSON(MQTT.WHITE, MQTT.SINGLE_BUZZ), sender);
             remaining_tickets_for_this_zone--;
             broadcast_score();
         } else {

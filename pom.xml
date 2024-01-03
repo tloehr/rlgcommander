@@ -36,6 +36,7 @@
         <jquery.version>3.6.4</jquery.version>
         <stomp.version>2.3.4</stomp.version>
         <javatuples.version>1.2</javatuples.version>
+        <jfiglet.version>0.0.9</jfiglet.version>
     </properties>
     <dependencies>
         <dependency>
@@ -186,6 +187,11 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>${gson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.lalyos</groupId>
+            <artifactId>jfiglet</artifactId>
+            <version>${jfiglet.version}</version>
         </dependency>
     </dependencies>
 

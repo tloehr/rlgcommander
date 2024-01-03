@@ -21,7 +21,7 @@
         jsonfileInput.addEventListener(
             "change",
             () => {
-                var file = jsonfileInput.files[0];
+                const file = jsonfileInput.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.readAsText(file, "UTF-8");

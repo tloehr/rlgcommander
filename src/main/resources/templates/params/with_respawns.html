@@ -7,12 +7,14 @@
 
         function read_respawns_form(game_parameters) {
             game_parameters.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
+            game_parameters.spawns.intro_voice = document.getElementById('intro_voice').value;
             game_parameters.agents.audio = from_string_list(document.getElementById('audio_group').value);
             game_parameters.silent_game = document.getElementById('check-silent').checked;
             game_parameters.spawns.game_lobby = document.getElementById('check-lobby').checked;
             if (game_parameters.spawns.announce_sprees)
                 game_parameters.spawns.announce_sprees = document.getElementById('check-spree').checked;
 
+            // todo: add this function for the voice selection too
             if (game_parameters.spawns.intro_mp3 === '<none>') game_parameters.spawns.starter_countdown = 0;
             else game_parameters.spawns.starter_countdown = 30;
 
@@ -32,6 +34,7 @@
         function preset_respawns_form(game_parameters) {
             sessionStorage.setItem('number_of_teams', game_parameters.spawns.teams.length);
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
+            document.getElementById('intro_voice').value = game_parameters.spawns.intro_voice;
             document.getElementById('audio_group').value = game_parameters.agents.audio ? game_parameters.agents.audio.join() : "";
             document.getElementById('check-lobby').checked = game_parameters.spawns.game_lobby;
             if (game_parameters.spawns.hasOwnProperty('announce_sprees')) {
@@ -129,9 +132,18 @@
             </div>
         </div>
 
+        <div class="col-md-3 col-sm-auto">
+            <label for="intro_voice" class="form-label">Voice</label>
+            <select class="form-select " style="height: 40px;" id="intro_voice">
+                <option selected value="<none>">No voice</option>
+                <option th:each="voice : ${voices}" th:value="${voice.value0}" th:text="${voice.value1}"></option>
+            </select>
+            <div id="voice_help" class="form-text">Voice file for intro and countdown</div>
+        </div>
+
         <div class="col-md-3  col-sm-auto">
             <label for="audio_group" class="form-label">Audio Group</label>
-            <input type="text" class="form-control"  id="audio_group"
+            <input type="text" class="form-control" id="audio_group"
                    placeholder="agents for playing audio files"/>
             <div id="audio_group_help" class="form-text">Spawn agents always playing sound.
             </div>

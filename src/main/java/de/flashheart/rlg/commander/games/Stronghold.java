@@ -45,13 +45,6 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     public Stronghold(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
-        log.info("\n" +
-                " ____  _                         _           _     _\n" +
-                "/ ___|| |_ _ __ ___  _ __   __ _| |__   ___ | | __| |\n" +
-                "\\___ \\| __| '__/ _ \\| '_ \\ / _` | '_ \\ / _ \\| |/ _` |\n" +
-                " ___) | |_| | | (_) | | | | (_| | | | | (_) | | (_| |\n" +
-                "|____/ \\__|_|  \\___/|_| |_|\\__, |_| |_|\\___/|_|\\__,_|\n" +
-                "                           |___/");
         rings_in_progress = new LinkedList<>();
         rings_taken = new ArrayList<>();
         rings_in_use = new ArrayList<>();
@@ -110,22 +103,22 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void process_external_message(String sender, String source, JSONObject message) {
-        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-        if (!message.getString("button").equalsIgnoreCase("up")) return;
-
-        if (game_fsm.getCurrentState().equals(_state_RUNNING) && roles.get(rings_in_progress.getFirst()).contains(sender))
-            cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
-        else super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+    public void process_external_message(String agent_id, String source, JSONObject message) {
+        if (game_fsm.getCurrentState().equals(_state_RUNNING) && roles.get(rings_in_progress.getFirst()).contains(agent_id)) {
+            if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+            if (!message.getString("button").equalsIgnoreCase("up")) return;
+            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+        } else
+            super.process_external_message(agent_id, source, message);
     }
 
     private void taken(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "medium"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.MEDIUM), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
     }
 
     private void fused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_FUSED));
         if (!allow_defuse) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
         if (active_ring_taken()) {
@@ -170,13 +163,13 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     private void activate_ring() {
         roles.get(rings_in_progress.getFirst()).forEach(agent -> cpFSMs.get(agent).ProcessFSM(_msg_ACTIVATE));
         if (rings_in_progress.size() < rings_in_use.size() && rings_in_use.size() > 1) // not with the first or only ring
-            send("acoustic", MQTT.toJSON(MQTT.SIR4, "long"), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.SIR4, MQTT.LONG), roles.get("sirens"));
         add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", "activated"));
         broadcast_score();
     }
 
     private void defused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), "fast"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), MQTT.FAST), agent);
     }
 
     private void nearly_defused(String agent) {
@@ -192,7 +185,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void prolog(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), MQTT.NORMAL), agent);
     }
 
     private boolean active_ring_taken() {

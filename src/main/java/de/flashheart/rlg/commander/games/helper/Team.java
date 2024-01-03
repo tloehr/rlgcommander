@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.games;
+package de.flashheart.rlg.commander.games.helper;
 
 import lombok.Getter;
 import lombok.ToString;
@@ -10,11 +10,11 @@ import org.apache.commons.lang3.StringUtils;
 @Getter
 @ToString
 public class Team {
-    final String role;
-    final String name;
-    final String color;
-    final String led_device_id;
-    int respawns;
+    private final String role;
+    private final String name;
+    private final String color;
+    private final String led_device_id;
+    private int respawns;
 
     public Team(String role, String name, String led_device_id) {
         this.role = role;

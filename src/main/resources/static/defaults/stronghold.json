@@ -24,7 +24,8 @@
     ],
     "respawn_time": 0,
     "game_lobby": false,
-    "intro_mp3": "<none>"
+    "intro_mp3": "<none>",
+    "intro_voice": "sharon"
   },
   "class": "de.flashheart.rlg.commander.games.Stronghold",
   "resume_countdown": "0",

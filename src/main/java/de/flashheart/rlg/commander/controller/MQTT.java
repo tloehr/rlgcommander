@@ -31,19 +31,24 @@ public class MQTT {
 
 
     public static final String SCHEME_VEY_LONG = "very_long";
-    public static final String SCHEME_LONG = "long";
-    public static final String SCHEME_MEDIUM = "medium";
+    public static final String LONG = "long";
+    public static final String MEDIUM = "medium";
     public static final String SCHEME_SHORT = "short";
     public static final String SCHEME_VERY_SHORT = "very_short";
     public static final String RECURRING_SCHEME_VERY_SLOW = "very_slow";
     public static final String RECURRING_SCHEME_SLOW = "slow";
-    public static final String RECURRING_SCHEME_NORMAL = "normal";
-    public static final String RECURRING_SCHEME_FAST = "fast";
-    public static final String RECURRING_SCHEME_VERY_FAST = "very_fast";
+    public static final String NORMAL = "normal";
+    public static final String FAST = "fast";
+    public static final String VERY_FAST = "very_fast";
+    public static final String RECURRING_SCHEME_MEGA_FAST = "mega_fast";
     public static final String RECURRING_SCHEME_NETSTATUS = "netstatus";
     public static final String SINGLE_BUZZ = "single_buzz";
     public static final String DOUBLE_BUZZ = "double_buzz";
     public static final String TRIPLE_BUZZ = "triple_buzz";
+    public static final String FLAG_TAKEN = "flag_taken";
+    public static final String RESPAWN_SIGNAL = "respawn_signal";
+    public static final String PREPARE_TEAM_SIGNAL = "prepare_team_signal";
+    public static final String TEAM_HURRY_UP_SIGNAL = "team_hurry_up_signal";
 
     public static final String GAME_STARTS = "game_starts";
     public static final String GAME_ENDS = "game_ends";

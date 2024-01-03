@@ -79,6 +79,7 @@ public class MQTTInbound {
             String source = tokens.get(tokens.size() - 1);
             String payload = message.getPayload().toString();
 
+            // todo: check if json object is valid to prevent exceptions here
             if (source.equalsIgnoreCase("status")) {
                 log.trace(message.toString());
                 log.trace(message.getPayload().toString());
@@ -88,12 +89,11 @@ public class MQTTInbound {
                 } catch (JSONException e) {
                     //agentsService.remove(agentid);
                 }
-            } else {
+            } else { // must be a button or rfid
                 log.trace(message.toString());
                 log.trace(message.getPayload().toString());
                 int game_id = live_agents.getOrDefault(agentid, new Agent()).getGameid();
-                // always remember last button event
-                agentsService.agent_reported_button(agentid, source, new JSONObject(payload));
+                // agentsService.agent_reported_button(agentid, source, new JSONObject(payload));
                 // report to running game
                 if (game_id > 0) {
                     try {

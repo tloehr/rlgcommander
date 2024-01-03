@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.fsm.FSM;
+import com.github.lalyos.jfiglet.FigletFont;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.BroadcastScoreJob;
@@ -28,13 +29,6 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
 
     public TimedOnly(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        log.info("\n" +
-                " _____ _                    _  ___        _\n" +
-                "|_   _(_)_ __ ___   ___  __| |/ _ \\ _ __ | |_   _\n" +
-                "  | | | | '_ ` _ \\ / _ \\/ _` | | | | '_ \\| | | | |\n" +
-                "  | | | | | | | | |  __/ (_| | |_| | | | | | |_| |\n" +
-                "  |_| |_|_| |_| |_|\\___|\\__,_|\\___/|_| |_|_|\\__, |\n" +
-                "                                            |___/");
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
         jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
         vars = game_parameters.getJSONObject("display");
@@ -44,7 +38,7 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     public void on_reset() {
         super.on_reset();
         deleteJob(broadcastScoreJobkey);
-        broadcast_cycle_counter = 0l;
+        broadcast_cycle_counter = 0L;
         broadcast_score();
     }
 
@@ -53,14 +47,7 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
         super.on_run();
         long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
         create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
-        broadcast_cycle_counter = 0;
-    }
-
-    @Override
-    public void process_external_message(String sender, String source, JSONObject message) {
-        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-        if (!message.getString("button").equalsIgnoreCase("up")) return;
-        super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+        broadcast_cycle_counter = 0L;
     }
 
     @Override
@@ -75,13 +62,12 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
                     MQTT.page("page1",
                             "Game Over",
                             "Respawns",
-                            "Blau: ${blue_respawns}",
-                            "Rot: ${red_respawns}")
+                            "Blue: ${blue_respawns}",
+                            "Red: ${red_respawns}")
             );
             return epilog_pages;
         }
 
-        // todo: show number of respawns
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             JSONObject pages_when_game_runs = MQTT.merge(
                     MQTT.page("page0",
@@ -94,8 +80,8 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
 
                             "Restzeit: ${remaining}",
                             StringUtils.center("Respawns", 20),
-                            "Blau: ${blue_respawns}",
-                            "Rot: ${red_respawns}")
+                            "Blue: ${blue_respawns}",
+                            "Red: ${red_respawns}")
             );
             return pages_when_game_runs;
         }
@@ -111,6 +97,8 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
             send("vars", vars, agents.keySet());
         }
     }
+
+
 
     @Override
     public FSM create_CP_FSM(String agent) {

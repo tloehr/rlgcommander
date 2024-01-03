@@ -3,9 +3,9 @@
       layout:decorate="~{params/sirens.html}">
 
 <head>
-    <title>Time Only</title>
+    <title>Magspeed Tournament</title>
     <script>
-        sessionStorage.setItem('game_mode', 'timed_only');
+        sessionStorage.setItem('game_mode', 'mag_speed');
 
         function read_form(game_parameters) {
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
@@ -31,8 +31,8 @@
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1>Time Only</h1>
-    <p>A game mode only to keep the time for You.</p>
+    <h1>Mag Speed Tournament</h1>
+    <p>A game mode to support the MagSpeed Tournament in Montabaur, Germany.</p>
 </section>
 
 <section layout:fragment="params">

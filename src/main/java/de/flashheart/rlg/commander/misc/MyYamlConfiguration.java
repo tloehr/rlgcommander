@@ -14,7 +14,8 @@ import java.util.Map;
 @Getter
 @Setter
 public class MyYamlConfiguration {
-    private Map<String, String> intro;
+    private Map<String, String> intros;
+    private Map<String, String> voices;
     private Map<String, String> access_points;
     private Map<String, String> score_broadcast;
 }

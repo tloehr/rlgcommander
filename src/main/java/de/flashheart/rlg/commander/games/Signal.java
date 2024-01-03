@@ -39,14 +39,6 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         assert_two_teams_red_and_blue();
         count_respawns = false;
 
-        log.info("\n" +
-                " ____  _                   _\n" +
-                "/ ___|(_) __ _ _ __   __ _| |\n" +
-                "\\___ \\| |/ _` | '_ \\ / _` | |\n" +
-                " ___) | | (_| | | | | (_| | |\n" +
-                "|____/|_|\\__, |_| |_|\\__,_|_|\n" +
-                "         |___/");
-
         cpLockJobs = new HashMap<>();
         cpFSMs.forEach((agent, fsm) -> cpLockJobs.put(agent, new JobKey(agent + "_lock_color", uuid.toString())));
         line_variables = new JSONObject();
@@ -82,7 +74,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
                 send("visual", MQTT.toJSON(led, "fast"), get_all_spawn_agents());
                 // 2,5 seconds sir2 at begin of lock period
-                send("acoustic", MQTT.toJSON(MQTT.SIR2, "long"), roles.get("sirens"));
+                send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.LONG), roles.get("sirens"));
             });
 
             return fsm;
@@ -93,14 +85,13 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     @Override
-    public void process_external_message(String sender, String source, JSONObject message) {
-        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-        if (!message.getString("button").equalsIgnoreCase("up")) return;
-
-        if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING))
-            cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
-        else
-            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+    public void process_external_message(String agent_id, String source, JSONObject message) {
+        if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
+            if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+            if (!message.getString("button").equalsIgnoreCase("up")) return;
+            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+        } else
+            super.process_external_message(agent_id, source, message);
     }
 
     private void cp_to_neutral(String agent) {
@@ -109,7 +100,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 MQTT.page("page0",
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "unlocked"));
         int index_of_agent = capture_points.indexOf(agent) + 1;
         line_variables.put("line" + index_of_agent, "");
@@ -118,8 +109,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     private void cp_to_blue(String agent) {
         deleteJob(cpLockJobs.get(agent));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal"), agent);
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, MQTT.NORMAL), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
         JobDataMap map = new JobDataMap();
         map.put("agent", agent);
         // lock in 2 secs
@@ -128,8 +119,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     private void cp_to_red(String agent) {
         deleteJob(cpLockJobs.get(agent));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal"), agent);
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, MQTT.NORMAL), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
         JobDataMap map = new JobDataMap();
         map.put("agent", agent);
         // lock in 2 secs
@@ -203,7 +194,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         String agent = map.getString("agent");
         String state = cpFSMs.get(agent).getCurrentState().toLowerCase();
         if (state.matches("red_locked|blue_locked")) {
-            send("acoustic", MQTT.toJSON(MQTT.SIR3, "long"), roles.get("sirens"));
+            send("acoustic", MQTT.toJSON(MQTT.SIR3, MQTT.LONG), roles.get("sirens"));
             send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), get_all_spawn_agents());
             cpFSMs.get(map.getString("agent")).ProcessFSM(_msg_TO_NEUTRAL);
         } else

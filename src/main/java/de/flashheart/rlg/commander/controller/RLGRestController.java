@@ -105,8 +105,17 @@ public class RLGRestController {
 
     @PostMapping("/game/unload")
     public ResponseEntity<?> stop_game(@RequestParam(name = "id") int id) {
-        gamesService.unload_game(id);
-        return new ResponseEntity(HttpStatus.ACCEPTED);
+        ResponseEntity r;
+        try {
+            gamesService.unload_game(id);
+            r = new ResponseEntity(HttpStatus.ACCEPTED);
+        } catch (Exception e) {
+            // remember the constructor of the game class must be public
+            log.warn(e);
+            e.printStackTrace();
+            r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
+        }
+        return r;
     }
 
     @GetMapping("/game/status")
@@ -137,13 +146,21 @@ public class RLGRestController {
     public ResponseEntity<?> max_number_of_games() {
         return new ResponseEntity(new JSONObject().put("max_number_of_games", GamesService.MAX_NUMBER_OF_GAMES).toString(), HttpStatus.OK);
     }
+
     @GetMapping("/system/list_agents")
     public ResponseEntity<?> list_agents() {
         return new ResponseEntity<>(agentsService.get_all_agent_states().toString(), HttpStatus.OK);
     }
+//
+//    @PostMapping("/system/test_agent")
+//    public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String agentid, @RequestParam(name = "deviceid") String deviceid, @RequestParam(name = "pattern") String pattern) {
+//        agentsService.test_agent(agentid, deviceid, pattern);
+//        return new ResponseEntity(HttpStatus.ACCEPTED);
+//    }
+
     @PostMapping("/system/test_agent")
-    public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String agentid, @RequestParam(name = "deviceid") String deviceid, @RequestParam(name = "pattern") String pattern) {
-        agentsService.test_agent(agentid, deviceid, pattern);
+    public ResponseEntity<?> test_agent2(@RequestParam(name = "agent_id") String agent_id, @RequestParam(name = "command") String command, @RequestParam(name = "scheme") String scheme) {
+        agentsService.test_agent(agent_id, command, new JSONObject(scheme));
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 

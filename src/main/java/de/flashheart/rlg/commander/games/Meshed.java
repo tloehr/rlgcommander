@@ -123,16 +123,15 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    public void process_external_message(String sender, String source, JSONObject message) {
-        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-        if (!message.getString("button").equalsIgnoreCase("up")) return;
-
-        if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
-            String transition_message = get_FSM_color_change_message(sender);
+    public void process_external_message(String agent_id, String source, JSONObject message) {
+        if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
+            if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+            if (!message.getString("button").equalsIgnoreCase("up")) return;
+            String transition_message = get_FSM_color_change_message(agent_id);
             if (!transition_message.isEmpty())
-                cpFSMs.get(sender).ProcessFSM(transition_message);
+                cpFSMs.get(agent_id).ProcessFSM(transition_message);
         } else
-            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+            super.process_external_message(agent_id, source, message);
     }
 
     /**
@@ -198,8 +197,8 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
 
 
     @Override
-    protected void on_respawn_signal_received(String spawn, String agent) {
-        super.on_respawn_signal_received(spawn, agent);
+    protected void on_respawn_signal_received(String spawn, String agent_id) {
+        super.on_respawn_signal_received(spawn, agent_id);
     }
 
 
@@ -250,9 +249,9 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
      * @return LED color code for a flag state
      */
     private String get_led_color_for_flage_state(String state) {
-        return switch (state){
+        return switch (state) {
             case _flag_state_RED -> MQTT.RED;
-            case _flag_state_YELLOW-> MQTT.YELLOW;
+            case _flag_state_YELLOW -> MQTT.YELLOW;
             case _flag_state_GREEN -> MQTT.GREEN;
             case _flag_state_BLUE -> MQTT.BLUE;
             default -> MQTT.WHITE;

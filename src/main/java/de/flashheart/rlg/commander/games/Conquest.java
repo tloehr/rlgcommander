@@ -80,13 +80,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         if (number_of_cps < 3) throw new ArrayIndexOutOfBoundsException("Minimum number of CPs: 3");
         count_respawns = true;
 
-        log.info("\n   ______                                  __\n" +
-                "  / ____/___  ____  ____ ___  _____  _____/ /_\n" +
-                " / /   / __ \\/ __ \\/ __ `/ / / / _ \\/ ___/ __/\n" +
-                "/ /___/ /_/ / / / / /_/ / /_/ /  __(__  ) /_\n" +
-                "\\____/\\____/_/ /_/\\__, /\\__,_/\\___/____/\\__/\n" +
-                "                    /_/");
-
         this.respawn_tickets = game_parameters.getBigDecimal("respawn_tickets");
         this.not_bleeding_before_cps = game_parameters.getBigDecimal("not_bleeding_before_cps");
         this.start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
@@ -141,8 +134,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    protected void on_respawn_signal_received(String spawn, String agent) {
-        super.on_respawn_signal_received(spawn, agent);
+    protected void on_respawn_signal_received(String spawn, String agent_id) {
+        super.on_respawn_signal_received(spawn, agent_id);
         if (spawn.equals("red_spawn")) {
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
         }
@@ -153,14 +146,13 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
 
 
     @Override
-    public void process_external_message(String sender, String source, JSONObject message) {
-        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-        if (!message.getString("button").equalsIgnoreCase("up")) return;
-
-        if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING))
-            cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
-        else
-            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+    public void process_external_message(String agent_id, String source, JSONObject message) {
+        if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
+            if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+            if (!message.getString("button").equalsIgnoreCase("up")) return;
+            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+        } else
+            super.process_external_message(agent_id, source, message);
     }
 
     @Override
@@ -185,18 +177,18 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
     }
 
     private void cp_to_blue(String agent) {
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal"), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, MQTT.NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal"), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, MQTT.NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 

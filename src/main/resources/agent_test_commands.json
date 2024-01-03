@@ -1,0 +1,218 @@
+{
+  "tests": [
+    {
+      "name": "all leds off",
+      "scheme": {
+        "led_all": "off"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "single, very_long",
+      "scheme": {
+        "led_all": "very_long"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "single, long",
+      "scheme": {
+        "led_all": "long"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "single, medium",
+      "scheme": {
+        "led_all": "medium"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "single, short",
+      "scheme": {
+        "led_all": "short"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "single, very_short",
+      "scheme": {
+        "led_all": "very_short"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "recurring, very_slow",
+      "scheme": {
+        "led_all": "very_slow"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "recurring, slow",
+      "scheme": {
+        "led_all": "slow"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "recurring, normal",
+      "scheme": {
+        "led_all": "normal"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "recurring, fast",
+      "scheme": {
+        "led_all": "fast"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "recurring, very_fast",
+      "scheme": {
+        "led_all": "very_fast"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "recurring, mega_fast",
+      "scheme": {
+        "led_all": "mega_fast"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "special, netstatus",
+      "scheme": {
+        "led_all": "netstatus"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "special, flag_taken",
+      "scheme": {
+        "led_all": "off",
+        "red": "flag_taken"
+      },
+      "command": "visual"
+    },
+    {
+      "name": "all sirens off",
+      "scheme": {
+        "sir_all": "off"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, single_buzz",
+      "scheme": {
+        "buzzer": "single_buzz"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, double_buzz",
+      "scheme": {
+        "buzzer": "double_buzz"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, triple_buzz",
+      "scheme": {
+        "buzzer": "triple_buzz"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, team_ready_signal",
+      "scheme": {
+        "buzzer": "team_ready_signal"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, team_hurry_up_signal",
+      "scheme": {
+        "buzzer": "team_hurry_up_signal"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, annoying",
+      "scheme": {
+        "buzzer": "annoying"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, respawn_signal",
+      "scheme": {
+        "buzzer": "respawn_signal"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, game_starts",
+      "scheme": {
+        "buzzer": "game_starts"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "acoustic, game_ends",
+      "scheme": {
+        "buzzer": "game_ends"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "stop playing",
+      "scheme": {
+        "channel": "",
+        "subpath": "",
+        "soundfile": ""
+      },
+      "command": "play"
+    },
+    {
+      "name": "play, jam",
+      "scheme": {
+        "channel": "music",
+        "subpath": "music",
+        "soundfile": "jam"
+      },
+      "command": "play"
+    },
+    {
+      "name": "random event",
+      "scheme": {
+        "channel": "events",
+        "subpath": "events",
+        "soundfile": "<random>"
+      },
+      "command": "play"
+    },
+    {
+      "name": "random pause",
+      "scheme": {
+        "channel": "pause",
+        "subpath": "pause",
+        "soundfile": "<random>"
+      },
+      "command": "play"
+    },
+    {
+      "name": "random music",
+      "scheme": {
+        "channel": "music",
+        "subpath": "music",
+        "soundfile": "<random>"
+      },
+      "command": "play"
+    }
+  ]
+}

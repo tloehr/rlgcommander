@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.service;
 
+import com.github.lalyos.jfiglet.FigletFont;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
@@ -23,6 +24,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -44,7 +46,7 @@ public class GamesService {
     SimpMessagingTemplate simpMessagingTemplate;
     MyYamlConfiguration myYamlConfiguration;
 
-    private final Optional<Game>[] loaded_games; // exactly n games are possible
+    private final Optional<Game>[] loaded_games;
     public static final int MAX_NUMBER_OF_GAMES = 1;
     private final Multimap<Integer, StateReachedListener> gameStateListeners;
 
@@ -65,18 +67,14 @@ public class GamesService {
         this.myYamlConfiguration = myYamlConfiguration;
     }
 
-    public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException {
+    public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         if (loaded_games[id - 1].isPresent())
             throw new IllegalAccessException("id " + id + " is in use. Unload first.");
-        log.debug("\n _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
-                "| |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
-                "| |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
-                "|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
-        log.debug("\n" + Tools.fignums[id]);
+        log.debug(FigletFont.convertOneLine(this.getClass().getClassLoader().getResourceAsStream("Big.flf"), "LOADING GAME #" + id));
         JSONObject game_description = new JSONObject(json);
-        
+
         // add parameters from application.yml
         game_description.put("SCORE_CALCULATION_EVERY_N_SECONDS", myYamlConfiguration.getScore_broadcast().get("every_seconds"));
         game_description.put("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", myYamlConfiguration.getScore_broadcast().get("cycle_counter"));
@@ -98,13 +96,10 @@ public class GamesService {
         return game;
     }
 
-    public void unload_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+    public void unload_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException, IOException {
         check_id(id);
-        log.debug("\n _   _ _  _ _    ___   _   ___ ___ _  _  ___    ___   _   __  __ ___\n" +
-                "| | | | \\| | |  / _ \\ /_\\ |   \\_ _| \\| |/ __|  / __| /_\\ |  \\/  | __|\n" +
-                "| |_| | .` | |_| (_) / _ \\| |) | || .` | (_ | | (_ |/ _ \\| |\\/| | _|\n" +
-                " \\___/|_|\\_|____\\___/_/ \\_\\___/___|_|\\_|\\___|  \\___/_/ \\_\\_|  |_|___|");
-        log.debug("\n" + Tools.fignums[id]);
+
+        log.debug(FigletFont.convertOneLine(this.getClass().getClassLoader().getResourceAsStream("big.flf"), "GAME #" + id + " RELEASED"));
         Game game_to_unload = loaded_games[id - 1].get();
         agentsService.remove_gameid_from_agents(game_to_unload.getAgents().keySet());
         game_to_unload.cleanup();
@@ -149,9 +144,9 @@ public class GamesService {
         loaded_games[id - 1].get().zeus(new JSONObject(params));
     }
 
-    public void process_message(int id, String agentid, String item, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+    public void process_message(int id, String agent_id, String source, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().process_external_message(agentid, item, payload);
+        loaded_games[id - 1].get().process_external_message(agent_id, source, payload);
     }
 
     public JSONArray get_games() {

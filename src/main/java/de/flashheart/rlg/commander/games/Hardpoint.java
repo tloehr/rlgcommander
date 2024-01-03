@@ -67,13 +67,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
 
-        log.info("\n    __  __               __            _       __\n" +
-                "   / / / /___ __________/ /___  ____  (_)___  / /_\n" +
-                "  / /_/ / __ `/ ___/ __  / __ \\/ __ \\/ / __ \\/ __/\n" +
-                " / __  / /_/ / /  / /_/ / /_/ / /_/ / / / / / /_\n" +
-                "/_/ /_/\\__,_/_/   \\__,_/ .___/\\____/_/_/ /_/\\__/\n" +
-                "                      /_/");
-
         count_respawns = false;
 
         this.winning_score = game_parameters.optLong("winning_score", 250);
@@ -144,7 +137,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (delay_until_next_flag > 0L)
-                        send("acoustic", MQTT.toJSON(MQTT.SHUTDOWN_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
+                        send("acoustic", MQTT.toJSON(MQTT.SHUTDOWN_SIREN, MQTT.LONG), roles.get("sirens"));
                     log.trace("flag ended with score red {} and blue {}", iteration_score_red / 1000L, iteration_score_blue / 1000L);
                     if (iteration_score_red + iteration_score_blue > 0) {
                         add_in_game_event(new JSONObject().put("message", String.format("Flag %s added %s points for RED and %s points for BLUE", agent, iteration_score_red / 1000L, iteration_score_blue / 1000L)).put("agent", agent), "free_text");
@@ -158,7 +151,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
             fsm.setAction(_flag_state_GET_READY, _msg_GO, new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    send("acoustic", MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
+                    send("acoustic", MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.LONG), roles.get("sirens"));
                     return true;
                 }
             });
@@ -170,7 +163,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     private void cp_prolog(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
         send("paged",
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "PROLOG"),
@@ -203,7 +196,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                     MQTT.page("page0",
                             "I am ${agentname}", "", "", "Flag is preparing"),
                     agent);
-            send("visual",new JSONObject("""
+            send("visual", new JSONObject("""
                     "led_all" : "off",
                     "wht": {
                         "repeat": -1,
@@ -255,7 +248,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag is NEUTRAL"),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "NEUTRAL"));
     }
 
@@ -270,15 +263,15 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         create_job(delayed_reaction_jobkey,
                 LocalDateTime.now().plus(delay_after_color_change.multiply(new BigDecimal(1000L)).longValue(), ChronoUnit.MILLIS),
                 DelayedReactionJob.class, Optional.empty());
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.NORMAL), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
     }
 
     private void cp_to_scoring_color(String agent, String color) {
         String COLOR = (color.equalsIgnoreCase("blu") ? "BLUE" : "RED");
         deleteJob(flag_time_out_jobkey);
-        send("acoustic", MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.SCHEME_MEDIUM), roles.get("sirens"));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("acoustic", MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.MEDIUM), roles.get("sirens"));
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.NORMAL), agent);
         send("paged",
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag is " + COLOR),
@@ -387,18 +380,17 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     @Override
-    public void process_external_message(String sender, String source, JSONObject message) {
-        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-        if (!message.getString("button").equalsIgnoreCase("up")) return;
-
-        if (game_fsm.getCurrentState().equals(_state_RUNNING) && get_active_flag().equalsIgnoreCase(sender))
-            cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
-        else
-            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
+    public void process_external_message(String agent_id, String source, JSONObject message) {
+        if (game_fsm.getCurrentState().equals(_state_RUNNING) && get_active_flag().equalsIgnoreCase(agent_id)) {
+            if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+            if (!message.getString("button").equalsIgnoreCase("up")) return;
+            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+        } else
+            super.process_external_message(agent_id, source, message);
     }
 
     @Override
-    protected void on_respawn_signal_received(String role, String agent) {
+    protected void on_respawn_signal_received(String role, String agent_id) {
         // no respawns in Hardpoint
     }
 

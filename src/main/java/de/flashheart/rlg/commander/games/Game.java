@@ -2,6 +2,7 @@ package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
+import com.github.lalyos.jfiglet.FigletFont;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
@@ -11,6 +12,7 @@ import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.games.events.StateTransitionEvent;
 import de.flashheart.rlg.commander.games.events.StateTransitionListener;
 import de.flashheart.rlg.commander.misc.*;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.javatuples.Quartet;
 import org.json.JSONArray;
@@ -36,6 +38,7 @@ public abstract class Game {
     public static final String _msg_ADMIN = "admin";
     public static final String _msg_BUTTON_01 = "btn01";
     public static final String _msg_BUTTON_02 = "btn02";
+    public static final String _msg_RFID = "rfid";
     public static final String _msg_RUN = "run";
     public static final String _msg_IN_GAME_EVENT_OCCURRED = "in_game_event_occurred";
     public static final String _msg_PAUSE = "pause";
@@ -67,6 +70,10 @@ public abstract class Game {
     public static final List<String> _state_ALL_STATES = List.of(_state_PROLOG, _state_TEAMS_NOT_READY, _state_TEAMS_READY, _state_RESUMING, _state_PAUSING, _state_RUNNING, _state_EPILOG);
     private List<StateTransitionListener> stateTransitionListeners = new ArrayList<>();
     private List<StateReachedListener> stateReachedListeners = new ArrayList<>();
+    public static final String AGENT_MUSIC_PATH = "music";
+    public static final String AGENT_VOICE_PATH = "countdown";
+    public static final String AGENT_EVENT_PATH = "events";
+    public static final String AGENT_PAUSE_PATH = "pause";
 
     // all message must be sent via THIS base.html classes send method to implement "SILENT_GAME"
     private final MQTTOutbound mqttOutbound;
@@ -75,9 +82,11 @@ public abstract class Game {
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
     protected final ArrayList<String> game_description;
+    @Getter
     private final JSONObject game_parameters;
     protected final UUID uuid;
     protected final Scheduler scheduler;
+    @Getter
     protected final Multimap<String, String> agents, roles;
     protected final HashMap<String, String> map_flag_state_to_led_color;
 
@@ -89,6 +98,7 @@ public abstract class Game {
     private LocalDateTime game_init_at;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        log.info(FigletFont.convertOneLine(getGameMode()));
         uuid = UUID.randomUUID();
         game_init_at = LocalDateTime.now();
         this.game_parameters = game_parameters;
@@ -100,7 +110,6 @@ public abstract class Game {
         this.silent_game = game_parameters.optBoolean("silent_game");
         this.cpFSMs = new HashMap<>();
         this.map_flag_state_to_led_color = new HashMap<>();
-
 
         JSONObject agts = game_parameters.getJSONObject("agents");
         Set<String> rls = agts.keySet();
@@ -217,6 +226,7 @@ public abstract class Game {
         if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
         mqttOutbound.send(cmd, payload, agent);
     }
+
     protected void send(String cmd, String signal_key, String agent) {
         if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
         mqttOutbound.send(cmd, signal_key, agent);
@@ -253,13 +263,16 @@ public abstract class Game {
     }
 
     /**
-     * when something happens, we need to react on it. Implement this method to tell us, WHAT we should do. these
+     * when something happens on the field (a button or a scanned tag), we need to react on it.
+     * Implement this method to tell us, WHAT we should do. these
      * messages are usually sent from outside the Game hierarchy. A sender can also be the quartz scheduler.
      *
-     * @param message
+     * @param agent_id of the message's source
+     * @param source   currently btn01, _timed_respawn_, rfid
+     * @param message  the payload of that message. Button up or down, UID of the tag...
      * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
      */
-    public abstract void process_external_message(String sender, String item, JSONObject message);
+    public abstract void process_external_message(String agent_id, String source, JSONObject message);
 
     public void on_reset() {
         game_init_at = LocalDateTime.now();
@@ -270,12 +283,12 @@ public abstract class Game {
 
     public void on_run() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
-        send("acoustic", MQTT.toJSON(MQTT.SIR1, "game_starts"), roles.get("sirens"));
+        send("acoustic", MQTT.toJSON(MQTT.SIR1, MQTT.GAME_STARTS), roles.get("sirens"));
     }
 
     public void on_game_over() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
-        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off", MQTT.SIR1, "game_ends"), roles.get("sirens"));
+        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off", MQTT.SIR1, MQTT.GAME_ENDS), roles.get("sirens"));
         log.info(getState().toString(4));
     }
 
@@ -360,14 +373,6 @@ public abstract class Game {
         });
 
         return fsm;
-    }
-
-    public Multimap<String, String> getAgents() {
-        return agents;
-    }
-
-    public Multimap<String, String> getRoles() {
-        return roles;
     }
 
 
@@ -482,16 +487,12 @@ public abstract class Game {
     }
 
     protected String get_signal(String key) {
-        return get_signal(key, MQTT.RECURRING_SCHEME_NORMAL);
+        return get_signal(key, MQTT.NORMAL);
     }
 
     protected String get_signal(String key, String def) {
         if (game_parameters.has(key)) return game_parameters.getJSONObject(key).optString(def);
         else return def;
-    }
-
-    public JSONObject getGame_parameters() {
-        return game_parameters;
     }
 
     protected JSONObject getSpawnPages(String state) {

@@ -42,14 +42,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
-        log.info("\n" +
-                "   ______           __            ________\n" +
-                "  / ____/__  ____  / /____  _____/ ____/ /___ _____ ______\n" +
-                " / /   / _ \\/ __ \\/ __/ _ \\/ ___/ /_  / / __ `/ __ `/ ___/\n" +
-                "/ /___/  __/ / / / /_/  __/ /  / __/ / / /_/ / /_/ (__  )\n" +
-                "\\____/\\___/_/ /_/\\__/\\___/_/  /_/   /_/\\__,_/\\__, /____/\n" +
-                "                                            /____/");
-
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
         scores = HashBasedTable.create();
         reset_score_table();
@@ -72,8 +64,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             });
             vars.put("score_" + color, JavaTimeConverter.format(scores.get("all", color)));
 
-            vars.put("red_respawns", team_registry.get("red").respawns);
-            vars.put("blue_respawns", team_registry.get("blue").respawns);
+            vars.put("red_respawns", team_registry.get("red").getRespawns());
+            vars.put("blue_respawns", team_registry.get("blue").getRespawns());
         });
         return vars;
     }
@@ -109,23 +101,26 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     private void cp_to_neutral(String agent) {
         send("paged",
                 MQTT.page("page0",
-                        "I am ${agentname}...", "...and Your Flag", "Blue: ${" + get_agent_key(agent, "blue") + "}", "Red: ${" + get_agent_key(agent, "red") + "}"),
-                agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, "normal"), agent);
+                        "I am ${agentname}...",
+                        "...and Your Flag",
+                        "Blue: ${" + get_agent_key(agent, "blue") + "}",
+                        "Red: ${" + get_agent_key(agent, "red") + "}"
+                ), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
         //if (game_fsm.getCurrentState().equals(_state_RUNNING))
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
     }
 
     private void cp_to_blue(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, "normal"), agent);
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, MQTT.NORMAL), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
         broadcast_score();
     }
 
     private void cp_to_red(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, "normal"), agent);
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "double_buzz"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, MQTT.NORMAL), agent);
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
         broadcast_score();
     }
@@ -231,15 +226,13 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void process_external_message(String sender, String source, JSONObject message) {
-        if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
-        if (!message.getString("button").equalsIgnoreCase("up")) return;
-
-        if (cpFSMs.containsKey(sender) && game_fsm.getCurrentState().equals(_state_RUNNING))
-            cpFSMs.get(sender).ProcessFSM(source.toLowerCase());
-        else {
-            super.process_external_message(sender, _msg_RESPAWN_SIGNAL, message);
-        }
+    public void process_external_message(String agent_id, String source, JSONObject message) {
+        if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
+            if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
+            if (!message.getString("button").equalsIgnoreCase("up")) return;
+            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+        } else
+            super.process_external_message(agent_id, source, message);
     }
 
     @Override

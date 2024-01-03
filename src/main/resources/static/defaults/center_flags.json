@@ -19,7 +19,8 @@
     "count_respawns": true,
     "game_lobby": true,
     "intro_mp3": "<none>",
-    "starter_countdown": 30,
+    "intro_voice": "sharon",
+    "starter_countdown": 0,
     "announce_sprees": true,
     "respawn_time": 0,
     "teams": [

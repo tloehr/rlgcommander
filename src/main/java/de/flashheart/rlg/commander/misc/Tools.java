@@ -18,50 +18,6 @@ import java.util.Vector;
 @Log4j2
 public class Tools {
 
-    public static final String[] fignums = new String[]{
-            "  __\n" +
-                    " /  \\\n" +
-                    "| () |\n" +
-                    " \\__/\n",
-            " _\n" +
-                    "/ |\n" +
-                    "| |\n" +
-                    "|_|\n",
-            " ___\n" +
-                    "|_  )\n" +
-                    " / /\n" +
-                    "/___|\n",
-            " ____\n" +
-                    "|__ /\n" +
-                    " |_ \\\n" +
-                    "|___/\n",
-            " _ _\n" +
-                    "| | |\n" +
-                    "|_  _|\n" +
-                    "  |_|\n",
-            " ___\n" +
-                    "| __|\n" +
-                    "|__ \\\n" +
-                    "|___/\n",
-            "  __\n" +
-                    " / /\n" +
-                    "/ _ \\\n" +
-                    "\\___/\n",
-            " ____\n" +
-                    "|__  |\n" +
-                    "  / /\n" +
-                    " /_/\n",
-            " ___\n" +
-                    "( _ )\n" +
-                    "/ _ \\\n" +
-                    "\\___/\n",
-            " ___\n" +
-                    "/ _ \\\n" +
-                    "\\_, /\n" +
-                    " /_/\n"
-    };
-
-
     // todo: this should be in the rlgagent
     public static JSONObject getProgressTickingScheme(String deviceid, int time_period_in_millis) {
         if (time_period_in_millis <= 30000L) {

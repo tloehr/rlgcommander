@@ -3,19 +3,14 @@ package de.flashheart.rlg.commander.service;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Agent;
+import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.io.FileUtils;
-import org.checkerframework.checker.units.qual.A;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -73,12 +68,12 @@ public class AgentsService {
         live_agents.put(agentid, my_agent);
     }
 
-    public void agent_reported_button(String agentid, String button, JSONObject message) {
-        if (!message.getString("button").equalsIgnoreCase("up")) return;
-        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
-        my_agent.button_pressed(button);
-        live_agents.putIfAbsent(agentid, my_agent);
-    }
+//    public void agent_reported_button(String agentid, String button, JSONObject message) {
+//        if (!message.getString("button").equalsIgnoreCase("up")) return;
+//        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+//        my_agent.button_pressed(button);
+//        live_agents.putIfAbsent(agentid, my_agent);
+//    }
 
     public boolean agent_belongs_to_game(String agentid, int gameid) {
         Agent myAgent = live_agents.getOrDefault(agentid, new Agent());
@@ -116,8 +111,8 @@ public class AgentsService {
                 "welcome_signal",
                 my_agent.getId());
         mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
-                "cmdr " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),
-                "agnt ${agversion}b${agbuild}",
+                "commander " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),
+                "    agent ${agversion}b${agbuild}",
                 "2me@flashheart.de"), my_agent.getId());
     }
 
@@ -132,11 +127,17 @@ public class AgentsService {
         if (my_agent.getGameid() > -1) return; // only when not in game
         if (deviceid.toLowerCase().matches("play|stop")) {
             String song = deviceid.equalsIgnoreCase("play") ? "<random>" : "";
-            mqttOutbound.send("play", MQTT.toJSON("subpath", "pause", "soundfile", song), agentid);
+            mqttOutbound.send("play", MQTT.toJSON("subpath", Game.AGENT_PAUSE_PATH, "soundfile", song), agentid);
         } else {
             String topic = deviceid.matches(MQTT.ACOUSTICS) ? "acoustic" : "visual";
             mqttOutbound.send(topic, MQTT.toJSON(deviceid, pattern), my_agent.getId());
         }
+    }
+
+    public void test_agent(String agentid, String command, JSONObject pattern) {
+        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+        if (my_agent.getGameid() > -1) return; // only when not in game
+        mqttOutbound.send(command, pattern, agentid);
     }
 
     /**
