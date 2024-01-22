@@ -11,7 +11,7 @@
             post_rest('system/test_agent', {
                 'agent_id': agent_id,
                 'command': elem_option_dataset.command,
-                'scheme': elem_option_dataset.scheme
+                'pattern': elem_option_dataset.pattern
             });
 
         }
@@ -29,15 +29,20 @@
 
                 <p>
                     <span class="card-text" th:text="${agent.software_version}"></span>
-                    <img src="/img/buzzer.png" height="28" width="28"/>
-                    <!--                    <span th:text="${agent.last_button_pressed}"></span>-->
+                    <img src="/img/buzzer.png" height="28"/>
+                    <span th:text="${agent.last_button}"></span>
+                    <br/>
+                    <img src="/img/rfid.png" height="28" width="28"/>
+                    <span th:text="${agent.last_rfid_uid}"></span>
                 </p>
                 <p class="card-text">
                     <button th:id="${agent.id}+'_delete'"
                             class="btn btn-outline-primary"
                             th:onclick="post_rest('system/remove_agent', {'agentid':[[${agent.id}]]}); location.reload();"><span
                             class="bi bi-lg bi-x-circle-fill text-danger"></span></button>
-                    <span th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'" th:text="${agent.ap}"></span>
+
+                    <span th:if="${agent.signal_quality >= 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'" th:text="${agent.signal_quality}+'%&nbsp;'+${agent.ap}"></span>
+                    <span th:if="${agent.signal_quality < 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'" th:text="'&nbsp;'+${agent.ap}"></span>
                     <b>
                         <span th:text="${agent.failed_pings}" class="text-black"></span>/<span
                             th:text="${agent.reconnects}" class="text-danger">></span>
@@ -48,16 +53,18 @@
                 </p>
 
                 <p>
-                <div class="col-auto">
-                    <label th:for="${agent.id}+'_agent_tests'" class="form-label">Test Agent</label>
+                <p class="card-text">
                     <select class="form-select " style="height: 40px;" th:id="${agent.id}+'_agent_tests'"
                             th:onchange="test_agent([[${agent.id}]])">
                         <option th:each="test : ${test_list}" th:value="${test.value0}"
-                                th:data-scheme="${test.value2}" th:data-command="${test.value1}"
+                                th:data-pattern="${test.value2}" th:data-command="${test.value1}"
                                 th:text="${test.value0}">
                         </option>
                     </select>
-                </div>
+                    <button th:id="${agent.id}+'_test_again'"
+                            class="btn btn-outline-primary"
+                            th:onclick="test_agent([[${agent.id}]])">Test
+                    </button>
                 </p>
             </div>
         </div>

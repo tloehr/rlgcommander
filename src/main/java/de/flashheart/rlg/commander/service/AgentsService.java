@@ -3,7 +3,6 @@ package de.flashheart.rlg.commander.service;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Agent;
-import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -11,6 +10,7 @@ import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -24,9 +24,6 @@ public class AgentsService {
     MQTTOutbound mqttOutbound;
     BuildProperties buildProperties;
     MyYamlConfiguration myYamlConfiguration;
-//    @Value("classpath:/welcome_scheme.json")
-//    Resource resourceFile;
-//    final JSONObject welcome_signal;
 
     @SneakyThrows
     public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration) {
@@ -54,6 +51,7 @@ public class AgentsService {
 
     /**
      * remove an agent from the list.
+     *
      * @param agentid
      */
     public void remove_agent(String agentid) {
@@ -68,12 +66,18 @@ public class AgentsService {
         live_agents.put(agentid, my_agent);
     }
 
-//    public void agent_reported_button(String agentid, String button, JSONObject message) {
-//        if (!message.getString("button").equalsIgnoreCase("up")) return;
-//        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
-//        my_agent.button_pressed(button);
-//        live_agents.putIfAbsent(agentid, my_agent);
-//    }
+    public void agent_reported_event(String agentid, String device, JSONObject message) {
+        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+        live_agents.putIfAbsent(agentid, my_agent);
+        if (device.equalsIgnoreCase("rfid")) {
+            my_agent.setLast_rfid_uid(message.optString("uid", "none"));
+            my_agent.setTimestamp(LocalDateTime.now());
+        }
+        if (device.matches("btn0\\d")) {
+            my_agent.setLast_button(device.toLowerCase());
+            my_agent.setTimestamp(LocalDateTime.now());
+        }
+    }
 
     public boolean agent_belongs_to_game(String agentid, int gameid) {
         Agent myAgent = live_agents.getOrDefault(agentid, new Agent());
@@ -94,6 +98,7 @@ public class AgentsService {
     public List<Agent> get_all_agents() {
         ArrayList<Agent> prepared_agent_list = new ArrayList<>();
         live_agents.values().stream().sorted().forEach(agent -> {
+            // quickly replace user addresses of APs with defined names
             agent.setAp(myYamlConfiguration.getAccess_points().getOrDefault(agent.getAp(), agent.getAp()));
             prepared_agent_list.add(agent);
         });
@@ -113,25 +118,7 @@ public class AgentsService {
         mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
                 "commander " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),
                 "    agent ${agversion}b${agbuild}",
-                "2me@flashheart.de"), my_agent.getId());
-    }
-
-    /**
-     * sends a test signal to see if the agent is working properly
-     *
-     * @param agentid  to be tested
-     * @param deviceid specific device like "led_red, sir1..."
-     */
-    public void test_agent(String agentid, String deviceid, String pattern) {
-        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
-        if (my_agent.getGameid() > -1) return; // only when not in game
-        if (deviceid.toLowerCase().matches("play|stop")) {
-            String song = deviceid.equalsIgnoreCase("play") ? "<random>" : "";
-            mqttOutbound.send("play", MQTT.toJSON("subpath", Game.AGENT_PAUSE_PATH, "soundfile", song), agentid);
-        } else {
-            String topic = deviceid.matches(MQTT.ACOUSTICS) ? "acoustic" : "visual";
-            mqttOutbound.send(topic, MQTT.toJSON(deviceid, pattern), my_agent.getId());
-        }
+                "2me@flashheart.de ${wifi_signal}"), my_agent.getId());
     }
 
     public void test_agent(String agentid, String command, JSONObject pattern) {

@@ -58,7 +58,8 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
         end_time = null;
 
         setGameDescription(game_parameters.getString("comment"),
-                String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "");
+                String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "",
+                " ".repeat(18) + "${wifi_signal}");
     }
 
     @Override

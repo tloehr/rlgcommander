@@ -60,7 +60,8 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
 
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))),
-                String.format("Number of rings: %s", rings_in_use.size())
+                String.format("Number of rings: %s", rings_in_use.size()),
+                " ".repeat(18) + "${wifi_signal}"
         );
 
     }

@@ -1,4 +1,4 @@
-package de.flashheart.rlg.commander.games.helper;
+package de.flashheart.rlg.commander.elements;
 
 import lombok.Getter;
 import lombok.ToString;

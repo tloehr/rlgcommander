@@ -83,12 +83,13 @@ public class MQTTOutbound {
 
     /**
      * sends a mqtt command to an agent
-     * @param cmd the sub channel in the command topic
+     *
+     * @param cmd        the sub channel in the command topic
      * @param signal_key needs to be defined in <b>standard_signals.json</b>. Will be used to when sent to the agent.
-     * @param agent the recipient
+     * @param agent      the recipient
      */
     public void send(String cmd, String signal_key, String agent) {
-        send(cmd, standard_signals.getJSONObject(signal_key), agent);
+        send(cmd, standard_signals.optJSONObject(signal_key), agent);
     }
 
     public void send(String cmd, JSONObject payload, String agent) {
@@ -99,8 +100,8 @@ public class MQTTOutbound {
     }
 
 
-    public void send(String cmd, String signal_key,  Collection<String> agents) {
-        send(cmd, standard_signals.getJSONObject(signal_key), agents);
+    public void send(String cmd, String signal_key, Collection<String> agents) {
+        send(cmd, standard_signals.optJSONObject(signal_key, new JSONObject().put("scheme", signal_key)), agents);
     }
 
     public void send(String cmd, JSONObject payload, Collection<String> agents) {

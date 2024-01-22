@@ -49,6 +49,7 @@ public class MQTT {
     public static final String RESPAWN_SIGNAL = "respawn_signal";
     public static final String PREPARE_TEAM_SIGNAL = "prepare_team_signal";
     public static final String TEAM_HURRY_UP_SIGNAL = "team_hurry_up_signal";
+    public static final String TEAM_READY_SIGNAL = "team_ready_signal";
 
     public static final String GAME_STARTS = "game_starts";
     public static final String GAME_ENDS = "game_ends";

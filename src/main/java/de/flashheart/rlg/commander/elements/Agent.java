@@ -15,19 +15,19 @@ import java.util.Map;
 @Getter
 @Setter
 public class Agent implements Comparable<Agent> {
-    private final Map<String, String> wifi_icon = Map.of("no_wifi", "bi-reception-0", "bad", "bi-reception-1", "fair", "bi-reception-2", "good", "bi-reception-3", "perfect", "bi-reception-4");
     String id;
     JSONObject status;
     int gameid; // this agent may or may not belong to a gameid. gameid < 1 means not assigned
     String software_version;
     LocalDateTime timestamp; // last message from Agent
-    String last_button_pressed;
+    String last_button;
+    String last_rfid_uid;
     String ap;
     String ip;
-    String wifi;
+    int signal_quality; // in percent
     int failed_pings;
     int reconnects;
-    String bi_wifi_icon;
+
 
     public Agent() {
         this("dummy");
@@ -40,7 +40,8 @@ public class Agent implements Comparable<Agent> {
     public Agent(String id, JSONObject status) {
         this.id = id;
         gameid = -1;
-        last_button_pressed = "none";
+        last_button = "none";
+        last_rfid_uid = "none";
         setStatus(status);
     }
 
@@ -50,23 +51,25 @@ public class Agent implements Comparable<Agent> {
         reconnects = status.optInt("reconnects");
         failed_pings = status.optInt("failed_pings");
         ip = status.optString("ip", "unknown");
-        wifi = status.optString("wifi", "no_wifi").toLowerCase();
-        bi_wifi_icon = wifi_icon.getOrDefault(wifi, "bi-question-circle-fill");
-        setAp(status.optString("ap", "no_ap"));
+        signal_quality = status.optInt("signal_quality", -1);
+        ap = status.optString("ap", "no_ap").toLowerCase();
         timestamp = LocalDateTime.now();
     }
 
-    public void button_pressed(String button) {
-        last_button_pressed = button;
-        timestamp = LocalDateTime.now();
-    }
 
-    public void setAp(String ap) {
-        this.ap = ap.toLowerCase();
-    }
+    public String getBi_wifi_icon() {
+        if (signal_quality >= 85)
+            return "bi-reception-4";
+        if (signal_quality >= 55)
+            return "bi-reception-3";
+        if (signal_quality >= 25)
+            return "bi-reception-2";
+        if (signal_quality == 0)
+            return "bi-reception-0";
+        if (signal_quality > 0)
+            return "bi-reception-1";
 
-    public void setGameid(int gameid) {
-        this.gameid = gameid;
+        return "bi-question-circle-fill";
     }
 
     public String getLast_seen() {

@@ -11,7 +11,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
-import org.springframework.core.io.Resource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -130,12 +129,12 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Tickets: %s", respawn_tickets.intValue()),
                 String.format("Bleed starts @%sCPs", not_bleeding_before_cps),
-                String.format("Time: %s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))));
+                String.format("Time: %s-%s", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss"))) + " ${wifi_signal}");
     }
 
     @Override
-    protected void on_respawn_signal_received(String spawn, String agent_id) {
-        super.on_respawn_signal_received(spawn, agent_id);
+    protected void on_spawn_button_pressed(String spawn, String agent_id) {
+        super.on_spawn_button_pressed(spawn, agent_id);
         if (spawn.equals("red_spawn")) {
             remaining_red_tickets = remaining_red_tickets.subtract(ticket_price_for_respawn);
         }

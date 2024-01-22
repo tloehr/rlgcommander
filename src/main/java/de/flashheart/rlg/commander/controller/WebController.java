@@ -84,7 +84,7 @@ public class WebController {
             JSONArray tests = new JSONObject(IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("agent_test_commands.json"), StandardCharsets.UTF_8)).getJSONArray("tests");
             for (int test_i = 0; test_i < tests.length(); test_i ++) {
                 JSONObject test = tests.getJSONObject(test_i);
-                list_of_tests.add(new Triplet<>(test.getString("name"), test.getString("command"), test.getJSONObject("scheme")));
+                list_of_tests.add(new Triplet<>(test.getString("name"), test.getString("command"), test.getJSONObject("pattern")));
             }
         } catch (Exception ignored) {
             log.error(ignored);

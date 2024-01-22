@@ -93,7 +93,7 @@ public class MQTTInbound {
                 log.trace(message.toString());
                 log.trace(message.getPayload().toString());
                 int game_id = live_agents.getOrDefault(agentid, new Agent()).getGameid();
-                // agentsService.agent_reported_button(agentid, source, new JSONObject(payload));
+                agentsService.agent_reported_event(agentid, source, new JSONObject(payload));
                 // report to running game
                 if (game_id > 0) {
                     try {

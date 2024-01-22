@@ -3,6 +3,57 @@
       layout:decorate="~{active/base.html}">
 <head><title>Magspeed Tournament</title></head>
 <body>
-<!--nothing specific for this class. the contents from base.html are sufficient.-->
+
+<section layout:fragment="score">
+
+    <div class="col-auto" id="winning_team" th:if="${winner.isPresent()}">
+<!--        <h2 th:text="|Team Red &#8594; ${red_points} &#8660; ${blue_points}  &#8592; Team Blue|"></h2>-->
+        <h2 th:text="|somebody won the game: ${winner.get().getName()}|"></h2>
+    </div>
+
+<!--    <script th:inline="javascript">-->
+<!--        /*<![CDATA[*/-->
+
+
+<!--        if (game_parameters.spawns.hasOwnProperty('announce_sprees')) {-->
+<!--            document.getElementById('check-spree').checked = game_parameters.spawns.announce_sprees;-->
+<!--        } else {-->
+<!--            document.getElementById('check-spree-widget').classList.add("d-none");-->
+<!--        }-->
+
+<!--        const segment_colors = ['bg-danger', 'bg-warning', 'bg-success', 'bg-primary'];-->
+<!--        const rings_taken = parseInt(/*[[${rings_taken}]]*/ 'default');-->
+<!--        const total_rings = parseInt(/*[[${total_rings}]]*/ 'default');-->
+<!--        const rings_to_go = total_rings - rings_taken;-->
+<!--        const remain_in_this_segment = parseInt(/*[[${remain_in_this_segment}]]*/ 'default');-->
+<!--        const total_in_this_segment = parseInt(/*[[${total_in_this_segment}]]*/ 'default');-->
+<!--        const segment_progress = remain_in_this_segment / total_in_this_segment * 100;-->
+<!--        const broken_agents = /*[[${broken_agents}]]*/ 'default';-->
+<!--        const stable_agents = /*[[${stable_agents}]]*/ 'default';-->
+
+<!--        document.getElementById("score_text").innerHTML = `Broken Rings: ${rings_taken} / ${total_rings}`-->
+
+<!--        if (total_rings > 1) {-->
+<!--            const total_progress = rings_taken / total_rings * 100;-->
+<!--            // we need an additional main progessbar-->
+<!--            console.log('total_progress: ' + total_progress);-->
+<!--            document.getElementById("my_main_bar").style.width = Math.max(total_progress, 2) + "%";-->
+<!--        }-->
+<!--        document.getElementById("my_segment_bar").style.width = Math.max(segment_progress, 2) + "%";-->
+<!--        document.getElementById("my_segment_bar").classList.add(segment_colors[total_rings - rings_taken - 1]);-->
+
+<!--        if (broken_agents.length > 0)-->
+<!--            document.getElementById("broken_agents_list").innerHTML = broken_agents.join();-->
+
+<!--        if (stable_agents.length > 0)-->
+<!--            document.getElementById("stable_agents_list").innerHTML = stable_agents.join();-->
+<!--        /*]]>*/-->
+<!--    </script>-->
+
+
+
+</section>
+
+
 </body>
 </html>

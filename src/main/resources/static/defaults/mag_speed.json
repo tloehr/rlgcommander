@@ -1,12 +1,12 @@
 {
   "game_mode": "mag_speed",
   "game_time": "180",
-  "winning_token_uid": "af-fe-ea-cd-1a",
+  "winning_token_uid": "af-fe-ea-cd",
   "silent_game": false,
   "display": {
-    "line1": "Holt das Hörnchen",
-    "line2": "Bringt es zum Spawn",
-    "line3": "Mag Speed 1/2024"
+    "line1": "Mag Speed 1/2024",
+    "line2": "Holt das Hörnchen",
+    "line3": "Bringt es zum Spawn"
   },
   "comment": "Mag Speed",
   "spawns": {

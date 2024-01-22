@@ -97,6 +97,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
         String last_line_in_description = "";
         if (delay_until_next_flag > 0L) last_line_in_description = String.format("Delay %s", delay_until_next_flag);
+        last_line_in_description = StringUtils.rightPad(last_line_in_description, 18, " ") + "${wifi_signal}";
+
         setGameDescription(
                 game_parameters.getString("comment"),
                 String.format("Winning@ %s", winning_score),
@@ -390,7 +392,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     @Override
-    protected void on_respawn_signal_received(String role, String agent_id) {
+    protected void on_spawn_button_pressed(String role, String agent_id) {
         // no respawns in Hardpoint
     }
 

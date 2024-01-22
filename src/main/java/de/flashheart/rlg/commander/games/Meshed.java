@@ -9,6 +9,7 @@ import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.DOTWriter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.javatuples.Quartet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,10 +40,10 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
         dot_format_map = new HashMap<>();
         spawn_agent_to_color = new HashMap<>();
 
-        spawn_segments.column(active_segment)
-                .entrySet()
-                .forEach(stringPairEntry -> spawn_agent_to_color.put(stringPairEntry.getValue().getLeft(),
-                        StringUtils.substringBefore(stringPairEntry.getKey(), "_"))
+        spawn_segments.stream()
+                .filter(o -> o.getValue1() == active_segment)
+                .forEach(o2 -> spawn_agent_to_color.put(o2.getValue2(),
+                        StringUtils.substringBefore(o2.getValue0(), "_"))
                 );
 
         // create mesh structure
@@ -52,14 +53,14 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
         // warpgates represented by spawn agents
         // we have only one spawn segment
         // agent name on the left (key part of Pair)
-        mesh.addNode(spawn_segments.get("red_spawn", 0).getLeft());
-        mesh.addNode(spawn_segments.get("blue_spawn", 0).getLeft());
-        mesh.addNode(spawn_segments.get("yellow_spawn", 0).getLeft());
+        mesh.addNode(get_node("red_spawn", 0));
+        mesh.addNode(get_node("blue_spawn", 0));
+        mesh.addNode(get_node("yellow_spawn", 0));
 
         // to color the spawn agents
-        dot_format_map.put(spawn_segments.get("red_spawn", 0).getLeft(), "[fillcolor=red fontcolor=yellow style=filled shape=box]");
-        dot_format_map.put(spawn_segments.get("blue_spawn", 0).getLeft(), "[fillcolor=blue fontcolor=yellow style=filled shape=box]");
-        dot_format_map.put(spawn_segments.get("yellow_spawn", 0).getLeft(), "[fillcolor=yellow fontcolor=black style=filled shape=box]");
+        dot_format_map.put(get_node("red_spawn",0), "[fillcolor=red fontcolor=yellow style=filled shape=box]");
+        dot_format_map.put(get_node("blue_spawn",0), "[fillcolor=blue fontcolor=yellow style=filled shape=box]");
+        dot_format_map.put(get_node("yellow_spawn",0), "[fillcolor=yellow fontcolor=black style=filled shape=box]");
 
         game_parameters.getJSONArray("mesh").forEach(entry -> {
             JSONArray connection = (JSONArray) entry;
@@ -68,6 +69,14 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
 
         log.debug(DOTWriter.write(mesh, dot_format_map));
 
+    }
+
+    private String get_node(String spawn_role, int segment){
+        return spawn_segments.stream()
+                .filter(o -> o.getValue0().equalsIgnoreCase(spawn_role))
+                .filter(o1->o1.getValue1() == segment)
+                .map(Quartet::getValue2)
+                .toList().get(0); // can only be one - ensure by throwing an exception in the constructor
     }
 
     @Override
@@ -197,8 +206,8 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
 
 
     @Override
-    protected void on_respawn_signal_received(String spawn, String agent_id) {
-        super.on_respawn_signal_received(spawn, agent_id);
+    protected void on_spawn_button_pressed(String spawn, String agent_id) {
+        super.on_spawn_button_pressed(spawn, agent_id);
     }
 
 

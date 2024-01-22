@@ -8,8 +8,8 @@
         sessionStorage.setItem('game_mode', 'mag_speed');
 
         function read_form(game_parameters) {
+            game_parameters.winning_token_uid = document.getElementById('winning_token_uid').value;
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
-            game_parameters.spawns.count_respawns = document.getElementById('count-respawns').checked;
             game_parameters.display.line1 = document.getElementById('line1').value;
             game_parameters.display.line2 = document.getElementById('line2').value;
             game_parameters.display.line3 = document.getElementById('line3').value;
@@ -17,8 +17,8 @@
         }
 
         function preset_form(game_parameters) {
+            document.getElementById('winning_token_uid').value = game_parameters.winning_token_uid;
             document.getElementById('game_time').value = game_parameters.game_time;
-            document.getElementById('count-respawns').checked = game_parameters.spawns.count_respawns;
             document.getElementById('line1').value = game_parameters.display.line1;
             document.getElementById('line2').value = game_parameters.display.line2;
             document.getElementById('line3').value = game_parameters.display.line3;
@@ -36,6 +36,13 @@
 </section>
 
 <section layout:fragment="params">
+    <div class="row mt-3">
+        <div class="col-auto">
+            <label for="winning_token_uid" class="form-label">TOKEN to win the game</label>
+            <input type="text" class="form-control" value="vanilla" id="winning_token_uid" required minlength="1"
+                   maxlength="20"/>
+        </div>
+    </div>
     <div class="row mt-3">
         <div class="col-auto">
             <label for="game_time" class="form-label">Gametime in seconds</label>
@@ -68,15 +75,7 @@
             <input type="text" class="form-control" value="vanilla" id="line3" required minlength="0"
                    maxlength="20"/>
         </div>
-
-        <div class="col-auto align-self-center form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="count-respawns">
-            <label class="form-check-label" for="count-respawns">Count respawns</label>
-        </div>
-
     </div>
-
-
 </section>
 
 

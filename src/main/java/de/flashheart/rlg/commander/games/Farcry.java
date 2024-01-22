@@ -28,6 +28,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 
 /**
@@ -82,7 +84,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn, HasM
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Bombtime: %s", ldtFlagTime.format(DateTimeFormatter.ofPattern("mm:ss"))),
                 String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))),
-                String.format("Respawn every: %s", ldtRespawn.format(DateTimeFormatter.ofPattern("mm:ss"))));
+                String.format("Spawntime: %s  ${wifi_signal}", ldtRespawn.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         // additional parsing agents and sirens
         map_of_agents_and_sirens = new HashMap<>();
@@ -106,17 +108,23 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn, HasM
      * @throws JSONException
      */
     void check_segment_sizes() throws JSONException {
-        log.debug(spawn_segments);
+
         // all segments must have the same size
 
 //        if (team_registry.size() != 2) throw new JSONException("we need exactly 2 teams");
 //        if (!spawn_segments.containsRow("red_spawn")) throw new JSONException("red_spawn missing");
 //        if (!spawn_segments.containsRow("blue_spawn")) throw new JSONException("blue_spawn missing");
         assert_two_teams_red_and_blue();
-        if (spawn_segments.rowMap().values().stream().map(integerPairMap -> integerPairMap.keySet().size()).distinct().count() > 1)
+        // a map of teams and the number of segments per team
+        ConcurrentMap<Object, Long> map_teams_to_segment_length = spawn_segments.stream().collect(Collectors.groupingByConcurrent(o -> o.getValue0(), Collectors.counting()));
+
+        if (map_teams_to_segment_length.values().stream().distinct().count() > 1)
             throw new JSONException("all teams must have the same number of spawn segments");
 
-        int num_of_spawn_segments = spawn_segments.row("red_spawn").size();
+//        if (spawn_segments.rowMap().values().stream().map(integerPairMap -> integerPairMap.keySet().size()).distinct().count() > 1)
+//            throw new JSONException("all teams must have the same number of spawn segments");
+
+        long num_of_spawn_segments = new ArrayList<Long>(map_teams_to_segment_length.values()).get(0);
 
         if (!(num_of_spawn_segments == capture_points.size() && num_of_spawn_segments == sirs.size()))
             throw new JSONException("number of segments mismatch. number of CPs, sirens and spawn_segments must match");

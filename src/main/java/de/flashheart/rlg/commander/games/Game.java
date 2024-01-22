@@ -30,6 +30,8 @@ import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static de.flashheart.rlg.commander.controller.MQTT.CMD_PLAY;
+
 @Log4j2
 public abstract class Game {
     public static final String _msg_RESET = "reset";
@@ -227,19 +229,22 @@ public abstract class Game {
         mqttOutbound.send(cmd, payload, agent);
     }
 
-    protected void send(String cmd, String signal_key, String agent) {
-        if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
-        mqttOutbound.send(cmd, signal_key, agent);
-    }
-
-    protected void send(String cmd, String signal_key, Collection<String> agents) {
-        if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
-        mqttOutbound.send(cmd, signal_key, agents);
-    }
-
     protected void send(String cmd, JSONObject payload, Collection<String> agents) {
         if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
         mqttOutbound.send(cmd, payload, agents);
+    }
+
+
+    protected void play(String channel, String subpath, String soundfile, String agent){
+        play(channel, subpath, soundfile, List.of(agent));
+    }
+
+    protected void play(String channel, String subpath, String soundfile){
+        play(channel, subpath, soundfile, roles.get("audio"));
+    }
+
+    protected void play(String channel, String subpath, String soundfile, Collection<String> agents){
+        send(CMD_PLAY, MQTT.toJSON("channel", channel, "subpath",subpath, "soundfile", soundfile), agents);
     }
 
     /**

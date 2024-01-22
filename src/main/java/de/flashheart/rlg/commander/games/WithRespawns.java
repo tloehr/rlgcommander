@@ -4,8 +4,7 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.helper.Team;
-import de.flashheart.rlg.commander.games.jobs.DelayedAudioJob;
+import de.flashheart.rlg.commander.elements.Team;
 import de.flashheart.rlg.commander.games.jobs.DelayedReactionJob;
 import de.flashheart.rlg.commander.games.jobs.RunGameJob;
 import de.flashheart.rlg.commander.games.traits.HasDelayedAudio;
@@ -28,7 +27,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,7 +71,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     // cells contain pairs of agent names and FSMs
     //protected final Table<String, Integer, Pair<String, FSM>> spawn_segments1;
     // SPAWN_ROLE, SEGMENT, AGENT, FSM
-    protected final ArrayList<Quartet<String, Integer, String, FSM>> spawn_segments2;
+    protected final ArrayList<Quartet<String, Integer, String, FSM>> spawn_segments;
 
 
     //    protected final HashMap<MultiKey<String>, FSM> spawn_segments2;
@@ -97,7 +95,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         this.deferred_countdown_jobkey = new JobKey("deferred_countdown", uuid.toString());
 
         //this.spawn_segments = HashBasedTable.create();
-        this.spawn_segments2 = new ArrayList<>();
+        this.spawn_segments = new ArrayList<>();
         active_segment = 0;
         team_registry = new HashMap<>();
 
@@ -120,12 +118,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                         section.forEach(spawn_agent_in_this_section -> {
                             String agent = spawn_agent_in_this_section.toString();
                             FSM fsm = create_Spawn_FSM(agent, spawn_role, led, team_name);
-//                            spawn_segments.put(spawn_role, section_number.intValue(),
-//                                    new ImmutablePair<>(
-//                                            agent, fsm
-//                                    )
-//                            );
-                            spawn_segments2.add(
+                            spawn_segments.add(
                                     new Quartet<>(
                                             spawn_role,
                                             section_number.intValue(),
@@ -140,31 +133,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                         });
                     }
             );
-
-            /** for later use - currently only one agent for every spawn
-             * teams.getJSONArray("agents").forEach(section -> {
-             *                         section_number.increment();
-             *                         JSONArray sp_agents = (JSONArray) section;
-             *                         ArrayList<Pair<String, FSM>> this_segment_team_list = new ArrayList<>();
-             *                         sp_agents.forEach(spawn_agent_in_this_section -> {
-             *                             String agent = spawn_agent_in_this_section.toString();
-             *                             this_segment_team_list.add(new ImmutablePair<>(
-             *                                     agent,
-             *                                     create_Spawn_FSM(agent, spawn_role, led, team_name)
-             *                             ));
-             *
-             *                             // every spawn is a potential audio device
-             *                             // other agents can also be used to play audio files,
-             *                             // but if the spawn has such a device and the necessary files
-             *                             // it will be playing them
-             *                             agents.put(agent, "audio");
-             *                             roles.put("audio", agent);
-             *                         });
-             *                         spawn_segments.put(spawn_role, section_number.intValue(), this_segment_team_list);
-             *                     }
-             *             );
-             *
-             */
         });
 
         // announce_sprees only works for two teams RED and BLUE. the game has to make sure
@@ -182,7 +150,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/spawn.xml"), null);
 //        audio_jobs.put(agent, new JobKey(agent, uuid.toString()));
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
-            send(CMD_PLAY, MQTT.toJSON("channel", "all", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
+            play("", "", "", agent);
+            //send(CMD_PLAY, MQTT.toJSON("channel", "all", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
             send(CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", led_device_id, MQTT.NORMAL), agent);
             send(CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0",
@@ -191,7 +160,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             );
         });
         fsm.setStatesAfterTransition(_state_STANDBY, (state, obj) -> {
-            send(CMD_PLAY, MQTT.toJSON("channel", "all", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
+            play("", "", "", agent);
+            //send(CMD_PLAY, MQTT.toJSON("channel", "all", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
 //            send(CMD_ACOUSTIC, MQTT.toJSON("sir_all", "off"), agent);
             send(CMD_VISUAL, MQTT.toJSON("led_all", "off"), agent);
             send(CMD_DISPLAY, MQTT.merge(
@@ -199,35 +169,31 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                     MQTT.page("page1", "THIS SPAWN IS", "", "INACTIVE", "")), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_PREPARING, (state, obj) -> {
-            send(CMD_ACOUSTIC, "prepare_team_signal", agent);
-            send(CMD_PLAY, MQTT.toJSON("channel", "all", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
+            send(CMD_ACOUSTIC, MQTT.toJSON(BUZZER, PREPARE_TEAM_SIGNAL), agent);
+            play("", "", "", agent);
+            //send(CMD_PLAY, MQTT.toJSON("channel", "", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
             send(CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0", " !! GAME LOBBY !! ", "", "Press button", "when ready"),
                     MQTT.page("page1", " !! GAME LOBBY !! ", "", "", "")
             ), agent);
         });
         fsm.setStatesAfterTransition(_state_HURRY_UP, (state, obj) -> {
-            send(CMD_ACOUSTIC, "team_hurry_up_signal", agent);
+            send(CMD_ACOUSTIC, MQTT.toJSON(BUZZER, TEAM_HURRY_UP_SIGNAL), agent);
             // as this is played only on THIS agent, we won't use the "audio" group here
             // these sounds are TEAM-specific. So each team will hear a different sound
             // "audio" agents are all playing the same - not appropriate here
-            send(CMD_PLAY, MQTT.toJSON("channel", "sound1", "subpath", AGENT_EVENT_PATH, "soundfile", "bell"), agent);
+            //send(CMD_PLAY, MQTT.toJSON("channel", "sound1", "subpath", AGENT_EVENT_PATH, "soundfile", "bell"), agent);
             send(CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0", " !! GAME LOBBY !! ", "Hurry up!", "Press button", "when ready"),
                     MQTT.page("page1", " !! GAME LOBBY !! ", "", "The other Team", "is waiting....")
             ), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
-            send(CMD_ACOUSTIC, "team_ready_signal", agent);
-            if (spawn_segments2.stream()
+            send(CMD_ACOUSTIC, MQTT.toJSON(BUZZER, TEAM_READY_SIGNAL), agent);
+            if (spawn_segments.stream()
                     .filter(o -> o.getValue1() == active_segment)
                     .allMatch(o2 -> o2.getValue3().getCurrentState().equals(_state_WE_ARE_READY))
             ) game_fsm.ProcessFSM(_msg_READY); // if ALL teams are ready, the GAME is READY to start
-
-//            if (spawn_segments.column(active_segment).values().stream() // checking all agents for all teams in ACTIVE_SEGMENT
-//                    .allMatch(stringFSMPair -> stringFSMPair.getValue().getCurrentState().equals(_state_WE_ARE_READY)))
-//                // if ALL teams are ready, the GAME is READY to start
-//                game_fsm.ProcessFSM(_msg_READY);
 
             else {
                 send(CMD_DISPLAY, MQTT.merge(
@@ -236,16 +202,11 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                 ), agent);
                 // inform the other spawn agents, that we are ready.
                 // this will move those agents to the HURRY_UP state
-                spawn_segments2.stream()
+                spawn_segments.stream()
                         .filter(o -> o.getValue1() == active_segment)
                         // but only those who are not ready yet
                         .filter(o1 -> o1.getValue3().getCurrentState().equals(_state_WE_ARE_PREPARING))
                         .forEach(o2 -> o2.getValue3().ProcessFSM(_msg_ANOTHER_TEAM_IS_READY));
-
-//                spawn_segments.column(active_segment).values().stream()
-//                        // but only those who are not ready yet
-//                        .filter(stringFSMPair -> stringFSMPair.getValue().getCurrentState().equals(_state_WE_ARE_PREPARING))
-//                        .forEach(stringFSMPair -> stringFSMPair.getValue().ProcessFSM(_msg_ANOTHER_TEAM_IS_READY));
             }
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_START, (state, obj) -> {
@@ -264,7 +225,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
                 if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return false;
-                on_respawn_signal_received(spawn_role, agent);
+                on_spawn_button_pressed(spawn_role, agent);
                 return true;
             }
         });
@@ -303,7 +264,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         return fsm;
     }
 
-
     @Override
     public void on_run() {
         super.on_run();
@@ -328,7 +288,9 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     public void on_reset() {
         super.on_reset();
         // stop all sounds on ALL agents
-        send(CMD_PLAY, MQTT.toJSON("channel", "", "subpath", "", "soundfile", "<none>"), agents.keySet());
+        //stop("");
+        play("", "", "");
+        // send(CMD_PLAY, MQTT.toJSON("channel", "", "subpath", "", "soundfile", "<none>"), agents.keySet());
         if (count_respawns) {
             team_registry.forEach((s, team) -> team.reset_respawns());
             if (announce_sprees) {
@@ -358,14 +320,14 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                 send_message_to_agents_in_segment(active_segment, _msg_START_COUNTDOWN);
                 // central audio handling via role "audio"
                 // the intro music and countdown are the same for all players. Hence, the "audio" group
-                send(CMD_PLAY, MQTT.toJSON("channel", "music", "subpath", AGENT_MUSIC_PATH, "soundfile", intro_mp3), roles.get("audio"));
-                JobDataMap jobDataMap = new JobDataMap();
-                jobDataMap.put("channel", "voice1");
-                jobDataMap.put("subpath", AGENT_VOICE_PATH);
-                // voice1 is a replaceable voice file to say the intro text along with the countdown
-                jobDataMap.put("soundfile", intro_voice);
-                // 6080 meaning 6:08 seconds - delay for the countdown intro voice
-                create_job(deferred_countdown_jobkey, LocalDateTime.now().plus(DELAY_IN_MS_MUSIC_2_COUNTDOWN_VOICE, ChronoUnit.MILLIS), DelayedAudioJob.class, Optional.of(jobDataMap));
+                play("music", AGENT_MUSIC_PATH, intro_mp3);
+                play("countdown", AGENT_VOICE_PATH, intro_voice);
+//                JobDataMap jobDataMap = new JobDataMap();
+//                jobDataMap.put("channel", "voice1");
+//                jobDataMap.put("subpath", AGENT_VOICE_PATH);
+//                jobDataMap.put("soundfile", intro_voice);
+//                // 6080 meaning 6:08 seconds - delay for the countdown intro voice
+//                create_job(deferred_countdown_jobkey, LocalDateTime.now().plus(DELAY_IN_MS_MUSIC_2_COUNTDOWN_VOICE, ChronoUnit.MILLIS), DelayedAudioJob.class, Optional.of(jobDataMap));
                 // start the game when the countdown has run out
                 create_job(deferredRunGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
             } else {
@@ -376,50 +338,31 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     }
 
     void send_message_to_agents_in_segment(int segment, String message) {
-        spawn_segments2.stream()
+        spawn_segments.stream()
                 .filter(o -> o.getValue1() == segment)
                 .forEach(o1 -> {
                     log.debug("{} -> {} ", o1.getValue2(), message);
                     o1.getValue3().ProcessFSM(message);
                 });
-
-//        spawn_segments.column(segment).values().forEach(stringFSMPair -> {
-//            log.debug("{} -> {} ", stringFSMPair.getLeft(), message);
-//            stringFSMPair.getValue().ProcessFSM(message);
-//
-//        });
     }
 
     void send_message_to_agent_in_segment(int segment, String agent, String message) {
-        spawn_segments2.stream()
+        spawn_segments.stream()
                 .filter(o -> o.getValue1() == segment)
                 .filter(o1 -> o1.getValue2().equalsIgnoreCase(agent))
                 .forEach(o2 -> o2.getValue3().ProcessFSM(message));
-
-//        spawn_segments.column(segment).values()
-//                .stream().filter(stringFSMPair -> stringFSMPair.getLeft().equals(agent))
-//                .forEach(stringFSMPair -> {
-//                    stringFSMPair.getValue().ProcessFSM(message);
-//                });
     }
 
     void send_message_to_all_agents(final String message) {
-        new HashSet<>(spawn_segments2)
+        new HashSet<>(spawn_segments)
                 .forEach(o -> o.getValue3().ProcessFSM(message));
-//        for (int segment = 0; segment < spawn_segments.size(); segment++) {
-//            send_message_to_agents_in_segment(segment, message);
-//        }
     }
 
     void send_message_to_all_inactive_segments(final String message) {
-        spawn_segments2.stream()
+        spawn_segments.stream()
                 .filter(o -> o.getValue1() != active_segment)
                 .collect(Collectors.toSet())
                 .forEach(o1 -> o1.getValue3().ProcessFSM(message));
-//        for (int segment = 0; segment < spawn_segments.size(); segment++) {
-//            if (segment != active_segment)
-//                send_message_to_agents_in_segment(segment, message);
-//        }
     }
 
     /**
@@ -431,7 +374,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     void next_spawn_segment() {
         send_message_to_agents_in_segment(active_segment, _msg_STANDBY);
         active_segment++;
-        if (active_segment == spawn_segments2.size()) active_segment = 0;
+        if (active_segment == spawn_segments.size()) active_segment = 0;
         send_message_to_agents_in_segment(active_segment, _msg_ACTIVATE);
     }
 
@@ -447,15 +390,16 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     @Override
     protected void on_cleanup() {
         super.on_cleanup();
-//        spawn_segments.clear();
-        spawn_segments2.clear();
+        spawn_segments.clear();
     }
 
     @Override
     public void process_external_message(String sender, String source, JSONObject message) {
         if (source.equals(_msg_RFID)) {
 //            String spawn_role = spawn_segments.column(active_segment).get("");
-            on_spawn_rfid_scanned(sender, message.getString("uid"));
+            get_spawn_role_for(sender, active_segment).ifPresent(spawn_role -> {
+                on_spawn_rfid_scanned(sender, team_registry.get(spawn_role), message.getString("uid"));
+            });
             return;
         }
 
@@ -477,7 +421,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
      * @param spawn_role spawn role for this agent_id
      * @param agent_id   guess...
      */
-    protected void on_respawn_signal_received(String spawn_role, String agent_id) {
+    protected void on_spawn_button_pressed(String spawn_role, String agent_id) {
         if (!count_respawns) return;
 
         Team this_team = team_registry.get(spawn_role);
@@ -511,13 +455,15 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
 
 
     /**
-     * override to react on a rfid tags that have been scanned at a spawn agent
+     * override to react on a rfid tags that have been scanned at a spawn agent. If the game class
+     * itself needs to handle rfid events, this should be done in the
+     * class' overriden process_external_message() method
      *
      * @param agent
      * @param uid
      */
-    protected void on_spawn_rfid_scanned(String agent, String uid) {
-        log.debug("scanned tag {} at {} for Team {}", uid, agent);
+    protected void on_spawn_rfid_scanned(String agent, Team team, String uid) {
+        log.debug("scanned tag {} at {} for Team {}", uid, agent, get_spawn_role_for(agent, active_segment).orElse("not assigned"));
     }
 
     private void prepare_spree_announcement() {
@@ -545,8 +491,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             log.debug("{}({}) says {}", team, get_active_spawn_agents(team), ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]);
             log.debug("{}({}) says {}", enemy, get_active_spawn_agents(enemy), SPREE_ANNOUNCEMENTS[spree - 2]);
 
-            send(CMD_PLAY, MQTT.toJSON("channel", "voice1", "subpath", AGENT_EVENT_PATH, "soundfile", ENEMY_SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(team));
-            send(CMD_PLAY, MQTT.toJSON("channel", "voice1", "subpath", AGENT_EVENT_PATH, "soundfile", SPREE_ANNOUNCEMENTS[spree - 2]), get_active_spawn_agents(enemy));
+            play("voice1", AGENT_EVENT_PATH, ENEMY_SPREE_ANNOUNCEMENTS[spree - 2], get_active_spawn_agents(team));
+            play("voice1", AGENT_EVENT_PATH, SPREE_ANNOUNCEMENTS[spree - 2], get_active_spawn_agents(enemy));
 
             announced_long_spree_already = spree >= 6;
         });
@@ -555,18 +501,16 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     private void first_blood_announcement() {
         // if the sum of all respawns equals 1 then this must be the first one
         if (team_registry.values().stream().mapToInt(Team::getRespawns).sum() == 1) {
-            send(CMD_PLAY, MQTT.toJSON("channel", "voice2", "subpath", AGENT_EVENT_PATH, "soundfile", "firstblood"), get_active_spawn_agents());
+            play("voice2", AGENT_EVENT_PATH, "firstblood");
             log.debug("Announcing FIRST BLOOD");
         }
     }
 
     protected void assert_two_teams_red_and_blue() throws JSONException {
         if (team_registry.size() != 2) throw new JSONException("we need exactly 2 teams");
-//        if (!spawn_segments.containsRow("red_spawn")) throw new JSONException("red_spawn missing");
-//        if (!spawn_segments.containsRow("blue_spawn")) throw new JSONException("blue_spawn missing");
-        if (spawn_segments2.stream().noneMatch(objects -> objects.getValue0().equalsIgnoreCase("red_spawn")))
+        if (spawn_segments.stream().noneMatch(objects -> objects.getValue0().equalsIgnoreCase("red_spawn")))
             throw new JSONException("red_spawn missing");
-        if (spawn_segments2.stream().noneMatch(objects -> objects.getValue0().equalsIgnoreCase("blue_spawn")))
+        if (spawn_segments.stream().noneMatch(objects -> objects.getValue0().equalsIgnoreCase("blue_spawn")))
             throw new JSONException("blue_spawn");
     }
 
@@ -577,11 +521,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
                 .put("starter_countdown", starter_countdown)
                 .put("active_segment", active_segment);
 
-//        spawn_segments.column(active_segment)
-//                .values()
-//                .forEach(stringFSMPair -> statusObject.getJSONObject("agent_states").put(stringFSMPair.getLeft(), stringFSMPair.getRight().getCurrentState()));
-
-        spawn_segments2.stream()
+        spawn_segments.stream()
                 .filter(objects -> objects.getValue1().equals(active_segment))
                 .forEach(objects -> statusObject.getJSONObject("agent_states")
                         .put(objects.getValue2(), objects.getValue3().getCurrentState()));
@@ -594,40 +534,38 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     @Override
     public void add_model_data(Model model) {
         super.add_model_data(model);
-        // deviceid+_respawns = "red_respawns" "blue_respawns" etc
-        team_registry.forEach((s, team) -> model.addAttribute(team.getColor() + "_respawns", team.getRespawns()));
+        if (count_respawns)
+            team_registry.forEach((s, team) -> model.addAttribute(team.getColor() + "_respawns", team.getRespawns()));
 
     }
 
     protected Collection<String> get_active_spawn_agents() {
-        return spawn_segments2.stream()
+        return spawn_segments.stream()
                 .filter(o -> o.getValue1() == active_segment)
                 .map(Quartet::getValue2)
                 .collect(Collectors.toSet());
-        //return spawn_segments.column(active_segment).values().stream().map(Pair::getKey).collect(Collectors.toSet());
     }
 
     protected Collection<String> get_all_spawn_agents() {
-        return spawn_segments2.stream()
+        return spawn_segments.stream()
                 .map(Quartet::getValue2)
                 .collect(Collectors.toSet());
-        //return spawn_segments.values().stream().map(Pair::getKey).collect(Collectors.toSet());
     }
 
-//    private Team get_current_spawn_role_for(final String agent) {
-//         spawn_segments.
-//                column(active_segment).
-//                values().stream().
-//                filter(stringFSMPair -> stringFSMPair.getLeft().equalsIgnoreCase(agent)).
-//                collect(Collectors.toList());
-//    }
+    protected Optional<String> get_spawn_role_for(final String agent, final int segment) {
+        List<Quartet<String, Integer, String, FSM>> list = spawn_segments.stream()
+                .filter(o -> o.getValue1() == segment)
+                .filter(o1 -> o1.getValue2().equalsIgnoreCase(agent))
+                .toList();
+        if (list.isEmpty()) return Optional.empty();
+        return Optional.of(list.get(0).getValue0());
+    }
 
     private Collection<String> get_active_spawn_agents(String team) {
-        return spawn_segments2.stream()
+        return spawn_segments.stream()
                 .filter(o -> o.getValue0().equalsIgnoreCase(team))
                 .map(Quartet::getValue2)
                 .collect(Collectors.toSet());
-        //return spawn_segments.row(team).values().stream().map(Pair::getKey).collect(Collectors.toSet());
     }
 
     private String get_opposing_team(String spawn) {
@@ -635,7 +573,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     }
 
     private Optional<String> get_team_for(String agent) {
-        List<String> result_list = spawn_segments2.stream()
+        List<String> result_list = spawn_segments.stream()
                 .filter(o -> o.getValue1() == active_segment && o.getValue2().equalsIgnoreCase(agent))
                 .map(Quartet::getValue0)
                 .toList();

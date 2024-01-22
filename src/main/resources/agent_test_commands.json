@@ -2,176 +2,218 @@
   "tests": [
     {
       "name": "all leds off",
-      "scheme": {
+      "pattern": {
         "led_all": "off"
       },
       "command": "visual"
     },
     {
       "name": "single, very_long",
-      "scheme": {
+      "pattern": {
         "led_all": "very_long"
       },
       "command": "visual"
     },
     {
       "name": "single, long",
-      "scheme": {
+      "pattern": {
         "led_all": "long"
       },
       "command": "visual"
     },
     {
       "name": "single, medium",
-      "scheme": {
+      "pattern": {
         "led_all": "medium"
       },
       "command": "visual"
     },
     {
       "name": "single, short",
-      "scheme": {
+      "pattern": {
         "led_all": "short"
       },
       "command": "visual"
     },
     {
       "name": "single, very_short",
-      "scheme": {
+      "pattern": {
         "led_all": "very_short"
       },
       "command": "visual"
     },
     {
       "name": "recurring, very_slow",
-      "scheme": {
+      "pattern": {
         "led_all": "very_slow"
       },
       "command": "visual"
     },
     {
       "name": "recurring, slow",
-      "scheme": {
+      "pattern": {
         "led_all": "slow"
       },
       "command": "visual"
     },
     {
       "name": "recurring, normal",
-      "scheme": {
+      "pattern": {
         "led_all": "normal"
       },
       "command": "visual"
     },
     {
       "name": "recurring, fast",
-      "scheme": {
+      "pattern": {
         "led_all": "fast"
       },
       "command": "visual"
     },
     {
       "name": "recurring, very_fast",
-      "scheme": {
+      "pattern": {
         "led_all": "very_fast"
       },
       "command": "visual"
     },
     {
       "name": "recurring, mega_fast",
-      "scheme": {
+      "pattern": {
         "led_all": "mega_fast"
       },
       "command": "visual"
     },
     {
       "name": "special, netstatus",
-      "scheme": {
+      "pattern": {
         "led_all": "netstatus"
       },
       "command": "visual"
     },
     {
       "name": "special, flag_taken",
-      "scheme": {
+      "pattern": {
         "led_all": "off",
         "red": "flag_taken"
       },
       "command": "visual"
     },
     {
+      "name": "special, remaining 60s",
+      "pattern": {
+        "remaining": 60
+      },
+      "command": "timers"
+    },
+    {
+      "name": "special, progress remaining",
+      "pattern": {
+        "progress": "remaining"
+      },
+      "command": "visual"
+    },
+    {
       "name": "all sirens off",
-      "scheme": {
+      "pattern": {
         "sir_all": "off"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, single_buzz",
-      "scheme": {
+      "name": "single_buzz",
+      "pattern": {
         "buzzer": "single_buzz"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, double_buzz",
-      "scheme": {
+      "name": "double_buzz",
+      "pattern": {
         "buzzer": "double_buzz"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, triple_buzz",
-      "scheme": {
+      "name": "triple_buzz",
+      "pattern": {
         "buzzer": "triple_buzz"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, team_ready_signal",
-      "scheme": {
+      "name": "team_ready_signal",
+      "pattern": {
         "buzzer": "team_ready_signal"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, team_hurry_up_signal",
-      "scheme": {
+      "name": "team_hurry_up_signal",
+      "pattern": {
         "buzzer": "team_hurry_up_signal"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, annoying",
-      "scheme": {
+      "name": "annoying buzzer",
+      "pattern": {
         "buzzer": "annoying"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, respawn_signal",
-      "scheme": {
+      "name": "respawn_signal",
+      "pattern": {
         "buzzer": "respawn_signal"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, game_starts",
-      "scheme": {
-        "buzzer": "game_starts"
+      "name": "sir1, game_starts",
+      "pattern": {
+        "sir1": "game_starts"
       },
       "command": "acoustic"
     },
     {
-      "name": "acoustic, game_ends",
-      "scheme": {
-        "buzzer": "game_ends"
+      "name": "sir1, game_ends",
+      "pattern": {
+        "sir1": "game_ends"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "Siren 1",
+      "pattern": {
+        "sir1": "medium"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "Siren 2",
+      "pattern": {
+        "sir2": "medium"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "Siren 3",
+      "pattern": {
+        "sir3": "medium"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "Siren 4",
+      "pattern": {
+        "sir4": "medium"
       },
       "command": "acoustic"
     },
     {
       "name": "stop playing",
-      "scheme": {
+      "pattern": {
         "channel": "",
         "subpath": "",
         "soundfile": ""
@@ -180,7 +222,7 @@
     },
     {
       "name": "play, jam",
-      "scheme": {
+      "pattern": {
         "channel": "music",
         "subpath": "music",
         "soundfile": "jam"
@@ -189,7 +231,7 @@
     },
     {
       "name": "random event",
-      "scheme": {
+      "pattern": {
         "channel": "events",
         "subpath": "events",
         "soundfile": "<random>"
@@ -198,7 +240,7 @@
     },
     {
       "name": "random pause",
-      "scheme": {
+      "pattern": {
         "channel": "pause",
         "subpath": "pause",
         "soundfile": "<random>"
@@ -207,7 +249,7 @@
     },
     {
       "name": "random music",
-      "scheme": {
+      "pattern": {
         "channel": "music",
         "subpath": "music",
         "soundfile": "<random>"
