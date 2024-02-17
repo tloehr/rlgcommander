@@ -14,8 +14,9 @@
             if (game_parameters.spawns.announce_sprees)
                 game_parameters.spawns.announce_sprees = document.getElementById('check-spree').checked;
 
-            // todo: add this function for the voice selection too
-            if (game_parameters.spawns.intro_mp3 === '<none>') game_parameters.spawns.starter_countdown = 0;
+            // we don't need a countdown timer, when both sound selections are none
+            if (game_parameters.spawns.intro_mp3 === '<none>' &&
+                game_parameters.spawns.intro_voice === '<none>') game_parameters.spawns.starter_countdown = 0;
             else game_parameters.spawns.starter_countdown = 30;
 
             game_parameters.spawns.teams.forEach(team => {
@@ -145,7 +146,7 @@
             <label for="audio_group" class="form-label">Audio Group</label>
             <input type="text" class="form-control" id="audio_group"
                    placeholder="agents for playing audio files"/>
-            <div id="audio_group_help" class="form-text">Spawn agents always playing sound.
+            <div id="audio_group_help" class="form-text">Spawn agents always belong to this group.
             </div>
         </div>
 

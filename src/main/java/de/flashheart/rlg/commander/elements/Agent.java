@@ -9,6 +9,8 @@ import org.json.JSONObject;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Map;
 
 @Log4j2
@@ -45,6 +47,14 @@ public class Agent implements Comparable<Agent> {
         setStatus(status);
     }
 
+    public void setLast_button(String last_button) {
+        this.last_button = last_button + ": " + LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM));
+    }
+
+    public void setLast_rfid_uid(String last_rfid_uid) {
+        this.last_rfid_uid = last_rfid_uid + ": " + LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM));
+    }
+
     public void setStatus(JSONObject status) {
         this.status = status;
         software_version = status.optString("version", "dummy");
@@ -52,7 +62,8 @@ public class Agent implements Comparable<Agent> {
         failed_pings = status.optInt("failed_pings");
         ip = status.optString("ip", "unknown");
         signal_quality = status.optInt("signal_quality", -1);
-        ap = status.optString("ap", "no_ap").toLowerCase();
+        // clean string from anything but letters and numbers
+        ap = status.optString("ap", "000000000000").toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
         timestamp = LocalDateTime.now();
     }
 

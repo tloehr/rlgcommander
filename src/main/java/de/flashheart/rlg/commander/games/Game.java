@@ -100,7 +100,7 @@ public abstract class Game {
     private LocalDateTime game_init_at;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        log.info(FigletFont.convertOneLine(getGameMode()));
+        log.info("\n" + FigletFont.convertOneLine(getGameMode()));
         uuid = UUID.randomUUID();
         game_init_at = LocalDateTime.now();
         this.game_parameters = game_parameters;
@@ -235,16 +235,16 @@ public abstract class Game {
     }
 
 
-    protected void play(String channel, String subpath, String soundfile, String agent){
+    protected void play(String channel, String subpath, String soundfile, String agent) {
         play(channel, subpath, soundfile, List.of(agent));
     }
 
-    protected void play(String channel, String subpath, String soundfile){
+    protected void play(String channel, String subpath, String soundfile) {
         play(channel, subpath, soundfile, roles.get("audio"));
     }
 
-    protected void play(String channel, String subpath, String soundfile, Collection<String> agents){
-        send(CMD_PLAY, MQTT.toJSON("channel", channel, "subpath",subpath, "soundfile", soundfile), agents);
+    protected void play(String channel, String subpath, String soundfile, Collection<String> agents) {
+        send(CMD_PLAY, MQTT.toJSON("channel", channel, "subpath", subpath, "soundfile", soundfile), agents);
     }
 
     /**
@@ -282,6 +282,7 @@ public abstract class Game {
     public void on_reset() {
         game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
+        play("","","");
         send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), roles.get("sirens"));
         send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), roles.get("sirens"));
     }
@@ -384,7 +385,14 @@ public abstract class Game {
     /**
      * called whenever cleanup() is called from outside
      */
-    protected abstract void on_cleanup();
+    protected void on_cleanup() {
+        stateReachedListeners.clear();
+        stateTransitionListeners.clear();
+        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), roles.get("sirens"));
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agents.keySet());
+        send("timers", MQTT.toJSON("_clearall", ""), agents.keySet());
+        play("","","");
+    }
 
     String get_in_game_event_description(JSONObject event) {
         String type = event.getString("type");
@@ -444,8 +452,6 @@ public abstract class Game {
      * call this to initiate the cleanup process before You destroy a loaded game.
      */
     public void cleanup() {
-        stateReachedListeners.clear();
-        stateTransitionListeners.clear();
         on_cleanup();
     }
 

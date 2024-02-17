@@ -72,7 +72,7 @@
     "count_respawns": true,
     "game_lobby": true,
     "intro_mp3": "<none>",
-    "intro_voice": "sharon",
+    "intro_voice": "sharon30s",
     "starter_countdown": 0,
     "announce_sprees": false,
     "respawn_time": 0,

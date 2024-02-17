@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+
 @Log4j2
 @Service
 public class AgentsService {
@@ -61,13 +62,18 @@ public class AgentsService {
     public void agent_reported_status(String agentid, JSONObject status) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid, status));
         if (live_agents.containsKey(agentid)) my_agent.setStatus(status);
-        if (!live_agents.containsKey(agentid) || status.getInt("netmonitor_cycle") == 0)
+        // status_counter==0 is valid when an agent restarts - so it will receive another welcome message
+        // even if it was known before
+        if (!live_agents.containsKey(agentid) || status.getInt("status_counter") == 0)
             welcome(my_agent);
         live_agents.put(agentid, my_agent);
     }
 
     public void agent_reported_event(String agentid, String device, JSONObject message) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+        // we will send a welcome message, if the agent is yet unknown
+        if (!live_agents.containsKey(agentid))
+            welcome(my_agent);
         live_agents.putIfAbsent(agentid, my_agent);
         if (device.equalsIgnoreCase("rfid")) {
             my_agent.setLast_rfid_uid(message.optString("uid", "none"));
@@ -109,15 +115,16 @@ public class AgentsService {
         if (my_agent.getGameid() > -1) return;
         log.info("Sending welcome message to newly attached agent {}", my_agent.getId());
         //mqttOutbound.send("init", agentid);
-        mqttOutbound.send("timers", MQTT.toJSON("_clearall", "0"), my_agent.getId());
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), my_agent.getId());
+        mqttOutbound.send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", "0"), my_agent.getId());
+        mqttOutbound.send(MQTT.CMD_PLAY, MQTT.toJSON("channel", "", "subpath", "", "soundfile", ""), my_agent.getId());
+        mqttOutbound.send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), my_agent.getId());
         // welcome-signal
-        mqttOutbound.send("visual",
+        mqttOutbound.send(MQTT.CMD_VISUAL,
                 "welcome_signal",
                 my_agent.getId());
-        mqttOutbound.send("paged", MQTT.page("page0", "Welcome " + my_agent.getId(),
+        mqttOutbound.send(MQTT.CMD_PAGED, MQTT.page("page0", "Welcome " + my_agent.getId(),
                 "commander " + buildProperties.getVersion() + "b" + buildProperties.get("buildNumber"),
-                "    agent ${agversion}b${agbuild}",
+                "${agtype} ${agversion}b${agbuild}",
                 "2me@flashheart.de ${wifi_signal}"), my_agent.getId());
     }
 

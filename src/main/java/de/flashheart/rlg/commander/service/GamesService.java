@@ -72,7 +72,7 @@ public class GamesService {
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         if (loaded_games[id - 1].isPresent())
             throw new IllegalAccessException("id " + id + " is in use. Unload first.");
-        log.debug(FigletFont.convertOneLine(this.getClass().getClassLoader().getResourceAsStream("Big.flf"), "LOADING GAME #" + id));
+        log.debug("\n"+ FigletFont.convertOneLine("LOADING GAME #" + id));
         JSONObject game_description = new JSONObject(json);
 
         // add parameters from application.yml
@@ -99,7 +99,7 @@ public class GamesService {
     public void unload_game(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException, IOException {
         check_id(id);
 
-        log.debug(FigletFont.convertOneLine(this.getClass().getClassLoader().getResourceAsStream("big.flf"), "GAME #" + id + " RELEASED"));
+        log.debug("\n"+ FigletFont.convertOneLine("GAME #" + id + " RELEASED"));
         Game game_to_unload = loaded_games[id - 1].get();
         agentsService.remove_gameid_from_agents(game_to_unload.getAgents().keySet());
         game_to_unload.cleanup();

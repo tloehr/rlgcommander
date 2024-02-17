@@ -156,13 +156,6 @@
       "command": "acoustic"
     },
     {
-      "name": "annoying buzzer",
-      "pattern": {
-        "buzzer": "annoying"
-      },
-      "command": "acoustic"
-    },
-    {
       "name": "respawn_signal",
       "pattern": {
         "buzzer": "respawn_signal"
