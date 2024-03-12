@@ -285,10 +285,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     @Override
     public void on_reset() {
         super.on_reset();
-        // stop all sounds on ALL agents
-        //stop("");
-        play("", "", "");
-        // send(CMD_PLAY, MQTT.toJSON("channel", "", "subpath", "", "soundfile", "<none>"), agents.keySet());
         if (count_respawns) {
             team_registry.forEach((s, team) -> team.reset_respawns());
             if (announce_sprees) {

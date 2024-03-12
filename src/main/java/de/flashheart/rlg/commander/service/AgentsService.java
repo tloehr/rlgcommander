@@ -145,7 +145,7 @@ public class AgentsService {
     }
 
     public void welcome_unused_agents() {
-        get_agents_for_gameid(-1).forEach(agent -> welcome(agent));
+        get_agents_for_gameid(-1).forEach(this::welcome);
     }
 
 }

@@ -400,7 +400,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     protected JSONObject getSpawnPages(String state) {
         if (state.equals(_state_EPILOG)) {
             return MQTT.page("page0",
-                    "Game Over",
+                    "Game Over         ${wifi_signal}",
                     "Winner: ${winner}",
                     "BlueFor: ${score_blue}",
                     "RedFor: ${score_red}");
@@ -408,7 +408,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return MQTT.merge(
                     MQTT.page("page0",
-                            "Red: ${score_red} Blue: ${score_blue}",
+                            "Red: ${score_red} Blue: ${score_blue}   ${wifi_signal}",
                             "${label}",
                             "${timelabel}:",
                             "   ${timer}"));

@@ -35,10 +35,10 @@ public class MQTTOutbound {
     public String topic;
     @Value("${mqtt.qos}")
     public int qos;
-    @Value("${mqtt.retain}")
-    public boolean retain;
-    @Value("${mqtt.acoustic.retain}")
-    public boolean acoustic_retain;
+//    @Value("${mqtt.retain}")
+//    public boolean retain;
+//    @Value("${mqtt.acoustic.retain}")
+//    public boolean acoustic_retain;
     @Value("${mqtt.clientid}")
     public String clientid;
     @Value("${mqtt.max_inflight}")
@@ -113,8 +113,8 @@ public class MQTTOutbound {
     }
 
     private void send(String topic, JSONObject payload) {
-        boolean retain_for_topic = topic.endsWith("acoustic") | topic.endsWith("play") ? acoustic_retain : retain;
-        gateway.sendToMqtt(payload.toString(), qos, retain_for_topic, this.topic + topic);
+        boolean should_be_retained = !(topic.endsWith("acoustic") | topic.endsWith("play") | topic.endsWith("timers"));
+        gateway.sendToMqtt(payload.toString(), qos, should_be_retained, this.topic + topic);
     }
 
 }

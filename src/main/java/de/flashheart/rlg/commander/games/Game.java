@@ -283,8 +283,9 @@ public abstract class Game {
         game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
         play("","","");
-        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), roles.get("sirens"));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agents.keySet());
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off"), agents.keySet());
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall",""), agents.keySet());
     }
 
     public void on_run() {

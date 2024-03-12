@@ -8,6 +8,18 @@
       "command": "visual"
     },
     {
+      "name": "agent startup page",
+      "pattern": {
+        "page0": [
+          "${agentname} ==> ${broker}",
+          "pyAgent ${agversion}b${agbuild}",
+          "${ip}",
+          "WiFi: ${wifi}  ${wifi_signal}"
+        ]
+      },
+      "command": "paged"
+    },
+    {
       "name": "single, very_long",
       "pattern": {
         "led_all": "very_long"

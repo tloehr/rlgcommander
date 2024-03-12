@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
 /**
- * lifecycle cleanup before new game is laoded (by GameService)
+ * todo: idea - add chart for the tickets over time
+ * red and blue as comparison
  */
 @Log4j2
 public class Conquest extends WithRespawns implements HasScoreBroadcast {
@@ -302,7 +303,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
                     MQTT.page("page0",
                             "RED Flags: ${red_flags}",
                             "BLUE Flags: ${blue_flags}",
-                            "",
+                            " ".repeat(18)+"${wifi_signal}",
                             "Red->${red_tickets}:${blue_tickets}<-Blue");
         }
         return MQTT.page("page0", game_description);

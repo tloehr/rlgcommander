@@ -1,17 +1,14 @@
 package de.flashheart.rlg.commander.elements;
 
-import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
-import org.checkerframework.checker.units.qual.A;
 import org.json.JSONObject;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.Map;
 
 @Log4j2
 @Getter
@@ -24,6 +21,7 @@ public class Agent implements Comparable<Agent> {
     LocalDateTime timestamp; // last message from Agent
     String last_button;
     String last_rfid_uid;
+    boolean rfid_is_active; // does this agent have a working rfid device ?
     String ap;
     String ip;
     int signal_quality; // in percent
@@ -44,6 +42,7 @@ public class Agent implements Comparable<Agent> {
         gameid = -1;
         last_button = "none";
         last_rfid_uid = "none";
+        rfid_is_active = false;
         setStatus(status);
     }
 
@@ -62,6 +61,7 @@ public class Agent implements Comparable<Agent> {
         failed_pings = status.optInt("failed_pings");
         ip = status.optString("ip", "unknown");
         signal_quality = status.optInt("signal_quality", -1);
+        rfid_is_active = status.optBoolean("rfid_is_active");
         // clean string from anything but letters and numbers
         ap = status.optString("ap", "000000000000").toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
         timestamp = LocalDateTime.now();

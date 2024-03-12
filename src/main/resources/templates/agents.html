@@ -25,24 +25,36 @@
     <div class="row">
         <div th:each="agent : ${agents}" class="card" style="width: 18rem;">
             <div class="card-body">
+
+                <button th:id="${agent.id}+'_delete'"
+                        class="btn btn-outline-primary"
+                        th:onclick="post_rest('system/remove_agent', {'agentid':[[${agent.id}]]}); location.reload();"><span
+                        class="bi bi-lg bi-x-circle-fill text-danger"></span></button>
                 <h5 class="card-title" th:text="${agent.id}+'&nbsp;('+${agent.last_seen}+')'"></h5>
 
                 <p>
                     <span class="card-text" th:text="${agent.software_version}"></span>
+                    <br/>
+
                     <img src="/img/buzzer.png" height="28"/>
                     <span th:text="${agent.last_button}"></span>
                     <br/>
-                    <img src="/img/rfid.png" height="28" width="28"/>
-                    <span th:text="${agent.last_rfid_uid}"></span>
+
+                    <span th:if="${!agent.rfid_is_active}">
+                        <img src="/img/no_rfid.png" height="28"/>
+                    </span>
+
+                    <span th:if="${agent.rfid_is_active}">
+                        <img src="/img/rfid.png" height="28"/>
+                        <span th:text="${agent.last_rfid_uid}"></span>
+                    </span>
                 </p>
                 <p class="card-text">
-                    <button th:id="${agent.id}+'_delete'"
-                            class="btn btn-outline-primary"
-                            th:onclick="post_rest('system/remove_agent', {'agentid':[[${agent.id}]]}); location.reload();"><span
-                            class="bi bi-lg bi-x-circle-fill text-danger"></span></button>
 
-                    <span th:if="${agent.signal_quality >= 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'" th:text="${agent.signal_quality}+'%&nbsp;'+${agent.ap}"></span>
-                    <span th:if="${agent.signal_quality < 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'" th:text="'&nbsp;'+${agent.ap}"></span>
+                    <span th:if="${agent.signal_quality >= 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'"
+                          th:text="${agent.signal_quality}+'%&nbsp;'+${agent.ap}"></span>
+                    <span th:if="${agent.signal_quality < 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'"
+                          th:text="'&nbsp;'+${agent.ap}"></span>
                     <b>
                         <span th:text="${agent.failed_pings}" class="text-black"></span>/<span
                             th:text="${agent.reconnects}" class="text-danger">></span>

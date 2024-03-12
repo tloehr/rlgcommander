@@ -137,8 +137,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     public void on_reset() {
         super.on_reset();
         deleteJob(broadcastScoreJobkey);
-        broadcast_cycle_counter = 0l;
-        last_job_broadcast = 0l;
+        broadcast_cycle_counter = 0L;
+        last_job_broadcast = 0L;
         reset_score_table();
         broadcast_score();
     }
@@ -239,13 +239,13 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     protected JSONObject getSpawnPages(String state) {
         if (state.equals(_state_EPILOG)) {
             JSONObject epilog_pages = MQTT.page("page0",
-                    "Game Over",
+                    "Game Over         ${wifi_signal}",
                     "Punktestand",
                     "Blau: ${score_blue}",
                     "Rot: ${score_red}");
             if (count_respawns) MQTT.merge(epilog_pages,
                     MQTT.page("page1",
-                            "Game Over",
+                            "Game Over         ${wifi_signal}",
                             "Respawns",
                             "Blau: ${blue_respawns}",
                             "Rot: ${red_respawns}")
@@ -257,24 +257,24 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             JSONObject pages_when_game_runs = MQTT.merge(
                     MQTT.page("page0",
                             "Restzeit: ${remaining}",
-                            StringUtils.center("Zeiten", 20),
+                            StringUtils.center("Zeiten", 18)+"${wifi_signal}",
                             "Blau: ${score_blue}",
                             "Rot: ${score_red}"),
                     MQTT.page("page1",
                             "Restzeit: ${remaining}",
-                            StringUtils.center("Rote Flaggen", 20),
+                            StringUtils.center("Rote Flaggen", 18)+"${wifi_signal}",
                             "${redline1}",
                             "${redline2}"),
                     MQTT.page("page2",
                             "Restzeit: ${remaining}",
-                            StringUtils.center("Blaue Flaggen", 20),
+                            StringUtils.center("Blaue Flaggen", 18)+"${wifi_signal}",
                             "${blueline1}",
                             "${blueline2}")
             );
             if (count_respawns) MQTT.merge(pages_when_game_runs,
                     MQTT.page("page3",
                             "Restzeit: ${remaining}",
-                            StringUtils.center("Respawns", 20),
+                            StringUtils.center("Respawns", 18)+"${wifi_signal}",
                             "Blau: ${blue_respawns}",
                             "Rot: ${red_respawns}")
             );
