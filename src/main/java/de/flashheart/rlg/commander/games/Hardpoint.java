@@ -36,6 +36,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
  * Gamemode inspired by Call Of Duty Hardpoint or Headquarters.
  * <p>Suggested back in 2019 by <a href="https://woodlandforum.com/board/index.php/User/14458-Chronoxon/?s=a70741ca9836656e56796bbf1461625052338da9">Chronoxon</a> on the <a href="https://woodlandforum.com/board/index.php/Thread/39784-Ideen-f%C3%BCr-elektronisches-Spielsystem/?postID=666001#post666001">Woodlandforum</a></p>
  */
+// todo: add option to "hide the next flag announcement"
 @Log4j2
 public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasScoreBroadcast, HasActivation, HasTimeOut, HasFlagTimer {
     public static final String _msg_TO_NEUTRAL = "to_neutral";
@@ -165,14 +166,17 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     private void cp_prolog(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
-        send("paged",
+        log.trace("cp_prolog {}", agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
+        send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "PROLOG"),
                 agent);
     }
 
     private void next_flag() {
+        log.trace("next_flag {}", peek_next_flag());
         cpFSMs.get(get_active_flag()).ProcessFSM(_msg_NEXT_FLAG);
         deleteJob(flag_time_out_jobkey);
 
@@ -189,16 +193,16 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     private void cp_get_ready(String agent) {
-        log.trace("getting ready ({})", get_active_flag());
+        log.trace("getting ready {}", get_active_flag());
         if (delay_until_next_flag > 0) {
             create_job(flag_activation_jobkey, LocalDateTime.now().plusSeconds(delay_until_next_flag), ActivationJob.class, Optional.empty());
             send("timers", MQTT.toJSON("timer", Long.toString(delay_until_next_flag)), agents.keySet());
             send("vars", MQTT.toJSON("timelabel", "Next READY in"), agents.keySet());
-            send("paged",
+            send(MQTT.CMD_PAGED,
                     MQTT.page("page0",
                             "I am ${agentname}", "", "", "Flag is preparing"),
                     agent);
-            send("visual", new JSONObject("""
+            send(MQTT.CMD_VISUAL, new JSONObject("""
                     "led_all" : "off",
                     "wht": {
                         "repeat": -1,
@@ -213,7 +217,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
     @Override
     public void activate(JobDataMap map) {
-        log.trace("go({})", get_active_flag());
+        log.trace("activate {}", get_active_flag());
         cpFSMs.get(get_active_flag()).ProcessFSM(_msg_GO);
     }
 
@@ -223,11 +227,13 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     private void cp_to_stand_by(String agent) {
-        send("paged",
+        log.trace("cp_to_stand_by {}", agent);
+        send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag standing by"),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
+        log.trace("sending OFF to {}", agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
     }
 
     private String peek_next_flag() {
@@ -241,16 +247,17 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
     private void cp_to_neutral(String agent) {
         // time limit - if nobody can touch the flag
-        deleteJob(flag_time_up_jobkey); // if it was by zeus
+        log.trace("cp_to_neutral {}", agent);
         create_job(flag_time_out_jobkey, LocalDateTime.now().plusSeconds(flag_time_out), TimeOutJob.class, Optional.empty());
         send("timers", MQTT.toJSON("timer", Long.toString(flag_time_out)), agents.keySet());
         send("vars", MQTT.toJSON("timelabel", "Next Flag in", "label", "actv:" + get_active_flag() + " next:" + peek_next_flag()), agents.keySet());
 
-        send("paged",
+        send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag is NEUTRAL"),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        log.trace("sending white to {}", agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "NEUTRAL"));
     }
 
@@ -265,16 +272,16 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         create_job(delayed_reaction_jobkey,
                 LocalDateTime.now().plus(delay_after_color_change.multiply(new BigDecimal(1000L)).longValue(), ChronoUnit.MILLIS),
                 DelayedReactionJob.class, Optional.empty());
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.NORMAL), agent);
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
     }
 
     private void cp_to_scoring_color(String agent, String color) {
         String COLOR = (color.equalsIgnoreCase("blu") ? "BLUE" : "RED");
         deleteJob(flag_time_out_jobkey);
-        send("acoustic", MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.MEDIUM), roles.get("sirens"));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.NORMAL), agent);
-        send("paged",
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.MEDIUM), roles.get("sirens"));
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.NORMAL), agent);
+        send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag is " + COLOR),
                 agent);

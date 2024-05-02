@@ -106,8 +106,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                         "Blue: ${" + get_agent_key(agent, "blue") + "}",
                         "Red: ${" + get_agent_key(agent, "red") + "}"
                 ), agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
-        //if (game_fsm.getCurrentState().equals(_state_RUNNING))
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
     }
 
@@ -257,24 +257,24 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             JSONObject pages_when_game_runs = MQTT.merge(
                     MQTT.page("page0",
                             "Restzeit: ${remaining}",
-                            StringUtils.center("Zeiten", 18)+"${wifi_signal}",
+                            StringUtils.center("Zeiten", 18) + "${wifi_signal}",
                             "Blau: ${score_blue}",
                             "Rot: ${score_red}"),
                     MQTT.page("page1",
                             "Restzeit: ${remaining}",
-                            StringUtils.center("Rote Flaggen", 18)+"${wifi_signal}",
+                            StringUtils.center("Rote Flaggen", 18) + "${wifi_signal}",
                             "${redline1}",
                             "${redline2}"),
                     MQTT.page("page2",
                             "Restzeit: ${remaining}",
-                            StringUtils.center("Blaue Flaggen", 18)+"${wifi_signal}",
+                            StringUtils.center("Blaue Flaggen", 18) + "${wifi_signal}",
                             "${blueline1}",
                             "${blueline2}")
             );
             if (count_respawns) MQTT.merge(pages_when_game_runs,
                     MQTT.page("page3",
                             "Restzeit: ${remaining}",
-                            StringUtils.center("Respawns", 18)+"${wifi_signal}",
+                            StringUtils.center("Respawns", 18) + "${wifi_signal}",
                             "Blau: ${blue_respawns}",
                             "Rot: ${red_respawns}")
             );

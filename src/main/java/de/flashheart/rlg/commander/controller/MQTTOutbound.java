@@ -113,8 +113,8 @@ public class MQTTOutbound {
     }
 
     private void send(String topic, JSONObject payload) {
-        boolean should_be_retained = !(topic.endsWith("acoustic") | topic.endsWith("play") | topic.endsWith("timers"));
-        gateway.sendToMqtt(payload.toString(), qos, should_be_retained, this.topic + topic);
+        boolean retained = !(topic.endsWith("acoustic") | topic.endsWith("play") | topic.endsWith("timers"));
+        gateway.sendToMqtt(payload.toString(), qos, retained, this.topic + topic);
     }
 
 }

@@ -100,7 +100,8 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, get_signal(FLAG_MUTABLE)), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, get_signal(FLAG_MUTABLE)), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
         dot_format_map.remove(agent);
     }
 

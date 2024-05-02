@@ -161,25 +161,25 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     private void defended(String agent) {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, MQTT.VERY_FAST), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, MQTT.VERY_FAST), agent);
         send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), get_all_spawn_agents());
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
 
     private void taken(String agent) {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "taken"));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.LONG), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.LONG), agent);
         active_capture_point++;
-        send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
 
         // activate next CP or end the game when no CPs left
         boolean all_cps_taken = active_capture_point == capture_points.size();
         if (overtime || all_cps_taken) {
-            send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, MQTT.VERY_FAST), agent);
+            send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, MQTT.VERY_FAST), agent);
             game_fsm.ProcessFSM(_msg_GAME_OVER);
         } else {
-            send("visual", new JSONObject(MQTT.LED_ALL, "off", MQTT.RED, MQTT.FLAG_TAKEN), agent);
-            send("acoustic", MQTT.toJSON(MQTT.SIR4, MQTT.LONG), map_of_agents_and_sirens.get(agent).toString());
+            send(MQTT.CMD_VISUAL, new JSONObject(MQTT.LED_ALL, "off", MQTT.RED, MQTT.FLAG_TAKEN), agent);
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.LONG), map_of_agents_and_sirens.get(agent).toString());
             next_spawn_segment();
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
         }
@@ -192,7 +192,8 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     }
 
     private void prolog(String agent) {
-        send("visual", show_number_as_leds(capture_points.indexOf(agent) + 1, MQTT.FAST), agent);
+        send(MQTT.CMD_VISUAL, show_number_as_leds(capture_points.indexOf(agent) + 1, MQTT.FAST), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
     }
 
     /**

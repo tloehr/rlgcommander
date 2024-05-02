@@ -53,7 +53,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
     private static final long DELAY_IN_MS_MUSIC_2_COUNTDOWN_VOICE = 6080;
 
     private final int starter_countdown;
-    private final String intro_mp3, intro_voice;
+    private final String intro_mp3, intro_voice, pause_mp3;
     private final boolean game_lobby;
     private final boolean announce_sprees;
     private int team1_killing_spree_length;
@@ -85,6 +85,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         this.game_lobby = spawn_parameters.optBoolean("game_lobby");
         this.starter_countdown = spawn_parameters.optInt("starter_countdown");
         this.intro_mp3 = spawn_parameters.optString("intro_mp3", "<none>");
+        this.pause_mp3 = spawn_parameters.optString("pause_mp3", "in-the-air-tonight");
         this.intro_voice = spawn_parameters.optString("intro_voice", "<none>");
         this.count_respawns = spawn_parameters.optBoolean("count_respawns");
 
@@ -149,11 +150,11 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
 //        audio_jobs.put(agent, new JobKey(agent, uuid.toString()));
         fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> {
             play("", "", "", agent);
-            //send(CMD_PLAY, MQTT.toJSON("channel", "all", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
             send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", led_device_id, MQTT.NORMAL), agent);
             send(MQTT.CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0",
-                            "I am ${agentname} and will", "be Your spawn.", "You are " + teamname, "!! Standby !!     ${wifi_signal}"),
+                            "I am ${agentname}. I will", "be Your spawn.", "You are " + teamname, "!! Standby !!     ${wifi_signal}"),
                     MQTT.page("page1", game_description)), agent
             );
         });
@@ -161,15 +162,14 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             play("", "", "", agent);
             //send(CMD_PLAY, MQTT.toJSON("channel", "all", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
 //            send(CMD_ACOUSTIC, MQTT.toJSON("sir_all", "off"), agent);
-            send(MQTT.CMD_VISUAL, MQTT.toJSON("led_all", "off"), agent);
+            send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
             send(MQTT.CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0", "", "THIS SPAWN IS", "", "INACTIVE"),
                     MQTT.page("page1", "THIS SPAWN IS", "", "INACTIVE", "")), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_PREPARING, (state, obj) -> {
             send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.MEDIUM), agent);
-            play("", "", "", agent);
-            //send(CMD_PLAY, MQTT.toJSON("channel", "", "subpath", AGENT_MUSIC_PATH, "soundfile", "<none>"), agent);
+            // play("music", AGENT_PAUSE_PATH, pause_mp3, agent);
             send(MQTT.CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0", " !! GAME LOBBY !! ", "", "Press button", "when ready"),
                     MQTT.page("page1", " !! GAME LOBBY !! ", "", "", "")
@@ -209,11 +209,11 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_START, (state, obj) -> {
             send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "off"), agent);
-            send("timers", MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
+            send(MQTT.CMD_TIMERS, MQTT.toJSON("countdown", Integer.toString(starter_countdown)), agent);
             send(MQTT.CMD_DISPLAY, MQTT.page("page0", " The Game starts ", "        in", "       ${countdown}", ""), agent);
         });
         fsm.setStatesAfterTransition(_state_COUNTDOWN_TO_RESUME, (state, obj) -> {
-            send("timers", MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
+            send(MQTT.CMD_TIMERS, MQTT.toJSON("countdown", Integer.toString(resume_countdown)), agent); // sending to everyone
             send(MQTT.CMD_DISPLAY, MQTT.page("page0", " The Game resumes ", "        in", "       ${countdown}", ""), agent);
         });
         fsm.setStatesAfterTransition(_state_PAUSING, (state, obj) -> send(MQTT.CMD_DISPLAY, MQTT.merge(getSpawnPages(_state_RUNNING), MQTT.page("pause", "", "      PAUSE      ", "", "")), agent));
@@ -231,7 +231,6 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         fsm.setAction(_state_STANDBY, _msg_ACTIVATE, new FSMAction() {
             @Override
             public boolean action(String curState, String message, String nextState, Object args) {
-                //send(CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "off"), agent);
                 send(MQTT.CMD_VISUAL, new JSONObject()
                                 .put("led_all", "off")
                                 .put(led_device_id, "fast"),

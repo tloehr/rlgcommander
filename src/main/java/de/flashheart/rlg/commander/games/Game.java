@@ -282,10 +282,11 @@ public abstract class Game {
     public void on_reset() {
         game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-        play("","","");
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agents.keySet());
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off"), agents.keySet());
-        send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall",""), agents.keySet());
+        //play("","","");
+//        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agents.keySet());
+//        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off"), agents.keySet());
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", ""), agents.keySet());
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), roles.get("sirens"));
     }
 
     public void on_run() {
@@ -392,7 +393,7 @@ public abstract class Game {
         send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), roles.get("sirens"));
         send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agents.keySet());
         send("timers", MQTT.toJSON("_clearall", ""), agents.keySet());
-        play("","","");
+        play("", "", "");
     }
 
     String get_in_game_event_description(JSONObject event) {

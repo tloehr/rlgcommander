@@ -177,7 +177,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
     }
 
     private void cp_to_blue(String agent) {

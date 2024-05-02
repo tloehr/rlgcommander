@@ -186,7 +186,8 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void prolog(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), MQTT.NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), MQTT.NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
     }
 
     private boolean active_ring_taken() {

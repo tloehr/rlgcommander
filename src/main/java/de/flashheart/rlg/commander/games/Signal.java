@@ -100,7 +100,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
                 MQTT.page("page0",
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "unlocked"));
         int index_of_agent = capture_points.indexOf(agent) + 1;
         line_variables.put("line" + index_of_agent, "");
