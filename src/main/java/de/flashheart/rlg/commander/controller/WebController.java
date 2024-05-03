@@ -1,12 +1,11 @@
 package de.flashheart.rlg.commander.controller;
 
 import de.flashheart.rlg.commander.games.*;
-import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
+import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.IOUtils;
-import org.checkerframework.checker.units.qual.A;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 import org.json.JSONArray;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;

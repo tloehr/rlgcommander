@@ -1,7 +1,6 @@
 package de.flashheart.rlg.commander;
 
-import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
-import de.flashheart.rlg.commander.misc.Tools;
+import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;

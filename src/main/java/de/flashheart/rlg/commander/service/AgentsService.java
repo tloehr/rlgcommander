@@ -3,7 +3,7 @@ package de.flashheart.rlg.commander.service;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Agent;
-import de.flashheart.rlg.commander.misc.MyYamlConfiguration;
+import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;

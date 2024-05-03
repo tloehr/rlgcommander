@@ -6,6 +6,7 @@
 
 <section layout:fragment="content">
     <div id = "my_header"></div>
+    <div th:if="${#authentication == null}"><h3>not authorized</h3></div>
     <script>
         var myHeaderElement = document.createElement('h2');
         myHeaderElement.innerHTML = 'Game slot #' + sessionStorage.getItem('game_id') + ' is empty';
