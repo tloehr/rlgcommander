@@ -30,4 +30,8 @@ rlgs:
     bf3: Battlefield 3
   access_points:
     00223f97a198: NETGEAR
+  users:
+    user: password1
+  api_keys:
+    - 218E8BF1-F5C5-4B69-A2AB-D040115B7159
 

@@ -116,6 +116,9 @@
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${agents_active}" href="/ui/agents">Agents</a>
                 </li>
+                <li>
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
             </ul>
             <div class="col-md-auto me-4">
                 <select class="form-select" id="game_id" value="1"
@@ -124,7 +127,7 @@
                     <!--                    <option value="2">Game #2</option>-->
                     <!--                    <option value="3">Game #3</option>-->
                 </select>
-                <script>
+                <script th:inline="javascript">
                     const game_id_sel = document.getElementById('game_id');
                     // first time init
                     if (!sessionStorage.getItem('runonce_game_id')) {
@@ -136,6 +139,8 @@
                         sessionStorage.setItem('game_id', game_id_sel.value);
                     }, false);
                     document.getElementById('game_id').value = sessionStorage.getItem('game_id');
+                    // this is a valid api_key for REST requests. Or nothing when nobody is logged in.
+                    sessionStorage.setItem('X-API-KEY', [[${api_key}]]);
                 </script>
             </div>
         </div>
@@ -159,8 +164,9 @@
 </main>
 
 <footer class="footer navbar-expand-lg navbar-dark bg-dark fixed-bottom">
-    <div class="text-center text-light  col-auto"><span th:text="'RLG Commander '+${server_version}"></span>&nbsp;&nbsp;Credits: <a
-            href="https://flashheart.de/doku.php/de:credits">flashheart.de</a></div>
+    <div class="text-center text-light  col-auto"><span th:text="'RLG Commander '+${server_version}"></span>&nbsp;&nbsp;Credits:
+        <a
+                href="https://flashheart.de/doku.php/de:credits">flashheart.de</a></div>
     <div class="text-center col-auto"><span id="rest_result"></span>
     </div>
     <script>

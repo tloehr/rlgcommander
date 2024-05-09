@@ -46,7 +46,6 @@ public class MQTTInbound {
     GamesService gamesService;
     ConcurrentHashMap<String, Agent> live_agents; // see MyConfiguration.java
 
-    @Autowired
     public MQTTInbound(AgentsService agentsService, GamesService gamesService, MQTTOutbound mqttOutbound, ConcurrentHashMap<String, Agent> live_agents) {
         this.agentsService = agentsService;
         this.gamesService = gamesService;

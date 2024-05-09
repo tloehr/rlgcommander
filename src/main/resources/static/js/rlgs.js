@@ -111,7 +111,6 @@ function update_game_state(message) {
     sessionStorage.setItem('state', state);
     document.getElementById('game_state').innerHTML = '&nbsp;' + state;
     document.getElementById('game_state').setAttribute('style', 'color: ' + color);
-    //$('#game_state').html('&nbsp;' + state).attr('style', 'color: ' + color);
 }
 
 function to_string_segment_list(jsonArray) {
@@ -149,6 +148,17 @@ function from_string_list(list) {
     return result;
 }
 
+function authenticateUser(user, password)
+{
+    var token = user + ":" + password;
+
+    // Should i be encoding this value????? does it matter???
+    // Base64 Encoding -> btoa
+    var hash = btoa(token);
+
+    return "Basic " + hash;
+}
+
 function get_rest(resturi, param_json) {
     console.log("REST GET: " + resturi);
     const xhttp = new XMLHttpRequest();
@@ -163,7 +173,7 @@ function get_rest(resturi, param_json) {
     }
     const base_url = window.location.origin + '/api/' + resturi;
     const myuri = base_url + (param_json ? '?' + jQuery.param(param_json) : '');
-    xhttp.open("GET", myuri, false); // true for asynchronous
+    xhttp.open('GET', myuri, false); // true for asynchronous
     xhttp.send('{}');
 }
 
@@ -200,6 +210,7 @@ function post_rest(resturi, param_json, body, callback) {
     // https://stackoverflow.com/a/61587856/1171329
     xhttp.open('POST', myuri, false);
     xhttp.setRequestHeader('Content-type', 'application/json');
+    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
     xhttp.send(body ? JSON.stringify(body) : '{}');
 }
 

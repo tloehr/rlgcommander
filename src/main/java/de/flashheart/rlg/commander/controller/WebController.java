@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.controller;
 
+import de.flashheart.rlg.commander.configs.MyUserDetails;
 import de.flashheart.rlg.commander.games.*;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import de.flashheart.rlg.commander.service.AgentsService;
@@ -12,6 +13,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -56,13 +59,16 @@ public class WebController {
     }
 
     @GetMapping("/upload")
-    public String upload(Model model) {
+    public String upload(Model model, @AuthenticationPrincipal User user) {
+        model.addAttribute("api_key", user != null ? myYamlConfiguration.getApi_keys().get(0) : "");
         model.addAttribute("params_active", "active");
         return "upload";
     }
 
     @GetMapping("/home")
-    public String app(Model model) {
+    public String home(Model model, @AuthenticationPrincipal MyUserDetails user) {
+        log.debug(user.getApi_key());
+        model.addAttribute("api_key", user != null ? myYamlConfiguration.getApi_keys().get(0) : "");
         model.addAttribute("home_active", "active");
         return "home";
     }
@@ -73,14 +79,15 @@ public class WebController {
     }
 
     @GetMapping("/agents")
-    public String agents(Model model) {
+    public String agents(Model model, @AuthenticationPrincipal User user) {
+        model.addAttribute("api_key", user != null ? myYamlConfiguration.getApi_keys().get(0) : "");
         model.addAttribute("agents", agentsService.get_all_agents());
         model.addAttribute("agents_active", "active");
         // adding test list for the agents web interface
         ArrayList<Triplet<String, String, JSONObject>> list_of_tests = new ArrayList<>();
         try {
             JSONArray tests = new JSONObject(IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("agent_test_commands.json"), StandardCharsets.UTF_8)).getJSONArray("tests");
-            for (int test_i = 0; test_i < tests.length(); test_i ++) {
+            for (int test_i = 0; test_i < tests.length(); test_i++) {
                 JSONObject test = tests.getJSONObject(test_i);
                 list_of_tests.add(new Triplet<>(test.getString("name"), test.getString("command"), test.getJSONObject("pattern")));
             }
@@ -93,21 +100,24 @@ public class WebController {
     }
 
     @GetMapping("/server")
-    public String server(@RequestParam(name = "id") int id, Model model) {
+    public String server(@RequestParam(name = "id") int id, Model model, @AuthenticationPrincipal User user) {
+        model.addAttribute("api_key", user != null ? myYamlConfiguration.getApi_keys().get(0) : "");
         model.addAttribute("server_status", gamesService.getGameState(id).toString(4));
         model.addAttribute("server_active", "active");
         return "server";
     }
 
     @GetMapping("/zeus/base")
-    public String zeus(@RequestParam(name = "id") int id, Model model) {
+    public String zeus(@RequestParam(name = "id") int id, Model model, @AuthenticationPrincipal User user) {
+        model.addAttribute("api_key", user != null ? myYamlConfiguration.getApi_keys().get(0) : "");
         model.addAttribute("active_active", "active");
         gamesService.getGame(id).ifPresent(game -> game.add_model_data(model));
         return model.containsAttribute("game_mode") ? "zeus/" + model.getAttribute("game_mode") : "error";
     }
 
     @GetMapping("/active/base")
-    public String active(@RequestParam(name = "id") int id, Model model) {
+    public String active(@RequestParam(name = "id") int id, Model model, @AuthenticationPrincipal User user) {
+        model.addAttribute("api_key", user != null ? myYamlConfiguration.getApi_keys().get(0) : "");
         model.addAttribute("active_active", "active");
         String game_mode = "";
 
@@ -129,7 +139,8 @@ public class WebController {
     }
 
     @GetMapping("/params/base")
-    public String params(@RequestParam(name = "game_mode") String game_mode, Model model) {
+    public String params(@RequestParam(name = "game_mode") String game_mode, Model model, @AuthenticationPrincipal User user) {
+        model.addAttribute("api_key", user != null ? myYamlConfiguration.getApi_keys().get(0) : "");
         model.addAttribute("params_active", "active");
         model.addAttribute("intros",
                 myYamlConfiguration.getIntros().entrySet().stream()
@@ -145,5 +156,4 @@ public class WebController {
         );
         return "params/" + game_mode;
     }
-
 }

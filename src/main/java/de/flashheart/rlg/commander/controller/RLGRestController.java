@@ -51,26 +51,26 @@ public class RLGRestController {
      *
      * @return
      */
-    @GetMapping("/game-sse")
-    public SseEmitter game_state_event_emitter(@RequestParam(name = "id") int id) {
-        SseEmitter emitter = new SseEmitter(-1l);
-        ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
-        sseMvcExecutor.execute(() -> {
-            gamesService.addStateReachedListener(id, stateReachedEvent -> {
-                try {
-                    SseEmitter.SseEventBuilder event = SseEmitter.event().
-                            data(stateReachedEvent.getState()).
-                            id(Long.toString(System.currentTimeMillis())).
-                            name("StateReachedEvent");
-                    emitter.send(event);
-                } catch (Exception e) {
-                    log.warn(e);
-                    emitter.completeWithError(e);
-                }
-            });
-        });
-        return emitter;
-    }
+//    @GetMapping("/game-sse")
+//    public SseEmitter game_state_event_emitter(@RequestParam(name = "id") int id) {
+//        SseEmitter emitter = new SseEmitter(-1l);
+//        ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
+//        sseMvcExecutor.execute(() -> {
+//            gamesService.addStateReachedListener(id, stateReachedEvent -> {
+//                try {
+//                    SseEmitter.SseEventBuilder event = SseEmitter.event().
+//                            data(stateReachedEvent.getState()).
+//                            id(Long.toString(System.currentTimeMillis())).
+//                            name("StateReachedEvent");
+//                    emitter.send(event);
+//                } catch (Exception e) {
+//                    log.warn(e);
+//                    emitter.completeWithError(e);
+//                }
+//            });
+//        });
+//        return emitter;
+//    }
 
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
