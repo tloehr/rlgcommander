@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Login to RLGS</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Layout Page</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" type="text/css"/>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}" type="text/css"/>
+    <link href="/styles/rlgs.css" rel="stylesheet">
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
+    <script th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
+    <script src="/js/rlgs.js"></script>
+</head>
+<body>
+
+<main role="main" class="container">
+    <div class="container-fluid">
+        <div class="row">
+            <h1>Welcome to the Real Life Gaming System</h1>
+            <h2>Please login</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-auto">
+                <img src="/img/avatar-simpsons-2-transparent2.png" width="64"/>
+            </div>
+            <div class="col-6">
+                <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                    Invalid username and password.
+                </div>
+                <div th:if="${param.logout}">
+                    You have been logged out.
+                </div>
+
+                <form th:action="@{/login}" method="post">
+                    <div class="form-group mb-3">
+                        <label for="username">User Name</label>
+                        <input type="text" class="form-control" id="username" name="username"
+                               placeholder="Enter Username">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" name="password" id="password"
+                               placeholder="Password">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Sign In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

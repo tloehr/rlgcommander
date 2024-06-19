@@ -148,20 +148,9 @@ function from_string_list(list) {
     return result;
 }
 
-function authenticateUser(user, password)
-{
-    var token = user + ":" + password;
-
-    // Should i be encoding this value????? does it matter???
-    // Base64 Encoding -> btoa
-    var hash = btoa(token);
-
-    return "Basic " + hash;
-}
-
 function get_rest(resturi, param_json) {
-    console.log("REST GET: " + resturi);
     const xhttp = new XMLHttpRequest();
+
     xhttp.onreadystatechange = () => {
         if (xhttp.readyState === 4) {
             if (xhttp.status === 200) {
@@ -172,8 +161,9 @@ function get_rest(resturi, param_json) {
         }
     }
     const base_url = window.location.origin + '/api/' + resturi;
-    const myuri = base_url + (param_json ? '?' + jQuery.param(param_json) : '');
+    const myuri = base_url + (param_json ? '?' + jQuery.param(param_json, true) : '');
     xhttp.open('GET', myuri, false); // true for asynchronous
+    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
     xhttp.send('{}');
 }
 
@@ -188,7 +178,33 @@ function update_rest_status_line() {
     document.getElementById('rest_result').className = sessionStorage.getItem('rest_result_class') || 'bi bi-question-circle-fill bi-md text-secondary';
 }
 
-function post_rest(resturi, param_json, body, callback) {
+function on_ready_state_change(xhttp){
+    update_rest_status_in_session(xhttp);
+    if (xhttp.readyState === 4) {
+        sessionStorage.removeItem('last_rest_result');
+        if (xhttp.status >= 400) sessionStorage.setItem('last_rest_result', JSON.stringify(JSON.parse(xhttp.responseText), null, 4));
+    }
+}
+
+function delete_rest(rest_uri, param_json) {
+    const xhttp = new XMLHttpRequest();
+
+    xhttp.onreadystatechange = () => {
+        on_ready_state_change(xhttp);
+    };
+
+    const base_uri = window.location.origin + '/api/' + rest_uri;
+
+    // param, traditional setting - see https://api.jquery.com/jQuery.param/#jQuery-param-obj-traditional
+    const my_uri = base_uri + (param_json ? '?' + jQuery.param(param_json, true) : '');
+    // async needs to be false, otherwise, Safari and Firefox will have wrong status reports on the xhttp.status
+    // https://stackoverflow.com/a/61587856/1171329
+    xhttp.open('DELETE', my_uri, false);
+    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
+    xhttp.send();
+}
+
+function post_rest(rest_uri, param_json, body, callback) {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = () => {
         //update_rest_status_in_session(xhttp);
@@ -196,19 +212,15 @@ function post_rest(resturi, param_json, body, callback) {
     };
 
     xhttp.onreadystatechange = () => {
-        // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
-        update_rest_status_in_session(xhttp);
-        if (xhttp.readyState === 4) {
-            sessionStorage.removeItem('last_rest_result');
-            if (xhttp.status >= 400) sessionStorage.setItem('last_rest_result', JSON.stringify(JSON.parse(xhttp.responseText), null, 4));
-        }
+        on_ready_state_change(xhttp);
     };
+    const base_uri = window.location.origin + '/api/' + rest_uri;
 
-    const base_url = window.location.origin + '/api/' + resturi;
-    const myuri = base_url + (param_json ? '?' + jQuery.param(param_json) : '');
+    // param, traditional setting - see https://api.jquery.com/jQuery.param/#jQuery-param-obj-traditional
+    const my_uri = base_uri + (param_json ? '?' + jQuery.param(param_json, true) : '');
     // async needs to be false, otherwise, Safari and Firefox will have wrong status reports on the xhttp.status
     // https://stackoverflow.com/a/61587856/1171329
-    xhttp.open('POST', myuri, false);
+    xhttp.open('POST', my_uri, false);
     xhttp.setRequestHeader('Content-type', 'application/json');
     xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
     xhttp.send(body ? JSON.stringify(body) : '{}');
@@ -254,5 +266,30 @@ function krytens_shuffle(lstAgents, nrCycles, nrLookback) {
     }
 
     return seqAgents;
+}
+
+function get_hours(seconds) {
+    return Math.floor(seconds / 3600);
+}
+
+function get_minutes(seconds) {
+    return Math.floor(seconds / 60);
+}
+
+/**
+ * delivers a simplified presentation of a period of time.
+ * @param seconds
+ * @returns {string|*}
+ */
+function get_simplified_elapsed_time(seconds) {
+    let result;
+    if (get_hours(seconds) > 0) {
+        result = '~' + get_hours(seconds) + 'h';
+    } else if (get_minutes(seconds) > 0) {
+        result = '~' + get_minutes(seconds) + 'm';
+    } else {
+        result = seconds + 's';
+    }
+    return result;
 }
 

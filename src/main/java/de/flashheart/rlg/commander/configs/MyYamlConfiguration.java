@@ -18,5 +18,4 @@ public class MyYamlConfiguration {
     private Map<String, String> access_points;
     private Map<String, String> score_broadcast;
     private List<YamlUser> users;
-    private List<String> api_keys;
 }

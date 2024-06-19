@@ -18,9 +18,9 @@ import java.util.List;
 
 public class ApiKeyAuthenticationFilter extends GenericFilterBean {
 
-    private final List<String> api_keys;
+    private final List<YamlUser> api_keys;
 
-    public ApiKeyAuthenticationFilter(List<String> api_keys) {
+    public ApiKeyAuthenticationFilter(List<YamlUser> api_keys) {
         this.api_keys = api_keys;
     }
 
@@ -31,8 +31,10 @@ public class ApiKeyAuthenticationFilter extends GenericFilterBean {
         try {
             HttpServletRequest httpServletRequest = (HttpServletRequest) request;
             // GET methods can be used without authentication
-            if (httpServletRequest.getMethod().equalsIgnoreCase("get")) return;
-            Authentication authentication = ApiKeyAuthenticationService.getAuthentication(httpServletRequest, api_keys);
+            //if (httpServletRequest.getMethod().equalsIgnoreCase("get")) return;
+            Authentication authentication = ApiKeyAuthenticationService.getAuthentication(httpServletRequest,
+                    api_keys.stream().map(YamlUser::getApi_key).toList()
+            );
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception exp) {
             HttpServletResponse httpResponse = (HttpServletResponse) response;

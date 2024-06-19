@@ -23,10 +23,10 @@ public class MyUserDetails implements UserDetails {
         this.authorities = authorities;
     }
 
-    public static MyUserDetails build(YamlUser yamlUser, PasswordEncoder passwordEncoder) {
+    public static MyUserDetails build(YamlUser yamlUser) {
         return new MyUserDetails(
                 yamlUser.getUsername(),
-                passwordEncoder.encode(yamlUser.getPassword()),
+                yamlUser.getPassword(),
                 yamlUser.getApi_key(),
                 List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );

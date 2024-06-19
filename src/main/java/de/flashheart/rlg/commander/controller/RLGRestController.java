@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,7 +72,6 @@ public class RLGRestController {
 //        });
 //        return emitter;
 //    }
-
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
     public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) {
@@ -151,12 +151,6 @@ public class RLGRestController {
     public ResponseEntity<?> list_agents() {
         return new ResponseEntity<>(agentsService.get_all_agent_states().toString(), HttpStatus.OK);
     }
-//
-//    @PostMapping("/system/test_agent")
-//    public ResponseEntity<?> test_agent(@RequestParam(name = "agentid") String agentid, @RequestParam(name = "deviceid") String deviceid, @RequestParam(name = "pattern") String pattern) {
-//        agentsService.test_agent(agentid, deviceid, pattern);
-//        return new ResponseEntity(HttpStatus.ACCEPTED);
-//    }
 
     @PostMapping("/system/test_agent")
     public ResponseEntity<?> test_agent2(@RequestParam(name = "agent_id") String agent_id, @RequestParam(name = "command") String command, @RequestParam(name = "pattern") String pattern) {
@@ -164,9 +158,15 @@ public class RLGRestController {
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
-    @PostMapping("/system/remove_agent")
-    public ResponseEntity<?> remove_agent(@RequestParam(name = "agentid") String agentid) {
-        agentsService.remove_agent(agentid);
+    @PostMapping("/system/test_agents")
+    public ResponseEntity<?> test_agents(@RequestParam(value = "agents") List<String> agents, @RequestBody String body) {
+        agentsService.test_agents(agents, body);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
+    @DeleteMapping("/system/remove_agents")
+    public ResponseEntity<?> remove_agent(@RequestParam(value = "agents") List<String> agents) {
+        agents.forEach(agent -> agentsService.remove_agent(agent));
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 

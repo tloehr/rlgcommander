@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +57,8 @@ public class AgentsService {
      * @param agentid
      */
     public void remove_agent(String agentid) {
+        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
+        if (my_agent.getGameid() > -1) return; // only when not in game
         live_agents.remove(agentid);
     }
 
@@ -75,14 +78,14 @@ public class AgentsService {
         if (!live_agents.containsKey(agentid))
             welcome(my_agent);
         live_agents.putIfAbsent(agentid, my_agent);
-        if (device.equalsIgnoreCase("rfid")) {
-            my_agent.setLast_rfid_uid(message.optString("uid", "none"));
-            my_agent.setTimestamp(LocalDateTime.now());
-        }
-        if (device.matches("btn0\\d")) {
-            my_agent.setLast_button(device.toLowerCase());
-            my_agent.setTimestamp(LocalDateTime.now());
-        }
+
+        if (device.equalsIgnoreCase("rfid"))
+            my_agent.event_occured(Agent.RFID, message.optString("uid", "none"));
+        if (device.matches("btn01"))
+            my_agent.event_occured(Agent.BTN01, "");
+        if (device.matches("btn02"))
+            my_agent.event_occured(Agent.BTN02, "");
+
     }
 
     public boolean agent_belongs_to_game(String agentid, int gameid) {
@@ -134,6 +137,11 @@ public class AgentsService {
         mqttOutbound.send(command, pattern, agentid);
     }
 
+    public void test_agents(List<String> agents, String str_body) {
+        JSONObject body = new JSONObject(str_body);
+        agents.forEach(agent -> test_agent(agent, body.getString("command"), body.getJSONObject("pattern")));
+    }
+
     /**
      * turn off all lights and sirens
      */
@@ -148,4 +156,7 @@ public class AgentsService {
         get_agents_for_gameid(-1).forEach(this::welcome);
     }
 
+    public void remove_all_agents() {
+
+    }
 }

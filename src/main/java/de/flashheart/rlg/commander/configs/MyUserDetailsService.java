@@ -11,11 +11,11 @@ import java.util.Optional;
 @Service
 public class MyUserDetailsService implements UserDetailsService {
     private final MyYamlConfiguration myYamlConfiguration;
-    private final PasswordEncoder passwordEncoder;
+//    private final PasswordEncoder passwordEncoder;
 
-    public MyUserDetailsService(MyYamlConfiguration myYamlConfiguration, PasswordEncoder passwordEncoder) {
+    public MyUserDetailsService(MyYamlConfiguration myYamlConfiguration) {
         this.myYamlConfiguration = myYamlConfiguration;
-        this.passwordEncoder = passwordEncoder;
+//        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -27,6 +27,6 @@ public class MyUserDetailsService implements UserDetailsService {
         if (optionalMyPreconfiguredUser.isEmpty()
         ) throw new UsernameNotFoundException("User Not Found with username: " + username);
 
-        return MyUserDetails.build(optionalMyPreconfiguredUser.get(), passwordEncoder);
+        return MyUserDetails.build(optionalMyPreconfiguredUser.get());
     }
 }

@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 @Configuration
 @Log4j2
-@NoArgsConstructor
 /**
  * The commander subscribes to the event messages from the agents. All Messages are processed within this class.
  */

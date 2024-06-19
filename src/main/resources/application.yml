@@ -16,6 +16,9 @@ spring:
 server:
   error:
     include-stacktrace: always
+  servlet:
+    session:
+      timeout: 60
 
 mqtt:
   cleanSession: 'true'
@@ -31,7 +34,9 @@ rlgs:
   access_points:
     00223f97a198: NETGEAR
   users:
-    user: password1
-  api_keys:
-    - 218E8BF1-F5C5-4B69-A2AB-D040115B7159
+    - username: default_user # pw 12345
+      password: $2b$12$5/8pFYfQVRLO5djo/bBh0.BUyW6PjAQMitC1.BDTtyUrZN0N3N4H2
+      api_key: D84C6904-8EB0-4C78-8598-6149597EB170
+
+
 

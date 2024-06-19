@@ -10,12 +10,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -34,13 +31,15 @@ public class SecurityConfiguration {
                 .securityMatcher("/api/**")
                 .cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(requests ->
-                        requests.anyRequest().authenticated()
+                .authorizeHttpRequests((auth) ->
+                        {
+                            auth.anyRequest().authenticated();
+                        }
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(Customizer.withDefaults())
                 //.authenticationManager(restAuthenticationManager())
-                .addFilterBefore(new ApiKeyAuthenticationFilter(myYamlConfiguration.getApi_keys()), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new ApiKeyAuthenticationFilter(myYamlConfiguration.getUsers()), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -49,53 +48,26 @@ public class SecurityConfiguration {
     public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         // For the Form Login filter chain, you can omit the @SecurityMatcher as it will only be invoked if none of the other matchers apply.
         return http
-                .authorizeHttpRequests((requests) -> {
-                            requests.requestMatchers("/").permitAll();
-                            requests.requestMatchers(new AntPathRequestMatcher("/js/**")).permitAll();
-                            requests.requestMatchers(new AntPathRequestMatcher("/webjars/**")).permitAll();
-                            requests.requestMatchers(new AntPathRequestMatcher("/img/**")).permitAll();
-                            requests.requestMatchers(new AntPathRequestMatcher("/styles/**")).permitAll();
-                            requests.requestMatchers("/error").permitAll();
-                            requests.anyRequest().authenticated();
+                .authorizeHttpRequests((auth) -> {
+//                            auth.requestMatchers("/").permitAll();
+                            auth.requestMatchers(new AntPathRequestMatcher("/js/**")).permitAll();
+                            auth.requestMatchers(new AntPathRequestMatcher("/webjars/**")).permitAll();
+                            auth.requestMatchers(new AntPathRequestMatcher("/img/**")).permitAll();
+                            auth.requestMatchers(new AntPathRequestMatcher("/styles/**")).permitAll();
+                            auth.anyRequest().authenticated();
                         }
                 )
-                .formLogin(withDefaults())
+                .formLogin((form) -> form
+                        .loginPage("/login")
+                        .permitAll()
+                )
+                .logout((logout) -> {
+                    logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout"));
+                    logout.invalidateHttpSession(true);
+                })
                 .build();
 
     }
-
-
-
-
-//    @Bean
-//    public InMemoryUserDetailsManager userDetailsService() {
-//        myYamlConfiguration.getUsers().forEach(myWebUsers ->
-//                users.add(new MyUserDetails(myWebUsers.getUsername(),
-//                        passwordEncoder().encode(myWebUsers.getPassword()),
-//                        authorities, myWebUsers.getApi_key())
-//                )
-//        );
-//        return new InMemoryUserDetailsManager(users);
-//    }
-
-    // different authentication manager, because rest has its own passwords
-//    private AuthenticationManager restAuthenticationManager() {
-//        UserDetailsService userDetailsService = restUserDetailsService();
-//
-//        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-//        authenticationProvider.setPasswordEncoder(passwordEncoder());
-//        authenticationProvider.setUserDetailsService(userDetailsService);
-//
-//        return new ProviderManager(authenticationProvider);
-//    }
-//
-//    private UserDetailsService restUserDetailsService() {
-//        UserDetails user = User.withUsername("user")
-//                .password(passwordEncoder().encode("password2"))
-//                .roles("USER")
-//                .build();
-//        return new InMemoryUserDetailsManager(user);
-//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

@@ -7,21 +7,24 @@ import org.json.JSONObject;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
+import java.util.HashMap;
 
 @Log4j2
 @Getter
 @Setter
 public class Agent implements Comparable<Agent> {
+    // EVENT Sources
+    public static final int BTN01 = 1;
+    public static final int BTN02 = 2;
+    public static final int RFID = 3;
+
     String id;
     JSONObject status;
     int gameid; // this agent may or may not belong to a gameid. gameid < 1 means not assigned
     String software_version;
     LocalDateTime timestamp; // last message from Agent
-    String last_button;
-    String last_rfid_uid;
-    boolean rfid_is_active; // does this agent have a working rfid device ?
+    HashMap<Integer, EVENT> events;
+    boolean rfid; // does this agent have a working rfid device ?
     String ap;
     String ip;
     int signal_quality; // in percent
@@ -40,18 +43,14 @@ public class Agent implements Comparable<Agent> {
     public Agent(String id, JSONObject status) {
         this.id = id;
         gameid = -1;
-        last_button = "none";
-        last_rfid_uid = "none";
-        rfid_is_active = false;
+        events = new HashMap<>();
+        rfid = false;
         setStatus(status);
     }
 
-    public void setLast_button(String last_button) {
-        this.last_button = last_button + ": " + LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM));
-    }
-
-    public void setLast_rfid_uid(String last_rfid_uid) {
-        this.last_rfid_uid = last_rfid_uid + ": " + LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM));
+    public void event_occured(int source, String details) {
+        events.put(source, new EVENT(details));
+        timestamp = LocalDateTime.now();
     }
 
     public void setStatus(JSONObject status) {
@@ -61,7 +60,7 @@ public class Agent implements Comparable<Agent> {
         failed_pings = status.optInt("failed_pings");
         ip = status.optString("ip", "unknown");
         signal_quality = status.optInt("signal_quality", -1);
-        rfid_is_active = status.optBoolean("rfid_is_active");
+        rfid = status.optBoolean("has_rfid");
         // clean string from anything but letters and numbers
         ap = status.optString("ap", "000000000000").toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
         timestamp = LocalDateTime.now();
@@ -84,11 +83,27 @@ public class Agent implements Comparable<Agent> {
     }
 
     public String getLast_seen() {
-        return Duration.between(timestamp, LocalDateTime.now()).toSeconds() + "s ago";
+        return getSecondsAgo(timestamp) + "s";
+    }
+
+    public long getSecondsAgo(LocalDateTime since) {
+        return Duration.between(since, LocalDateTime.now()).toSeconds();
     }
 
     @Override
     public int compareTo(Agent o) {
         return id.compareTo(o.id);
+    }
+
+    @Getter
+    @Setter
+    private class EVENT {
+        private String details;
+        private LocalDateTime event_time;
+
+        public EVENT(String details) {
+            this.details = details;
+            this.event_time = LocalDateTime.now();
+        }
     }
 }

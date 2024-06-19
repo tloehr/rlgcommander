@@ -4,13 +4,10 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.jobs.Misc1Job;
 import de.flashheart.rlg.commander.games.jobs.RespawnTimerJob;
 import de.flashheart.rlg.commander.games.traits.HasFlagTimer;
 import de.flashheart.rlg.commander.games.jobs.FlagTimerJob;
-import de.flashheart.rlg.commander.games.traits.HasMisc1Job;
 import de.flashheart.rlg.commander.games.traits.HasTimedRespawn;
-import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,7 +47,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     private final List<Object> capture_points;
     private final List<Object> sirs;
     private LocalDateTime estimated_end_time;
-    private final Map map_of_agents_and_sirens;
+    private final Map map_of_agents_assigned_to_sirens;
     // which CP to take next
     private int active_capture_point;
     boolean overtime;
@@ -72,7 +69,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
                 String.format("Spawntime: %s  ${wifi_signal}", ldtRespawn.format(DateTimeFormatter.ofPattern("mm:ss"))));
 
         // additional parsing agents and sirens
-        map_of_agents_and_sirens = new HashMap<>();
+        map_of_agents_assigned_to_sirens = new HashMap<>();
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList();
         ran_once_already = false;
 
@@ -82,7 +79,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         sirs = game_parameters.getJSONObject("agents").getJSONArray("capture_sirens").toList();
         check_segment_sizes();
         for (int i = 0; i < capture_points.size(); i++) {
-            map_of_agents_and_sirens.put(capture_points.get(i), sirs.get(i));
+            map_of_agents_assigned_to_sirens.put(capture_points.get(i), sirs.get(i));
             roles.put("sirens", sirs.get(i).toString()); // add these sirens to the siren list
         }
     }
@@ -144,7 +141,9 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         create_resumable_job(bombTimerJobkey, estimated_end_time, FlagTimerJob.class, Optional.of(jdm));
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
         play("voice2", AGENT_EVENT_PATH, "selfdestruct", get_active_spawn_agents());
-        send("acoustic", Tools.getProgressTickingScheme(MQTT.SIR2, bomb_timer * 1000), map_of_agents_and_sirens.get(agent).toString());
+        // send("acoustic", Tools.getProgressTickingScheme(MQTT.SIR2, bomb_timer * 1000), map_of_agents_and_sirens.get(agent).toString());
+        // HURRY UP SIGNAL zweckentfremdet
+        send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.TEAM_HURRY_UP_SIGNAL), map_of_agents_assigned_to_sirens.get(agent).toString());
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         send("visual", new JSONObject().put("progress", "remaining"), agent);
         send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), get_all_spawn_agents());
@@ -170,7 +169,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "taken"));
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.LONG), agent);
         active_capture_point++;
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_assigned_to_sirens.get(agent).toString());
 
         // activate next CP or end the game when no CPs left
         boolean all_cps_taken = active_capture_point == capture_points.size();
@@ -179,7 +178,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
             game_fsm.ProcessFSM(_msg_GAME_OVER);
         } else {
             send(MQTT.CMD_VISUAL, new JSONObject(MQTT.LED_ALL, "off", MQTT.RED, MQTT.FLAG_TAKEN), agent);
-            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.LONG), map_of_agents_and_sirens.get(agent).toString());
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
             next_spawn_segment();
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
         }
@@ -223,8 +222,8 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
-                    send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_and_sirens.get(agent).toString());
-                    send("acoustic", MQTT.toJSON(MQTT.SIR3, MQTT.LONG), map_of_agents_and_sirens.get(agent).toString());
+                    send("acoustic", MQTT.toJSON(MQTT.SIR2, "off"), map_of_agents_assigned_to_sirens.get(agent).toString());
+                    send("acoustic", MQTT.toJSON(MQTT.SIR3, MQTT.LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
                     play("voice3", AGENT_EVENT_PATH, "shutdown", get_active_spawn_agents());
                     return true;
                 }
@@ -236,7 +235,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
                     send("vars", MQTT.toJSON("active_cp", agent), get_all_spawn_agents());
                     add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     if (active_capture_point > 0)
-                        send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.LONG), map_of_agents_and_sirens.get(agent).toString());
+                        send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
                     return true;
                 }
             });

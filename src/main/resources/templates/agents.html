@@ -1,14 +1,10 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
-      xmlns="http://www.w3.org/1999/html"
       layout:decorate="~{layout.html}">
 <head><title>Agent List</title>
     <script>
         function test_agent(agents) {
             if (!agents) return;
-
-            const elem_select = document.getElementById(agent_id + '_agent_tests');
-            const elem_option_dataset = elem_select.options[elem_select.selectedIndex].dataset;
 
             post_rest('system/test_agents', {
                 'agents': agents,
@@ -16,15 +12,60 @@
                 'pattern': elem_option_dataset.pattern
             });
         }
+
+        function set_checkboxes(select) {
+            document.getElementsByName('row_selector').forEach((element, i) => {
+                element.checked = select;
+            })
+        }
+
+        function remove_selected_agents() {
+            let selection = []
+            document.getElementsByName('row_selector').forEach((element, i) => {
+                if (element.checked) selection.push(element.getAttribute('id'));
+            })
+            if (!selection.length) return;
+
+            delete_rest('system/remove_agents',
+                {'agents': selection}
+            );
+        }
+
+        function test_selected_agents() {
+            let selection = []
+            document.getElementsByName('row_selector').forEach((element, i) => {
+                if (element.checked) selection.push(element.getAttribute('id'));
+            })
+
+            if (!selection.length) return;
+
+            const elem_select = document.getElementById('agent_test_list');
+            const elem_option_dataset = elem_select.options[elem_select.selectedIndex].dataset;
+
+            post_rest('system/test_agents',
+                {'agents': selection},
+                {
+                    'command': elem_option_dataset.command,
+                    'pattern': JSON.parse(elem_option_dataset.pattern)
+                }
+            );
+        }
+
     </script>
 </head>
 <body>
 
 <section layout:fragment="content">
 
+    <div class="row justify-content-end">
+        <button id="select-all" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(true)">Select all
+        </button>
+        <button id="clear-selection" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(false)">Clear
+            Selection
+        </button>
+    </div>
     <div class="row">
         <table class="table table-striped table-sm">
-
             <thead>
             <tr>
                 <th>Agent</th>
@@ -36,110 +77,82 @@
             <div th:each="agent : ${agents}">
                 <tr>
                     <!-- data-toggle if für die tooltips, name verbindet alle checkboxen bzgl. ihrer Funktion
-                    in der Zeile. id entsprich immer den zugehörigen agenten namen -->
+                    in der Zeile. id entspricht immer den zugehörigen agenten namen -->
                     <td data-toggle="tooltip" data-placement="top" th:attr="title=${agent.getSoftware_version()}">
                         <input class="form-check-input" type="checkbox" name="row_selector"
                                th:id="${agent.id}"/>&nbsp;
-                        <span th:text="${agent.id}+'&nbsp;('+${agent.last_seen}+')'"/>
+                        <span th:text="${agent.id}"></span>
+                        <span th:if="${agent.getSecondsAgo(agent.timestamp) <= 70}" class="badge badge-pill text-bg-success"
+                              th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"/>
+                        <span th:if="${agent.getSecondsAgo(agent.timestamp) > 70}" class="badge badge-pill text-bg-danger"
+                              th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"/>
                     </td>
                     <td data-toggle="tooltip" data-placement="top" th:attr="title=${agent.getIp()}">
-                        <span th:if="${agent.signal_quality >= 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'"
-                              th:text="${agent.signal_quality}+'%&nbsp;'+${agent.ap}"></span>
-                        <span th:if="${agent.signal_quality < 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'"
-                              th:text="'&nbsp;'+${agent.ap}"></span>
-                        <b>
-                            <span th:text="${agent.reconnects}" class="text-danger">></span>
-                        </b>
+                        <span th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'"></span>
+                        <span th:text="${agent.signal_quality}+'%&nbsp;'+${agent.ap}"></span>
+                        <span th:if="${agent.reconnects > 0}" th:text="${agent.reconnects}"
+                              class="badge badge-pill badge-danger"></span>
                     </td>
-                    <td><img src="/img/buzzer.png" height="28"/> <span th:text="${agent.getLast_button()}"></span>&nbsp;
-                        <img th:if="${!agent.rfid_is_active}" src="/img/no_rfid.png" height="28"/>
-                        <img th:if="${agent.rfid_is_active}" src="/img/rfid.png" height="28"/><span
-                                th:if="${agent.rfid_is_active}"
-                                th:text="${agent.last_rfid_uid}"></span>
+                    <td>
+                        <span th:id="${agent.id}+'_btn01'" th:if="${agent.getEvents().containsKey(agent.BTN01)}"
+                              class="badge text-bg-primary"><img src="/img/buzzer-invert.png" height="28"/>&nbsp;
+
+                            <script th:inline="javascript">
+                                document.getElementById([[${agent.id}]] + '_btn01').innerHTML += get_simplified_elapsed_time([[${agent.getSecondsAgo(agent.getEvents().get(agent.BTN01).getEvent_time())}]]);
+                            </script>
+                        </span>
+                        <span class="badge text-bg-light"
+                              th:if="${!agent.getEvents().containsKey(agent.BTN01)}">
+                            <img src="/img/buzzer.png" height="28"/></span>
+                        <!-- ------------------ -->
+                        <span class="badge text-bg-light"
+                              th:if="${agent.isRfid() && !agent.getEvents().containsKey(agent.RFID)}">
+                            <img src="/img/buzzer.png" height="28"/></span>
+                        <span class="badge text-bg-primary"
+                              th:if="${agent.getEvents().containsKey(agent.RFID)}">
+                            <img src="/img/buzzer-invert.png" height="28"/>&nbsp;
+                        </span>
                     </td>
                 </tr>
             </div>
             </tbody>
         </table>
     </div>
-    <div class="row">
 
-        <div th:each="agent : ${agents}" class="card" style="width: 18rem;">
-            <div class="card-body">
+    <div class="row mt-2 justify-content-start">
 
-                <button th:id="${agent.id}+'_delete'"
-                        class="btn btn-outline-primary"
-                        th:onclick="post_rest('system/remove_agent', {'agentid':[[${agent.id}]]}); location.reload();"><span
-                        class="bi bi-lg bi-x-circle-fill text-danger"></span></button>
-                <h5 class="card-title" th:text="${agent.id}+'&nbsp;('+${agent.last_seen}+')'"></h5>
-
-                <p>
-                    <span class="card-text" th:text="${agent.software_version}"></span>
-                    <br/>
-
-                    <img src="/img/buzzer.png" height="28"/>
-                    <span th:text="${agent.last_button}"></span>
-                    <br/>
-
-                    <span th:if="${!agent.rfid_is_active}">
-                        <img src="/img/no_rfid.png" height="28"/>
-                    </span>
-
-                    <span th:if="${agent.rfid_is_active}">
-                        <img src="/img/rfid.png" height="28"/>
-                        <span th:text="${agent.last_rfid_uid}"></span>
-                    </span>
-                </p>
-                <p class="card-text">
-
-                    <span th:if="${agent.signal_quality >= 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'"
-                          th:text="${agent.signal_quality}+'%&nbsp;'+${agent.ap}"></span>
-                    <span th:if="${agent.signal_quality < 0}" th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'"
-                          th:text="'&nbsp;'+${agent.ap}"></span>
-                    <b>
-                        <span th:text="${agent.failed_pings}" class="text-black"></span>/<span
-                            th:text="${agent.reconnects}" class="text-danger">></span>
-                    </b>
-                </p>
-                <p class="card-text">
-                    <span th:text="${agent.ip}"></span>
-                </p>
-
-                <p>
-                <p class="card-text">
-                    <select class="form-select " style="height: 40px;" th:id="${agent.id}+'_agent_tests'"
-                            th:onchange="test_agent([[${agent.id}]])">
-                        <option th:each="test : ${test_list}" th:value="${test.value0}"
-                                th:data-pattern="${test.value2}" th:data-command="${test.value1}"
-                                th:text="${test.value0}">
-                        </option>
-                    </select>
-                    <button th:id="${agent.id}+'_test_again'"
-                            class="btn btn-outline-primary"
-                            th:onclick="test_agent([[${agent.id}]])">Test
-                    </button>
-                </p>
-            </div>
+        <div class="col-auto">
+            <select class="form-select form-select-lg" id="agent_test_list"
+                    onchange="test_selected_agents()">
+                <option th:each="test : ${test_list}" th:value="${test.value0}"
+                        th:data-pattern="${test.value2}" th:data-command="${test.value1}"
+                        th:text="${test.value0}">
+                </option>
+            </select>
         </div>
-    </div>
 
-    <div class="row mt-2">
-        <select class="form-select " style="height: 40px;" id="agent_tests"
-                th:onchange="test_selected_agents()">
-            <option th:each="test : ${test_list}" th:value="${test.value0}"
-                    th:data-pattern="${test.value2}" th:data-command="${test.value1}"
-                    th:text="${test.value0}">
-            </option>
-        </select>
-        <button th:id="${agent.id}+'_test_again'"
-                class="btn btn-outline-primary"
-                th:onclick="test_agent([[${agent.id}]])">Test
+        <button id="test_button"
+                class="btn btn-outline-primary btn-lg col-auto me-2"
+                onclick="test_selected_agents()">Test
         </button>
 
-        <button title="Sleep" type="button" class="btn btn-secondary btn-circle btn-lg col-auto me-2"><i
-                class="bi bi-moon-stars-fill bi-lg" onclick="post_rest('system/powersave_agents')"></i></button>
-        <button title="Wake up" type="button" class="btn btn-warning btn-circle btn-lg col-auto"><i
-                class="bi bi-sun-fill bi-lg" onclick="post_rest('system/welcome_agents')"></i></button>
+        <button id="delete"
+                class="btn btn-outline-danger col-auto btn-lg me-2"
+                onclick="remove_selected_agents(); location.reload();"><i
+                class="bi bi-lg bi-x-circle-fill"></i>
+        </button>
+
+        <button title="Sleep" onclick="post_rest('system/powersave_agents')" type="button"
+                class="btn btn-outline-secondary btn-circle btn-lg col-auto me-2"><i
+                class="bi bi-moon-stars-fill bi-lg"></i>
+        </button>
+
+
+        <button title="Wake up" onclick="post_rest('system/welcome_agents')" type="button"
+                class="btn btn-outline-warning btn-circle btn-lg col-auto"><i
+                class="bi bi-sun-fill bi-lg"></i>
+        </button>
+
 
     </div>
 </section>
