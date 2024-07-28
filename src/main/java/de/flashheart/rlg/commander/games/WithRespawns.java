@@ -573,5 +573,16 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
         return result_list.isEmpty() ? Optional.empty() : Optional.of(result_list.get(0));
     }
 
+    protected String get_spawn_node_for(String spawn_role) {
+        return get_spawn_node_for(spawn_role, 0);
+    }
+
+    protected String get_spawn_node_for(String spawn_role, int segment) {
+        return spawn_segments.stream()
+                .filter(o -> o.getValue0().equalsIgnoreCase(spawn_role))
+                .filter(o1 -> o1.getValue1() == segment)
+                .map(Quartet::getValue2)
+                .toList().get(0); // can only be one - ensure by throwing an exception in the constructor
+    }
 
 }

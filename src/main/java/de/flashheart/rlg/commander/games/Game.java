@@ -84,6 +84,9 @@ public abstract class Game {
     // should be overwritten by the game class to describe the mode and the parameters currently in use
     // can be displayed on the LCDs
     protected final ArrayList<String> game_description;
+
+    // this map tracks replaced agents during a game (when agent has been broken or battery is empty)
+
     @Getter
     private final JSONObject game_parameters;
     protected final UUID uuid;
@@ -100,7 +103,7 @@ public abstract class Game {
     private LocalDateTime game_init_at;
 
     Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        log.info("\n" + FigletFont.convertOneLine(getGameMode()));
+        log.info("\n{}", FigletFont.convertOneLine(getGameMode()));
         uuid = UUID.randomUUID();
         game_init_at = LocalDateTime.now();
         this.game_parameters = game_parameters;
@@ -133,8 +136,8 @@ public abstract class Game {
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
         send("paged", MQTT.page("page0",
                 "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
-    }
 
+    }
 
     protected void add_in_game_event(JSONObject in_game_event, String type) {
         in_game_event.put("type", type);
@@ -499,13 +502,19 @@ public abstract class Game {
         return agents.get(agent).contains(role);
     }
 
+    /**
+     * this method enables the game class to have an own signal macro scheme in the game_description.
+     * yet unused. see meshed.json for example
+     *
+     * @param key
+     * @return
+     */
     protected String get_signal(String key) {
         return get_signal(key, MQTT.NORMAL);
     }
 
     protected String get_signal(String key, String def) {
-        if (game_parameters.has(key)) return game_parameters.getJSONObject(key).optString(def);
-        else return def;
+        return game_parameters.optJSONObject("signals", new JSONObject()).optString(key, def);
     }
 
     protected JSONObject getSpawnPages(String state) {

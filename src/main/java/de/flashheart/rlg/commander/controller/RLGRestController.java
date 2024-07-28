@@ -103,6 +103,7 @@ public class RLGRestController {
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
+
     @PostMapping("/game/unload")
     public ResponseEntity<?> stop_game(@RequestParam(name = "id") int id) {
         ResponseEntity r;

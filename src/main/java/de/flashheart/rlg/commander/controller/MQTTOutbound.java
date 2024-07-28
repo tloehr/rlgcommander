@@ -22,6 +22,7 @@ import org.springframework.messaging.MessageHandler;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,15 +47,18 @@ public class MQTTOutbound {
 
     ApplicationContext applicationContext;
     MyGateway gateway;
+    HashMap<String, String> agent_replacement_map;
     JSONObject standard_signals;
 
     @SneakyThrows
     @Autowired
-    public MQTTOutbound(ApplicationContext applicationContext) {
+    public MQTTOutbound(ApplicationContext applicationContext, HashMap<String, String> agent_replacement_map) {
         this.applicationContext = applicationContext;
         this.gateway = applicationContext.getBean(MyGateway.class);
+        this.agent_replacement_map = agent_replacement_map;
         standard_signals = new JSONObject(IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("standard_signals.json"), StandardCharsets.UTF_8));
     }
+
 
     @Bean
     public MqttPahoClientFactory mqttClientFactory() { // for outbound only

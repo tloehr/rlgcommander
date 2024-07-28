@@ -189,28 +189,56 @@
       "command": "acoustic"
     },
     {
-      "name": "Siren 1",
+      "name": "Siren 1-long",
+      "pattern": {
+        "sir1": "long"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "Siren 2-long",
+      "pattern": {
+        "sir2": "long"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "Siren 3-long",
+      "pattern": {
+        "sir3": "long"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "Siren 4-long",
+      "pattern": {
+        "sir4": "long"
+      },
+      "command": "acoustic"
+    },
+    {
+      "name": "Siren 1-medium",
       "pattern": {
         "sir1": "medium"
       },
       "command": "acoustic"
     },
     {
-      "name": "Siren 2",
+      "name": "Siren 2-medium",
       "pattern": {
         "sir2": "medium"
       },
       "command": "acoustic"
     },
     {
-      "name": "Siren 3",
+      "name": "Siren 3-medium",
       "pattern": {
         "sir3": "medium"
       },
       "command": "acoustic"
     },
     {
-      "name": "Siren 4",
+      "name": "Siren 4-medium",
       "pattern": {
         "sir4": "medium"
       },

@@ -1,15 +1,13 @@
 package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.fsm.FSM;
-import com.google.common.graph.GraphBuilder;
-import com.google.common.graph.MutableGraph;
+import com.google.common.graph.*;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.DOTWriter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Quartet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,69 +24,145 @@ import java.util.stream.Collectors;
 @Log4j2
 public class Meshed extends WithRespawns implements HasScoreBroadcast {
 
+    // key names for blinking schemes as defined in meshed.json
     private final String FLAG_IMMUTABLE = "flag_immutable";
     private final String FLAG_MUTABLE = "flag_mutable";
     private final String ADJACENT_COLOR_HINT = "adjacent_color_hint";
 
-    final MutableGraph<String> mesh;
-    private final HashMap<String, String> dot_format_map;
-    private final HashMap<String, String> spawn_agent_to_color;
+    private final String red_spawn, blue_spawn, yellow_spawn;
+    private final JSONArray json_mesh;
 
+    final MutableValueGraph<String, String> mesh;
+
+    private final HashMap<String, String> map_dot_format;
+    private final HashMap<String, String> map_spawn_agent_to_its_teamcolor;
+    private final HashMap<String, Set<String>> map_of_neighbourhood_states_for_agents;
+
+    final Map<String, String> spawn_agents_fake_states;
 
     public Meshed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        dot_format_map = new HashMap<>();
-        spawn_agent_to_color = new HashMap<>();
+        map_dot_format = new HashMap<>();
+        map_spawn_agent_to_its_teamcolor = new HashMap<>();
+        map_of_neighbourhood_states_for_agents = new HashMap<>();
 
         spawn_segments.stream()
                 .filter(o -> o.getValue1() == active_segment)
-                .forEach(o2 -> spawn_agent_to_color.put(o2.getValue2(),
+                .forEach(o2 -> map_spawn_agent_to_its_teamcolor.put(o2.getValue2(),
                         StringUtils.substringBefore(o2.getValue0(), "_"))
                 );
 
         // create mesh structure
-        mesh = GraphBuilder.undirected().build();
+        mesh = ValueGraphBuilder.directed().build();
         // cp agents first
-        roles.get("capture_points").forEach(agent -> mesh.addNode(agent));
-        // warpgates represented by spawn agents
+        roles.get("capture_points").forEach(agent -> {
+            mesh.addNode(agent);
+        });
+        // warp_gates represented by spawn agents
         // we have only one spawn segment
         // agent name on the left (key part of Pair)
-        mesh.addNode(get_node("red_spawn", 0));
-        mesh.addNode(get_node("blue_spawn", 0));
-        mesh.addNode(get_node("yellow_spawn", 0));
 
-        // to color the spawn agents
-        dot_format_map.put(get_node("red_spawn",0), "[fillcolor=red fontcolor=yellow style=filled shape=box]");
-        dot_format_map.put(get_node("blue_spawn",0), "[fillcolor=blue fontcolor=yellow style=filled shape=box]");
-        dot_format_map.put(get_node("yellow_spawn",0), "[fillcolor=yellow fontcolor=black style=filled shape=box]");
+        red_spawn = get_spawn_node_for("red_spawn");
+        blue_spawn = get_spawn_node_for("blue_spawn");
+        yellow_spawn = get_spawn_node_for("yellow_spawn");
 
-        game_parameters.getJSONArray("mesh").forEach(entry -> {
-            JSONArray connection = (JSONArray) entry;
-            mesh.putEdge(connection.getString(0), connection.getString(1));
-        });
+        spawn_agents_fake_states = Map.of(red_spawn, _flag_state_RED, yellow_spawn, _flag_state_YELLOW, blue_spawn, _flag_state_BLUE);
 
-        log.debug(DOTWriter.write(mesh, dot_format_map));
+        json_mesh = game_parameters.getJSONArray("mesh");
+        //init_graph();
 
+        //log.debug(DOTWriter.write(mesh, map_dot_format));
     }
 
-    private String get_node(String spawn_role, int segment){
-        return spawn_segments.stream()
-                .filter(o -> o.getValue0().equalsIgnoreCase(spawn_role))
-                .filter(o1->o1.getValue1() == segment)
-                .map(Quartet::getValue2)
-                .toList().get(0); // can only be one - ensure by throwing an exception in the constructor
+    /**
+     * prepare and init graph representation
+     */
+    private void init_graph(){
+        map_dot_format.clear();
+        // to color the spawn agents
+        map_dot_format.put(red_spawn, "[fillcolor=red fontcolor=yellow style=filled shape=box]");
+        map_dot_format.put(blue_spawn, "[fillcolor=blue fontcolor=yellow style=filled shape=box]");
+        map_dot_format.put(yellow_spawn, "[fillcolor=yellow fontcolor=black style=filled shape=box]");
+
+        // now add all edges as defined in game_parameters
+        json_mesh.forEach(entry -> {
+            JSONArray connection = (JSONArray) entry;
+            String agent1 = connection.getString(0);
+            String agent2 = connection.getString(1);
+
+            if (spawn_agents_fake_states.containsKey(agent1)) {
+                // this is a spawn agent. The outgoing edge will be set to it's color
+                mesh.putEdgeValue(agent1, agent2, spawn_agents_fake_states.get(agent1));
+                // and add it to the format map
+                map_dot_format.put(agent1 + "," + agent2, String.format("[color=%s]", mesh.edgeValue(agent1, agent2)));
+                mesh.putEdgeValue(agent2, agent1, _flag_state_NEUTRAL);
+            } else if (spawn_agents_fake_states.containsKey(agent2)) {
+                // same as above, but the other way round
+                mesh.putEdgeValue(agent2, agent1, spawn_agents_fake_states.get(agent2));
+                map_dot_format.put(agent2 + "," + agent1, String.format("[color=%s]", mesh.edgeValue(agent2, agent1)));
+                mesh.putEdgeValue(agent1, agent2, _flag_state_NEUTRAL);
+            } else {
+                mesh.putEdgeValue(agent2, agent1, _flag_state_NEUTRAL);
+                mesh.putEdgeValue(agent1, agent2, _flag_state_NEUTRAL);
+            }
+
+            // prepare neighbourhood map
+            map_of_neighbourhood_states_for_agents.putIfAbsent(agent1, new HashSet<>());
+            map_of_neighbourhood_states_for_agents.putIfAbsent(agent2, new HashSet<>());
+        });
+
+        map_of_neighbourhood_states_for_agents.remove(red_spawn);
+        map_of_neighbourhood_states_for_agents.remove(blue_spawn);
+        map_of_neighbourhood_states_for_agents.remove(yellow_spawn);
+    }
+
+    /**
+     * refreshes the current neighbourhood states for all nodes.
+     * This map is refreshed when the game resets and after every flag_state change
+     */
+    private void refresh_neighbourhood_state_map() {
+        final Set<String> NEUTRAL_STATES = Set.of(_flag_state_NEUTRAL, _flag_state_PROLOG);
+        // empty all state sets of capture points first. Leave the spawn's sets intact.
+        mesh.nodes().stream().filter(agent -> roles.get("capture_points").contains(agent)).forEach(cp -> {
+            map_of_neighbourhood_states_for_agents.get(cp).clear();
+        });
+        // now refill all sets
+        mesh.nodes().stream().filter(agent -> roles.get("capture_points").contains(agent)).forEach(agent ->
+                mesh.adjacentNodes(agent)
+                        // we don't care for neutral neighbours, so we filter them out
+                        // if a state is inside the spawn_agents_fake_map then we will use this otherwise a cp
+                        .forEach(neighbour -> {
+                            // this is a spawn
+                            if (spawn_agents_fake_states.containsKey(neighbour))
+                                map_of_neighbourhood_states_for_agents.get(agent).add(spawn_agents_fake_states.get(neighbour));
+                            else { // this is a regular capture point. We never add NEUTRAL states to the list
+                                // as it is not allowed to switch a CP back
+                                String this_neighbours_state = cpFSMs.get(neighbour).getCurrentState();
+                                if (!NEUTRAL_STATES.contains(this_neighbours_state))
+                                    map_of_neighbourhood_states_for_agents.get(agent).add(this_neighbours_state);
+                            }
+                        })
+        );
+        log.debug(map_of_neighbourhood_states_for_agents);
+    }
+
+    @Override
+    public void on_reset() {
+        super.on_reset();
+        init_graph();
+        refresh_neighbourhood_state_map();
     }
 
     @Override
     public FSM create_CP_FSM(final String agent) {
         try {
-            // don't care about 0 and 1
-            //String[] fsms = new String[]{"", "", "conquest", "meshed3", "meshed4"}; // file names of cp FSMs definitions - see resources/games
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/meshed3.xml"), null);
-
-            fsm.setStatesAfterTransition(new ArrayList<>(List.of(_flag_state_NEUTRAL, _flag_state_PROLOG)), (state, obj) -> cp_to_neutral(agent));
+            fsm.setStatesAfterTransition(new ArrayList<>(List.of(_flag_state_NEUTRAL, _flag_state_PROLOG)), (state, obj) -> {
+                cp_to_neutral(agent);
+            });
             fsm.setStatesAfterTransition(new ArrayList<>(_flag_ALL_RUNNING_STATES), (state, obj) -> {
                 switch_cp(agent, state);
+                refresh_neighbourhood_state_map();
                 update_adjacent_flags_to(agent);
                 broadcast_score();
             });
@@ -100,10 +174,11 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, get_signal(FLAG_MUTABLE)), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.RECURRING_SCHEME_SLOW), agent);
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
-        dot_format_map.remove(agent);
+        map_dot_format.remove(agent);
     }
+
 
     /**
      * handles everything when a flag is changing its state
@@ -112,7 +187,7 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
      * @param state
      */
     private void switch_cp(String agent, String state) {
-        send("visual", MQTT.toJSON(get_flag_blinking_scheme(agent, state)), agent);
+        send("visual", MQTT.toJSON(get_flag_blinking_scheme_for(agent, state)), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
 
         // add in game event to the event list
@@ -128,7 +203,7 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
             case "GREEN" -> "WHITE";
             default -> "BLACK"; // includes YELLOW
         };
-        dot_format_map.put(agent, String.format("[fillcolor=%s fontcolor=%s style=filled]", state.toLowerCase(),
+        map_dot_format.put(agent, String.format("[fillcolor=%s fontcolor=%s style=filled]", state.toLowerCase(),
                 font_foreground_color.toLowerCase()));
     }
 
@@ -158,10 +233,9 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
      * @return the message to change the flag to the next color. if empty, no change is allowed
      */
     private String get_FSM_color_change_message(String agent) {
-        List<String> allowed_states = new ArrayList<>(get_states_from_adjacent_flags(agent));
-        if (allowed_states.isEmpty()) return "";
+        if (map_of_neighbourhood_states_for_agents.get(agent).isEmpty()) return "";
+        List<String> allowed_states = new ArrayList<>(map_of_neighbourhood_states_for_agents.get(agent));
         Collections.sort(allowed_states);
-
         String current_state = cpFSMs.get(agent).getCurrentState();
 
         int idx_state = 0;
@@ -185,15 +259,19 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
      * @return
      */
     private Set<String> get_states_from_adjacent_flags(String agent) {
+        log.debug("get_states_from_adjacent_flags({})", agent);
         Set<String> adjacent = mesh.adjacentNodes(agent);
+        log.debug("adjacent nodes for {} are :{}", agent, adjacent);
+
         // first get allowed states from al adjacent capture points
         final Set<String> allowed_states = adjacent.stream().filter(cpFSMs::containsKey)
                 .map(adj_agents -> cpFSMs.get(adj_agents).getCurrentState().toUpperCase()).collect(Collectors.toSet());
+        log.debug("allowed states for {} are :{}", agent, allowed_states);
 
         // now we add adjacent spawn colors
         adjacent.stream()
                 .filter(adj_agent -> get_active_spawn_agents().contains(adj_agent))
-                .forEach(adj_agent -> allowed_states.add(spawn_agent_to_color.get(adj_agent).toUpperCase()));
+                .forEach(adj_agent -> allowed_states.add(map_spawn_agent_to_its_teamcolor.get(adj_agent).toUpperCase()));
 
         log.debug(allowed_states);
 
@@ -205,13 +283,6 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
         return allowed_states;
     }
 
-
-    @Override
-    protected void on_spawn_button_pressed(String spawn, String agent_id) {
-        super.on_spawn_button_pressed(spawn, agent_id);
-    }
-
-
     /**
      * when a flag changes, the adjacent flags may need to hint to the new possibility.
      * so we need to send them an update.
@@ -221,7 +292,12 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
     private void update_adjacent_flags_to(String agent) {
         mesh.adjacentNodes(agent)
                 .forEach(neighbour ->
-                        send("visual", MQTT.toJSON(get_flag_blinking_scheme(agent, cpFSMs.get(agent).getCurrentState())), agent));
+                        send("visual",
+                                MQTT.toJSON(get_flag_blinking_scheme_for(agent)), agent));
+    }
+
+    private String[] get_flag_blinking_scheme_for(String agent) {
+        return get_flag_blinking_scheme_for(agent, cpFSMs.get(agent).getCurrentState());
     }
 
     /**
@@ -232,23 +308,26 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
      * @param current_flag_state
      * @return
      */
-    private String[] get_flag_blinking_scheme(String agent, String current_flag_state) {
-        Set<String> adj_colors = get_states_from_adjacent_flags(agent);
-        String active_state_scheme = get_signal(adj_colors.isEmpty() ? FLAG_IMMUTABLE : FLAG_MUTABLE);
+    private String[] get_flag_blinking_scheme_for(String agent, String current_flag_state) {
+        //Set<String> adj_colors = get_states_from_adjacent_flags(agent);
+        //String active_state_scheme = get_signal(adj_colors.isEmpty() ? FLAG_IMMUTABLE : FLAG_MUTABLE);
 
         log.debug(agent);
 
+
         // construct appropriate blinking scheme for active state
-        List<String> signal_pairs = new ArrayList<>(List.of(MQTT.LED_ALL, "off", get_led_color_for_flage_state(current_flag_state), active_state_scheme));
+        // active states blink slowly
+        List<String> signal_pairs = new ArrayList<>(List.of(MQTT.LED_ALL, "off", get_led_color_for_flag_state(current_flag_state), MQTT.RECURRING_SCHEME_SLOW));
         // add hints for all possible colors from adjacent flags
         // except the current_flag_state
-        adj_colors.stream()
-                .filter(state -> !state.equals(current_flag_state))
+        map_of_neighbourhood_states_for_agents.get(agent)
+                .stream().filter(state -> !state.equals(current_flag_state))
                 .forEach(state -> {
-                            signal_pairs.add(get_led_color_for_flage_state(state));
+                            signal_pairs.add(get_led_color_for_flag_state(state));
                             signal_pairs.add(get_signal(ADJACENT_COLOR_HINT));
                         }
                 );
+
         return signal_pairs.toArray(new String[]{});
     }
 
@@ -258,13 +337,13 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
      * @param state the flag state
      * @return LED color code for a flag state
      */
-    private String get_led_color_for_flage_state(String state) {
+    private String get_led_color_for_flag_state(String state) {
         return switch (state) {
             case _flag_state_RED -> MQTT.RED;
             case _flag_state_YELLOW -> MQTT.YELLOW;
             case _flag_state_GREEN -> MQTT.GREEN;
             case _flag_state_BLUE -> MQTT.BLUE;
-            default -> MQTT.WHITE;
+            default -> MQTT.WHITE; // includes PROLOG and NEUTRAL
         };
     }
 
@@ -275,12 +354,12 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
 
     @Override
     public void broadcast_score() {
-        log.debug(DOTWriter.write(mesh, dot_format_map));
+        log.debug(DOTWriter.write(mesh, map_dot_format));
     }
 
     @Override
     public void add_model_data(Model model) {
         super.add_model_data(model);
-        model.addAttribute("vizdot", DOTWriter.write(mesh, dot_format_map));
+        model.addAttribute("vizdot", DOTWriter.write(mesh, map_dot_format));
     }
 }

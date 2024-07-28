@@ -73,7 +73,7 @@ public class MQTTInbound {
         return message -> {
             String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
             List<String> tokens = Collections.list(new StringTokenizer(topic, "/")).stream().map(token -> (String) token).collect(Collectors.toList());
-            String agentid = tokens.get(tokens.size() - 2);
+            String agent_id = tokens.get(tokens.size() - 2);
             String source = tokens.get(tokens.size() - 1);
             String payload = message.getPayload().toString();
 
@@ -83,19 +83,19 @@ public class MQTTInbound {
                 log.trace(message.getPayload().toString());
                 try {
                     JSONObject status = new JSONObject(message.getPayload().toString());
-                    agentsService.agent_reported_status(agentid, status);
+                    agentsService.agent_reported_status(agent_id, status);
                 } catch (JSONException e) {
                     //agentsService.remove(agentid);
                 }
             } else { // must be a button or rfid
                 log.trace(message.toString());
                 log.trace(message.getPayload().toString());
-                int game_id = live_agents.getOrDefault(agentid, new Agent()).getGameid();
-                agentsService.agent_reported_event(agentid, source, new JSONObject(payload));
+                int game_id = live_agents.getOrDefault(agent_id, new Agent()).getGameid();
+                agentsService.agent_reported_event(agent_id, source, new JSONObject(payload));
                 // report to running game
                 if (game_id > 0) {
                     try {
-                        gamesService.process_message(game_id, agentid, source, new JSONObject(payload));
+                        gamesService.process_message(game_id, agent_id, source, new JSONObject(payload));
                     } catch (IllegalStateException ise) {
                         log.warn(ise.getMessage());
                     } catch (Exception e) {

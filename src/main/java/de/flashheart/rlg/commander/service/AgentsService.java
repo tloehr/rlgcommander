@@ -11,10 +11,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -22,24 +19,26 @@ import java.util.stream.Collectors;
 @Log4j2
 @Service
 public class AgentsService {
+    private final HashMap agent_replacement_map;
     ConcurrentHashMap<String, Agent> live_agents; // see MyConfiguration.java
     MQTTOutbound mqttOutbound;
     BuildProperties buildProperties;
     MyYamlConfiguration myYamlConfiguration;
 
     @SneakyThrows
-    public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration) {
+    public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration, HashMap agent_replacement_map) {
         this.mqttOutbound = mqttOutbound;
         this.buildProperties = buildProperties;
         this.live_agents = live_agents;
         this.myYamlConfiguration = myYamlConfiguration;
+        this.agent_replacement_map = agent_replacement_map;
     }
 
-    public void assign_gameid_to_agents(int gameid, Set<String> agentids) {
-        agentids.forEach(agentid -> {
-            Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
-            my_agent.setGameid(gameid);
-            live_agents.put(agentid, my_agent);
+    public void assign_gameid_to_agents(int game_id, Set<String> agent_ids) {
+        agent_ids.forEach(agent_id -> {
+            Agent my_agent = live_agents.getOrDefault(agent_id, new Agent(agent_id));
+            my_agent.setGameid(game_id);
+            live_agents.put(agent_id, my_agent);
         });
     }
 
@@ -87,11 +86,11 @@ public class AgentsService {
             my_agent.event_occured(Agent.BTN02, "");
 
     }
-
-    public boolean agent_belongs_to_game(String agentid, int gameid) {
-        Agent myAgent = live_agents.getOrDefault(agentid, new Agent());
-        return myAgent.getGameid() == gameid;
-    }
+//
+//    public boolean agent_belongs_to_game(String agentid, int gameid) {
+//        Agent myAgent = live_agents.getOrDefault(agentid, new Agent());
+//        return myAgent.getGameid() == gameid;
+//    }
 
     /**
      * return a list of all agents that are not DUMMIES and have reported their status at least once
@@ -134,6 +133,7 @@ public class AgentsService {
     public void test_agent(String agentid, String command, JSONObject pattern) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
         if (my_agent.getGameid() > -1) return; // only when not in game
+        if (agent_replacement_map.values().contains(agentid)) return; // agents that are used for replacements are also out of bounds
         mqttOutbound.send(command, pattern, agentid);
     }
 

@@ -1,12 +1,19 @@
 package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.fsm.FSM;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
+import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.text.WordUtils;
+import org.checkerframework.checker.units.qual.A;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobKey;
@@ -18,6 +25,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -25,10 +33,6 @@ import java.util.stream.Collectors;
 
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
-/**
- * todo: idea - add chart for the tickets over time
- * red and blue as comparison
- */
 @Log4j2
 public class Conquest extends WithRespawns implements HasScoreBroadcast {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
@@ -40,6 +44,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     private final HashSet<String> cps_held_by_blue, cps_held_by_red;
     private final JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
+    // todo: idea - add chart for the tickets over time
+    private final ArrayList<Triple<String, BigDecimal, BigDecimal>> scores;
 
     /**
      * This class creates a conquest style game as known from Battlefield.
@@ -95,6 +101,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         ticket_bleed_table = new BigDecimal[number_of_cps + 1];
         BigDecimal between = start_bleed_interval.subtract(end_bleed_interval);
         BigDecimal interval_reduction_per_cp = between.divide(BigDecimal.valueOf(number_of_cps).subtract(not_bleeding_before_cps), 4, RoundingMode.HALF_UP);
+        scores = new ArrayList<>();
 
         // fill array with zeros under "not_bleeding..."
         for (int cp = 0; cp < not_bleeding_before_cps.intValue(); cp++) {
@@ -201,6 +208,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue.size()]);
         remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_red.size()]);
 
+        scores.add(new ImmutableTriple<>(JavaTimeConverter.to_iso8601(), remaining_red_tickets, remaining_blue_tickets));
+
         log.trace("Cp: R{} B{}", cps_held_by_red, cps_held_by_blue);
         log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
 
@@ -243,6 +252,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         remaining_red_tickets = respawn_tickets;
         cps_held_by_blue.clear();
         cps_held_by_red.clear();
+        scores.clear();
     }
 
     @Override
@@ -304,7 +314,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
                     MQTT.page("page0",
                             "RED Flags: ${red_flags}",
                             "BLUE Flags: ${blue_flags}",
-                            " ".repeat(18)+"${wifi_signal}",
+                            " ".repeat(18) + "${wifi_signal}",
                             "Red->${red_tickets}:${blue_tickets}<-Blue");
         }
         return MQTT.page("page0", game_description);
@@ -342,11 +352,20 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     @Override
     public JSONObject getState() {
         update_cps_held_by_list();
+        JSONArray score_table = new JSONArray();
+        scores.forEach(triple -> {
+            JSONArray row = new JSONArray();
+            row.put(triple.getLeft())
+                    .put(triple.getMiddle())
+                    .put(triple.getRight());
+            score_table.put(row);
+        });
         return super.getState()
                 .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
                 .put("remaining_red_tickets", remaining_red_tickets.intValue())
                 .put("cps_held_by_blue", cps_held_by_blue)
-                .put("cps_held_by_red", cps_held_by_red);
+                .put("cps_held_by_red", cps_held_by_red)
+                .put("scores", score_table);
     }
 
     @Override
