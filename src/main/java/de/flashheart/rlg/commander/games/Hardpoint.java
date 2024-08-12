@@ -60,9 +60,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     private long last_job_broadcast;
     private int active_capture_point;
     private final CircularFifoQueue<String> recently_activated_flags;
-    private final Random random = new Random(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
-    // number of the current iteration of the flag cycle - in short "how many times did we activate a flag so far ?"
-    private int iteration;
+    private boolean hide_next_flag;
 
     public Hardpoint(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -75,6 +73,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         this.flag_time_up = game_parameters.optLong("flag_time_up", 120);
         this.delay_until_next_flag = game_parameters.optLong("delay_until_next_flag", 30);
         this.delay_after_color_change = game_parameters.optBigDecimal("delay_after_color_change", BigDecimal.ONE);
+        this.hide_next_flag = game_parameters.optBoolean("hide_next_flag", true);
 
         capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).collect(Collectors.toList());
 
@@ -145,7 +144,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                     if (iteration_score_red + iteration_score_blue > 0) {
                         add_in_game_event(new JSONObject().put("message", String.format("Flag %s added %s points for RED and %s points for BLUE", agent, iteration_score_red / 1000L, iteration_score_blue / 1000L)).put("agent", agent), "free_text");
                     }
-                    iteration++;
                     iteration_score_red = 0L;
                     iteration_score_blue = 0L;
                     return true;
@@ -250,7 +248,9 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         log.trace("cp_to_neutral {}", agent);
         create_job(flag_time_out_jobkey, LocalDateTime.now().plusSeconds(flag_time_out), TimeOutJob.class, Optional.empty());
         send("timers", MQTT.toJSON("timer", Long.toString(flag_time_out)), agents.keySet());
-        send("vars", MQTT.toJSON("timelabel", "Next Flag in", "label", "actv:" + get_active_flag() + " next:" + peek_next_flag()), agents.keySet());
+        String label = "actv:" + get_active_flag();
+        if (!hide_next_flag) label += " next:" + peek_next_flag();
+        send("vars", MQTT.toJSON("timelabel", "Next Flag in", "label", label), agents.keySet());
 
         send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
@@ -312,7 +312,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         last_job_broadcast = 0L;
         active_capture_point = 0;
         recently_activated_flags.clear();
-        iteration = 0;
         reset_score_table();
         broadcast_score();
     }

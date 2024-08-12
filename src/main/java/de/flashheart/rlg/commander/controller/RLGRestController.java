@@ -52,26 +52,6 @@ public class RLGRestController {
      *
      * @return
      */
-//    @GetMapping("/game-sse")
-//    public SseEmitter game_state_event_emitter(@RequestParam(name = "id") int id) {
-//        SseEmitter emitter = new SseEmitter(-1l);
-//        ExecutorService sseMvcExecutor = Executors.newSingleThreadExecutor();
-//        sseMvcExecutor.execute(() -> {
-//            gamesService.addStateReachedListener(id, stateReachedEvent -> {
-//                try {
-//                    SseEmitter.SseEventBuilder event = SseEmitter.event().
-//                            data(stateReachedEvent.getState()).
-//                            id(Long.toString(System.currentTimeMillis())).
-//                            name("StateReachedEvent");
-//                    emitter.send(event);
-//                } catch (Exception e) {
-//                    log.warn(e);
-//                    emitter.completeWithError(e);
-//                }
-//            });
-//        });
-//        return emitter;
-//    }
     @PostMapping("/game/load")
     // https://stackoverflow.com/a/57024167
     public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) {
@@ -156,6 +136,18 @@ public class RLGRestController {
     @PostMapping("/system/test_agent")
     public ResponseEntity<?> test_agent2(@RequestParam(name = "agent_id") String agent_id, @RequestParam(name = "command") String command, @RequestParam(name = "pattern") String pattern) {
         agentsService.test_agent(agent_id, command, new JSONObject(pattern));
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
+    @PostMapping("/system/add_replacement")
+    public ResponseEntity<?> add_replacement(@RequestParam(name = "old") String old_agent, @RequestParam(name = "new") String new_agent) {
+        agentsService.replace_agent(old_agent, new_agent);
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
+    @DeleteMapping("/system/clear_replacements")
+    public ResponseEntity<?> clear_replacements() {
+        agentsService.clear_replacements();
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 

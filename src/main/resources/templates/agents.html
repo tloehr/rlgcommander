@@ -31,6 +31,24 @@
             );
         }
 
+        function remove_replacement(old_agent) {
+            post_rest('system/add_replacement',
+                {
+                    'old': old_agent,
+                    'new': ''
+                }
+            );
+        }
+
+        function replace_agent() {
+            post_rest('system/add_replacement',
+                {
+                    'old': document.getElementById("old_agent").value,
+                    'new': document.getElementById("new_agent").value
+                }
+            );
+        }
+
         function test_selected_agents() {
             let selection = []
             document.getElementsByName('row_selector').forEach((element, i) => {
@@ -82,9 +100,11 @@
                         <input class="form-check-input" type="checkbox" name="row_selector"
                                th:id="${agent.id}"/>&nbsp;
                         <span th:text="${agent.id}"></span>
-                        <span th:if="${agent.getSecondsAgo(agent.timestamp) <= 70}" class="badge badge-pill text-bg-success"
+                        <span th:if="${agent.getSecondsAgo(agent.timestamp) <= 70}"
+                              class="badge badge-pill text-bg-success"
                               th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"/>
-                        <span th:if="${agent.getSecondsAgo(agent.timestamp) > 70}" class="badge badge-pill text-bg-danger"
+                        <span th:if="${agent.getSecondsAgo(agent.timestamp) > 70}"
+                              class="badge badge-pill text-bg-danger"
                               th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"/>
                     </td>
                     <td data-toggle="tooltip" data-placement="top" th:attr="title=${agent.getIp()}">
@@ -133,7 +153,7 @@
 
         <button id="test_button"
                 class="btn btn-outline-primary btn-lg col-auto me-2"
-                onclick="test_selected_agents()">Test
+                onclick="test_selected_agents(); location.reload();">Test
         </button>
 
         <button id="delete"
@@ -142,18 +162,51 @@
                 class="bi bi-lg bi-x-circle-fill"></i>
         </button>
 
-        <button title="Sleep" onclick="post_rest('system/powersave_agents')" type="button"
+        <button title="Sleep" onclick="post_rest('system/powersave_agents'); location.reload();" type="button"
                 class="btn btn-outline-secondary btn-circle btn-lg col-auto me-2"><i
                 class="bi bi-moon-stars-fill bi-lg"></i>
         </button>
 
 
-        <button title="Wake up" onclick="post_rest('system/welcome_agents')" type="button"
+        <button title="Wake up" onclick="post_rest('system/welcome_agents'); location.reload();" type="button"
                 class="btn btn-outline-warning btn-circle btn-lg col-auto"><i
                 class="bi bi-sun-fill bi-lg"></i>
         </button>
 
 
+    </div>
+
+    <div class="row mt-2 justify-content-start">
+        <h3 class="h3">Replaced Agents</h3>
+        <div class="col-auto">
+            <div class="table table-striped">
+                <table class="table table-striped table-sm my_table">
+                    <tbody>
+                    <div th:each="old_new_agent_pair : ${agent_replacement_map.entrySet()}">
+                        <tr>
+                            <td class="align-middle" th:text="${old_new_agent_pair.getKey()} + '&nbsp;&xrarr;&nbsp;' + ${old_new_agent_pair.getValue()}">
+                            </td>
+                            <td>
+                                <!-- see: https://www.baeldung.com/thymeleaf-js-function-call#3-using-functions-with-dynamic-input -->
+                                <button title="delete" type="button" class="btn btn-sm"
+                                        th:onclick="remove_replacement([[${old_new_agent_pair.getKey()}]]); location.reload();"><i
+                                        class="bi bi-x-square-fill bi-lg text-danger"></i></button>
+                            </td>
+                        </tr>
+                    </div>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-auto">
+            <form class="needs-validation" onsubmit="replace_agent(); location.reload(); return false;" id="replace_agent_form">
+                <label for="old_agent" class="form-label">Old Agent</label>
+                <input type="text" class="form-control" id="old_agent" value="" required/>
+                <label for="new_agent" class="form-label">New Agent</label>
+                <input type="text" class="form-control" id="new_agent" value="" required/>
+                <button class="btn mt-2 btn-primary" type="submit">Add replacement</button>
+            </form>
+        </div>
     </div>
 </section>
 

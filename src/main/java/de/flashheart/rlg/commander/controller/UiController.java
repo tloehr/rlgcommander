@@ -80,6 +80,7 @@ public class UiController {
     public String agents(Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("agents", agentsService.get_all_agents());
+        model.addAttribute("agent_replacement_map", agentsService.get_agent_replacement_map());
         // model.addAttribute("agents_active", "active");
         // adding test list for the agents web interface
         ArrayList<Triplet<String, String, JSONObject>> list_of_tests = new ArrayList<>();

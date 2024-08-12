@@ -21,6 +21,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,12 +45,14 @@ public class MQTTInbound {
     AgentsService agentsService;
     GamesService gamesService;
     ConcurrentHashMap<String, Agent> live_agents; // see MyConfiguration.java
+    HashMap<String, String> agent_replacement_map;
 
-    public MQTTInbound(AgentsService agentsService, GamesService gamesService, MQTTOutbound mqttOutbound, ConcurrentHashMap<String, Agent> live_agents) {
+    public MQTTInbound(AgentsService agentsService, GamesService gamesService, MQTTOutbound mqttOutbound, ConcurrentHashMap<String, Agent> live_agents, HashMap<String, String> agent_replacement_map) {
         this.agentsService = agentsService;
         this.gamesService = gamesService;
         this.mqttOutbound = mqttOutbound;
         this.live_agents = live_agents;
+        this.agent_replacement_map = agent_replacement_map;
     }
 
     @Bean
@@ -73,29 +76,35 @@ public class MQTTInbound {
         return message -> {
             String topic = message.getHeaders().get("mqtt_receivedTopic").toString();
             List<String> tokens = Collections.list(new StringTokenizer(topic, "/")).stream().map(token -> (String) token).collect(Collectors.toList());
-            String agent_id = tokens.get(tokens.size() - 2);
+            String old_agent = tokens.get(tokens.size() - 2);
             String source = tokens.get(tokens.size() - 1);
             String payload = message.getPayload().toString();
 
-            // todo: check if json object is valid to prevent exceptions here
             if (source.equalsIgnoreCase("status")) {
                 log.trace(message.toString());
                 log.trace(message.getPayload().toString());
                 try {
                     JSONObject status = new JSONObject(message.getPayload().toString());
-                    agentsService.agent_reported_status(agent_id, status);
+                    agentsService.agent_reported_status(old_agent, status);
                 } catch (JSONException e) {
+                    log.error(e.getMessage());
                     //agentsService.remove(agentid);
                 }
             } else { // must be a button or rfid
                 log.trace(message.toString());
                 log.trace(message.getPayload().toString());
-                int game_id = live_agents.getOrDefault(agent_id, new Agent()).getGameid();
-                agentsService.agent_reported_event(agent_id, source, new JSONObject(payload));
+
+                // check if this agent is substituted
+                // if not it's simply the original agent it
+                String new_agent = agent_replacement_map.getOrDefault(old_agent, old_agent);
+                if (!new_agent.equals(old_agent)) log.debug("INBOUND: agent {} replaced by {}", old_agent, new_agent);
+                // the game_id is inherited from the old_agent
+                int game_id = live_agents.getOrDefault(new_agent, new Agent()).getGameid();
+                agentsService.agent_reported_event(new_agent, source, new JSONObject(payload));
                 // report to running game
                 if (game_id > 0) {
                     try {
-                        gamesService.process_message(game_id, agent_id, source, new JSONObject(payload));
+                        gamesService.process_message(game_id, new_agent, source, new JSONObject(payload));
                     } catch (IllegalStateException ise) {
                         log.warn(ise.getMessage());
                     } catch (Exception e) {

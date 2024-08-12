@@ -14,7 +14,7 @@
             game_parameters.flag_time_up = parseInt(document.getElementById('flag_time_up').value);
             game_parameters.delay_until_next_flag = parseInt(document.getElementById('delay_until_next_flag').value);
             game_parameters.delay_after_color_change = parseInt(document.getElementById('delay_after_color_change').value);
-
+            game_parameters.hide_next_flag = document.getElementById('check-hide-next-flag').checked;
             read_cps_sirens_form(game_parameters);
         }
 
@@ -24,7 +24,7 @@
             document.getElementById('flag_time_up').value = game_parameters.flag_time_up;
             document.getElementById('delay_until_next_flag').value = game_parameters.delay_until_next_flag;
             document.getElementById('delay_after_color_change').value = game_parameters.delay_after_color_change;
-
+            document.getElementById('check-hide-next-flag').checked = game_parameters.hide_next_flag;
             preset_cps_sirens_form(game_parameters);
         }
 
@@ -109,6 +109,10 @@
                     class="bi bi-md bi-info-circle-fill"></span> Delay after first color change</label>
             <input type="number" class="form-control" id="delay_after_color_change" value="1" required
                    min="0.5" max="2.5" step="0.5" inputmode="decimal" pattern="\d*">
+        </div>
+        <div class="col-auto align-self-center form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="check-hide-next-flag">
+            <label class="form-check-label" for="check-hide-next-flag">Hide next Flag</label>
         </div>
 
     </div>

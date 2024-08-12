@@ -64,8 +64,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
             });
             vars.put("score_" + color, JavaTimeConverter.format(scores.get("all", color)));
 
-            vars.put("red_respawns", team_registry.get("red").getRespawns());
-            vars.put("blue_respawns", team_registry.get("blue").getRespawns());
+            vars.put("red_respawns", team_registry.get("red_spawn").getRespawns());
+            vars.put("blue_respawns", team_registry.get("blue_spawn").getRespawns());
         });
         return vars;
     }

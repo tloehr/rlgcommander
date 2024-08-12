@@ -46,6 +46,7 @@ public class AgentsService {
         assign_gameid_to_agents(-1, agentids);
     }
 
+
     public Set<Agent> get_agents_for_gameid(int gameid) {
         return live_agents.values().stream().filter(agent -> agent.getGameid() == gameid).collect(Collectors.toSet());
     }
@@ -133,7 +134,8 @@ public class AgentsService {
     public void test_agent(String agentid, String command, JSONObject pattern) {
         Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
         if (my_agent.getGameid() > -1) return; // only when not in game
-        if (agent_replacement_map.values().contains(agentid)) return; // agents that are used for replacements are also out of bounds
+        if (agent_replacement_map.values().contains(agentid))
+            return; // agents that are used for replacements are also out of bounds
         mqttOutbound.send(command, pattern, agentid);
     }
 
@@ -143,20 +145,53 @@ public class AgentsService {
     }
 
     /**
-     * turn off all lights and sirens
+     * turn off all lights and sirens of unused agents.
+     * but not those which are in use as a replacement
      */
     public void powersave_unused_agents() {
-        get_agents_for_gameid(-1).forEach(agent -> {
-            mqttOutbound.send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent.getId());
-            mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), agent.getId());
-        });
+        get_agents_for_gameid(-1).stream()
+                .filter(agent -> !agent_replacement_map.containsValue(agent))
+                .forEach(agent -> {
+                    mqttOutbound.send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent.getId());
+                    mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), agent.getId());
+                });
     }
 
+    /**
+     * if an agent breaks during a match, we will want to replace it without
+     * restarting the match
+     * <p>
+     * as a real replacement would be quite difficult and complicated it is much better to stick
+     * with the original configuration and simply replace the agent-ids on their way in and out
+     * so that the mqtt_outbound class quickly replaces the id before broadcasting.
+     * so does the process_external_messages method, too.
+     * <p>
+     * here we are only maintaining a replacement map, that is used by those to inbound and outbound facilities.
+     *
+     * @param old_agent the broken agent to be replaced
+     * @param new_agent the agent to step in. if this field is empty, an assigment is removed.
+     */
+    public void replace_agent(String old_agent, String new_agent) {
+        if (new_agent.isEmpty()) agent_replacement_map.remove(old_agent);
+        else agent_replacement_map.put(old_agent, new_agent);
+        log.debug("agent_replacement_map: {}", agent_replacement_map);
+    }
+
+    /**
+     * send a welcome message to all unused agents.
+     * But not to those which are used as a replacement.
+     */
     public void welcome_unused_agents() {
-        get_agents_for_gameid(-1).forEach(this::welcome);
+        get_agents_for_gameid(-1).stream()
+                .filter(agent -> !agent_replacement_map.containsValue(agent))
+                .forEach(this::welcome);
     }
 
-    public void remove_all_agents() {
+    public void clear_replacements() {
+        agent_replacement_map.clear();
+    }
 
+    public HashMap get_agent_replacement_map() {
+        return agent_replacement_map;
     }
 }

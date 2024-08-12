@@ -6,6 +6,7 @@
   "flag_time_out": 120,
   "flag_time_up": 60,
   "delay_until_next_flag": 30,
+  "hide_next_flag": true,
   "delay_after_color_change": 1,
   "resume_countdown": 0,
   "silent_game": false,

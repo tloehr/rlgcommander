@@ -112,13 +112,17 @@ public class MQTTOutbound {
         if (agents.isEmpty()) return;
         agents.forEach(agent -> {
             log.trace("sending {}", topic + agent + "/" + cmd);
-            send(agent + "/" + cmd, payload);
+            send(agent, cmd, payload);
         });
     }
 
-    private void send(String topic, JSONObject payload) {
+    private void send(String agent, String cmd, JSONObject payload) {
         boolean retained = !(topic.endsWith("acoustic") | topic.endsWith("play") | topic.endsWith("timers"));
-        gateway.sendToMqtt(payload.toString(), qos, retained, this.topic + topic);
+        // check if this agent is substituted
+        // if not it's simply the original agent it
+        String replaced_agent = agent_replacement_map.getOrDefault(agent, agent);
+        if (!replaced_agent.equals(agent)) log.debug("OUTBOUND: agent {} replaced by {}", agent, replaced_agent);
+        gateway.sendToMqtt(payload.toString(), qos, retained, this.topic + replaced_agent + "/" + cmd);
     }
 
 }

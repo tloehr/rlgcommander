@@ -85,8 +85,6 @@ public abstract class Game {
     // can be displayed on the LCDs
     protected final ArrayList<String> game_description;
 
-    // this map tracks replaced agents during a game (when agent has been broken or battery is empty)
-
     @Getter
     private final JSONObject game_parameters;
     protected final UUID uuid;

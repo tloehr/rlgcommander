@@ -43,7 +43,6 @@ public class GamesService {
     BuildProperties buildProperties;
     SimpMessagingTemplate simpMessagingTemplate;
     MyYamlConfiguration myYamlConfiguration;
-    HashMap<String, String> agent_replacement_map;
 
     private final Optional<Game>[] loaded_games;
     public static final int MAX_NUMBER_OF_GAMES = 1;
@@ -54,7 +53,7 @@ public class GamesService {
         log.info("RLG-Commander v{} b{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
-    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate, MyYamlConfiguration myYamlConfiguration, HashMap<String, String> agent_replacement_map) {
+    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate, MyYamlConfiguration myYamlConfiguration) {
         this.mqttOutbound = mqttOutbound;
         this.scheduler = scheduler;
         this.agentsService = agentsService;
@@ -63,7 +62,6 @@ public class GamesService {
         this.loaded_games = new Optional[]{Optional.empty()};
         this.gameStateListeners = HashMultimap.create();
         this.myYamlConfiguration = myYamlConfiguration;
-        this.agent_replacement_map = agent_replacement_map;
     }
 
     public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
@@ -100,8 +98,8 @@ public class GamesService {
 
         log.debug("\n" + FigletFont.convertOneLine("GAME #" + id + " RELEASED"));
         Game game_to_unload = loaded_games[id - 1].get();
-        // delete all replacements for this game
-        game_to_unload.getAgents().keySet().forEach(agent_to_remove -> agent_replacement_map.remove(agent_to_remove));
+        // delete all replacements used in this for this game
+        //game_to_unload.getAgents().keySet().forEach(agent_to_remove -> agent_replacement_map.remove(agent_to_remove));
         // free all used agents from their game assignments
         agentsService.remove_gameid_from_agents(game_to_unload.getAgents().keySet());
         game_to_unload.cleanup();
@@ -126,15 +124,6 @@ public class GamesService {
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)));
         return loaded_games[id - 1].isEmpty() ? state : MQTT.merge(state, loaded_games[id - 1].get().getState());
     }
-//
-//    public JSONArray getGameStates() throws ArrayIndexOutOfBoundsException {
-//        JSONArray jsonArray = new JSONArray();
-//        for (int id = 1; id <= MAX_NUMBER_OF_GAMES; id++) {
-//            JSONObject iGame = loaded_games[id - 1].isEmpty() ? new JSONObject() : loaded_games[id - 1].get().getState();
-//            jsonArray.put(id, iGame);
-//        }
-//        return jsonArray;
-//    }
 
     public void process_message(int id, String message) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
@@ -146,12 +135,9 @@ public class GamesService {
         loaded_games[id - 1].get().zeus(new JSONObject(params));
     }
 
-    public void process_message(int id, String agent_id, String source, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+    public void process_message(int id, String agent, String source, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        // check if this agent is substituted
-        // if not it's simply the original agent it
-        String replaced_agent_id = agent_replacement_map.getOrDefault(agent_id, agent_id);
-        loaded_games[id - 1].get().process_external_message(replaced_agent_id, source, payload);
+        loaded_games[id - 1].get().process_external_message(agent, source, payload);
     }
 
     public JSONArray get_games() {
@@ -184,22 +170,5 @@ public class GamesService {
         return toAdd;
     }
 
-    /**
-     * if an agent breaks during a match, we will want to replace it without
-     * restarting the match
-     * <p>
-     * as a real replacement would be quite difficult and complicated it is much better to stick
-     * with the original configuration and simply replace the agent-ids on their way in and out
-     * so that the mqtt_outbound class quickly replaces the id before broadcasting.
-     * so does the process_external_messages method, too.
-     * <p>
-     * here we are only maintaining a replacement map, that is used by those to inbound and outbound facilities.
-     *
-     * @param old_agent the broken agent to be replaced
-     * @param new_agent the agent to step in
-     */
-    public void replace_agent(String old_agent, String new_agent) {
-        if (new_agent.isEmpty()) agent_replacement_map.remove(old_agent);
-        else agent_replacement_map.put(old_agent, new_agent);
-    }
+
 }
