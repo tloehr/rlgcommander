@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
+//todo: when message "ready" is sent manually, the spawn agents do not move to the appropriate state.
 @Log4j2
  /*
   Games deriving from this class will have team respawn agents with optional countdown functions.

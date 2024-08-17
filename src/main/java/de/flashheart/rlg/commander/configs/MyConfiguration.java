@@ -1,6 +1,11 @@
 package de.flashheart.rlg.commander.configs;
 
+import com.google.common.collect.HashBiMap;
 import de.flashheart.rlg.commander.elements.Agent;
+import netscape.javascript.JSObject;
+import org.apache.commons.collections4.keyvalue.MultiKey;
+import org.apache.commons.collections4.map.MultiKeyMap;
+import org.json.JSONObject;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,8 +22,13 @@ public class MyConfiguration {
     }
 
     @Bean
-    public HashMap<String, String> agent_replacement_map() {
-        return new HashMap<>();
+    public HashBiMap<String, String> agent_replacement_map() {
+        return HashBiMap.create();
+    }
+
+    @Bean
+    public MultiKeyMap<String, JSONObject> recent_commands(){
+        return new MultiKeyMap<>();
     }
 
     /**

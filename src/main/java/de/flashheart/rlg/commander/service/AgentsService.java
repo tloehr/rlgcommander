@@ -1,11 +1,13 @@
 package de.flashheart.rlg.commander.service;
 
+import com.google.common.collect.HashBiMap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Agent;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.map.MultiKeyMap;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
@@ -19,14 +21,15 @@ import java.util.stream.Collectors;
 @Log4j2
 @Service
 public class AgentsService {
-    private final HashMap agent_replacement_map;
+    private final HashBiMap<String, String> agent_replacement_map;
     ConcurrentHashMap<String, Agent> live_agents; // see MyConfiguration.java
     MQTTOutbound mqttOutbound;
     BuildProperties buildProperties;
     MyYamlConfiguration myYamlConfiguration;
 
+
     @SneakyThrows
-    public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration, HashMap agent_replacement_map) {
+    public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration, HashBiMap<String, String> agent_replacement_map) {
         this.mqttOutbound = mqttOutbound;
         this.buildProperties = buildProperties;
         this.live_agents = live_agents;
@@ -151,10 +154,14 @@ public class AgentsService {
     public void powersave_unused_agents() {
         get_agents_for_gameid(-1).stream()
                 .filter(agent -> !agent_replacement_map.containsValue(agent))
-                .forEach(agent -> {
-                    mqttOutbound.send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent.getId());
-                    mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), agent.getId());
-                });
+                .forEach(agent ->
+                        powersave(agent.getId())
+                );
+    }
+
+    private void powersave(String agent) {
+        mqttOutbound.send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
+        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
     }
 
     /**
@@ -172,8 +179,20 @@ public class AgentsService {
      * @param new_agent the agent to step in. if this field is empty, an assigment is removed.
      */
     public void replace_agent(String old_agent, String new_agent) {
-        if (new_agent.isEmpty()) agent_replacement_map.remove(old_agent);
-        else agent_replacement_map.put(old_agent, new_agent);
+        if (new_agent.isEmpty()) {
+            if (agent_replacement_map.containsKey(old_agent)){
+                powersave(agent_replacement_map.get(old_agent));
+            }
+            agent_replacement_map.remove(old_agent);
+            //todo this is not working
+            mqttOutbound.resend_commands(old_agent);
+            return;
+        }
+        // ensures, that key value pairs are unique.
+        agent_replacement_map.inverse().remove(new_agent);
+        agent_replacement_map.put(old_agent, new_agent);
+        mqttOutbound.resend_commands(old_agent);
+
         log.debug("agent_replacement_map: {}", agent_replacement_map);
     }
 
@@ -191,7 +210,7 @@ public class AgentsService {
         agent_replacement_map.clear();
     }
 
-    public HashMap get_agent_replacement_map() {
+    public HashBiMap<String, String> get_agent_replacement_map() {
         return agent_replacement_map;
     }
 }

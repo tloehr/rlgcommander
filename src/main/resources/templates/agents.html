@@ -6,7 +6,7 @@
         function test_agent(agents) {
             if (!agents) return;
 
-            post_rest('system/test_agents', {
+            post_rest('agent/test', {
                 'agents': agents,
                 'command': elem_option_dataset.command,
                 'pattern': elem_option_dataset.pattern
@@ -26,13 +26,13 @@
             })
             if (!selection.length) return;
 
-            delete_rest('system/remove_agents',
+            delete_rest('agent',
                 {'agents': selection}
             );
         }
 
         function remove_replacement(old_agent) {
-            post_rest('system/add_replacement',
+            post_rest('agent/replace',
                 {
                     'old': old_agent,
                     'new': ''
@@ -41,7 +41,7 @@
         }
 
         function replace_agent() {
-            post_rest('system/add_replacement',
+            post_rest('agent/replace',
                 {
                     'old': document.getElementById("old_agent").value,
                     'new': document.getElementById("new_agent").value
@@ -60,7 +60,7 @@
             const elem_select = document.getElementById('agent_test_list');
             const elem_option_dataset = elem_select.options[elem_select.selectedIndex].dataset;
 
-            post_rest('system/test_agents',
+            post_rest('agent/test',
                 {'agents': selection},
                 {
                     'command': elem_option_dataset.command,
@@ -83,6 +83,7 @@
         </button>
     </div>
     <div class="row">
+        <h3 class="h3">Active Agents</h3>
         <table class="table table-striped table-sm">
             <thead>
             <tr>
@@ -153,7 +154,7 @@
 
         <button id="test_button"
                 class="btn btn-outline-primary btn-lg col-auto me-2"
-                onclick="test_selected_agents(); location.reload();">Test
+                onclick="test_selected_agents();">Test
         </button>
 
         <button id="delete"
@@ -162,13 +163,13 @@
                 class="bi bi-lg bi-x-circle-fill"></i>
         </button>
 
-        <button title="Sleep" onclick="post_rest('system/powersave_agents'); location.reload();" type="button"
+        <button title="Sleep" onclick="post_rest('agent/sleep'); location.reload();" type="button"
                 class="btn btn-outline-secondary btn-circle btn-lg col-auto me-2"><i
                 class="bi bi-moon-stars-fill bi-lg"></i>
         </button>
 
 
-        <button title="Wake up" onclick="post_rest('system/welcome_agents'); location.reload();" type="button"
+        <button title="Wake up" onclick="post_rest('agent/wakeup'); location.reload();" type="button"
                 class="btn btn-outline-warning btn-circle btn-lg col-auto"><i
                 class="bi bi-sun-fill bi-lg"></i>
         </button>
@@ -179,7 +180,10 @@
     <div class="row mt-2 justify-content-start">
         <h3 class="h3">Replaced Agents</h3>
         <div class="col-auto">
-            <div class="table table-striped">
+            <div class="h4" th:if="${agent_replacement_map.isEmpty()}">No replacements yet.</div>
+            <div
+                    th:if="${!agent_replacement_map.isEmpty()}"
+                    class="table table-striped">
                 <table class="table table-striped table-sm my_table">
                     <tbody>
                     <div th:each="old_new_agent_pair : ${agent_replacement_map.entrySet()}">
