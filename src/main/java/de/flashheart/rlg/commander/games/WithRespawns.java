@@ -240,7 +240,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedReactio
             }
         });
 
-        fsm.setAction(new ArrayList<>(List.of(_state_HURRY_UP, _state_WE_ARE_READY, _state_PROLOG, _state_STANDBY, _state_COUNTDOWN_TO_START)), _msg_RUN, new FSMAction() {
+        fsm.setAction(new ArrayList<>(List.of(_state_WE_ARE_PREPARING, _state_HURRY_UP, _state_WE_ARE_READY, _state_PROLOG, _state_STANDBY, _state_COUNTDOWN_TO_START)), _msg_RUN, new FSMAction() {
             @Override
             public boolean action(String s, String s1, String s2, Object o) {
                 send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "off"), agent);
