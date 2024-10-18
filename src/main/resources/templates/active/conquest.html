@@ -8,6 +8,43 @@
 
     <div class="col-auto">
         <h2 th:text="|Team Red &#8594; ${remaining_red_tickets} &#8660; ${remaining_blue_tickets}  &#8592; Team Blue|"></h2>
+
+<!--        <div>-->
+<!--            <canvas id="myChart" style="width:100%;max-width:600px"></canvas>-->
+<!--        </div>-->
+<!--        <script th:src="@{/webjars/chart.js/dist/chart.umd.js}"></script>-->
+<!--        <script th:inline="javascript">-->
+<!--            /*<![CDATA[*/-->
+<!--            //const ctx = document.getElementById('myChart');-->
+<!--            new Chart("myChart", {-->
+<!--                type: 'line',-->
+<!--                data: {-->
+<!--                    labels: [...[[${score_data_red}]].keys()],-->
+<!--                    datasets: [{-->
+<!--                        lineTension: 0,-->
+<!--                        borderWidth: 2,-->
+<!--                        label: 'Team Red',-->
+<!--                        backgroundColor: 'rgba(255,255,255,0.0)',-->
+<!--                        borderColor: 'rgba(255,0,0,1.0)',-->
+<!--                        data: [[${score_data_red}]]-->
+<!--                    },{-->
+<!--                        lineTension: 0,-->
+<!--                        borderWidth: 2,-->
+<!--                        label: 'Team Blue',-->
+<!--                        backgroundColor: 'rgba(255,255,255,0.0)',-->
+<!--                        borderColor: 'rgba(0,0,255,1.0)',-->
+<!--                        data: [[${score_data_blue}]]-->
+<!--                    }]-->
+<!--                },-->
+<!--                options: {-->
+<!--                    legend: {display: true},-->
+<!--                    animation: false-->
+<!--                }-->
+<!--            });-->
+<!--            /*]]>*/-->
+<!--        </script>-->
+
+
         <h2>Capture Points</h2>
         <h3 class="text-danger">Team Red</h3>
         <h4 th:if="${cps_held_by_red.size} eq 0">None</h4>

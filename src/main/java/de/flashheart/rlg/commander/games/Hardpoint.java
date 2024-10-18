@@ -24,7 +24,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -165,8 +164,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
     private void cp_prolog(String agent) {
         log.trace("cp_prolog {}", agent);
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
         send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "PROLOG"),
@@ -201,7 +200,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                             "I am ${agentname}", "", "", "Flag is preparing"),
                     agent);
             send(MQTT.CMD_VISUAL, new JSONObject("""
-                    "led_all" : "off",
+                    "led_all" : MQTT.OFF,
                     "wht": {
                         "repeat": -1,
                         "scheme": [75,-75,75,-2500]
@@ -231,7 +230,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                         "I am ${agentname}", "", "", "Flag standing by"),
                 agent);
         log.trace("sending OFF to {}", agent);
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
     }
 
     private String peek_next_flag() {
@@ -257,7 +256,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                         "I am ${agentname}", "", "", "Flag is NEUTRAL"),
                 agent);
         log.trace("sending white to {}", agent);
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "NEUTRAL"));
     }
 
@@ -272,7 +271,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         create_job(delayed_reaction_jobkey,
                 LocalDateTime.now().plus(delay_after_color_change.multiply(new BigDecimal(1000L)).longValue(), ChronoUnit.MILLIS),
                 DelayedReactionJob.class, Optional.empty());
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, color, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
     }
 
@@ -280,7 +279,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         String COLOR = (color.equalsIgnoreCase("blu") ? "BLUE" : "RED");
         deleteJob(flag_time_out_jobkey);
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.MEDIUM), roles.get("sirens"));
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", color, MQTT.NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, color, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag is " + COLOR),

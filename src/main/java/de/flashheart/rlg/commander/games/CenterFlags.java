@@ -106,20 +106,20 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
                         "Blue: ${" + get_agent_key(agent, "blue") + "}",
                         "Red: ${" + get_agent_key(agent, "red") + "}"
                 ), agent);
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "neutral"));
     }
 
     private void cp_to_blue(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, MQTT.NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.BLUE, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
         broadcast_score();
     }
 
     private void cp_to_red(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, MQTT.NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.RED, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
         broadcast_score();

@@ -3,7 +3,7 @@
     {
       "name": "all leds off",
       "pattern": {
-        "led_all": "off"
+        "led_all": MQTT.OFF
       },
       "command": "visual"
     },
@@ -106,7 +106,7 @@
     {
       "name": "special, flag_taken",
       "pattern": {
-        "led_all": "off",
+        "led_all": MQTT.OFF,
         "red": "flag_taken"
       },
       "command": "visual"
@@ -128,7 +128,7 @@
     {
       "name": "all sirens off",
       "pattern": {
-        "sir_all": "off"
+        "sir_all": MQTT.OFF
       },
       "command": "acoustic"
     },

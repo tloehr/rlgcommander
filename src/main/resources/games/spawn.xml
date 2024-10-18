@@ -62,6 +62,8 @@
         <MESSAGE id="btn01" nextState="IN_GAME"/>
         <MESSAGE id="game_over" nextState="EPILOG"/>
         <MESSAGE id="pause" nextState="PAUSING"/>
+        <!-- to reinit the original blinking state-->
+        <MESSAGE id="reinit" nextState="IN_GAME"/>
         <!-- Admin shortcuts -->
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>

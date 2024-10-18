@@ -1,13 +1,18 @@
 {
   "comment": "Signal",
   "class": "de.flashheart.rlg.commander.games.Signal",
-  "lock_time": 2,
   "game_mode": "signal",
   "unlock_time": 10,
   "game_time": 600,
   "resume_countdown": 0,
   "silent_game": false,
   "agents": {
+    "red": [
+      "ag01"
+    ],
+    "blu": [
+      "ag02"
+    ],
     "capture_points": [
       "ag01",
       "ag02"
@@ -18,7 +23,7 @@
   },
   "spawns": {
     "game_lobby": false,
-    "intro_mp3": "<none>",
+    "intro_mp3": "bf3",
     "intro_voice": "sharon30s",
     "starter_countdown": 0,
     "respawn_time": 0,

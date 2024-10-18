@@ -2,33 +2,22 @@
 
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="run" nextState="NEUTRAL"/>
+        <MESSAGE id="run" nextState="OPEN"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="NEUTRAL">
-        <MESSAGE id="btn01" nextState="BLUE"/>
+    <STATE id="OPEN">
+        <MESSAGE id="start_closing" nextState="CLOSING"/>
+        <MESSAGE id="close" nextState="CLOSED"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="BLUE">
-        <MESSAGE id="btn01" nextState="RED"/>
-        <MESSAGE id="lock" nextState="BLUE_LOCKED"/>
+    <STATE id="CLOSING">
+        <MESSAGE id="close" nextState="CLOSED"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="RED">
-        <MESSAGE id="btn01" nextState="BLUE"/>
-        <MESSAGE id="lock" nextState="RED_LOCKED"/>
-        <MESSAGE id="game_over" nextState="GAME_OVER"/>
-        <MESSAGE id="reset" nextState="PROLOG"/>
-    </STATE>
-    <STATE id="RED_LOCKED">
-        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
-        <MESSAGE id="game_over" nextState="GAME_OVER"/>
-        <MESSAGE id="reset" nextState="PROLOG"/>
-    </STATE>
-    <STATE id="BLUE_LOCKED">
-        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
+    <STATE id="CLOSED">
+        <MESSAGE id="open" nextState="OPEN"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>

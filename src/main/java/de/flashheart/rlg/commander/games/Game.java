@@ -284,10 +284,10 @@ public abstract class Game {
         game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
         //play("","","");
-//        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agents.keySet());
-//        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off"), agents.keySet());
+//        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agents.keySet());
+//        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agents.keySet());
         send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", ""), agents.keySet());
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), roles.get("sirens"));
     }
 
     public void on_run() {
@@ -297,7 +297,7 @@ public abstract class Game {
 
     public void on_game_over() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
-        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off", MQTT.SIR1, MQTT.GAME_ENDS), roles.get("sirens"));
+        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR1, MQTT.GAME_ENDS), roles.get("sirens"));
         log.info(getState().toString(4));
     }
 
@@ -391,8 +391,8 @@ public abstract class Game {
     protected void on_cleanup() {
         stateReachedListeners.clear();
         stateTransitionListeners.clear();
-        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), roles.get("sirens"));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agents.keySet());
+        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), roles.get("sirens"));
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agents.keySet());
         send("timers", MQTT.toJSON("_clearall", ""), agents.keySet());
         play("", "", "");
     }
@@ -508,7 +508,7 @@ public abstract class Game {
      * @return
      */
     protected String get_signal(String key) {
-        return get_signal(key, MQTT.NORMAL);
+        return get_signal(key, MQTT.RECURRING_SCHEME_NORMAL);
     }
 
     protected String get_signal(String key, String def) {

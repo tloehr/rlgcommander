@@ -10,6 +10,18 @@
 
     <h1>Current Server Status</h1>
 
+    <div class="col-md-auto">
+        <button class="btn btn-outline-info" type="button"
+                th:onclick="download_json(
+                    JSON.parse([[${server_status}]])
+                )">
+
+            <span class="bi bi-download">&nbsp;Download State</span>
+
+
+        </button>
+    </div>
+
     <div class="p-3 mb-2 bg-dark" style="color: #36FF33">
         <pre id="server_status" th:text="${server_status}"></pre>
     </div>

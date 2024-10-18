@@ -103,10 +103,10 @@
                         <span th:text="${agent.id}"></span>
                         <span th:if="${agent.getSecondsAgo(agent.timestamp) <= 70}"
                               class="badge badge-pill text-bg-success"
-                              th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"/>
+                              th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"></span>
                         <span th:if="${agent.getSecondsAgo(agent.timestamp) > 70}"
                               class="badge badge-pill text-bg-danger"
-                              th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"/>
+                              th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"></span>
                     </td>
                     <td data-toggle="tooltip" data-placement="top" th:attr="title=${agent.getIp()}">
                         <span th:class="'bi '+${agent.bi_wifi_icon}+' bi-lg'"></span>

@@ -24,29 +24,32 @@ import java.util.stream.Collectors;
 
 @Log4j2
 public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadcast {
-    public static final String _msg_LOCK = "lock";
-    public static final String _msg_TO_NEUTRAL = "to_neutral";
-    private final List<String> capture_points;
-    private final Map<String, JobKey> cpLockJobs;
-    private long UNLOCK_TIME, LOCK_TIME;
-    private JSONObject line_variables;
+    public static final String _msg_CLOSE = "close";
+    public static final String _msg_START_CLOSING = "start_closing";
+    public static final String _msg_OPEN = "open";
+    public static final String _state_OPEN = "OPEN";
+    public static final String _state_CLOSING = "CLOSING";
+    public static final String _state_CLOSED = "CLOSED";
+    private final List<String> cps_for_red;
+    private final List<String> cps_for_blue;
+    private String active_color = "";
+    private JSONObject variables_for_score_broadcasting;
     private int blue_points, red_points;
-
-    // todo: add a lock all option that will prevent ANY flag from being changed during a lock period
+    private final long UNLOCK_TIME;
+    private final JobKey signal_unlock_job;
 
     public Signal(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
         count_respawns = false;
-
-        cpLockJobs = new HashMap<>();
-        cpFSMs.forEach((agent, fsm) -> cpLockJobs.put(agent, new JobKey(agent + "_lock_color", uuid.toString())));
-        line_variables = new JSONObject();
-
-        capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
-
+        variables_for_score_broadcasting = new JSONObject();
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
-        LOCK_TIME = game_parameters.optLong("lock_time");
+        signal_unlock_job = new JobKey("signal_unlock_job", uuid.toString());
+        cps_for_red = game_parameters.getJSONObject("agents").getJSONArray("red").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
+        cps_for_blue = game_parameters.getJSONObject("agents").getJSONArray("blu").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
+        roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
+        send("paged", MQTT.page("page0",
+                "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
     }
 
     @Override
@@ -54,28 +57,12 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/signal.xml"), null);
             fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList("PROLOG", "NEUTRAL")), (state, obj) -> cp_to_neutral(agent));
-            fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList("BLUE", "RED")), (state, obj) -> {
-                if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
-                else cp_to_red(agent);
-            });
-            fsm.setStatesAfterTransition(new ArrayList<>(Arrays.asList("BLUE_LOCKED", "RED_LOCKED")), (state, obj) -> {
-                if (state.equals("BLUE_LOCKED")) blue_points++;
-                else red_points++;
-                JobDataMap map = new JobDataMap();
-                map.put("agent", agent);
-                // unlock later
-                create_job(cpLockJobs.get(agent), LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.of(map));
-                int index_of_agent = capture_points.indexOf(agent) + 1;
-                String color = state.equals("BLUE_LOCKED") ? "BLAU" : "ROT";
-                line_variables.put("line" + index_of_agent, agent + ": " + color);
-                add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", state));
-                broadcast_score();
-                String led = state.equals("BLUE_LOCKED") ? MQTT.BLUE : MQTT.RED;
-                send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
-                send("visual", MQTT.toJSON(led, "fast"), get_all_spawn_agents());
-                // 2,5 seconds sir2 at begin of lock period
-                send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.LONG), roles.get("sirens"));
-            });
+
+            fsm.setStatesAfterTransition(_state_PROLOG, (state, obj) -> prolog(agent));
+            fsm.setStatesAfterTransition(_state_OPEN, (state, obj) -> open(agent));
+            fsm.setStatesAfterTransition(_state_CLOSING, (state, obj) -> closing(agent));
+            fsm.setStatesAfterTransition(_state_CLOSED, (state, obj) -> closed(agent));
+            fsm.setStatesAfterTransition(_state_EPILOG, (state, obj) -> epilog(agent));
 
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
@@ -84,48 +71,87 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         }
     }
 
+    private void prolog(String agent) {
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF,
+                get_color_for(agent), MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
+    }
+
+    private void epilog(String agent) {
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
+    }
+
+    private void open(String agent) {
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF,
+                get_color_for(agent), MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
+    }
+
+    // one flag is pushed and closing all the others before closing itself
+    private void closing(String agent) {
+        active_color = get_color_for(agent);
+        if (active_color.equals(MQTT.BLUE)) blue_points++;
+        else red_points++;
+
+        //add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", state));
+        broadcast_score();
+        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), get_all_spawn_agents());
+        send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.LONG), roles.get("sirens"));
+
+        // closing everybody
+        cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_CLOSE));
+
+        // create unlock job
+        create_job(signal_unlock_job, LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.empty());
+    }
+
+    private void closed(String agent) {
+        if (active_color.equals(get_color_for(agent))) {
+            send("visual", MQTT.toJSON(active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), agent);
+        } else {
+            send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
+        }
+    }
+
+    @Override
+    public void delayed_reaction(JobDataMap map) {
+        // unlocking everyone
+        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR3, MQTT.LONG), roles.get("sirens"));
+        cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_OPEN));
+    }
+
     @Override
     public void process_external_message(String agent_id, String source, JSONObject message) {
         if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
             if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
             if (!message.getString("button").equalsIgnoreCase("up")) return;
-            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+            if (!cpFSMs.get(agent_id).getCurrentState().equals(_state_OPEN)) return;
+            cpFSMs.get(agent_id).ProcessFSM(_msg_START_CLOSING);
         } else
             super.process_external_message(agent_id, source, message);
     }
 
     private void cp_to_neutral(String agent) {
-        deleteJob(cpLockJobs.get(agent));
         send("paged",
                 MQTT.page("page0",
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
+
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, get_color_for(agent), MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "unlocked"));
-        int index_of_agent = capture_points.indexOf(agent) + 1;
-        line_variables.put("line" + index_of_agent, "");
+        //int index_of_agent = capture_points.indexOf(agent) + 1;
+        //variables_for_score_broadcasting.put("line" + index_of_agent, "");
         broadcast_score();
     }
 
-    private void cp_to_blue(String agent) {
-        deleteJob(cpLockJobs.get(agent));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, MQTT.NORMAL), agent);
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
-        JobDataMap map = new JobDataMap();
-        map.put("agent", agent);
-        // lock in 2 secs
-        create_job(cpLockJobs.get(agent), LocalDateTime.now().plusSeconds(LOCK_TIME), DelayedReactionJob.class, Optional.of(map));
-    }
 
-    private void cp_to_red(String agent) {
-        deleteJob(cpLockJobs.get(agent));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, MQTT.NORMAL), agent);
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
-        JobDataMap map = new JobDataMap();
-        map.put("agent", agent);
-        // lock in 2 secs
-        create_job(cpLockJobs.get(agent), LocalDateTime.now().plusSeconds(LOCK_TIME), DelayedReactionJob.class, Optional.of(map));
+    private String get_color_for(String agent) {
+        if (cps_for_blue.contains(agent)) return MQTT.BLUE;
+        if (cps_for_red.contains(agent)) return MQTT.RED;
+        return MQTT.WHITE; // error
     }
 
     @Override
@@ -162,15 +188,10 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
             broadcast_score();
-            send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), get_all_spawn_agents());
+           // send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
         }
     }
 
-    @Override
-    public void on_run() {
-        super.on_run();
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), get_all_spawn_agents());
-    }
 
     @Override
     public String getGameMode() {
@@ -180,33 +201,29 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     @Override
     public void on_reset() {
         super.on_reset();
+        deleteJob(signal_unlock_job);
         // spawn agents are used as display not for a specific team
         empty_lines();
         blue_points = 0;
         red_points = 0;
     }
 
-    void empty_lines() {
-        line_variables = MQTT.toJSON("line1", "", "line2", "", "line3", "", "line4", "");
+    @Override
+    public void on_game_over() {
+        super.on_game_over();
+        deleteJob(signal_unlock_job);
+        broadcast_score(); // one last time
     }
 
-    @Override
-    public void delayed_reaction(JobDataMap map) {
-        String agent = map.getString("agent");
-        String state = cpFSMs.get(agent).getCurrentState().toLowerCase();
-        if (state.matches("red_locked|blue_locked")) {
-            send("acoustic", MQTT.toJSON(MQTT.SIR3, MQTT.LONG), roles.get("sirens"));
-            send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), get_all_spawn_agents());
-            cpFSMs.get(map.getString("agent")).ProcessFSM(_msg_TO_NEUTRAL);
-        } else
-            cpFSMs.get(map.getString("agent")).ProcessFSM(_msg_LOCK);
+    void empty_lines() {
+        variables_for_score_broadcasting = MQTT.toJSON("line1", "", "line2", "", "line3", "", "line4", "");
     }
 
     @Override
     public void broadcast_score() {
         send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
-        line_variables.put("red_points", red_points).put("blue_points", blue_points);
-        send("vars", line_variables, get_all_spawn_agents());
+        variables_for_score_broadcasting.put("red_points", red_points).put("blue_points", blue_points);
+        send("vars", variables_for_score_broadcasting, get_all_spawn_agents());
     }
 
     @Override

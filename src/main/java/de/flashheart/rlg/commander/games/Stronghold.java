@@ -83,7 +83,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
 //                @Override
 //                public boolean action(String curState, String message, String nextState, Object args) {
 //                    // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
-//                    send("acoustic", MQTT.toJSON(MQTT.SIR2, "off", MQTT.SIR3, "medium"), roles.get("sirens"));
+//                    send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.OFF, MQTT.SIR3, "medium"), roles.get("sirens"));
 //                    return true;
 //                }
 //            });
@@ -119,7 +119,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void fused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_FUSED));
         if (!allow_defuse) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
         if (active_ring_taken()) {
@@ -170,24 +170,24 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void defused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), MQTT.FAST), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, map_agent_to_ring_color.get(agent), MQTT.RECURRING_SCHEME_FAST), agent);
     }
 
     private void nearly_defused(String agent) {
         cpFSMs.get(agent).ProcessFSM(_msg_DEFUSE);
-        send("acoustic", MQTT.toJSON(MQTT.SIR2, "off", MQTT.SIR3, "medium"), roles.get("sirens"));
+        send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.OFF, MQTT.SIR3, "medium"), roles.get("sirens"));
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_DEFUSED));
         broadcast_score();
     }
 
     private void standby(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
         //addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_STANDBY));
     }
 
     private void prolog(String agent) {
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", map_agent_to_ring_color.get(agent), MQTT.NORMAL), agent);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, map_agent_to_ring_color.get(agent), MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
     }
 
     private boolean active_ring_taken() {

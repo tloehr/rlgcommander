@@ -1,6 +1,6 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
-      layout:decorate="~{params/cps_and_sirens.html}">
+      layout:decorate="~{params/sirens.html}">
 
 
 <head>
@@ -10,20 +10,25 @@
 
         function read_form(game_parameters) {
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
-            game_parameters.lock_time = parseInt(document.getElementById('lock_time').value);
             game_parameters.unlock_time = parseInt(document.getElementById('unlock_time').value);
+            game_parameters.agents.blu = from_string_list(document.getElementById('cps_for_blue').value);
+            game_parameters.agents.red = from_string_list(document.getElementById('cps_for_red').value);
+            game_parameters.agents.capture_points = [].concat(
+                game_parameters.agents.red,
+                game_parameters.agents.blu
+            );
 
-            read_cps_sirens_form(game_parameters);
+            read_sirens_form(game_parameters);
         }
 
         function preset_form(game_parameters) {
             document.getElementById('game_time').value = game_parameters.game_time;
-            document.getElementById('lock_time').value = game_parameters.lock_time;
             document.getElementById('unlock_time').value = game_parameters.unlock_time;
+            document.getElementById('cps_for_blue').value = game_parameters.agents.blu.join(); // join makes a comma separated list
+            document.getElementById('cps_for_red').value = game_parameters.agents.red.join();
 
-            preset_cps_sirens_form(game_parameters);
+            preset_sirens_form(game_parameters);
         }
-
 
     </script>
 
@@ -51,26 +56,34 @@
                 <option value="1500">25 Minuten</option>
                 <option value="1800">30 Minuten</option>
                 <option value="2700">45 Minuten</option>
-                <option value="3000">50 Minuten</option>
+                <option value="3600">60 Minuten</option>
             </datalist>
-        </div>
-
-        <div class="col-auto">
-            <label for="lock_time" class="form-label">Lock Time</label>
-            <input type="number" class="form-control" id="lock_time" value="2" required
-                   min="1" inputmode="decimal" pattern="\d*">
-            <small id="lock_time_help" class="form-text">Time in seconds it will take to lock a selected flag
-                color.</small>
         </div>
 
         <div class="col-auto">
             <label for="unlock_time" class="form-label">Unlock Time</label>
             <input type="number" class="form-control" id="unlock_time" value="10" required
                    min="1" inputmode="decimal" pattern="\d*">
-            <small id="unlock_time_help" class="form-text">Time in seconds that a locked flag will wait until it is
+            <small id="unlock_time_help" class="form-text">Time in seconds that closed flags will wait until they are
                 accessible again.</small>
         </div>
+    </div>
 
+    <div class="row mb-3">
+        <div class="col-auto">
+            <label for="cps_for_red" class="form-label">Red Capture-Points</label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" value="ag01" id="cps_for_red" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <div id="cphelp1" class="form-text">Agent IDs, comma separated</div>
+        </div>
+        <div class="col-auto">
+            <label for="cps_for_blue" class="form-label">Blue Capture-Points</label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" value="ag02" id="cps_for_blue" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <div id="cphelp2" class="form-text">Agent IDs, comma separated</div>
+        </div>
     </div>
 </section>
 

@@ -174,8 +174,8 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.RECURRING_SCHEME_SLOW), agent);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_SLOW), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
         map_dot_format.remove(agent);
     }
 
@@ -317,7 +317,7 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
 
         // construct appropriate blinking scheme for active state
         // active states blink slowly
-        List<String> signal_pairs = new ArrayList<>(List.of(MQTT.LED_ALL, "off", get_led_color_for_flag_state(current_flag_state), MQTT.RECURRING_SCHEME_SLOW));
+        List<String> signal_pairs = new ArrayList<>(List.of(MQTT.LED_ALL, MQTT.OFF, get_led_color_for_flag_state(current_flag_state), MQTT.RECURRING_SCHEME_SLOW));
         // add hints for all possible colors from adjacent flags
         // except the current_flag_state
         map_of_neighbourhood_states_for_agents.get(agent)

@@ -11,6 +11,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Optional;
@@ -26,6 +27,7 @@ public abstract class Scheduled extends Game {
     protected final BigDecimal SCORE_CALCULATION_EVERY_N_SECONDS;
     protected final long BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES;
     protected final long REPEAT_EVERY_MS;
+    protected final long NUMBER_OF_BROADCAST_EVENTS_PER_MINUTE; // to execute something once per minute
     final HashMap<JobKey, Trigger> jobs;
 
     public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
@@ -34,6 +36,7 @@ public abstract class Scheduled extends Game {
         BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES = Long.parseLong(game_parameters.optString("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", "10"));
         SCORE_CALCULATION_EVERY_N_SECONDS = new BigDecimal(game_parameters.optString("SCORE_CALCULATION_EVERY_N_SECONDS","0.5"));
         REPEAT_EVERY_MS = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
+        NUMBER_OF_BROADCAST_EVENTS_PER_MINUTE = BigDecimal.valueOf(60L).divide(SCORE_CALCULATION_EVERY_N_SECONDS, RoundingMode.HALF_UP).longValue();
 
         jobs = new HashMap<>();
         try {

@@ -123,7 +123,7 @@ public class AgentsService {
         //mqttOutbound.send("init", agentid);
         mqttOutbound.send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", "0"), my_agent.getId());
         mqttOutbound.send(MQTT.CMD_PLAY, MQTT.toJSON("channel", "", "subpath", "", "soundfile", ""), my_agent.getId());
-        mqttOutbound.send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), my_agent.getId());
+        mqttOutbound.send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), my_agent.getId());
         // welcome-signal
         mqttOutbound.send(MQTT.CMD_VISUAL,
                 "welcome_signal",
@@ -160,8 +160,8 @@ public class AgentsService {
     }
 
     private void powersave(String agent) {
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.LED_ALL, "off"), agent);
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
+        mqttOutbound.send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
+        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
     }
 
     /**

@@ -1,18 +1,14 @@
 package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.fsm.FSM;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
 import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
-import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.text.WordUtils;
-import org.checkerframework.checker.units.qual.A;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,7 +41,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     private final JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
     // todo: idea - add chart for the tickets over time
-    private final ArrayList<Triple<String, BigDecimal, BigDecimal>> scores;
+    private final ArrayList<Triple<LocalDateTime, BigDecimal, BigDecimal>> scores;
 
     /**
      * This class creates a conquest style game as known from Battlefield.
@@ -184,19 +180,19 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     private void cp_to_neutral(String agent) {
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.WHITE, MQTT.NORMAL), agent);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, "off"), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
     }
 
     private void cp_to_blue(String agent) {
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.BLUE, MQTT.NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.BLUE, MQTT.RECURRING_SCHEME_NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "blue"));
     }
 
     private void cp_to_red(String agent) {
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, "off", MQTT.RED, MQTT.NORMAL), agent);
+        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.RED, MQTT.RECURRING_SCHEME_NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 
@@ -208,13 +204,17 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue.size()]);
         remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_red.size()]);
 
-        scores.add(new ImmutableTriple<>(JavaTimeConverter.to_iso8601(), remaining_red_tickets, remaining_blue_tickets));
-
         log.trace("Cp: R{} B{}", cps_held_by_red, cps_held_by_blue);
         log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
 
-        if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0)
+        if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
+            //scores.add(new ImmutableTriple<>(LocalDateTime.now(), remaining_red_tickets, remaining_blue_tickets));
             broadcast_score();
+        }
+
+        if (broadcast_cycle_counter % NUMBER_OF_BROADCAST_EVENTS_PER_MINUTE == 0) {
+            scores.add(new ImmutableTriple<>(LocalDateTime.now(), remaining_red_tickets, remaining_blue_tickets));
+        }
 
         if (remaining_blue_tickets.intValue() <= 0 || remaining_red_tickets.intValue() <= 0) {
             broadcast_score();
@@ -352,30 +352,38 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     @Override
     public JSONObject getState() {
         update_cps_held_by_list();
-        JSONArray score_table = new JSONArray();
-        scores.forEach(triple -> {
-            JSONArray row = new JSONArray();
-            row.put(triple.getLeft())
-                    .put(triple.getMiddle())
-                    .put(triple.getRight());
-            score_table.put(row);
-        });
+
         return super.getState()
                 .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
                 .put("remaining_red_tickets", remaining_red_tickets.intValue())
                 .put("cps_held_by_blue", cps_held_by_blue)
-                .put("cps_held_by_red", cps_held_by_red)
-                .put("scores", score_table);
+                .put("cps_held_by_red", cps_held_by_red);
     }
 
     @Override
     public void add_model_data(Model model) {
         super.add_model_data(model);
         update_cps_held_by_list();
+        //JSONArray score_table = new JSONArray();
+        JSONArray score_data_red = new JSONArray();
+        JSONArray score_data_blue = new JSONArray();
+
+        scores.forEach(triple -> {
+//            JSONArray row = new JSONArray();
+//            row.put(triple.getLeft())
+//                    .put(triple.getMiddle())
+//                    .put(triple.getRight());
+            score_data_red.put(triple.getMiddle());
+            score_data_blue.put(triple.getRight());
+        });
 
         model.addAttribute("cps_held_by_blue", cps_held_by_blue.stream().sorted().collect(Collectors.toList()));
         model.addAttribute("cps_held_by_red", cps_held_by_red.stream().sorted().collect(Collectors.toList()));
         model.addAttribute("remaining_blue_tickets", remaining_blue_tickets.intValue());
         model.addAttribute("remaining_red_tickets", remaining_red_tickets.intValue());
+        model.addAttribute("score_data_red", score_data_red.toList());
+        model.addAttribute("score_data_blue", score_data_blue.toList());
+
+
     }
 }

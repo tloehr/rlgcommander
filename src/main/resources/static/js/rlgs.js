@@ -293,3 +293,14 @@ function get_simplified_elapsed_time(seconds) {
     return result;
 }
 
+// https://stackoverflow.com/a/30800715
+function download_json(game_parameters) {
+    const mode = sessionStorage.getItem('game_mode');
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(game_parameters, null, 4));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", mode + ".json");
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+

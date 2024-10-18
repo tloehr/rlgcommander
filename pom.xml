@@ -11,7 +11,7 @@
     </parent>
     <groupId>de.flashheart.rlgs</groupId>
     <artifactId>rlgcommander</artifactId>
-    <version>1.10</version>
+    <version>1.11</version>
     <name>rlgcommander</name>
     <description>Command Module for the RLGS2 gaming system.</description>
     <properties>
@@ -38,6 +38,7 @@
         <stomp.version>2.3.4</stomp.version>
         <javatuples.version>1.2</javatuples.version>
         <jfiglet.version>0.0.9</jfiglet.version>
+        <chartjs.version>4.4.4</chartjs.version>
     </properties>
     <dependencies>
         <dependency>
@@ -129,6 +130,12 @@
             <groupId>org.webjars</groupId>
             <artifactId>stomp-websocket</artifactId>
             <version>${stomp.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.webjars.npm/chart.js -->
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>chart.js</artifactId>
+            <version>${chartjs.version}</version>
         </dependency>
         <!--
                    _   _

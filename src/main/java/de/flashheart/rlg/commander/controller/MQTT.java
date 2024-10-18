@@ -18,10 +18,10 @@ public class MQTT {
     public static final String SIR_ALL = "sir_all";
     public static final String VISUALS = WHITE + "|" + RED + "|" + YELLOW + "|" + GREEN + "|" + BLUE;
 
-    public static final String SIR1 = "sir1";
-    public static final String SIR2 = "sir2";
-    public static final String SIR3 = "sir3";
-    public static final String SIR4 = "sir4";
+    public static final String SIR1 = "sir1"; // START/STOP
+    public static final String SIR2 = "sir2"; // ACTIVATE
+    public static final String SIR3 = "sir3"; // DEACTIVATE
+    public static final String SIR4 = "sir4"; // NEXT
     public static final String START_STOP_SIREN = SIR1;
     public static final String ALERT_SIREN = SIR2;
     public static final String SHUTDOWN_SIREN = SIR3;
@@ -30,18 +30,20 @@ public class MQTT {
     public static final String ACOUSTICS = SIR1 + "|" + SIR2 + "|" + SIR3 + "|" + SIR4 + "|" + BUZZER;
 
 
-    public static final String SCHEME_VEY_LONG = "very_long";
+    public static final String SCHEME_VERY_LONG = "very_long";
     public static final String LONG = "long";
     public static final String MEDIUM = "medium";
     public static final String SCHEME_SHORT = "short";
     public static final String SCHEME_VERY_SHORT = "very_short";
     public static final String RECURRING_SCHEME_VERY_SLOW = "very_slow";
     public static final String RECURRING_SCHEME_SLOW = "slow";
-    public static final String NORMAL = "normal";
-    public static final String FAST = "fast";
-    public static final String VERY_FAST = "very_fast";
+    public static final String RECURRING_SCHEME_NORMAL = "normal";
+    public static final String RECURRING_SCHEME_FAST = "fast";
+    public static final String OFF = "off";
+    public static final String RECURRING_SCHEME_VERY_FAST = "very_fast";
     public static final String RECURRING_SCHEME_MEGA_FAST = "mega_fast";
-    public static final String RECURRING_SCHEME_NETSTATUS = "netstatus";
+    public static final String RECURRING_SCHEME_SIGNAL_STRENGTH = "signal_strength";
+    public static final String RECURRING_SCHEME_NO_WIFI = "no_wifi";
     public static final String SINGLE_BUZZ = "single_buzz";
     public static final String DOUBLE_BUZZ = "double_buzz";
     public static final String TRIPLE_BUZZ = "triple_buzz";

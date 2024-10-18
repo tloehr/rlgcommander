@@ -3,8 +3,9 @@
       layout:decorate="~{layout.html}">
 <head><title>Active Game</title>
     <script>
-        function init_buttons() {
 
+
+        function init_buttons() {
             /**
              * .blink_me {
              *   animation: blinker 2s linear infinite;
@@ -16,19 +17,26 @@
              * @type {*[][]}
              */
 
+            if (!sessionStorage.getItem('ctrls_locked')) {
+                sessionStorage.setItem('ctrls_locked', 'false');
+            }
+            const ctrls_locked = sessionStorage.getItem('ctrls_locked') === 'true';
+
             // get an array of 1 and 0 to decide which button to enable or not. depending on the current state.
             const acbe = [[${active_command_buttons_enabled}]];
             const haszeus = [[${has_zeus}]];
-            
-            document.getElementById('btn_prepare').disabled = !acbe[0];
-            document.getElementById('btn_reset').disabled = !acbe[1];
-            document.getElementById('btn_ready').disabled = !acbe[2];
-            document.getElementById('btn_run').disabled = !acbe[3];
-            document.getElementById('btn_pause').disabled = !acbe[4];
-            document.getElementById('btn_resume').disabled = !acbe[5];
-            document.getElementById('btn_continue').disabled = !acbe[6];
-            document.getElementById('btn_game_over').disabled = !acbe[7];
+            document.getElementById('check-lock').checked = ctrls_locked;
 
+            document.getElementById('btn_prepare').disabled = ctrls_locked || !acbe[0];
+            document.getElementById('btn_reset').disabled = ctrls_locked || !acbe[1];
+            document.getElementById('btn_ready').disabled = ctrls_locked || !acbe[2];
+            document.getElementById('btn_run').disabled = ctrls_locked || !acbe[3];
+            document.getElementById('btn_pause').disabled = ctrls_locked || !acbe[4];
+            document.getElementById('btn_resume').disabled = ctrls_locked || !acbe[5];
+            document.getElementById('btn_continue').disabled = ctrls_locked || !acbe[6];
+            document.getElementById('btn_game_over').disabled = ctrls_locked || !acbe[7];
+
+            // for small screens
             document.getElementById('btn_prepare2').disabled = !acbe[0];
             document.getElementById('btn_reset2').disabled = !acbe[1];
             document.getElementById('btn_ready2').disabled = !acbe[2];
@@ -56,6 +64,20 @@
 <section layout:fragment="content">
     <div id="game_control" class="bg-white sticky-top d-print-none">
         <div class="d-none d-md-block">
+            <div class="row mb-3">
+                <div id="check-lock-widget" class="col-auto align-self-center form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="check-lock"
+                           style="width: 26px;
+  height: 26px;
+  border: 2px solid;
+  border-radius: 5px;
+  /*checkbox border color*/
+  border-color: #737373;"
+                           onclick="sessionStorage.setItem('ctrls_locked', document.getElementById('check-lock').checked);
+                           init_buttons();">
+                    <label class="form-check-label" for="check-lock">Lock Controls</label>
+                </div>
+            </div>
             <div class="row">
                 <button id="btn_prepare"
                         th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PREPARE}]]});"
