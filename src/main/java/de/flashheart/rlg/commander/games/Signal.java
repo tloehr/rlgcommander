@@ -117,9 +117,14 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     @Override
     public void delayed_reaction(JobDataMap map) {
+        open_all();
+    }
+
+    private void open_all() {
         // unlocking everyone
         send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR3, MQTT.LONG), roles.get("sirens"));
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_OPEN));
+        active_color = "";
     }
 
     @Override
@@ -188,7 +193,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
             broadcast_score();
-           // send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
+            // send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
         }
     }
 
@@ -231,6 +236,52 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         return super.getState()
                 .put("red_points", red_points)
                 .put("blue_points", blue_points);
+    }
+
+
+    @Override
+    public boolean hasZeus() {
+        return true;
+    }
+
+    @Override
+    public void zeus(JSONObject params) throws IllegalStateException, JSONException {
+        if (!game_fsm.getCurrentState().equals(_state_RUNNING)) return;
+
+        String operation = params.getString("operation").toLowerCase();
+
+        if (operation.equalsIgnoreCase("unlock")) {
+            if (active_color.isEmpty()) throw new IllegalStateException("state is not locked");
+            // correct score
+            if (active_color.equals(MQTT.BLUE)) blue_points--;
+            else red_points--;
+            // unlock all flags
+            add_in_game_event(new JSONObject()
+                    .put("item", "unlock")
+                    .put("agent", "all")
+                    .put("state", "open")
+                    .put("zeus", "intervention"));
+            open_all();
+        }
+    }
+
+    @Override
+    public String get_in_game_event_description(JSONObject event) {
+        String result = super.get_in_game_event_description(event);
+        if (result.isEmpty()) {
+            result = "error";
+            String type = event.getString("type");
+
+            if (type.equalsIgnoreCase("in_game_state_change")) {
+                String zeus = (event.has("zeus") ? " (by the hand of ZEUS)" : "");
+                if (event.getString("item").equals("unlock")) {
+                    String text = event.getLong("amount") >= 0 ? " has been granted %d seconds" : " has lost %d seconds";
+                    result = "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))
+                            + zeus;
+                }
+            }
+        }
+        return result;
     }
 
     @Override

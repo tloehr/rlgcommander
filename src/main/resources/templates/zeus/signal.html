@@ -1,0 +1,33 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{zeus/base.html}">
+
+<head><title>Zeus for Signal</title></head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1 class="mt-2">
+        <img src="/img/zeus.png" height="64" width="64"/>
+        Zeus - Signal</h1>
+</section>
+
+<section layout:fragment="zeus_form">
+    <h2>Unlock all flags & revert score</h2>
+    <div class="row mb-2">
+        <form id="zeus_unlock" onsubmit="return false" href="#">
+            <div class="input-group">
+                <button class="btn btn-secondary" type="submit"
+                        onclick="post_rest('game/zeus',
+                        {'id':sessionStorage.getItem('game_id')},
+                        {
+                            'operation': 'unlock'
+                        }); go_back_to_active_game();">
+                    Back to neutral
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+</body>
+</html>

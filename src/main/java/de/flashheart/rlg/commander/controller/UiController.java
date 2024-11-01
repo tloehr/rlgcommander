@@ -31,6 +31,7 @@ public class UiController {
     ApplicationContext applicationContext;
     BuildProperties buildProperties;
     MyYamlConfiguration myYamlConfiguration;
+
     private static final Map<String, int[]> active_command_buttons_enabled =
             Map.of(
                     Game._state_PROLOG, new int[]{1, 1, 1, 1, 0, 0, 0, 0},
@@ -65,10 +66,11 @@ public class UiController {
     }
 
     @GetMapping("/home")
-    public String home(Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String home(Model model, @RequestParam(name = "lang") String lang, @AuthenticationPrincipal MyUserDetails user) {
+        if (lang.isEmpty()) lang = "de";
         model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("home_active", "active");
-        return "home";
+        return "home_" + lang;
     }
 
     @GetMapping("/error")

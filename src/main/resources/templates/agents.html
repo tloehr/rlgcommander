@@ -101,6 +101,7 @@
                         <input class="form-check-input" type="checkbox" name="row_selector"
                                th:id="${agent.id}"/>&nbsp;
                         <span th:text="${agent.id}"></span>
+                        <span class="bi bi-controller" th:if="${agent.gameid > 0}" th:text="${agent.gameid}"></span>
                         <span th:if="${agent.getSecondsAgo(agent.timestamp) <= 70}"
                               class="badge badge-pill text-bg-success"
                               th:text="${agent.getSecondsAgo(agent.timestamp)}+'s'"></span>

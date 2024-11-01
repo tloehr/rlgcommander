@@ -8,18 +8,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 @Getter
 public class MyUserDetails implements UserDetails {
     private final String username;
     private final String password;
     private final String api_key;
+//    private final Locale locale;
     private Collection<? extends GrantedAuthority> authorities;
 
     public MyUserDetails(String username, String password, String api_key, Collection<? extends GrantedAuthority> authorities) {
         this.username = username;
         this.password = password;
         this.api_key = api_key;
+//        this.locale = locale;
         this.authorities = authorities;
     }
 

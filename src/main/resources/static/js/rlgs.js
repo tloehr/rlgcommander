@@ -85,10 +85,36 @@ function connect() {
     stompClient.connect({}, function (frame) {
         stompClient.subscribe('/topic/messages', messageOutput => {
             update_game_state(JSON.parse(messageOutput.body));
-            if (location.pathname === '/ui/active/base') location.reload();
-            //if ($(location).attr('pathname') === '/ui/active/base') location.reload();
+            if (window.location.pathname === '/ui/active/base') window.location.reload();
+            //if ($(window.location).attr('pathname') === '/ui/active/base') window.location.reload();
         });
     });
+}
+
+// https://stackoverflow.com/a/78945/1171329
+function selectElement(id, valueToSelect) {
+    let element = document.getElementById(id);
+    element.value = valueToSelect;
+}
+
+// function reload_with_new_params2(params) {
+//     const url = new URL(window.location.href);
+//     jQuery.each(params, (key, value) => {
+//         url.searchParams.set(key, value);
+//     });
+//     window.location.href = url.href; // this reloads the window with the NEW params
+// }
+
+function reload_with_new_params(params) {
+    navigate_with_new_params(window.location.href, params);
+}
+
+function navigate_with_new_params(destination, params) {
+    const url = new URL(destination);
+    jQuery.each(params, (key, value) => url.searchParams.set(key, value));
+    // reloads the window with the NEW params
+    window.location.href = url.href;
+    return false; // to prevent a-tag default behaviour
 }
 
 /**
@@ -178,7 +204,7 @@ function update_rest_status_line() {
     document.getElementById('rest_result').className = sessionStorage.getItem('rest_result_class') || 'bi bi-question-circle-fill bi-md text-secondary';
 }
 
-function on_ready_state_change(xhttp){
+function on_ready_state_change(xhttp) {
     update_rest_status_in_session(xhttp);
     if (xhttp.readyState === 4) {
         sessionStorage.removeItem('last_rest_result');
@@ -254,7 +280,7 @@ function krytens_shuffle(lstAgents, nrCycles, nrLookback) {
     shuffle(lstAgents);
     let seqAgents = [...lstAgents]; // ES6 way to clone an array
 
-    for (x = 0; x < nrCycles-1; x++) {
+    for (x = 0; x < nrCycles - 1; x++) {
         const lookBack = lstAgents.slice(-nrLookback);
         const eligibleItems = lstAgents.slice(0, -nrLookback);
         shuffle(eligibleItems);

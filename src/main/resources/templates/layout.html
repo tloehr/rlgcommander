@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,6 +18,7 @@
             const game_id = sessionStorage.getItem('game_id');
             sessionStorage.removeItem('game_parameters_#' + game_id);
             const base_url = window.location.origin + '/ui/' + uri;
+
             location.href = base_url + '?' + jQuery.param({game_mode}); // means 'game_mode' : game_mode
         }
 
@@ -48,7 +49,8 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link " aria-current="page" href="/ui/home" th:classappend="${home_active}">Home</a>
+                    <a class="nav-link " aria-current="page" href="#" onclick="navigate_with_new_params(window.location.origin+'/ui/home',{'lang': document.getElementById('lang_switcher').value});"
+                       th:classappend="${home_active}">Home</a>
                 </li>
 
                 <li class="nav-item dropdown">
@@ -67,59 +69,93 @@
                         <hr/>
                         <!-- calls the base.html but clears the game_parameters from storage -->
                         <li><a class="dropdown-item"
-                               onclick="click_with_game_mode('params/base', 'farcry');">
+                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
+                               {'id': document.getElementById('game_id').value,
+                                    'game_mode': 'farcry',
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );">
                             <span class="bi bi-file-earmark-play">&nbsp;FarCry Assault</span></a></li>
                         <li><a class="dropdown-item"
-                               onclick="click_with_game_mode('params/base', 'conquest');">
+                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base', {'id': document.getElementById('game_id').value,
+                                    'game_mode': 'conquest',
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );">
                             <span class="bi bi-file-earmark-play">&nbsp;Conquest</span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="click_with_game_mode('params/base', 'center_flags');">
+                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base', {'id': document.getElementById('game_id').value,
+                                    'game_mode': 'center_flags',
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );">
                             <span class="bi bi-file-earmark-play">&nbsp;Center Flags</span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="click_with_game_mode('params/base', 'hardpoint');">
+                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
+                                    {'id': document.getElementById('game_id').value,
+                                    'game_mode': 'hardpoint',
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );">
                             <span class="bi bi-file-earmark-play">&nbsp;Hardpoint</span></a>
                         </li>
-<!--                        <li><a class="dropdown-item"-->
-<!--                               onclick="click_with_game_mode('params/base', 'mag_speed');">-->
-<!--                            <span class="bi bi-file-earmark-play">&nbsp;Magspeed Tournament</span></a>-->
-<!--                        </li>-->
-<!--                        <li><a class="dropdown-item"-->
-<!--                               onclick="click_with_game_mode('params/base', 'meshed');">-->
-<!--                            <span class="bi bi-file-earmark-play">&nbsp;Meshed</span></a>-->
-<!--                        </li>-->
+                        <!--                        <li><a class="dropdown-item"-->
+                        <!--                               onclick="click_with_game_mode('params/base', 'mag_speed');">-->
+                        <!--                            <span class="bi bi-file-earmark-play">&nbsp;Magspeed Tournament</span></a>-->
+                        <!--                        </li>-->
+                        <!--                        <li><a class="dropdown-item"-->
+                        <!--                               onclick="click_with_game_mode('params/base', 'meshed');">-->
+                        <!--                            <span class="bi bi-file-earmark-play">&nbsp;Meshed</span></a>-->
+                        <!--                        </li>-->
                         <li><a class="dropdown-item"
-                               onclick="click_with_game_mode('params/base', 'signal');">
+                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
+                               {'id': document.getElementById('game_id').value,
+                                    'game_mode': 'signal',
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );">
                             <span class="bi bi-file-earmark-play">&nbsp;Signal</span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="click_with_game_mode('params/base', 'stronghold');">
+                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
+                               {'id': document.getElementById('game_id').value,
+                                    'game_mode': 'stronghold',
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );">
                             <span class="bi bi-file-earmark-play">&nbsp;Stronghold</span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="click_with_game_mode('params/base', 'timed_only');">
+                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
+                               {'id': document.getElementById('game_id').value,
+                                    'game_mode': 'timed_only',
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );">
                             <span class="bi bi-file-earmark-play">&nbsp;Time Only</span></a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link" th:classappend="${active_active}"
-                       onclick="click_with_game_id('active/base');"
+                       onclick="navigate_with_new_params(window.location.origin+'/ui/active/base',
+                               {'id': document.getElementById('game_id').value,
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );"
                        href="#">Active Game</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${server_active}"
-                       onclick="click_with_game_id('server');"
+                       onclick="navigate_with_new_params(window.location.origin+'/ui/server',
+                               {'id': document.getElementById('game_id').value,
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );"
                        href="#">Server</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${agents_active}" href="/ui/agents">Agents</a>
+                    <a class="nav-link" th:classappend="${agents_active}"
+                       onclick="navigate_with_new_params(window.location.origin+'/ui/agents',
+                               {'id': document.getElementById('game_id').value,
+                                    'lang': document.getElementById('lang_switcher').value}
+                                    );"
+                       href="#">Agents</a>
                 </li>
                 <li class="nav-item">
-                    <!--                    <form th:action="@{/logout}" method="post">-->
-                    <!--                        <input class="nav-link" type="submit" value="Sign Out"/>-->
-                    <!--                    </form>-->
                     <a class="nav-link" href="/logout">Logout</a>
                 </li>
             </ul>
@@ -130,22 +166,37 @@
                     <!--                    <option value="2">Game #2</option>-->
                     <!--                    <option value="3">Game #3</option>-->
                 </select>
-                <script th:inline="javascript">
-                    const game_id_sel = document.getElementById('game_id');
-                    // first time init
-                    if (!sessionStorage.getItem('runonce_game_id')) {
-                        sessionStorage.setItem('runonce_game_id', '1');
-                        sessionStorage.setItem('game_id', game_id_sel.value);
-                    }
-                    // on change update
-                    game_id_sel.addEventListener('change', () => {
-                        sessionStorage.setItem('game_id', game_id_sel.value);
-                    }, false);
-                    document.getElementById('game_id').value = sessionStorage.getItem('game_id');
-                    // this is a valid api_key for REST requests. Or nothing when nobody is logged in.
-                    sessionStorage.setItem('X-API-KEY', [[${api_key}]]);
-                </script>
             </div>
+            <div class="col-md-auto me-4">
+                <select class="form-select" id="lang_switcher" onchange="reload_with_new_params({'lang':this.value});">
+                    <option value="de">deutsch</option>
+                    <option value="en">english</option>
+                    <option value="ru">русский</option>
+                </select>
+            </div>
+            <script th:inline="javascript">
+                const game_id_sel = document.getElementById('game_id');
+                // first time init
+                if (!sessionStorage.getItem('runonce_game_id')) {
+                    sessionStorage.setItem('runonce_game_id', '1');
+                    sessionStorage.setItem('game_id', game_id_sel.value);
+                }
+                // on change update
+                game_id_sel.addEventListener('change', () => {
+                    sessionStorage.setItem('game_id', game_id_sel.value);
+                }, false);
+                document.getElementById('game_id').value = sessionStorage.getItem('game_id');
+                // this is a valid api_key for REST requests. Or nothing when nobody is logged in.
+                sessionStorage.setItem('X-API-KEY', [[${api_key}]]);
+
+                // set language selector on reload
+                const url = new URL(window.location.href);
+                if (url.searchParams.has("lang"))
+                    selectElement("lang_switcher", url.searchParams.get("lang"));
+                else
+                    selectElement("lang_switcher", "de");
+
+            </script>
         </div>
         <div class="col-auto">
 
@@ -167,9 +218,8 @@
 </main>
 
 <footer class="footer navbar-expand-lg navbar-dark bg-dark fixed-bottom">
-    <div class="text-center text-light  col-auto"><span th:text="'RLG Commander '+${server_version}"></span>&nbsp;&nbsp;Credits:
-        <a
-                href="https://flashheart.de/doku.php/de:credits">flashheart.de</a></div>
+    <div class="text-center text-light  col-auto"><span th:text="'RLG Commander '+${server_version}"></span>&nbsp;
+        <a href="https://flashheart.de">flashheart.de</a></div>
     <div class="text-center col-auto"><span id="rest_result"></span>
     </div>
     <script>

@@ -54,6 +54,9 @@ public class SecurityConfiguration {
                             auth.requestMatchers(new AntPathRequestMatcher("/webjars/**")).permitAll();
                             auth.requestMatchers(new AntPathRequestMatcher("/img/**")).permitAll();
                             auth.requestMatchers(new AntPathRequestMatcher("/styles/**")).permitAll();
+                            // https://stackoverflow.com/questions/32993624/spring-boot-change-locale-on-login-page
+                            // to allow lang http parameter on login
+                            auth.requestMatchers(new AntPathRequestMatcher("/login/**")).permitAll();
                             auth.anyRequest().authenticated();
                         }
                 )
