@@ -4,14 +4,13 @@
 <head><title>Game Parameters</title>
 
     <script>
-        sessionStorage.removeItem('show_agent_shuffle_button');
-        sessionStorage.removeItem('number_of_teams');
 
         function load_game(game_parameters) {
-            const game_id = sessionStorage.getItem('game_id');
-            post_rest('game/load', {'id': game_id}, game_parameters, function (xhttp) {
+            const game_id = document.getElementById('game_id').value;
+            post_rest('game/load', {'game_id': game_id}, game_parameters, function (xhttp) {
                 if (xhttp.status < 400) {
-                    window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
+                    navigate_to(window.location.origin+'/ui/active/base');
+                    //window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': document.getElementById('game_id').value});
                 } else {
                     update_rest_status_line();
                 }
@@ -19,7 +18,7 @@
         }
 
         function read_base_form() {
-            const game_id = sessionStorage.getItem('game_id');
+            const game_id = document.getElementById('game_id').value;
             const game_parameters = JSON.parse(sessionStorage.getItem('game_parameters_#' + game_id));
             // read params from cache and overwrite the values with the user entries.
             game_parameters.comment = document.getElementById('comment').value;
@@ -33,7 +32,7 @@
          */
         function preset_base_form() {
             const mode = sessionStorage.getItem('game_mode');
-            const game_id = sessionStorage.getItem('game_id');
+            const game_id = document.getElementById('game_id').value;
             const game_parameters_string = sessionStorage.getItem('game_parameters_#' + game_id);
             if (!game_parameters_string) {
                 // nothing loaded yet, will read defaults and store it in cache
@@ -55,6 +54,12 @@
 <body>
 
 <section layout:fragment="content">
+
+    <script>
+        sessionStorage.removeItem('game_parameters_#' + document.getElementById('game_id').value);
+        sessionStorage.removeItem('show_agent_shuffle_button');
+        sessionStorage.removeItem('number_of_teams');
+    </script>
 
     <section layout:fragment="gamemode_header">
     </section>

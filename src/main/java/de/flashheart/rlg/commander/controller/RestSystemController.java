@@ -45,8 +45,8 @@ public class RestSystemController {
     }
 
     @GetMapping("/status")
-    public ResponseEntity<?> status(@RequestParam(name = "id") int id) {
-        return new ResponseEntity<>(new JSONObject().put("response", id).toString(4), HttpStatus.OK);
+    public ResponseEntity<?> status(@RequestParam(name = "game_id") int game_id) {
+        return new ResponseEntity<>(new JSONObject().put("response", game_id).toString(4), HttpStatus.OK);
     }
 
     @GetMapping("/max_games")

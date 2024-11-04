@@ -13,24 +13,10 @@
     <script th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
     <script src="/js/rlgs.js"></script>
 
-    <script>
-        function click_with_game_mode(uri, game_mode) {
-            const game_id = sessionStorage.getItem('game_id');
-            sessionStorage.removeItem('game_parameters_#' + game_id);
-            const base_url = window.location.origin + '/ui/' + uri;
-
-            location.href = base_url + '?' + jQuery.param({game_mode}); // means 'game_mode' : game_mode
-        }
-
-        function click_with_game_id(uri) {
-            const game_id = sessionStorage.getItem('game_id');
-            const base_url = window.location.origin + '/ui/' + uri;
-            location.href = base_url + '?' + jQuery.param({'id': game_id});
-        }
-    </script>
 </head>
 
-<body onload="get_rest('game/current_state', {'id':sessionStorage.getItem('game_id')}); connect();">
+<body onload="get_rest('game/current_state', {'game_id': document.getElementById('game_id').value});
+        connect();">
 <nav id="navbar" role="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="#" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -49,7 +35,8 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link " aria-current="page" href="#" onclick="navigate_with_new_params(window.location.origin+'/ui/home',{'lang': document.getElementById('lang_switcher').value});"
+                    <a class="nav-link " aria-current="page" href="#"
+                       onclick="navigate_to(window.location.origin+'/ui/home');"
                        th:classappend="${home_active}">Home</a>
                 </li>
 
@@ -63,38 +50,24 @@
                                href="/ui/upload"><span
                                 class="bi bi-upload">&nbsp;Upload Game</span></a></li>
                         <li><a class="dropdown-item"
-                               onclick="post_rest('game/unload',{'id': sessionStorage.getItem('game_id')}); go_back_to_active_game();">
+                               onclick="post_rest('game/unload',{'game_id': document.getElementById('game_id').value}); navigate_to(window.location.origin+'/ui/active/base');">
                             <span class="bi bi-cloud-slash-fill">&nbsp;Unload Game</span></a>
                         </li>
                         <hr/>
                         <!-- calls the base.html but clears the game_parameters from storage -->
                         <li><a class="dropdown-item"
-                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
-                               {'id': document.getElementById('game_id').value,
-                                    'game_mode': 'farcry',
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );">
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'farcry'});">
                             <span class="bi bi-file-earmark-play">&nbsp;FarCry Assault</span></a></li>
                         <li><a class="dropdown-item"
-                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base', {'id': document.getElementById('game_id').value,
-                                    'game_mode': 'conquest',
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );">
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'conquest'});">
                             <span class="bi bi-file-earmark-play">&nbsp;Conquest</span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base', {'id': document.getElementById('game_id').value,
-                                    'game_mode': 'center_flags',
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );">
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'center_flags'});">
                             <span class="bi bi-file-earmark-play">&nbsp;Center Flags</span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
-                                    {'id': document.getElementById('game_id').value,
-                                    'game_mode': 'hardpoint',
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );">
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'hardpoint'});">
                             <span class="bi bi-file-earmark-play">&nbsp;Hardpoint</span></a>
                         </li>
                         <!--                        <li><a class="dropdown-item"-->
@@ -106,53 +79,32 @@
                         <!--                            <span class="bi bi-file-earmark-play">&nbsp;Meshed</span></a>-->
                         <!--                        </li>-->
                         <li><a class="dropdown-item"
-                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
-                               {'id': document.getElementById('game_id').value,
-                                    'game_mode': 'signal',
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );">
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'signal'});">
                             <span class="bi bi-file-earmark-play">&nbsp;Signal</span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
-                               {'id': document.getElementById('game_id').value,
-                                    'game_mode': 'stronghold',
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );">
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'stronghold'});">
                             <span class="bi bi-file-earmark-play">&nbsp;Stronghold</span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="navigate_with_new_params(window.location.origin+'/ui/params/base',
-                               {'id': document.getElementById('game_id').value,
-                                    'game_mode': 'timed_only',
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );">
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'timed_only'});">
                             <span class="bi bi-file-earmark-play">&nbsp;Time Only</span></a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link" th:classappend="${active_active}"
-                       onclick="navigate_with_new_params(window.location.origin+'/ui/active/base',
-                               {'id': document.getElementById('game_id').value,
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );"
+                       onclick="navigate_to(window.location.origin+'/ui/active/base');"
                        href="#">Active Game</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${server_active}"
-                       onclick="navigate_with_new_params(window.location.origin+'/ui/server',
-                               {'id': document.getElementById('game_id').value,
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );"
+                       onclick="navigate_to(window.location.origin+'/ui/server');"
                        href="#">Server</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${agents_active}"
-                       onclick="navigate_with_new_params(window.location.origin+'/ui/agents',
-                               {'id': document.getElementById('game_id').value,
-                                    'lang': document.getElementById('lang_switcher').value}
-                                    );"
+                       onclick="navigate_to(window.location.origin+'/ui/agents');"
                        href="#">Agents</a>
                 </li>
                 <li class="nav-item">
@@ -161,6 +113,7 @@
             </ul>
             <div class="col-md-auto me-4">
                 <select class="form-select" id="game_id" value="1"
+                        onchange="reload();"
                         title="Reserved for future use. Currently RLGS can handle only one game at a time.">
                     <option value="1">Game #1</option>
                     <!--                    <option value="2">Game #2</option>-->
@@ -168,34 +121,19 @@
                 </select>
             </div>
             <div class="col-md-auto me-4">
-                <select class="form-select" id="lang_switcher" onchange="reload_with_new_params({'lang':this.value});">
+                <select class="form-select" id="locale" onchange="reload();">
                     <option value="de">deutsch</option>
                     <option value="en">english</option>
                     <option value="ru">русский</option>
                 </select>
             </div>
             <script th:inline="javascript">
-                const game_id_sel = document.getElementById('game_id');
-                // first time init
-                if (!sessionStorage.getItem('runonce_game_id')) {
-                    sessionStorage.setItem('runonce_game_id', '1');
-                    sessionStorage.setItem('game_id', game_id_sel.value);
-                }
-                // on change update
-                game_id_sel.addEventListener('change', () => {
-                    sessionStorage.setItem('game_id', game_id_sel.value);
-                }, false);
-                document.getElementById('game_id').value = sessionStorage.getItem('game_id');
+                const url = new URL(window.location.href);
+                // set to 1 if no search param present
+                selectElement('game_id', url.searchParams.get("game_id") ? url.searchParams.get("game_id") : '1');
+                selectElement('locale', url.searchParams.get('locale') ? url.searchParams.get('locale') : 'de');
                 // this is a valid api_key for REST requests. Or nothing when nobody is logged in.
                 sessionStorage.setItem('X-API-KEY', [[${api_key}]]);
-
-                // set language selector on reload
-                const url = new URL(window.location.href);
-                if (url.searchParams.has("lang"))
-                    selectElement("lang_switcher", url.searchParams.get("lang"));
-                else
-                    selectElement("lang_switcher", "de");
-
             </script>
         </div>
         <div class="col-auto">

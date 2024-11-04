@@ -23,7 +23,7 @@
                 </select>
                 <button class="btn btn-secondary" type="submit"
                         onclick="post_rest('game/zeus',
-                        {'id':sessionStorage.getItem('game_id')},
+                        {'game_id':sessionStorage.getItem('game_id')},
                         {
                             'operation': 'to_neutral',
                             'agent':document.getElementById('agents_to_neutral').value

@@ -86,6 +86,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF,
                 get_color_for(agent), MQTT.RECURRING_SCHEME_NORMAL), agent);
         send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_OPEN));
     }
 
     // one flag is pushed and closing all the others before closing itself
@@ -94,7 +95,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         if (active_color.equals(MQTT.BLUE)) blue_points++;
         else red_points++;
 
-        //add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", state));
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _msg_START_CLOSING));
         broadcast_score();
         send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
         send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), get_all_spawn_agents());
@@ -108,6 +109,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     private void closed(String agent) {
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_CLOSED));
         if (active_color.equals(get_color_for(agent))) {
             send("visual", MQTT.toJSON(active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), agent);
         } else {
@@ -275,10 +277,9 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
             if (type.equalsIgnoreCase("in_game_state_change")) {
                 String zeus = (event.has("zeus") ? " (by the hand of ZEUS)" : "");
                 if (event.getString("item").equals("unlock")) {
-                    String text = event.getLong("amount") >= 0 ? " has been granted %d seconds" : " has lost %d seconds";
-                    result = "Team " + event.getString("team") + String.format(text, Math.abs(event.getLong("amount")))
-                            + zeus;
+                    result = "Flags have been unlocked";
                 }
+                result += zeus;
             }
         }
         return result;

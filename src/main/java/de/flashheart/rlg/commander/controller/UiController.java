@@ -11,6 +11,7 @@ import org.javatuples.Pair;
 import org.javatuples.Triplet;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,6 +27,8 @@ import java.util.stream.Collectors;
 @Log4j2
 @RequestMapping("ui")
 public class UiController {
+    @Value("${server.locale.default}")
+    public String default_locale;
     GamesService gamesService;
     AgentsService agentsService;
     ApplicationContext applicationContext;
@@ -66,11 +69,10 @@ public class UiController {
     }
 
     @GetMapping("/home")
-    public String home(Model model, @RequestParam(name = "lang") String lang, @AuthenticationPrincipal MyUserDetails user) {
-        if (lang.isEmpty()) lang = "de";
+    public String home(Model model, @RequestParam(name = "locale") String locale, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("home_active", "active");
-        return "home_" + lang;
+        return "home_" + (locale.isEmpty() ? default_locale : locale);
     }
 
     @GetMapping("/error")
@@ -101,28 +103,28 @@ public class UiController {
     }
 
     @GetMapping("/server")
-    public String server(@RequestParam(name = "id") int id, Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String server(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("api_key", user.getApi_key());
-        model.addAttribute("server_status", gamesService.getGameState(id).toString(4));
+        model.addAttribute("server_status", gamesService.getGameState(game_id).toString(4));
         model.addAttribute("server_active", "active");
         return "server";
     }
 
     @GetMapping("/zeus/base")
-    public String zeus(@RequestParam(name = "id") int id, Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String zeus(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("active_active", "active");
-        gamesService.getGame(id).ifPresent(game -> game.add_model_data(model));
+        gamesService.getGame(game_id).ifPresent(game -> game.add_model_data(model));
         return model.containsAttribute("game_mode") ? "zeus/" + model.getAttribute("game_mode") : "error";
     }
 
     @GetMapping("/active/base")
-    public String active(@RequestParam(name = "id") int id, Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String active(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("active_active", "active");
         String game_mode = "";
 
-        if (gamesService.getGame(id).isEmpty()) {
+        if (gamesService.getGame(game_id).isEmpty()) {
             game_mode = "empty";
             model.addAttribute("classname", Game._state_EMPTY);
             model.addAttribute("has_zeus", false);
@@ -130,7 +132,7 @@ public class UiController {
             model.addAttribute("game_mode", "empty");
         } else {
             //log.debug("add_model_data from webcontroller");
-            Game game = gamesService.getGame(id).get();
+            Game game = gamesService.getGame(game_id).get();
             game.add_model_data(model);
             model.addAttribute("active_command_buttons_enabled", new JSONArray(active_command_buttons_enabled.get(game.get_current_state())));
             game_mode = game.getGameMode();

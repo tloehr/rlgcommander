@@ -49,13 +49,6 @@
             // zeus
             document.getElementById('btn_zeus').disabled = !haszeus || sessionStorage.getItem("state") !== 'RUNNING';
         }
-
-        function goto_zeus() {
-            //const mode = '[[${mode}]]';
-            const base_url = window.location.origin + '/ui/zeus/base';
-            location.href = base_url + '?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
-        }
-
     </script>
 </head>
 
@@ -80,43 +73,42 @@
             </div>
             <div class="row">
                 <button id="btn_prepare"
-                        th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PREPARE}]]});"
+                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PREPARE}]]});"
                         class="btn btn-outline-primary col-sm-auto me-1"><span
                         class="bi bi-rocket-takeoff-fill">&nbsp;Prepare</span></button>
                 <button id="btn_reset"
-                        th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESET}]]});"
+                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESET}]]});"
                         class="btn btn-outline-warning  col-sm-auto me-1"><span class="bi bi-skip-backward-circle-fill">&nbsp;Reset</span>
                 </button>
                 <button id="btn_ready"
-                        th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_READY}]]});"
+                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_READY}]]});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-hand-thumbs-up-fill">&nbsp;Ready</span></button>
                 <button id="btn_run"
-                        th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RUN}]]});"
+                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RUN}]]});"
                         class="btn btn-outline-success  col-sm-auto me-1"><span
                         class="bi bi-play-circle-fill">&nbsp;Run</span>
                 </button>
                 <button id="btn_pause"
-                        th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PAUSE}]]});"
+                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PAUSE}]]});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-pause-circle-fill">&nbsp;Pause</span></button>
                 <button id="btn_resume"
-                        th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESUME}]]});"
+                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESUME}]]});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-fast-forward-circle-fill">&nbsp;Resume</span>
                 </button>
                 <button id="btn_continue"
-                        th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_CONTINUE}]]});"
+                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_CONTINUE}]]});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span class="bi bi-fast-forward-circle">&nbsp;Continue</span>
                 </button>
                 <button id="btn_game_over"
-                        th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_GAME_OVER}]]});"
+                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_GAME_OVER}]]});"
                         class="btn btn-outline-secondary me-auto col-sm-auto"><span class="bi bi-stop-circle-fill">&nbsp;Game Over</span>
                 </button>
-                <button id="btn_zeus" onclick="goto_zeus()" class="btn btn-outline-danger col-sm-auto"><span
+                <button id="btn_zeus" onclick="navigate_to(window.location.origin + '/ui/zeus/base');" class="btn btn-outline-danger col-sm-auto"><span
                         class="bi bi-sliders">&nbsp;Zeus Admin</span>
                 </button>
-                <!--            <a onclick="goto_zeus()" class="btn btn-outline-danger col-sm-auto" id="btn_zeus"  role="button" aria-pressed="true"><span class="bi bi-stop-circle-fill">&nbsp;Zeus</span></a>-->
             </div>
         </div>
         <div class="d-md-none">
@@ -163,7 +155,7 @@
                             th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_GAME_OVER}]]});"
                             class="btn btn-secondary me-auto col-sm-auto"><span class="bi bi-stop-circle-fill">&nbsp;Game Over</span>
                     </button>
-                    <button id="btn_zeus2" onclick="goto_zeus()" class="btn btn-danger col-sm-auto"><span
+                    <button id="btn_zeus2" onclick="navigate_to(window.location.origin + '/ui/zeus/base');" class="btn btn-danger col-sm-auto"><span
                             class="bi bi-sliders">&nbsp;Zeus Admin</span>
                     </button>
                 </div>

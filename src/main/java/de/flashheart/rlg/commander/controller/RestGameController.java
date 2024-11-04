@@ -50,11 +50,11 @@ public class RestGameController {
      */
     @PostMapping("/load")
     // https://stackoverflow.com/a/57024167
-    public ResponseEntity<?> load_game(@RequestParam(name = "id") int id, @RequestBody String description) {
+    public ResponseEntity<?> load_game(@RequestParam(name = "game_id") int game_id, @RequestBody String description) {
         ResponseEntity r;
         try {
             log.debug(description);
-            Game game = gamesService.load_game(id, description);
+            Game game = gamesService.load_game(game_id, description);
             r = new ResponseEntity<>(game.getState().toString(4), HttpStatus.ACCEPTED);
         } catch (Exception e) {
             // remember the constructor of the game class must be public
@@ -66,25 +66,25 @@ public class RestGameController {
     }
 
     @PostMapping("/zeus")
-    public ResponseEntity<?> zeus(@RequestParam(name = "id") int id,
+    public ResponseEntity<?> zeus(@RequestParam(name = "game_id") int game_id,
                                   @RequestBody String params) {
-        gamesService.zeus(id, params);
+        gamesService.zeus(game_id, params);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/process")
-    public ResponseEntity<?> process(@RequestParam(name = "id") int id,
+    public ResponseEntity<?> process(@RequestParam(name = "game_id") int game_id,
                                      @RequestParam(name = "message") String message) {
-        gamesService.process_message(id, message);
+        gamesService.process_message(game_id, message);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
 
     @PostMapping("/unload")
-    public ResponseEntity<?> unload(@RequestParam(name = "id") int id) {
+    public ResponseEntity<?> unload(@RequestParam(name = "game_id") int game_id) {
         ResponseEntity r;
         try {
-            gamesService.unload_game(id);
+            gamesService.unload_game(game_id);
             r = new ResponseEntity(HttpStatus.ACCEPTED);
         } catch (Exception e) {
             // remember the constructor of the game class must be public
@@ -96,19 +96,19 @@ public class RestGameController {
     }
 
     @GetMapping("/status")
-    public ResponseEntity<?> status_game(@RequestParam(name = "id") int id) {
-        return new ResponseEntity<>(gamesService.getGameState(id).toString(4), HttpStatus.OK);
+    public ResponseEntity<?> status_game(@RequestParam(name = "game_id") int game_id) {
+        return new ResponseEntity<>(gamesService.getGameState(game_id).toString(4), HttpStatus.OK);
     }
 
     @GetMapping("/current_state")
-    public ResponseEntity<?> current_state_game(@RequestParam(name = "id") int id) {
-        return new ResponseEntity<>(gamesService.getGameState(id).optString("game_state", "EMPTY"), HttpStatus.OK);
+    public ResponseEntity<?> current_state_game(@RequestParam(name = "game_id") int game_id) {
+        return new ResponseEntity<>(gamesService.getGameState(game_id).optString("game_state", "EMPTY"), HttpStatus.OK);
     }
 
     @GetMapping("/parameters")
-    public ResponseEntity<?> parameters(@RequestParam(name = "id") int id) {
+    public ResponseEntity<?> parameters(@RequestParam(name = "game_id") int game_id) {
         try {
-            return new ResponseEntity<>(gamesService.getGame(id).orElseThrow().getGame_parameters().toString(4), HttpStatus.OK);
+            return new ResponseEntity<>(gamesService.getGame(game_id).orElseThrow().getGame_parameters().toString(4), HttpStatus.OK);
         } catch (NoSuchElementException e) {
             return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }

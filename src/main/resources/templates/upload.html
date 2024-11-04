@@ -29,7 +29,7 @@
                         const game_parameters = JSON.parse(evt.target.result);
                         sessionStorage.setItem('game_parameters_#' + game_id, evt.target.result)
                         location.href = window.location.origin + '/ui/params/base?' + jQuery.param({
-                            'id': game_id,
+                            'game_id': game_id,
                             'game_mode': game_parameters.game_mode
                         });
                     }

@@ -19,7 +19,7 @@
             <div class="input-group">
                 <button class="btn btn-secondary" type="submit"
                         onclick="post_rest('game/zeus',
-                        {'id':sessionStorage.getItem('game_id')},
+                        {'game_id':sessionStorage.getItem('game_id')},
                         {
                             'operation': 'unlock'
                         }); go_back_to_active_game();">

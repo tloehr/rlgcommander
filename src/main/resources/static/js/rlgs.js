@@ -105,12 +105,25 @@ function selectElement(id, valueToSelect) {
 //     window.location.href = url.href; // this reloads the window with the NEW params
 // }
 
-function reload_with_new_params(params) {
-    navigate_with_new_params(window.location.href, params);
+function reload(params) {
+    navigate_to(window.location.href, params);
 }
 
-function navigate_with_new_params(destination, params) {
+/**
+ * this function navigates the browser with certain options
+ * @param destination the target url to navigate to
+ * @param params the params to be used with the url. locale and game_id are always added to this object
+ * @returns {boolean}
+ */
+function navigate_to(destination, params) {
+    if (!params) params = {};
     const url = new URL(destination);
+    // game_id and locale are always present;
+    url.searchParams.set('locale', document.getElementById('locale').value);
+    url.searchParams.set('game_id', document.getElementById('game_id') ? document.getElementById('game_id').value : '1');
+    // I believe only locale is important as it is read by the spring i18n system
+    // the game_id is read by every method directly from the page element
+
     jQuery.each(params, (key, value) => url.searchParams.set(key, value));
     // reloads the window with the NEW params
     window.location.href = url.href;
@@ -250,11 +263,6 @@ function post_rest(rest_uri, param_json, body, callback) {
     xhttp.setRequestHeader('Content-type', 'application/json');
     xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
     xhttp.send(body ? JSON.stringify(body) : '{}');
-}
-
-function go_back_to_active_game() {
-    window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': sessionStorage.getItem('game_id')});
-    return false;
 }
 
 /**
