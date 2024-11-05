@@ -19,10 +19,10 @@
             <div class="input-group">
                 <button class="btn btn-secondary" type="submit"
                         onclick="post_rest('game/zeus',
-                        {'game_id':sessionStorage.getItem('game_id')},
+                        {'game_id':document.getElementById('game_id').value},
                         {
                             'operation': 'unlock'
-                        }); go_back_to_active_game();">
+                        }); navigate_to(window.location.origin+'/ui/active/base');">
                     Back to neutral
                 </button>
             </div>

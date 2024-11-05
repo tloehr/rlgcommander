@@ -10,7 +10,6 @@
             post_rest('game/load', {'game_id': game_id}, game_parameters, function (xhttp) {
                 if (xhttp.status < 400) {
                     navigate_to(window.location.origin+'/ui/active/base');
-                    //window.location.href = window.location.origin + '/ui/active/base?' + jQuery.param({'id': document.getElementById('game_id').value});
                 } else {
                     update_rest_status_line();
                 }
@@ -31,7 +30,8 @@
          * @param mode - name of the game_mode
          */
         function preset_base_form() {
-            const mode = sessionStorage.getItem('game_mode');
+            const url = new URL(window.location.href);
+            const mode = url.searchParams.get('game_mode');
             const game_id = document.getElementById('game_id').value;
             const game_parameters_string = sessionStorage.getItem('game_parameters_#' + game_id);
             if (!game_parameters_string) {
@@ -113,8 +113,15 @@
             </button>
         </div>
         <div class="col-md-auto">
+            <script>
+                function download_params(){
+                    const url = new URL(window.location.href);
+                    const mode = url.searchParams.get('game_mode');
+                    download_json(read_base_form(), mode);
+                }
+            </script>
             <button class="btn btn-outline-info" type="button"
-                    onclick="download_json(read_base_form())"><span
+                    onclick="download_params()"><span
                     class="bi bi-download">&nbsp;Download Game</span>
             </button>
         </div>

@@ -8,14 +8,16 @@
   "silent_game": false,
   "agents": {
     "red": [
-      "ag01"
+      "ag01","ag02"
     ],
     "blu": [
-      "ag02"
+      "ag03","ag04"
     ],
     "capture_points": [
       "ag01",
-      "ag02"
+      "ag02",
+      "ag03",
+      "ag04"
     ],
     "sirens": [
       "ag50"

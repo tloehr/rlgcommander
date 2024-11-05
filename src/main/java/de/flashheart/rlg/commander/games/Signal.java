@@ -253,7 +253,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         String operation = params.getString("operation").toLowerCase();
 
         if (operation.equalsIgnoreCase("unlock")) {
-            if (active_color.isEmpty()) throw new IllegalStateException("state is not locked");
+            if (active_color.isEmpty()) return;
             // correct score
             if (active_color.equals(MQTT.BLUE)) blue_points--;
             else red_points--;

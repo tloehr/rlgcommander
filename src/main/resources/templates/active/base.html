@@ -60,12 +60,6 @@
             <div class="row mb-3">
                 <div id="check-lock-widget" class="col-auto align-self-center form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="check-lock"
-                           style="width: 26px;
-  height: 26px;
-  border: 2px solid;
-  border-radius: 5px;
-  /*checkbox border color*/
-  border-color: #737373;"
                            onclick="sessionStorage.setItem('ctrls_locked', document.getElementById('check-lock').checked);
                            init_buttons();">
                     <label class="form-check-label" for="check-lock">Lock Controls</label>
@@ -73,37 +67,37 @@
             </div>
             <div class="row">
                 <button id="btn_prepare"
-                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PREPARE}]]});"
+                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'prepare'});"
                         class="btn btn-outline-primary col-sm-auto me-1"><span
                         class="bi bi-rocket-takeoff-fill">&nbsp;Prepare</span></button>
                 <button id="btn_reset"
-                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESET}]]});"
+                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'reset'});"
                         class="btn btn-outline-warning  col-sm-auto me-1"><span class="bi bi-skip-backward-circle-fill">&nbsp;Reset</span>
                 </button>
                 <button id="btn_ready"
-                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_READY}]]});"
+                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'ready'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-hand-thumbs-up-fill">&nbsp;Ready</span></button>
                 <button id="btn_run"
-                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RUN}]]});"
+                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'run'});"
                         class="btn btn-outline-success  col-sm-auto me-1"><span
                         class="bi bi-play-circle-fill">&nbsp;Run</span>
                 </button>
                 <button id="btn_pause"
-                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PAUSE}]]});"
+                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'pause'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-pause-circle-fill">&nbsp;Pause</span></button>
                 <button id="btn_resume"
-                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESUME}]]});"
+                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'resume'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-fast-forward-circle-fill">&nbsp;Resume</span>
                 </button>
                 <button id="btn_continue"
-                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_CONTINUE}]]});"
+                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'continue'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span class="bi bi-fast-forward-circle">&nbsp;Continue</span>
                 </button>
                 <button id="btn_game_over"
-                        th:onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_GAME_OVER}]]});"
+                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'game_over'});"
                         class="btn btn-outline-secondary me-auto col-sm-auto"><span class="bi bi-stop-circle-fill">&nbsp;Game Over</span>
                 </button>
                 <button id="btn_zeus" onclick="navigate_to(window.location.origin + '/ui/zeus/base');" class="btn btn-outline-danger col-sm-auto"><span
@@ -121,38 +115,38 @@
             <div class="collapse" id="collapseExample">
                 <div class="col-auto">
                     <button id="btn_prepare2"
-                            th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PREPARE}]]});"
+                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'prepare'});"
                             class="btn btn-primary col-sm-auto me-1"><span
                             class="bi bi-rocket-takeoff-fill">&nbsp;Prepare</span></button>
                     <button id="btn_reset2"
-                            th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESET}]]});"
+                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'reset'});"
                             class="btn btn-warning  col-sm-auto me-1"><span
                             class="bi bi-skip-backward-circle-fill">&nbsp;Reset</span>
                     </button>
                     <button id="btn_ready2"
-                            th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_READY}]]});"
+                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'ready'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span
                             class="bi bi-hand-thumbs-up-fill">&nbsp;Ready</span></button>
                     <button id="btn_run2"
-                            th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RUN}]]});"
+                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'run'});"
                             class="btn btn-success  col-sm-auto me-1"><span
                             class="bi bi-play-circle-fill">&nbsp;Run</span>
                     </button>
                     <button id="btn_pause2"
-                            th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_PAUSE}]]});"
+                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'pause'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span
                             class="bi bi-pause-circle-fill">&nbsp;Pause</span></button>
                     <button id="btn_resume2"
-                            th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_RESUME}]]});"
+                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'resume'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span
                             class="bi bi-fast-forward-circle-fill">&nbsp;Resume</span>
                     </button>
                     <button id="btn_continue2"
-                            th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_CONTINUE}]]});"
+                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'continue'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span class="bi bi-fast-forward-circle">&nbsp;Continue</span>
                     </button>
                     <button id="btn_game_over2"
-                            th:onclick="post_rest('game/process', {'id':sessionStorage.getItem('game_id'),'message':[[${T(de.flashheart.rlg.commander.games.Game)._msg_GAME_OVER}]]});"
+                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'game_over'});"
                             class="btn btn-secondary me-auto col-sm-auto"><span class="bi bi-stop-circle-fill">&nbsp;Game Over</span>
                     </button>
                     <button id="btn_zeus2" onclick="navigate_to(window.location.origin + '/ui/zeus/base');" class="btn btn-danger col-sm-auto"><span

@@ -246,11 +246,11 @@ function delete_rest(rest_uri, param_json) {
 function post_rest(rest_uri, param_json, body, callback) {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = () => {
-        //update_rest_status_in_session(xhttp);
         if (callback) callback(xhttp);
     };
 
     xhttp.onreadystatechange = () => {
+        console.log(xhttp);
         on_ready_state_change(xhttp);
     };
     const base_uri = window.location.origin + '/api/' + rest_uri;
@@ -328,8 +328,8 @@ function get_simplified_elapsed_time(seconds) {
 }
 
 // https://stackoverflow.com/a/30800715
-function download_json(game_parameters) {
-    const mode = sessionStorage.getItem('game_mode');
+function download_json(game_parameters, mode) {
+    //const mode = sessionStorage.getItem('game_mode');
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(game_parameters, null, 4));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);

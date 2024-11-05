@@ -9,7 +9,7 @@
 <!--    <div th:if="${#authentication == null}"><h3>not authorized</h3></div>-->
     <script>
         var myHeaderElement = document.createElement('h2');
-        myHeaderElement.innerHTML = 'Game slot #' + sessionStorage.getItem('game_id') + ' is empty';
+        myHeaderElement.innerHTML = 'Game slot #' + document.getElementById('game_id').value + ' is empty';
         document.getElementById("my_header").appendChild(myHeaderElement)
     </script>
 </section>

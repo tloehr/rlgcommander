@@ -8,15 +8,13 @@
 <section layout:fragment="content">
     <div class="row mt-3">
         <div class="col-md-auto">
-
             <input class="form-control" id="jsonfile" type="file" accept="application/json">
-
         </div>
     </div>
     <script>
         // react on the file upload event
         const jsonfileInput = document.getElementById("jsonfile");
-        const game_id = sessionStorage.getItem('game_id');
+        const game_id = document.getElementById('game_id').value;
         sessionStorage.removeItem('game_parameters_#' + game_id);
         jsonfileInput.addEventListener(
             "change",
@@ -28,10 +26,11 @@
                     reader.onload = function (evt) {
                         const game_parameters = JSON.parse(evt.target.result);
                         sessionStorage.setItem('game_parameters_#' + game_id, evt.target.result)
-                        location.href = window.location.origin + '/ui/params/base?' + jQuery.param({
-                            'game_id': game_id,
-                            'game_mode': game_parameters.game_mode
-                        });
+                        navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})
+                        // location.href = window.location.origin + '/ui/params/base?' + jQuery.param({
+                        //     'game_id': game_id,
+                        //     'game_mode': game_parameters.game_mode
+                        // });
                     }
                     reader.onerror = function (evt) {
                         console.error(evt);

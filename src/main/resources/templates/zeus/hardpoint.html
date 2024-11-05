@@ -23,7 +23,7 @@
                 </select>
                 <button class="btn btn-secondary" type="submit"
                         onclick="post_rest('game/zeus',
-                        {'game_id':sessionStorage.getItem('game_id')},
+                        {'game_id':document.getElementById('game_id').value},
                         {
                             'operation': 'to_neutral',
                             'agent':document.getElementById('agents_to_neutral').value
@@ -38,10 +38,10 @@
                 <div class="input-group">
                     <button class="btn btn-success" type="submit"
                             onclick="post_rest('game/zeus',
-                        {'game_id':sessionStorage.getItem('game_id')},
+                        {'game_id':document.getElementById('game_id').value},
                         {
                             'operation': 'next_flag'
-                        }); go_back_to_active_game();">
+                        }); navigate_to(window.location.origin+'/ui/active/base');">
                         Select next flag
                     </button>
                 </div>

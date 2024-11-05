@@ -18,7 +18,7 @@
         }
 
         function reset_agents() {
-            const game_parameters_string = sessionStorage.getItem('game_parameters_#' + sessionStorage.getItem('game_id'));
+            const game_parameters_string = sessionStorage.getItem('game_parameters_#' + document.getElementById('game_id').value);
             const game_parameters = JSON.parse(game_parameters_string);
             document.getElementById('capture_points').value = game_parameters.agents.capture_points.join()
         }
