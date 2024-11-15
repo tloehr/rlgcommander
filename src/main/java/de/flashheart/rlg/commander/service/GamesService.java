@@ -3,19 +3,22 @@ package de.flashheart.rlg.commander.service;
 import com.github.lalyos.jfiglet.FigletFont;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import de.flashheart.rlg.commander.Exception.AgentInUseException;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
+import de.flashheart.rlg.commander.persistence.SavedGamesService;
+import de.flashheart.rlg.commander.persistence.GamesHistoryService;
+import de.flashheart.rlg.commander.persistence.Users;
 import de.flashheart.rlg.commander.websockets.OutputMessage;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
@@ -30,19 +33,20 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @Log4j2
 public class GamesService {
-    MQTTOutbound mqttOutbound;
-    Scheduler scheduler;
-    AgentsService agentsService;
-    BuildProperties buildProperties;
-    SimpMessagingTemplate simpMessagingTemplate;
-    MyYamlConfiguration myYamlConfiguration;
+    private final MQTTOutbound mqttOutbound;
+    private final Scheduler scheduler;
+    private final AgentsService agentsService;
+    private final BuildProperties buildProperties;
+    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final MyYamlConfiguration myYamlConfiguration;
+    private final GamesHistoryService gamesHistoryService;
+    private final SavedGamesService savedGamesService;
 
     private final Optional<Game>[] loaded_games;
     public static final int MAX_NUMBER_OF_GAMES = 1;
@@ -53,42 +57,55 @@ public class GamesService {
         log.info("RLG-Commander v{} b{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
-    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate, MyYamlConfiguration myYamlConfiguration) {
+    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate, MyYamlConfiguration myYamlConfiguration, GamesHistoryService gamesHistoryService, SavedGamesService savedGamesService) {
         this.mqttOutbound = mqttOutbound;
         this.scheduler = scheduler;
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
         this.simpMessagingTemplate = simpMessagingTemplate;
+        this.gamesHistoryService = gamesHistoryService;
+        this.savedGamesService = savedGamesService;
         this.loaded_games = new Optional[]{Optional.empty()};
         this.gameStateListeners = HashMultimap.create();
         this.myYamlConfiguration = myYamlConfiguration;
     }
 
-    public Game load_game(final int id, String json) throws ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
-        if (id < 1 || id > MAX_NUMBER_OF_GAMES)
+    public void save_game(String title, Users owner, JSONObject game){
+        savedGamesService.save(savedGamesService.createNew(title, owner, game));
+    }
+
+    public Game load_game(final int game_id, String json, Users owner) throws AgentInUseException, ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
+        if (game_id < 1 || game_id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
-        if (loaded_games[id - 1].isPresent())
-            throw new IllegalAccessException("id " + id + " is in use. Unload first.");
-        log.debug("\n" + FigletFont.convertOneLine("LOADING GAME #" + id));
+        if (loaded_games[game_id - 1].isPresent())
+            throw new IllegalAccessException("id " + game_id + " is in use. Unload first.");
+        log.debug("\n" + FigletFont.convertOneLine("LOADING GAME #" + game_id));
         JSONObject game_description = new JSONObject(json);
 
         // add parameters from application.yml
         game_description.put("SCORE_CALCULATION_EVERY_N_SECONDS", myYamlConfiguration.getScore_broadcast().get("every_seconds"));
         game_description.put("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", myYamlConfiguration.getScore_broadcast().get("cycle_counter"));
+        game_description.put("owner", owner.getUsername());
 
-        loaded_games[id - 1].ifPresent(game -> game.cleanup());
-        // todo: check for agent conflicts when loading. reject if necessary
-        Game game = (Game) Class
+        loaded_games[game_id - 1].ifPresent(game -> game.cleanup());
+        final Game game = (Game) Class
                 .forName(game_description.getString("class"))
                 .getDeclaredConstructor(JSONObject.class, Scheduler.class, MQTTOutbound.class)
                 .newInstance(game_description, scheduler, mqttOutbound);
+        agentsService.assign_game_id_to_agents(game_id, game.getAgents().keySet());
+
         game.addStateReachedListener(event -> {
-            log.trace("gameid #{} new state: {}", id, event.getState());
-            fireStateReached(id, event); // pass it on to the RestController
+            log.trace("gameid #{} new state: {}", game_id, event.getState());
+            fireStateReached(game_id, event); // pass it on to the RestController
+        });
+        game.addStateTransistionListener(event -> {
+            if (event.getMessage().equals(Game._msg_GAME_OVER)) {
+                gamesHistoryService.save(gamesHistoryService.createNew(owner, game.getState()));
+            }
         });
 
-        loaded_games[id - 1] = Optional.of(game);
-        agentsService.assign_gameid_to_agents(id, game.getAgents().keySet());
+        loaded_games[game_id - 1] = Optional.of(game);
+
         game.process_internal_message(Game._msg_RESET);
         return game;
     }
@@ -101,12 +118,12 @@ public class GamesService {
         // delete all replacements used in this for this game
         //game_to_unload.getAgents().keySet().forEach(agent_to_remove -> agent_replacement_map.remove(agent_to_remove));
         // free all used agents from their game assignments
-        agentsService.remove_gameid_from_agents(game_to_unload.getAgents().keySet());
+        agentsService.free_agents(game_to_unload.getAgents().keySet());
         game_to_unload.cleanup();
         loaded_games[id - 1] = Optional.empty();
         fireStateReached(id, StateReachedEvent.EMPTY); // pass it on to the RestController
         gameStateListeners.removeAll(id);
-        // todo: this welcomes all agents even if they never reported in. not really a problem - kind of an oddity
+        // this welcomes all agents even if they never reported in. not really a problem - kind of an oddity
         agentsService.welcome_unused_agents();
     }
 
@@ -154,7 +171,7 @@ public class GamesService {
     private void fireStateReached(int id, StateReachedEvent event) {
         // todo: IDs mit berücksichtigen.
         OutputMessage outputMessage = new OutputMessage(event.getState(), new SimpleDateFormat("HH:mm").format(new Date()));
-        simpMessagingTemplate.convertAndSend("/topic/messages", outputMessage);
+        simpMessagingTemplate.convertAndSend("/topic/messages", outputMessage); // STOMP
         gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
     }
 

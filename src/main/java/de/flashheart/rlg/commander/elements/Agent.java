@@ -66,6 +66,13 @@ public class Agent implements Comparable<Agent> {
         timestamp = LocalDateTime.now();
     }
 
+    public boolean isFree() {
+        return gameid == -1;
+    }
+
+    public void setFree() {
+        gameid = -1;
+    }
 
     public String getBi_wifi_icon() {
         if (signal_quality >= 85)
@@ -97,7 +104,7 @@ public class Agent implements Comparable<Agent> {
 
     @Getter
     @Setter
-    private class EVENT {
+    private static class EVENT {
         private String details;
         private LocalDateTime event_time;
 

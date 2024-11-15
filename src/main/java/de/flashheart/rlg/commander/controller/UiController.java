@@ -3,6 +3,7 @@ package de.flashheart.rlg.commander.controller;
 import de.flashheart.rlg.commander.configs.MyUserDetails;
 import de.flashheart.rlg.commander.games.*;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
+import de.flashheart.rlg.commander.persistence.SavedGamesService;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
@@ -29,11 +30,12 @@ import java.util.stream.Collectors;
 public class UiController {
     @Value("${server.locale.default}")
     public String default_locale;
-    GamesService gamesService;
-    AgentsService agentsService;
-    ApplicationContext applicationContext;
-    BuildProperties buildProperties;
-    MyYamlConfiguration myYamlConfiguration;
+    private final GamesService gamesService;
+    private final AgentsService agentsService;
+    private final ApplicationContext applicationContext;
+    private final BuildProperties buildProperties;
+    private final MyYamlConfiguration myYamlConfiguration;
+    private final SavedGamesService savedGamesService;
 
     private static final Map<String, int[]> active_command_buttons_enabled =
             Map.of(
@@ -48,12 +50,13 @@ public class UiController {
             );
 
 
-    public UiController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration) {
+    public UiController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration, SavedGamesService savedGamesService) {
         this.gamesService = gamesService;
         this.agentsService = agentsService;
         this.applicationContext = applicationContext;
         this.buildProperties = buildProperties;
         this.myYamlConfiguration = myYamlConfiguration;
+        this.savedGamesService = savedGamesService;
     }
 
     @ModelAttribute("server_version")
@@ -65,6 +68,7 @@ public class UiController {
     public String upload(Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("params_active", "active");
+        model.addAttribute("saved_games", savedGamesService.list_saved_games());
         return "upload";
     }
 
@@ -145,6 +149,8 @@ public class UiController {
     public String params(@RequestParam(name = "game_mode") String game_mode, Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("params_active", "active");
+
+        //model.addAttribute("game_template", "nothing_here_yet");
         model.addAttribute("intros",
                 myYamlConfiguration.getIntros().entrySet().stream()
                         .map(stringStringEntry -> new Pair<>(stringStringEntry.getKey(), stringStringEntry.getValue()))

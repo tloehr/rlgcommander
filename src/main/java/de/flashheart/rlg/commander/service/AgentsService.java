@@ -1,18 +1,17 @@
 package de.flashheart.rlg.commander.service;
 
 import com.google.common.collect.HashBiMap;
+import de.flashheart.rlg.commander.Exception.AgentInUseException;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Agent;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.map.MultiKeyMap;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -27,7 +26,6 @@ public class AgentsService {
     BuildProperties buildProperties;
     MyYamlConfiguration myYamlConfiguration;
 
-
     @SneakyThrows
     public AgentsService(MQTTOutbound mqttOutbound, BuildProperties buildProperties, ConcurrentHashMap<String, Agent> live_agents, MyYamlConfiguration myYamlConfiguration, HashBiMap<String, String> agent_replacement_map) {
         this.mqttOutbound = mqttOutbound;
@@ -37,7 +35,14 @@ public class AgentsService {
         this.agent_replacement_map = agent_replacement_map;
     }
 
-    public void assign_gameid_to_agents(int game_id, Set<String> agent_ids) {
+    public void assign_game_id_to_agents(int game_id, Set<String> agent_ids) throws AgentInUseException {
+        // first check that the agents are still free to use
+        agent_ids.forEach(agent_id -> {
+            if (live_agents.containsKey(agent_id) && !live_agents.get(agent_id).isFree()) {
+                throw new AgentInUseException(String.format("Agent %s is already in use", agent_id));
+            }
+        });
+        // if the agents are all free to use, we can carry on
         agent_ids.forEach(agent_id -> {
             Agent my_agent = live_agents.getOrDefault(agent_id, new Agent(agent_id));
             my_agent.setGameid(game_id);
@@ -45,12 +50,16 @@ public class AgentsService {
         });
     }
 
-    public void remove_gameid_from_agents(Set<String> agentids) {
-        assign_gameid_to_agents(-1, agentids);
+    public void free_agents(Set<String> agent_ids) {
+        agent_ids.forEach(agent_id -> {
+            if (live_agents.containsKey(agent_id)) {
+                live_agents.get(agent_id).setFree();
+            }
+        });
     }
 
 
-    public Set<Agent> get_agents_for_gameid(int gameid) {
+    public Set<Agent> get_agents_for(int gameid) {
         return live_agents.values().stream().filter(agent -> agent.getGameid() == gameid).collect(Collectors.toSet());
     }
 
@@ -152,7 +161,7 @@ public class AgentsService {
      * but not those which are in use as a replacement
      */
     public void powersave_unused_agents() {
-        get_agents_for_gameid(-1).stream()
+        get_agents_for(-1).stream()
                 .filter(agent -> !agent_replacement_map.containsValue(agent))
                 .forEach(agent ->
                         powersave(agent.getId())
@@ -180,7 +189,7 @@ public class AgentsService {
      */
     public void replace_agent(String old_agent, String new_agent) {
         if (new_agent.isEmpty()) {
-            if (agent_replacement_map.containsKey(old_agent)){
+            if (agent_replacement_map.containsKey(old_agent)) {
                 powersave(agent_replacement_map.get(old_agent));
             }
             agent_replacement_map.remove(old_agent);
@@ -201,7 +210,7 @@ public class AgentsService {
      * But not to those which are used as a replacement.
      */
     public void welcome_unused_agents() {
-        get_agents_for_gameid(-1).stream()
+        get_agents_for(-1).stream()
                 .filter(agent -> !agent_replacement_map.containsValue(agent))
                 .forEach(this::welcome);
     }

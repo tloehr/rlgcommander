@@ -1,6 +1,9 @@
 package de.flashheart.rlg.commander.controller;
 
 import de.flashheart.rlg.commander.games.Game;
+import de.flashheart.rlg.commander.persistence.SavedGamesService;
+import de.flashheart.rlg.commander.persistence.Users;
+import de.flashheart.rlg.commander.persistence.UsersRepository;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
@@ -10,23 +13,26 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.support.ErrorMessage;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/game")
 @Log4j2
 public class RestGameController {
-    GamesService gamesService;
-    AgentsService agentsService;
-    ApplicationContext applicationContext;
+    private final GamesService gamesService;
+    private final UsersRepository usersRepository;
+    private final SavedGamesService savedGamesService;
 
-    public RestGameController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext) {
+    public RestGameController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext, UsersRepository usersRepository, SavedGamesService savedGamesService) {
         this.gamesService = gamesService;
-        this.agentsService = agentsService;
-        this.applicationContext = applicationContext;
+        this.usersRepository = usersRepository;
+        this.savedGamesService = savedGamesService;
     }
 
     @ExceptionHandler({JSONException.class,
@@ -50,19 +56,36 @@ public class RestGameController {
      */
     @PostMapping("/load")
     // https://stackoverflow.com/a/57024167
-    public ResponseEntity<?> load_game(@RequestParam(name = "game_id") int game_id, @RequestBody String description) {
+    public ResponseEntity<?> load_game(@RequestParam(name = "game_id") int game_id,
+                                       @RequestBody String description,
+                                       Authentication authentication) {
         ResponseEntity r;
         try {
             log.debug(description);
-            Game game = gamesService.load_game(game_id, description);
+            Optional<Users> optUsers = Optional.ofNullable(usersRepository.findByApikey(authentication.getPrincipal().toString()));
+            if (optUsers.isEmpty()) {
+                throw new BadCredentialsException("Invalid API Key");
+            }
+            Game game = gamesService.load_game(game_id, description, optUsers.get());
             r = new ResponseEntity<>(game.getState().toString(4), HttpStatus.ACCEPTED);
         } catch (Exception e) {
             // remember the constructor of the game class must be public
             log.warn(e);
-            e.printStackTrace();
             r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
         }
         return r;
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<?> save(@RequestParam(name = "title") String title,
+                                  @RequestBody String params,
+                                  Authentication authentication) {
+        Optional<Users> optUsers = Optional.ofNullable(usersRepository.findByApikey(authentication.getPrincipal().toString()));
+        if (optUsers.isEmpty()) {
+            throw new BadCredentialsException("Invalid API Key");
+        }
+        gamesService.save_game(title, optUsers.get(), new JSONObject(params));
+        return new ResponseEntity(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/zeus")
@@ -89,10 +112,17 @@ public class RestGameController {
         } catch (Exception e) {
             // remember the constructor of the game class must be public
             log.warn(e);
-            e.printStackTrace();
             r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
         }
         return r;
+    }
+
+    @GetMapping("/list_saved_games")
+    public ResponseEntity<?> list_saved_games(
+            @RequestParam("text") Optional<String> text,
+            @RequestParam("mode") Optional<String> mode,
+            @RequestParam("owner") Optional<String> owner) {
+        return new ResponseEntity<>(savedGamesService.list_saved_games(text, mode, owner), HttpStatus.OK);
     }
 
     @GetMapping("/status")

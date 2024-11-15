@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.configs;
 
+import de.flashheart.rlg.commander.persistence.UsersRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -13,15 +14,13 @@ import org.springframework.web.filter.GenericFilterBean;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.HashSet;
-import java.util.List;
+
 
 public class ApiKeyAuthenticationFilter extends GenericFilterBean {
+    private final UsersRepository usersRepository;
 
-    private final List<YamlUser> api_keys;
-
-    public ApiKeyAuthenticationFilter(List<YamlUser> api_keys) {
-        this.api_keys = api_keys;
+    public ApiKeyAuthenticationFilter(UsersRepository usersRepository) {
+        this.usersRepository = usersRepository;
     }
 
 
@@ -32,9 +31,7 @@ public class ApiKeyAuthenticationFilter extends GenericFilterBean {
             HttpServletRequest httpServletRequest = (HttpServletRequest) request;
             // GET methods can be used without authentication
             //if (httpServletRequest.getMethod().equalsIgnoreCase("get")) return;
-            Authentication authentication = ApiKeyAuthenticationService.getAuthentication(httpServletRequest,
-                    api_keys.stream().map(YamlUser::getApi_key).toList()
-            );
+            Authentication authentication = ApiKeyAuthenticationService.getAuthentication(httpServletRequest, usersRepository);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception exp) {
             HttpServletResponse httpResponse = (HttpServletResponse) response;

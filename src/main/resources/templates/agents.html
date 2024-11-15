@@ -3,15 +3,6 @@
       layout:decorate="~{layout.html}">
 <head><title>Agent List</title>
     <script>
-        function test_agent(agents) {
-            if (!agents) return;
-
-            post_rest('agent/test', {
-                'agents': agents,
-                'command': elem_option_dataset.command,
-                'pattern': elem_option_dataset.pattern
-            });
-        }
 
         function set_checkboxes(select) {
             document.getElementsByName('row_selector').forEach((element, i) => {
@@ -83,13 +74,13 @@
         </button>
     </div>
     <div class="row">
-        <h3 class="h3">Active Agents</h3>
+        <h3 class="h3" th:text="#{agents.active}"></h3>
         <table class="table table-striped table-sm">
             <thead>
             <tr>
-                <th>Agent</th>
-                <th>Network</th>
-                <th>Hardware</th>
+                <th th:text="#{agents.table.col.agent}"></th>
+                <th th:text="#{agents.table.col.network}"></th>
+                <th th:text="#{agents.table.col.hardware}"></th>
             </tr>
             </thead>
             <tbody>

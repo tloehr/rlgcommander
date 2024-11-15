@@ -1,35 +1,35 @@
 package de.flashheart.rlg.commander.configs;
 
+import de.flashheart.rlg.commander.persistence.Users;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Getter
 public class MyUserDetails implements UserDetails {
     private final String username;
     private final String password;
     private final String api_key;
-    private Collection<? extends GrantedAuthority> authorities;
+    private final Collection<? extends GrantedAuthority> authorities;
 
-    public MyUserDetails(String username, String password, String api_key, Collection<? extends GrantedAuthority> authorities) {
+    private MyUserDetails(String username, String password, String api_key, Collection<? extends GrantedAuthority> authorities) {
         this.username = username;
         this.password = password;
         this.api_key = api_key;
         this.authorities = authorities;
     }
 
-    public static MyUserDetails build(YamlUser yamlUser) {
+    public static MyUserDetails build(Users user) {
         return new MyUserDetails(
-                yamlUser.getUsername(),
-                yamlUser.getPassword(),
-                yamlUser.getApi_key(),
-                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                user.getUsername(),
+                user.getPassword(),
+                user.getApikey(),
+                user.getRoles().stream().map(roles -> new SimpleGrantedAuthority(roles.getRole())).toList()
         );
     }
 
