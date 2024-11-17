@@ -11,12 +11,11 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class GamesHistory extends DefaultEntity {
+public class PlayedGames extends DefaultEntity {
     LocalDateTime pit;
     @ManyToOne
     @JoinColumn(name = "users_id", referencedColumnName = "id")
     private Users owner;
     String mode;
     String game_state;
-    String cmd_version;
 }

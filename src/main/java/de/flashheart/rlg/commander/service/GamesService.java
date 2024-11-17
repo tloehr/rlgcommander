@@ -11,7 +11,7 @@ import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import de.flashheart.rlg.commander.persistence.SavedGamesService;
-import de.flashheart.rlg.commander.persistence.GamesHistoryService;
+import de.flashheart.rlg.commander.persistence.PlayedGamesService;
 import de.flashheart.rlg.commander.persistence.Users;
 import de.flashheart.rlg.commander.websockets.OutputMessage;
 import lombok.extern.log4j.Log4j2;
@@ -45,8 +45,7 @@ public class GamesService {
     private final BuildProperties buildProperties;
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final MyYamlConfiguration myYamlConfiguration;
-    private final GamesHistoryService gamesHistoryService;
-    private final SavedGamesService savedGamesService;
+    private final PlayedGamesService playedGamesService;
 
     private final Optional<Game>[] loaded_games;
     public static final int MAX_NUMBER_OF_GAMES = 1;
@@ -57,21 +56,16 @@ public class GamesService {
         log.info("RLG-Commander v{} b{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
-    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate, MyYamlConfiguration myYamlConfiguration, GamesHistoryService gamesHistoryService, SavedGamesService savedGamesService) {
+    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate, MyYamlConfiguration myYamlConfiguration, PlayedGamesService playedGamesService, SavedGamesService savedGamesService) {
         this.mqttOutbound = mqttOutbound;
         this.scheduler = scheduler;
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
         this.simpMessagingTemplate = simpMessagingTemplate;
-        this.gamesHistoryService = gamesHistoryService;
-        this.savedGamesService = savedGamesService;
+        this.playedGamesService = playedGamesService;
         this.loaded_games = new Optional[]{Optional.empty()};
         this.gameStateListeners = HashMultimap.create();
         this.myYamlConfiguration = myYamlConfiguration;
-    }
-
-    public void save_game(String title, Users owner, JSONObject game){
-        savedGamesService.save(savedGamesService.createNew(title, owner, game));
     }
 
     public Game load_game(final int game_id, String json, Users owner) throws AgentInUseException, ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
@@ -86,6 +80,7 @@ public class GamesService {
         game_description.put("SCORE_CALCULATION_EVERY_N_SECONDS", myYamlConfiguration.getScore_broadcast().get("every_seconds"));
         game_description.put("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", myYamlConfiguration.getScore_broadcast().get("cycle_counter"));
         game_description.put("owner", owner.getUsername());
+        game_description.put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
 
         loaded_games[game_id - 1].ifPresent(game -> game.cleanup());
         final Game game = (Game) Class
@@ -100,7 +95,7 @@ public class GamesService {
         });
         game.addStateTransistionListener(event -> {
             if (event.getMessage().equals(Game._msg_GAME_OVER)) {
-                gamesHistoryService.save(gamesHistoryService.createNew(owner, game.getState()));
+                playedGamesService.save(playedGamesService.createNew(owner, game.getState()));
             }
         });
 
@@ -137,7 +132,7 @@ public class GamesService {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         JSONObject state = new JSONObject()
-                .put("version", String.format("v%sb%s", buildProperties.getVersion(), buildProperties.get("buildNumber")))
+                .put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")))
                 .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
                 .put("mode", "server");
         return loaded_games[id - 1].isEmpty() ? state : MQTT.merge(state, loaded_games[id - 1].get().getState());

@@ -124,7 +124,7 @@
 
                 function save_game() {
                     const title = document.getElementById('save-game-title').value;
-                    post_rest('game/save', {title}, read_base_form());
+                    post_rest('saved_games/save', {title}, read_base_form());
                 }
             </script>
             <button class="btn btn-outline-info" type="button"

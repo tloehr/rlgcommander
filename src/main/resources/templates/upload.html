@@ -26,10 +26,6 @@
                             const game_parameters = JSON.parse(evt.target.result);
                             sessionStorage.setItem('game_parameters_#' + game_id, evt.target.result)
                             navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})
-                            // location.href = window.location.origin + '/ui/params/base?' + jQuery.param({
-                            //     'game_id': game_id,
-                            //     'game_mode': game_parameters.game_mode
-                            // });
                         }
                         reader.onerror = function (evt) {
                             console.error(evt);
@@ -41,6 +37,14 @@
         </script>
     </div>
     <hr/>
+    <script>
+        function read_preset_game (save_game_id) {
+            const game_parameters = JSON.parse(preset_game);
+            const game_id = document.getElementById('game_id').value;
+            sessionStorage.setItem('game_parameters_#' + game_id, preset_game)
+            navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})
+        }
+    </script>
     <div class="row mt-3">
         <h3 class="h3" th:text="#{params.table.saved.games}"></h3>
         <table class="table table-striped table-sm">
@@ -54,7 +58,7 @@
             <tbody>
             <div th:each="game : ${saved_games}">
                 <tr>
-                    <td th:text="${game.pit}"></td>
+                    <td ><a href="#" th:text="${game.pit}" th:onclick="read_preset_game([[${game.id}]])"></a></td>
                     <td th:text="${game.text}"></td>
                     <td th:text="${game.mode}"></td>
                 </tr>

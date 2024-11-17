@@ -4,10 +4,8 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.Expose;
-import com.google.gson.reflect.TypeToken;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.random.RandomGenerator;
 
@@ -24,38 +23,10 @@ public class SavedGamesService implements DefaultService<SavedGames> {
     private final BuildProperties buildProperties;
     private final Gson gson;
 
-    public SavedGamesService(SavedGamesRepository savedGamesRepository, BuildProperties buildProperties) {
+    public SavedGamesService(SavedGamesRepository savedGamesRepository, BuildProperties buildProperties, GsonBuilder jpaGsonBuilder) {
         this.savedGamesRepository = savedGamesRepository;
         this.buildProperties = buildProperties;
-        // didn't use it - but maybe in Future
-        GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeAdapter(new TypeToken<LocalDateTime>() {
-        }.getType(), new LocalDateTimeConverter());
-        builder.addSerializationExclusionStrategy(new ExclusionStrategy() {
-            @Override
-            public boolean shouldSkipField(FieldAttributes fieldAttributes) {
-                final Expose expose = fieldAttributes.getAnnotation(Expose.class);
-                return expose != null && !expose.serialize();
-            }
-
-            @Override
-            public boolean shouldSkipClass(Class<?> aClass) {
-                return false;
-            }
-        });
-        builder.addDeserializationExclusionStrategy(new ExclusionStrategy() {
-            @Override
-            public boolean shouldSkipField(FieldAttributes fieldAttributes) {
-                final Expose expose = fieldAttributes.getAnnotation(Expose.class);
-                return expose != null && !expose.deserialize();
-            }
-
-            @Override
-            public boolean shouldSkipClass(Class<?> aClass) {
-                return false;
-            }
-        });
-        gson = builder.create();
+        gson = jpaGsonBuilder.create();
     }
 
     @Override
@@ -70,14 +41,13 @@ public class SavedGamesService implements DefaultService<SavedGames> {
 
     @Transactional
     public SavedGames createNew(String title, Users owner, JSONObject game_parameters) {
-        SavedGames gameTemplate = createNew();
-        gameTemplate.setMode(game_parameters.optString("game_mode", "ERROR"));
-        gameTemplate.setText(title.trim().isEmpty() ? gameTemplate.getMode() + "_" + RandomGenerator.getDefault().nextInt(1, 1000) : title);
-        gameTemplate.setOwner(owner);
-        gameTemplate.setParameters(game_parameters.toString());
-        gameTemplate.setCmd_version(buildProperties.getVersion());
-        gameTemplate.setPit(LocalDateTime.now());
-        return gameTemplate;
+        SavedGames savedGame = createNew();
+        savedGame.setMode(game_parameters.optString("game_mode", "ERROR"));
+        savedGame.setText(title.trim().isEmpty() ? savedGame.getMode() + "_" + RandomGenerator.getDefault().nextInt(1, 1000) : title);
+        savedGame.setOwner(owner);
+        savedGame.setParameters(game_parameters.toString());
+        savedGame.setPit(LocalDateTime.now());
+        return savedGame;
     }
 
     public List<SavedGames> list_saved_games() {
@@ -88,16 +58,21 @@ public class SavedGamesService implements DefaultService<SavedGames> {
         return savedGamesRepository.findAll();
     }
 
-//    public JSONArray list_saved_games() {
-//        return list_saved_games(Optional.empty(), Optional.empty(), Optional.empty());
-//    }
-//
-//    public JSONArray list_saved_games(Optional<String> text, Optional<String> mode, Optional<String> owner) {
-//        return new JSONArray(
-//                savedGamesRepository.findAll()
-//                        .stream()
-//                        .map(gson::toJson)
-//                        .collect(Collectors.toList())
-//        );
-//    }
+    /**
+     * loads the entity and returns a json version of it
+     *
+     * @param saved_game_id the PK of the requested game
+     * @return a JSON representation
+     * @throws NoSuchElementException if no entity was found
+     */
+    public String load_by_id(long saved_game_id) throws NoSuchElementException {
+        Optional<SavedGames> game = savedGamesRepository.findById(saved_game_id);
+        if (game.isPresent())
+            return gson.toJson(game.get(), SavedGames.class);
+        throw new NoSuchElementException("Game with id " + saved_game_id + " does not exist");
+    }
+
+    public String list_games() {
+        return gson.toJson(savedGamesRepository.findAll(), SavedGames.class);
+    }
 }

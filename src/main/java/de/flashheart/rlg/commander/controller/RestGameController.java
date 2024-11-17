@@ -9,7 +9,6 @@ import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.support.ErrorMessage;
@@ -27,12 +26,10 @@ import java.util.Optional;
 public class RestGameController {
     private final GamesService gamesService;
     private final UsersRepository usersRepository;
-    private final SavedGamesService savedGamesService;
 
-    public RestGameController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext, UsersRepository usersRepository, SavedGamesService savedGamesService) {
+    public RestGameController(GamesService gamesService, UsersRepository usersRepository) {
         this.gamesService = gamesService;
         this.usersRepository = usersRepository;
-        this.savedGamesService = savedGamesService;
     }
 
     @ExceptionHandler({JSONException.class,
@@ -76,17 +73,7 @@ public class RestGameController {
         return r;
     }
 
-    @PostMapping("/save")
-    public ResponseEntity<?> save(@RequestParam(name = "title") String title,
-                                  @RequestBody String params,
-                                  Authentication authentication) {
-        Optional<Users> optUsers = Optional.ofNullable(usersRepository.findByApikey(authentication.getPrincipal().toString()));
-        if (optUsers.isEmpty()) {
-            throw new BadCredentialsException("Invalid API Key");
-        }
-        gamesService.save_game(title, optUsers.get(), new JSONObject(params));
-        return new ResponseEntity(HttpStatus.ACCEPTED);
-    }
+
 
     @PostMapping("/zeus")
     public ResponseEntity<?> zeus(@RequestParam(name = "game_id") int game_id,
@@ -115,14 +102,6 @@ public class RestGameController {
             r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
         }
         return r;
-    }
-
-    @GetMapping("/list_saved_games")
-    public ResponseEntity<?> list_saved_games(
-            @RequestParam("text") Optional<String> text,
-            @RequestParam("mode") Optional<String> mode,
-            @RequestParam("owner") Optional<String> owner) {
-        return new ResponseEntity<>(savedGamesService.list_saved_games(text, mode, owner), HttpStatus.OK);
     }
 
     @GetMapping("/status")

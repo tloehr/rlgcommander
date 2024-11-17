@@ -21,7 +21,7 @@ public class Users extends DefaultEntity {
     private List<Roles> roles;
     @OneToMany(fetch=FetchType.LAZY, mappedBy = "owner")
     @ToString.Exclude
-    private List<GamesHistory> gamesHistory;
+    private List<PlayedGames> playedGames;
     @OneToMany(fetch=FetchType.LAZY, mappedBy = "owner")
     @ToString.Exclude
     private List<SavedGames> gameTemplates;

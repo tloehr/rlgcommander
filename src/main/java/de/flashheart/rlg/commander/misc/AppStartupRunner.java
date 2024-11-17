@@ -1,24 +1,20 @@
 package de.flashheart.rlg.commander.misc;
 
 import de.flashheart.rlg.commander.persistence.*;
-import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
-import org.json.JSONObject;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 
 @Component
 @Log4j2
 public class AppStartupRunner implements ApplicationRunner {
     private final UsersRepository usersRepository;
-    private final GamesHistoryService gamesHistoryService;
+    private final PlayedGamesService playedGamesService;
 
-    public AppStartupRunner(UsersRepository usersRepository, GamesHistoryService gamesHistoryService) {
+    public AppStartupRunner(UsersRepository usersRepository, PlayedGamesService playedGamesService) {
         this.usersRepository = usersRepository;
-        this.gamesHistoryService = gamesHistoryService;
+        this.playedGamesService = playedGamesService;
     }
 
     @Override
