@@ -5,7 +5,7 @@
 <head>
     <title>Magspeed Tournament</title>
     <script>
-        sessionStorage.setItem('game_mode', 'mag_speed');
+        sessionStorage.setItem('game_mode_#' + get_game_id(), 'mag_speed');
 
         function read_form(game_parameters) {
             game_parameters.winning_token_uid = document.getElementById('winning_token_uid').value;

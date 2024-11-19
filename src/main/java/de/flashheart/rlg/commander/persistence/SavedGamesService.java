@@ -1,10 +1,8 @@
 package de.flashheart.rlg.commander.persistence;
 
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import jakarta.persistence.EntityNotFoundException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.transaction.Transactional;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
@@ -12,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -21,12 +20,10 @@ import java.util.random.RandomGenerator;
 public class SavedGamesService implements DefaultService<SavedGames> {
     private final SavedGamesRepository savedGamesRepository;
     private final BuildProperties buildProperties;
-    private final Gson gson;
 
-    public SavedGamesService(SavedGamesRepository savedGamesRepository, BuildProperties buildProperties, GsonBuilder jpaGsonBuilder) {
+    public SavedGamesService(SavedGamesRepository savedGamesRepository, BuildProperties buildProperties) {
         this.savedGamesRepository = savedGamesRepository;
         this.buildProperties = buildProperties;
-        gson = jpaGsonBuilder.create();
     }
 
     @Override
@@ -46,7 +43,7 @@ public class SavedGamesService implements DefaultService<SavedGames> {
         savedGame.setText(title.trim().isEmpty() ? savedGame.getMode() + "_" + RandomGenerator.getDefault().nextInt(1, 1000) : title);
         savedGame.setOwner(owner);
         savedGame.setParameters(game_parameters.toString());
-        savedGame.setPit(LocalDateTime.now());
+        savedGame.setPit(ZonedDateTime.now());
         return savedGame;
     }
 
@@ -65,14 +62,19 @@ public class SavedGamesService implements DefaultService<SavedGames> {
      * @return a JSON representation
      * @throws NoSuchElementException if no entity was found
      */
-    public String load_by_id(long saved_game_id) throws NoSuchElementException {
+    public String load_by_id(long saved_game_id) throws NoSuchElementException, JsonProcessingException {
         Optional<SavedGames> game = savedGamesRepository.findById(saved_game_id);
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules(); // for the jdk8 datetimes
         if (game.isPresent())
-            return gson.toJson(game.get(), SavedGames.class);
+            return objectMapper.writeValueAsString(game.get());
+        //return gson.toJson(game.get(), SavedGames.class);
         throw new NoSuchElementException("Game with id " + saved_game_id + " does not exist");
     }
 
-    public String list_games() {
-        return gson.toJson(savedGamesRepository.findAll(), SavedGames.class);
+    public String list_games() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules(); // for the jdk8 datetimes
+        return objectMapper.writeValueAsString(savedGamesRepository.findAll());//gson.toJson(savedGamesRepository.findAll(), SavedGames.class);
     }
 }

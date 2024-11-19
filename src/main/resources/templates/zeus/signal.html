@@ -19,7 +19,7 @@
             <div class="input-group">
                 <button class="btn btn-secondary" type="submit"
                         onclick="post_rest('game/zeus',
-                        {'game_id':document.getElementById('game_id').value},
+                        {'game_id':get_game_id()},
                         {
                             'operation': 'unlock'
                         }); navigate_to(window.location.origin+'/ui/active/base');">

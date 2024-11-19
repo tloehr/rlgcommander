@@ -6,7 +6,7 @@
 <head>
     <title>Signal</title>
     <script>
-        sessionStorage.setItem('game_mode', 'signal');
+        sessionStorage.setItem('game_mode_#' + get_game_id(), 'signal');
 
         function read_form(game_parameters) {
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);

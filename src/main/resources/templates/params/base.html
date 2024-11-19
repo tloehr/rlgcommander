@@ -6,8 +6,7 @@
     <script th:inline="javascript">
 
         function upload_game(game_parameters) {
-            const game_id = document.getElementById('game_id').value;
-            post_rest('game/load', {'game_id': game_id}, game_parameters, function (xhttp) {
+            post_rest('game/load', {'game_id': get_game_id()}, game_parameters, function (xhttp) {
                 if (xhttp.status < 400) {
                     navigate_to(window.location.origin + '/ui/active/base');
                 } else {
@@ -17,8 +16,7 @@
         }
 
         function read_base_form() {
-            const game_id = document.getElementById('game_id').value;
-            const game_parameters = JSON.parse(sessionStorage.getItem('game_parameters_#' + game_id));
+            const game_parameters = JSON.parse(sessionStorage.getItem('game_parameters_#' + get_game_id()));
             // read params from cache and overwrite the values with the user entries.
             game_parameters.comment = document.getElementById('comment').value;
             read_form(game_parameters);
@@ -32,16 +30,15 @@
         function preset_base_form() {
             const url = new URL(window.location.href);
             const mode = url.searchParams.get('game_mode');
-            const game_id = document.getElementById('game_id').value;
 
             if ([[${game_template}]]) { // a user preset parameters from the database
                 const game_parameters = [[${game_parameters_from_model}]];
-                sessionStorage.setItem('game_parameters_#' + game_id, JSON.stringify(game_parameters));
+                sessionStorage.setItem('game_parameters_#' + get_game_id(), JSON.stringify(game_parameters));
                 document.getElementById('comment').value = game_parameters.comment;
                 preset_form(game_parameters);
             } else { // the default json can be loaded from the static webserver
                 $.getJSON(window.location.origin + '/defaults/' + mode + '.json', function (game_parameters) {
-                    sessionStorage.setItem('game_parameters_#' + game_id, JSON.stringify(game_parameters));
+                    sessionStorage.setItem('game_parameters_#' + get_game_id(), JSON.stringify(game_parameters));
                     document.getElementById('comment').value = game_parameters.comment;
                     preset_form(game_parameters);
                 });
@@ -58,9 +55,9 @@
 <section layout:fragment="content">
 
     <script>
-        sessionStorage.removeItem('game_parameters_#' + document.getElementById('game_id').value);
+        sessionStorage.removeItem('game_parameters_#' + get_game_id());
         sessionStorage.removeItem('show_agent_shuffle_button');
-        sessionStorage.removeItem('number_of_teams');
+        sessionStorage.removeItem('number_of_teams_#' + get_game_id());
     </script>
 
     <section layout:fragment="gamemode_header">
@@ -118,7 +115,7 @@
             <script>
                 function download_game() {
                     const url = new URL(window.location.href);
-                    const mode = url.searchParams.get('game_mode');
+                    const mode = url.searchParams.get('game_mode#' + get_game_id());
                     download_json(read_base_form(), mode);
                 }
 

@@ -84,9 +84,10 @@ function connect() {
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
         stompClient.subscribe('/topic/messages', messageOutput => {
-            update_game_state(JSON.parse(messageOutput.body));
+            const output_message = JSON.parse(messageOutput.body);
+            //const state = JSON.parse(messageOutput.body)['game_state'];
+            sessionStorage.setItem('state_#' + output_message['game_id'], output_message['game_state']);
             if (window.location.pathname === '/ui/active/base') window.location.reload();
-            //if ($(window.location).attr('pathname') === '/ui/active/base') window.location.reload();
         });
     });
 }
@@ -96,14 +97,6 @@ function selectElement(id, valueToSelect) {
     let element = document.getElementById(id);
     element.value = valueToSelect;
 }
-
-// function reload_with_new_params2(params) {
-//     const url = new URL(window.location.href);
-//     jQuery.each(params, (key, value) => {
-//         url.searchParams.set(key, value);
-//     });
-//     window.location.href = url.href; // this reloads the window with the NEW params
-// }
 
 function reload(params) {
     navigate_to(window.location.href, params);
@@ -120,7 +113,7 @@ function navigate_to(destination, params) {
     const url = new URL(destination);
     // game_id and locale are always present;
     url.searchParams.set('locale', document.getElementById('locale').value);
-    url.searchParams.set('game_id', document.getElementById('game_id') ? document.getElementById('game_id').value : '1');
+    url.searchParams.set('game_id', document.getElementById('game_id').value);
     // I believe only locale is important as it is read by the spring i18n system
     // the game_id is read by every method directly from the page element
 
@@ -138,19 +131,32 @@ window.onbeforeunload = function () {
     disconnect();
 };
 
+// simple convenience function
+function get_game_id(){
+    return new URL(window.location.href).searchParams.get("game_id") || '1'
+}
+
+function get_locale(){
+    return new URL(window.location.href).searchParams.get("locale") || 'de'
+}
+
 function disconnect() {
     if (stompClient != null) {
         stompClient.disconnect();
     }
 }
 
-function update_game_state(message) {
-    const state = message['game_state'];
+function update_state_display() {
+    const state = sessionStorage.getItem('state#' + get_game_id()) || 'EMPTY';
     const color = game_state_colors[state];
-    sessionStorage.setItem('state', state);
     document.getElementById('game_state').innerHTML = '&nbsp;' + state;
     document.getElementById('game_state').setAttribute('style', 'color: ' + color);
 }
+
+// function update_game_state(message) {
+//     const state = message['game_state'];
+//     sessionStorage.setItem('state', state);
+// }
 
 function to_string_segment_list(jsonArray) {
     let result = [];
@@ -187,23 +193,24 @@ function from_string_list(list) {
     return result;
 }
 
-function get_rest(resturi, param_json) {
+function get_rest(rest_uri, param_json) {
     const xhttp = new XMLHttpRequest();
 
     xhttp.onreadystatechange = () => {
         if (xhttp.readyState === 4) {
-            if (xhttp.status === 200) {
-                //console.log(xhttp.responseText);
-                update_game_state({'game_state': xhttp.responseText})
-            }
+            //if (xhttp.status === 200) {
+            //console.log(xhttp.responseText);
+            //update_game_state({'game_state': xhttp.responseText})
+            //}
             update_rest_status_in_session(xhttp);
         }
     }
-    const base_url = window.location.origin + '/api/' + resturi;
-    const myuri = base_url + (param_json ? '?' + jQuery.param(param_json, true) : '');
-    xhttp.open('GET', myuri, false); // true for asynchronous
+    const base_url = window.location.origin + '/api/' + rest_uri;
+    const my_uri = base_url + (param_json ? '?' + jQuery.param(param_json, true) : '');
+    xhttp.open('GET', my_uri, false); // true for asynchronous
     xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
     xhttp.send('{}');
+    return xhttp.response;
 }
 
 function update_rest_status_in_session(xhttp) {

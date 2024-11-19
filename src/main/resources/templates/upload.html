@@ -1,7 +1,9 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout.html}">
-<head><title th:text="#{main.upload.game}"></title></head>
+<head><title th:text="#{main.upload.game}"></title>
+
+</head>
 <body>
 
 
@@ -13,8 +15,7 @@
         <script>
             // react on the file upload event
             const jsonfileInput = document.getElementById("jsonfile");
-            const game_id = document.getElementById('game_id').value;
-            sessionStorage.removeItem('game_parameters_#' + game_id);
+            sessionStorage.removeItem('game_parameters_#' + get_game_id());
             jsonfileInput.addEventListener(
                 "change",
                 () => {
@@ -24,7 +25,7 @@
                         reader.readAsText(file, "UTF-8");
                         reader.onload = function (evt) {
                             const game_parameters = JSON.parse(evt.target.result);
-                            sessionStorage.setItem('game_parameters_#' + game_id, evt.target.result)
+                            sessionStorage.setItem('game_parameters_#' + get_game_id(), evt.target.result)
                             navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})
                         }
                         reader.onerror = function (evt) {
@@ -38,10 +39,10 @@
     </div>
     <hr/>
     <script>
-        function read_preset_game (save_game_id) {
+        function read_preset_game (saved_game_id) {
+            const preset_game = get_rest('saved_games/', {saved_game_id});
             const game_parameters = JSON.parse(preset_game);
-            const game_id = document.getElementById('game_id').value;
-            sessionStorage.setItem('game_parameters_#' + game_id, preset_game)
+            sessionStorage.setItem('game_parameters_#' + get_game_id(), preset_game)
             navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})
         }
     </script>

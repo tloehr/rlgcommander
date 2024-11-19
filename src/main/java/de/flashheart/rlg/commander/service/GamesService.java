@@ -163,11 +163,10 @@ public class GamesService {
         if (loaded_games[id - 1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded.");
     }
 
-    private void fireStateReached(int id, StateReachedEvent event) {
-        // todo: IDs mit berücksichtigen.
-        OutputMessage outputMessage = new OutputMessage(event.getState(), new SimpleDateFormat("HH:mm").format(new Date()));
+    private void fireStateReached(int game_id, StateReachedEvent event) {
+        OutputMessage outputMessage = new OutputMessage(event.getState(), new SimpleDateFormat("HH:mm").format(new Date()), game_id);
         simpMessagingTemplate.convertAndSend("/topic/messages", outputMessage); // STOMP
-        gameStateListeners.get(id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
+        gameStateListeners.get(game_id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
     }
 
     public StateReachedListener addStateReachedListener(int id, StateReachedListener toAdd) {

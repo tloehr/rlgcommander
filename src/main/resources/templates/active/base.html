@@ -1,10 +1,8 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout.html}">
-<head><title>Active Game</title>
+<head><title th:text="#{main.active.game}"></title>
     <script>
-
-
         function init_buttons() {
             /**
              * .blink_me {
@@ -67,40 +65,41 @@
             </div>
             <div class="row">
                 <button id="btn_prepare"
-                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'prepare'});"
+                        onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'prepare'});"
                         class="btn btn-outline-primary col-sm-auto me-1"><span
                         class="bi bi-rocket-takeoff-fill">&nbsp;Prepare</span></button>
                 <button id="btn_reset"
-                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'reset'});"
+                        onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'reset'});"
                         class="btn btn-outline-warning  col-sm-auto me-1"><span class="bi bi-skip-backward-circle-fill">&nbsp;Reset</span>
                 </button>
                 <button id="btn_ready"
-                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'ready'});"
+                        onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'ready'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-hand-thumbs-up-fill">&nbsp;Ready</span></button>
                 <button id="btn_run"
-                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'run'});"
+                        onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'run'});"
                         class="btn btn-outline-success  col-sm-auto me-1"><span
                         class="bi bi-play-circle-fill">&nbsp;Run</span>
                 </button>
                 <button id="btn_pause"
-                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'pause'});"
+                        onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'pause'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-pause-circle-fill">&nbsp;Pause</span></button>
                 <button id="btn_resume"
-                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'resume'});"
+                        onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'resume'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span
                         class="bi bi-fast-forward-circle-fill">&nbsp;Resume</span>
                 </button>
                 <button id="btn_continue"
-                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'continue'});"
+                        onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'continue'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1"><span class="bi bi-fast-forward-circle">&nbsp;Continue</span>
                 </button>
                 <button id="btn_game_over"
-                        onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'game_over'});"
+                        onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'game_over'});"
                         class="btn btn-outline-secondary me-auto col-sm-auto"><span class="bi bi-stop-circle-fill">&nbsp;Game Over</span>
                 </button>
-                <button id="btn_zeus" onclick="navigate_to(window.location.origin + '/ui/zeus/base');" class="btn btn-outline-danger col-sm-auto"><span
+                <button id="btn_zeus" onclick="navigate_to(window.location.origin + '/ui/zeus/base');"
+                        class="btn btn-outline-danger col-sm-auto"><span
                         class="bi bi-sliders">&nbsp;Zeus Admin</span>
                 </button>
             </div>
@@ -115,41 +114,42 @@
             <div class="collapse" id="collapseExample">
                 <div class="col-auto">
                     <button id="btn_prepare2"
-                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'prepare'});"
+                            onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'prepare'});"
                             class="btn btn-primary col-sm-auto me-1"><span
                             class="bi bi-rocket-takeoff-fill">&nbsp;Prepare</span></button>
                     <button id="btn_reset2"
-                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'reset'});"
+                            onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'reset'});"
                             class="btn btn-warning  col-sm-auto me-1"><span
                             class="bi bi-skip-backward-circle-fill">&nbsp;Reset</span>
                     </button>
                     <button id="btn_ready2"
-                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'ready'});"
+                            onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'ready'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span
                             class="bi bi-hand-thumbs-up-fill">&nbsp;Ready</span></button>
                     <button id="btn_run2"
-                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'run'});"
+                            onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'run'});"
                             class="btn btn-success  col-sm-auto me-1"><span
                             class="bi bi-play-circle-fill">&nbsp;Run</span>
                     </button>
                     <button id="btn_pause2"
-                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'pause'});"
+                            onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'pause'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span
                             class="bi bi-pause-circle-fill">&nbsp;Pause</span></button>
                     <button id="btn_resume2"
-                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'resume'});"
+                            onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'resume'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span
                             class="bi bi-fast-forward-circle-fill">&nbsp;Resume</span>
                     </button>
                     <button id="btn_continue2"
-                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'continue'});"
+                            onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'continue'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span class="bi bi-fast-forward-circle">&nbsp;Continue</span>
                     </button>
                     <button id="btn_game_over2"
-                            onclick="post_rest('game/process', {'game_id':document.getElementById('game_id').value,'message':'game_over'});"
+                            onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'game_over'});"
                             class="btn btn-secondary me-auto col-sm-auto"><span class="bi bi-stop-circle-fill">&nbsp;Game Over</span>
                     </button>
-                    <button id="btn_zeus2" onclick="navigate_to(window.location.origin + '/ui/zeus/base');" class="btn btn-danger col-sm-auto"><span
+                    <button id="btn_zeus2" onclick="navigate_to(window.location.origin + '/ui/zeus/base');"
+                            class="btn btn-danger col-sm-auto"><span
                             class="bi bi-sliders">&nbsp;Zeus Admin</span>
                     </button>
                 </div>

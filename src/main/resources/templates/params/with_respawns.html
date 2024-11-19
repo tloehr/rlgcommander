@@ -33,7 +33,7 @@
         }
 
         function preset_respawns_form(game_parameters) {
-            sessionStorage.setItem('number_of_teams', game_parameters.spawns.teams.length);
+            sessionStorage.setItem('number_of_teams_#' + get_game_id(), game_parameters.spawns.teams.length);
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
             document.getElementById('intro_voice').value = game_parameters.spawns.intro_voice;
             document.getElementById('audio_group').value = game_parameters.agents.audio ? game_parameters.agents.audio.join() : "";
@@ -104,11 +104,11 @@
 
         function swap_teams() {
 
-            if (sessionStorage.getItem('number_of_teams') === '4') {
+            if (sessionStorage.getItem('number_of_teams_#' + get_game_id()) === '4') {
                 swap_4teams();
-            } else if (sessionStorage.getItem('number_of_teams') === '3') {
+            } else if (sessionStorage.getItem('number_of_teams_#' + get_game_id()) === '3') {
                 swap_3teams();
-            } else if (sessionStorage.getItem('number_of_teams') === '2') {
+            } else if (sessionStorage.getItem('number_of_teams_#' + get_game_id()) === '2') {
                 swap_2teams();
             }
         }

@@ -5,7 +5,7 @@
 <head>
     <title>Setup Hardpoint</title>
     <script>
-        sessionStorage.setItem('game_mode', 'hardpoint');
+        sessionStorage.setItem('game_mode_#' + get_game_id(), 'hardpoint');
         sessionStorage.setItem('show_agent_shuffle_button', 'true');
 
         function read_form(game_parameters) {

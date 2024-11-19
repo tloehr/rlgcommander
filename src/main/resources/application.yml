@@ -3,40 +3,59 @@ logging:
   level:
     de:
       flashheart: DEBUG
+    org:
+      eclipse:
+        paho:
+          client:
+            mqttv3: INFO
+    root: INFO
 
 spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
   quartz:
     properties:
       org:
         quartz:
           scheduler:
-            instanceId: myscheduler
-
-
-server:
-  error:
-    include-stacktrace: always
-  servlet:
-    session:
-      timeout: 60
-
-mqtt:
-  cleanSession: 'true'
-  connectionTimeout: '10'
-  automaticReconnect: 'true'
+            instanceId: my_scheduler
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: user
+    password: password
+    url: jdbc:mysql://localhost:3306/rlgs_db
+  jpa:
+    show-sql: true
 
 rlgs:
+  intros:
+    bf3: Battlefield 3
+  voices:
+    sharon30s: Sharon (AI)
+  access_points:
+    00223f97a198: NETGEAR
   score_broadcast:
     every_seconds: '0.5'
     cycle_counter: '10'
-  intro:
-    bf3: Battlefield 3
-  access_points:
-    00223f97a198: NETGEAR
-  users:
-    - username: default_user # pw 12345
-      password: $2b$12$5/8pFYfQVRLO5djo/bBh0.BUyW6PjAQMitC1.BDTtyUrZN0N3N4H2
-      api_key: D84C6904-8EB0-4C78-8598-6149597EB170
 
+mqtt:
+  qos: '2'
+  outbound:
+    topic: rlg/cmd/
+  inbound:
+    topic: rlg/evt/#
+  clientid: rlgcmd@release
+  url: tcp://localhost:1883
+  max_inflight: '1000'
+  automaticReconnect: 'true'
 
-
+server:
+  port: 8090
+  locale:
+    default: de
+  servlet:
+    session:
+      timeout: 1440m
+  error:
+    include-stacktrace: always

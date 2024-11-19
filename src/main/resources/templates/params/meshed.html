@@ -10,7 +10,7 @@
     <script th:src="@{/webjars/viz.js-graphviz-java/full.render.js}"></script>
 
     <script>
-        sessionStorage.setItem('game_mode', 'meshed');
+        sessionStorage.setItem('game_mode_#' + get_game_id(),'meshed');
 
         function read_form(game_parameters) {
             game_parameters.ticket_price_for_respawn = parseInt(document.getElementById('ticket_price_for_respawn').value);

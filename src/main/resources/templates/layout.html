@@ -13,11 +13,9 @@
     <script th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
     <script th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
     <script src="/js/rlgs.js"></script>
-
 </head>
 
-<body onload="get_rest('game/current_state', {'game_id': document.getElementById('game_id').value});
-        connect();">
+<body onload="update_state_display(); connect();">
 <nav id="navbar" role="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="#" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -51,7 +49,13 @@
                                href="/ui/upload"><span
                                 class="bi bi-upload">&nbsp;Upload Game</span></a></li>
                         <li><a class="dropdown-item"
-                               onclick="post_rest('game/unload',{'game_id': document.getElementById('game_id').value}); navigate_to(window.location.origin+'/ui/active/base');">
+                               onclick="
+                               post_rest('game/unload',{'game_id': get_game_id()});
+                               sessionStorage.removeItem('state_#'+get_game_id());
+                               sessionStorage.removeItem('game_parameters_#'+get_game_id());
+                               sessionStorage.removeItem('game_mode_#'+get_game_id());
+                               sessionStorage.removeItem('number_of_teams_#'+get_game_id());
+                               navigate_to(window.location.origin+'/ui/active/base', {});">
                             <span class="bi bi-cloud-slash-fill">&nbsp;Unload Game</span></a>
                         </li>
                         <hr/>
@@ -129,20 +133,18 @@
                 </select>
             </div>
             <script th:inline="javascript">
-                const url = new URL(window.location.href);
+                //const url = new URL(window.location.href);
                 // set to 1 if no search param present
-                selectElement('game_id', url.searchParams.get("game_id") ? url.searchParams.get("game_id") : '1');
-                selectElement('locale', url.searchParams.get('locale') ? url.searchParams.get('locale') : 'de');
+                selectElement('game_id', get_game_id());
+                selectElement('locale', get_locale());
+
                 // this is a valid api_key for REST requests. Or nothing when nobody is logged in.
                 sessionStorage.setItem('X-API-KEY', [[${api_key}]]);
             </script>
         </div>
         <div class="col-auto">
-
             <div class="col-auto"><span id="game_state" class="bi bi-circle-fill bi-md">&nbsp;Empty</span>
             </div>
-
-
         </div>
 
     </div>

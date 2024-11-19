@@ -5,7 +5,7 @@
 <head>
     <title>Center Flags</title>
     <script>
-        sessionStorage.setItem('game_mode', 'center_flags');
+        sessionStorage.setItem('game_mode_#' + get_game_id(), 'center_flags');
 
         function read_form(game_parameters) {
             game_parameters.count_respawns = document.getElementById('count-respawns').checked;
@@ -30,14 +30,16 @@
 
 <section layout:fragment="gamemode_header">
     <h1>Center Flags</h1>
-    <p>Time restricted game mode. The team with the most summed-up time wins. To gain score it is necessary to switch the flags to the respective team color.</p>
+    <p>Time restricted game mode. The team with the most summed-up time wins. To gain score it is necessary to switch
+        the flags to the respective team color.</p>
 </section>
 
 <section layout:fragment="params">
     <div class="row mb-3">
         <div class="col-auto">
             <label for="game_time" class="form-label">Gametime in seconds</label>
-            <input type="number" inputmode="decimal" class="form-control" id="game_time" list="game_times" value="600" required
+            <input type="number" inputmode="decimal" class="form-control" id="game_time" list="game_times" value="600"
+                   required
                    min="1" pattern="\d*">
             <datalist id="game_times">
                 <option value="120">2 Minuten</option>

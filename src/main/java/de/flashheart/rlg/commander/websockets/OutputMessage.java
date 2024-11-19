@@ -8,5 +8,6 @@ import lombok.Getter;
 public class OutputMessage {
     private String game_state;
     private String time;
+    private int game_id;
 
 }

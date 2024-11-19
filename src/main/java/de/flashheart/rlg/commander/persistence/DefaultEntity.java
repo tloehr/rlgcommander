@@ -1,7 +1,6 @@
 package de.flashheart.rlg.commander.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.gson.annotations.Expose;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +24,6 @@ public class DefaultEntity implements Serializable {
     protected Long id;
 
     @Version
-    @Expose(serialize = false, deserialize = false)
     @JsonIgnore
     protected int version;
 

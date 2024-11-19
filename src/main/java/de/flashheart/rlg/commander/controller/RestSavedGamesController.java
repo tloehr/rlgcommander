@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.controller;
 
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.flashheart.rlg.commander.persistence.SavedGamesService;
 import de.flashheart.rlg.commander.persistence.Users;
 import de.flashheart.rlg.commander.persistence.UsersRepository;
@@ -24,15 +25,14 @@ import java.util.Optional;
 public class RestSavedGamesController {
     private final SavedGamesService savedGamesService;
     private final UsersRepository usersRepository;
-    private final GsonBuilder jpa_gson_builder;
 
-    public RestSavedGamesController(SavedGamesService savedGamesService, UsersRepository usersRepository, GsonBuilder jpa_gson_builder) {
+    public RestSavedGamesController(SavedGamesService savedGamesService, UsersRepository usersRepository) {
         this.savedGamesService = savedGamesService;
         this.usersRepository = usersRepository;
-        this.jpa_gson_builder = jpa_gson_builder;
     }
 
-    @ExceptionHandler({JSONException.class,
+    @ExceptionHandler({
+            JSONException.class,
             NoSuchElementException.class,
             ArrayIndexOutOfBoundsException.class,
             ClassNotFoundException.class,
@@ -40,26 +40,30 @@ public class RestSavedGamesController {
             InvocationTargetException.class,
             InstantiationException.class,
             IllegalAccessException.class,
-            IllegalStateException.class})
+            IllegalStateException.class,
+            JsonParseException.class,
+            JsonProcessingException.class
+    })
     public ResponseEntity<ErrorMessage> handleException(Exception exc) {
         log.warn(exc.getMessage());
         return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
     }
 
     @GetMapping("/list")
-    public ResponseEntity<?> list_saved_games(
-            @RequestParam("text") Optional<String> text,
-            @RequestParam("mode") Optional<String> mode,
-            @RequestParam("owner") Optional<String> owner) {
+    public ResponseEntity<?> list(
+            @RequestParam(name = "text", required = false) Optional<String> text,
+            @RequestParam(name = "mode", required = false) Optional<String> mode,
+            @RequestParam(name = "owner", required = false) Optional<String> owner
+    ) throws JsonProcessingException {
         return new ResponseEntity<>(savedGamesService.list_games(), HttpStatus.OK);
     }
 
-    @GetMapping("/load")
-    public ResponseEntity<?> load(@RequestParam(name = "saved_game_id") long saved_game_id) {
+    @GetMapping("/")
+    public ResponseEntity<?> load(@RequestParam(name = "saved_game_id") long saved_game_id) throws JsonProcessingException {
         return new ResponseEntity<>(savedGamesService.load_by_id(saved_game_id), HttpStatus.OK);
     }
 
-    @PostMapping("/save")
+    @PostMapping("/")
     public ResponseEntity<?> save(@RequestParam(name = "title") String title,
                                   @RequestBody String params,
                                   Authentication authentication) {
