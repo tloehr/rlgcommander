@@ -10,12 +10,13 @@
     <link href="/styles/rlgs.css" rel="stylesheet">
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
-    <script th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
-    <script th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
+    <script th:src="@{/webjars/paho-mqtt/paho-mqtt-min.js}"></script>
     <script src="/js/rlgs.js"></script>
+
 </head>
 
-<body onload="update_state_display(); connect();">
+<!--<body onload="update_state_display();  connect(get_game_id());">-->
+<body onload="update_state_display(); connect_to_mqtt();">
 <nav id="navbar" role="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="#" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -36,27 +37,25 @@
                 <li class="nav-item">
                     <a class="nav-link " aria-current="page" href="#"
                        onclick="navigate_to(window.location.origin+'/ui/home');"
-                       th:classappend="${home_active}">Home</a>
+                       th:classappend="${home_active}"
+                       th:text="#{main.home}"></a>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                       aria-expanded="false" th:classappend="${params_active}">
-                        Setup Games
+                       aria-expanded="false" th:classappend="${params_active}" th:text="#{main.new_game}">
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item"
                                href="/ui/upload"><span
-                                class="bi bi-upload">&nbsp;Upload Game</span></a></li>
+                                class="bi bi-upload" th:text="'&nbsp;'+#{main.upload.game}"></span></a></li>
                         <li><a class="dropdown-item"
                                onclick="
                                post_rest('game/unload',{'game_id': get_game_id()});
-                               sessionStorage.removeItem('state_#'+get_game_id());
                                sessionStorage.removeItem('game_parameters_#'+get_game_id());
-                               sessionStorage.removeItem('game_mode_#'+get_game_id());
-                               sessionStorage.removeItem('number_of_teams_#'+get_game_id());
+                               sessionStorage.removeItem('state_#' + get_game_id())
                                navigate_to(window.location.origin+'/ui/active/base', {});">
-                            <span class="bi bi-cloud-slash-fill">&nbsp;Unload Game</span></a>
+                            <span th:text="'&nbsp;'+#{main.unload.game}" class="bi bi-cloud-slash-fill"></span></a>
                         </li>
                         <hr/>
                         <!-- calls the base.html but clears the game_parameters from storage -->
@@ -100,36 +99,39 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link" th:classappend="${active_active}"
                        onclick="navigate_to(window.location.origin+'/ui/active/base');"
-                       href="#">Active Game</a>
+                       href="#"
+                       th:text="#{main.active.game}"></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${server_active}"
                        onclick="navigate_to(window.location.origin+'/ui/server');"
-                       href="#">Server</a>
+                       href="#"
+                       th:text="#{main.server}"></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${agents_active}"
                        onclick="navigate_to(window.location.origin+'/ui/agents');"
-                       href="#">Agents</a>
+                       href="#"
+                       th:text="#{main.agents}"></a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/logout">Logout</a>
+                    <a class="nav-link" href="/logout"
+                       th:text="#{main.logout}"></a>
                 </li>
             </ul>
-            <div class="col-md-auto me-4">
-                <select class="form-select" id="game_id" value="1"
-                        onchange="reload();"
-                        title="Reserved for future use. Currently RLGS can handle only one game at a time.">
-                    <option value="1">Game #1</option>
-                    <!--                    <option value="2">Game #2</option>-->
-                    <!--                    <option value="3">Game #3</option>-->
-                </select>
-            </div>
             <div class="col-md-auto me-4">
                 <select class="form-select" id="locale" onchange="reload();">
                     <option value="de">deutsch</option>
                     <option value="en">english</option>
                     <option value="ru">русский</option>
+                </select>
+            </div>
+            <div class="col-md-auto me-4">
+                <select class="form-select" id="game_id" value="1"
+                        onchange="reload();">
+                    <option value="1">Game #1</option>
+                    <!--                    <option value="2">Game #2</option>-->
+                    <!--                    <option value="3">Game #3</option>-->
                 </select>
             </div>
             <script th:inline="javascript">
@@ -138,12 +140,21 @@
                 selectElement('game_id', get_game_id());
                 selectElement('locale', get_locale());
 
-                // this is a valid api_key for REST requests. Or nothing when nobody is logged in.
-                sessionStorage.setItem('X-API-KEY', [[${api_key}]]);
+                // to make sure this is called only once
+                // we take the existence of X-API-KEY as a proof for all the other keys, too
+                if (sessionStorage.getItem('X-API-KEY') === null) {
+                    // only run once
+                    // this is a valid api_key for REST requests. Or nothing when nobody is logged in.
+                    sessionStorage.setItem('X-API-KEY', [[${api_key}]]);
+                    sessionStorage.setItem('mqtt_notification_topic', [[${mqtt_notification_topic}]] + "#");
+                    sessionStorage.setItem('mqtt_host', [[${mqtt_host}]]);
+                    sessionStorage.setItem('mqtt_ws_port', [[${mqtt_ws_port}]]);
+                }
             </script>
         </div>
         <div class="col-auto">
-            <div class="col-auto"><span id="game_state" class="bi bi-circle-fill bi-md">&nbsp;Empty</span>
+            <div class="col-auto">
+                <span id="game_state" class="bi bi-circle-fill bi-md" th:text="'&nbsp;'+#{game.state.empty}"></span>
             </div>
         </div>
 

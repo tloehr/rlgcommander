@@ -15,7 +15,6 @@
         <script>
             // react on the file upload event
             const jsonfileInput = document.getElementById("jsonfile");
-            sessionStorage.removeItem('game_parameters_#' + get_game_id());
             jsonfileInput.addEventListener(
                 "change",
                 () => {
@@ -29,6 +28,7 @@
                             navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})
                         }
                         reader.onerror = function (evt) {
+                            sessionStorage.removeItem('game_parameters_#' + get_game_id());
                             console.error(evt);
                         }
                     }
@@ -38,14 +38,14 @@
         </script>
     </div>
     <hr/>
-    <script>
-        function read_preset_game (saved_game_id) {
-            const preset_game = get_rest('saved_games/', {saved_game_id});
-            const game_parameters = JSON.parse(preset_game);
-            sessionStorage.setItem('game_parameters_#' + get_game_id(), preset_game)
-            navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})
-        }
-    </script>
+<!--    <script>-->
+<!--        function read_preset_game (saved_game_id) {-->
+<!--            const preset_game = get_rest('saved_games/', {saved_game_id});-->
+<!--            const game_parameters = JSON.parse(preset_game);-->
+<!--            sessionStorage.setItem('game_parameters_#' + get_game_id(), preset_game)-->
+<!--            navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})-->
+<!--        }-->
+<!--    </script>-->
     <div class="row mt-3">
         <h3 class="h3" th:text="#{params.table.saved.games}"></h3>
         <table class="table table-striped table-sm">

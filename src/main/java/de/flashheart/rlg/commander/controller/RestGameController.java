@@ -1,5 +1,7 @@
 package de.flashheart.rlg.commander.controller;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.persistence.Users;
 import de.flashheart.rlg.commander.persistence.UsersRepository;
@@ -21,27 +23,13 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/game")
 @Log4j2
-public class RestGameController {
+public class RestGameController extends MyParentController {
     private final GamesService gamesService;
     private final UsersRepository usersRepository;
 
     public RestGameController(GamesService gamesService, UsersRepository usersRepository) {
         this.gamesService = gamesService;
         this.usersRepository = usersRepository;
-    }
-
-    @ExceptionHandler({JSONException.class,
-            NoSuchElementException.class,
-            ArrayIndexOutOfBoundsException.class,
-            ClassNotFoundException.class,
-            NoSuchMethodException.class,
-            InvocationTargetException.class,
-            InstantiationException.class,
-            IllegalAccessException.class,
-            IllegalStateException.class})
-    public ResponseEntity<ErrorMessage> handleException(Exception exc) {
-        log.warn(exc.getMessage());
-        return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
     }
 
     /**
@@ -70,8 +58,6 @@ public class RestGameController {
         }
         return r;
     }
-
-
 
     @PostMapping("/zeus")
     public ResponseEntity<?> zeus(@RequestParam(name = "game_id") int game_id,

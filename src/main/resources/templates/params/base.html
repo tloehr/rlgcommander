@@ -1,11 +1,13 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
       layout:decorate="~{layout.html}">
-<head><title>Game Parameters</title>
+<head><title th:text="#{main.new_game}"></title> <!-- PARAMS-->
 
     <script th:inline="javascript">
 
-        function upload_game(game_parameters) {
+        let show_agent_shuffle_button = false;
+
+        function send_to_server(game_parameters) {
             post_rest('game/load', {'game_id': get_game_id()}, game_parameters, function (xhttp) {
                 if (xhttp.status < 400) {
                     navigate_to(window.location.origin + '/ui/active/base');
@@ -27,16 +29,16 @@
          * we read the defaults from the server if no preloaded game_parameter is available.
          * @param mode - name of the game_mode
          */
-        function preset_base_form() {
+        function preset_base_form_from_template() {
             const url = new URL(window.location.href);
             const mode = url.searchParams.get('game_mode');
 
-            if ([[${game_template}]]) { // a user preset parameters from the database
+            if ([[${game_template}]]) { // a user's preset setup sent from the controller overriding the default
                 const game_parameters = [[${game_parameters_from_model}]];
                 sessionStorage.setItem('game_parameters_#' + get_game_id(), JSON.stringify(game_parameters));
                 document.getElementById('comment').value = game_parameters.comment;
                 preset_form(game_parameters);
-            } else { // the default json can be loaded from the static webserver
+            } else { // the default json loaded from static webserver
                 $.getJSON(window.location.origin + '/defaults/' + mode + '.json', function (game_parameters) {
                     sessionStorage.setItem('game_parameters_#' + get_game_id(), JSON.stringify(game_parameters));
                     document.getElementById('comment').value = game_parameters.comment;
@@ -50,28 +52,21 @@
     </script>
 
 </head>
-<body>
+<body>  <!-- PARAMS-->
 
 <section layout:fragment="content">
-
-    <script>
-        sessionStorage.removeItem('game_parameters_#' + get_game_id());
-        sessionStorage.removeItem('show_agent_shuffle_button');
-        sessionStorage.removeItem('number_of_teams_#' + get_game_id());
-    </script>
 
     <section layout:fragment="gamemode_header">
     </section>
 
     <hr/>
     <div class="row mb-2">
-        <form class="needs-validation" onsubmit="upload_game(read_base_form()); return false;" id="params_form">
+        <form class="needs-validation" onsubmit="send_to_server(read_base_form()); return false;" id="params_form">
             <div class="col-md-auto">
-                <label for="comment" class="form-label">Game description</label>
+                <label for="comment" class="form-label" th:text="#{params.common.game_description}"></label>
                 <input type="text" class="form-control" value="vanilla" id="comment" required minlength="1"
                        maxlength="20"/>
-                <small id="comment-help" class="form-text">Will be visible on the Spawn-Agent's LCD. 20 chars
-                    only.</small>
+                <small id="comment-help" class="form-text" th:text="#{params.common.game_description.comment}"></small>
             </div>
 
             <section layout:fragment="with_respawns">
@@ -102,7 +97,9 @@
         </form>
     </div>
 
-    <script>preset_base_form()</script>
+    <script>
+        preset_base_form_from_template();
+    </script>
 
     <div class="row mt-4 mb-2">
         <div class="col-md-auto">

@@ -1,5 +1,7 @@
 package de.flashheart.rlg.commander.controller;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mchange.util.DuplicateElementException;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
@@ -18,7 +20,7 @@ import java.util.NoSuchElementException;
 @RestController
 @RequestMapping("/api/agent")
 @Log4j2
-public class RestAgentController {
+public class RestAgentController extends MyParentController{
     GamesService gamesService;
     AgentsService agentsService;
     ApplicationContext applicationContext;
@@ -29,19 +31,6 @@ public class RestAgentController {
         this.applicationContext = applicationContext;
     }
 
-    @ExceptionHandler({JSONException.class,
-            NoSuchElementException.class,
-            ArrayIndexOutOfBoundsException.class,
-            ClassNotFoundException.class,
-            NoSuchMethodException.class,
-            InvocationTargetException.class,
-            InstantiationException.class,
-            IllegalAccessException.class,
-            IllegalStateException.class})
-    public ResponseEntity<ErrorMessage> handleException(Exception exc) {
-        log.warn(exc.getMessage());
-        return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
-    }
     @GetMapping("/list")
     public ResponseEntity<?> list_agents() {
         return new ResponseEntity<>(agentsService.get_all_agent_states().toString(), HttpStatus.OK);

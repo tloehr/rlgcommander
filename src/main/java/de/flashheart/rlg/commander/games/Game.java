@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.games;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.github.lalyos.jfiglet.FigletFont;
@@ -192,7 +193,7 @@ public abstract class Game {
         on_transition(event.getOldState(), event.getMessage(), event.getNewState());
     }
 
-    private void fireStateReached(StateReachedEvent event) {
+    private void fireStateReached(StateReachedEvent event){
         stateReachedListeners.forEach(stateReachedListener -> stateReachedListener.onStateReached(event));
         log.debug("new state {}", event.getState());
         at_state(event.getState());

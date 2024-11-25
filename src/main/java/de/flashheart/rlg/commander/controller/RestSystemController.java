@@ -1,5 +1,7 @@
 package de.flashheart.rlg.commander.controller;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
@@ -19,7 +21,7 @@ import java.util.NoSuchElementException;
 @RestController
 @RequestMapping("/api/system")
 @Log4j2
-public class RestSystemController {
+public class RestSystemController extends MyParentController {
     GamesService gamesService;
     AgentsService agentsService;
     ApplicationContext applicationContext;
@@ -28,20 +30,6 @@ public class RestSystemController {
         this.gamesService = gamesService;
         this.agentsService = agentsService;
         this.applicationContext = applicationContext;
-    }
-
-    @ExceptionHandler({JSONException.class,
-            NoSuchElementException.class,
-            ArrayIndexOutOfBoundsException.class,
-            ClassNotFoundException.class,
-            NoSuchMethodException.class,
-            InvocationTargetException.class,
-            InstantiationException.class,
-            IllegalAccessException.class,
-            IllegalStateException.class})
-    public ResponseEntity<ErrorMessage> handleException(Exception exc) {
-        log.warn(exc.getMessage());
-        return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
     }
 
     @GetMapping("/status")

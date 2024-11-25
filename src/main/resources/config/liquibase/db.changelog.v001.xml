@@ -1,28 +1,96 @@
 <?xml version="1.1" encoding="UTF-8" standalone="no"?>
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-    <changeSet author="tloehr (generated)" id="1730901677749-1">
-        <createTable tableName="users">
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="tloehr (generated)" id="1731595166563-1">
+        <createTable tableName="played_games">
             <column autoIncrement="true" name="id" type="BIGINT UNSIGNED">
                 <constraints nullable="false" primaryKey="true"/>
             </column>
-            <column name="username" type="VARCHAR(100)">
+            <column name="pit" remarks="when this game was created" type="datetime(0)">
                 <constraints nullable="false"/>
             </column>
-            <column name="password" type="VARCHAR(100)">
+            <column name="users_id" remarks="owner of the game" type="BIGINT UNSIGNED">
                 <constraints nullable="false"/>
             </column>
-            <column name="api_key" type="VARCHAR(100)">
+            <column name="mode" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
-            <column defaultValue="de" name="locale" type="VARCHAR(10)">
-                <constraints nullable="false"/>
-            </column>
-            <column defaultValue="ROLE_USER" name="role" type="VARCHAR(20)">
+            <column name="game_state" remarks="16MB of Text is enough" type="MEDIUMTEXT">
                 <constraints nullable="false"/>
             </column>
             <column defaultValueNumeric="0" name="version" type="BIGINT UNSIGNED">
                 <constraints nullable="false"/>
             </column>
         </createTable>
+    </changeSet>
+    <changeSet author="tloehr (generated)" id="1731595166563-2">
+        <createTable tableName="roles">
+            <column autoIncrement="true" name="id" type="BIGINT UNSIGNED">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="role" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="users_id" type="BIGINT UNSIGNED">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="version" type="BIGINT UNSIGNED">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="tloehr (generated)" id="1731595166563-3">
+        <createTable tableName="saved_games">
+            <column autoIncrement="true" name="id" type="BIGINT UNSIGNED">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="pit" type="datetime(0)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="text" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mode" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parameters" type="MEDIUMTEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="users_id" type="BIGINT UNSIGNED"/>
+            <column defaultValueNumeric="0" name="version" type="BIGINT UNSIGNED">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="tloehr (generated)" id="1731595166563-4">
+        <createTable tableName="users">
+            <column autoIncrement="true" name="id" type="BIGINT UNSIGNED">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="username" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="apikey" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="de" name="locale" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="version" type="BIGINT UNSIGNED">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1731595166563-5" author="liquibase-docs">
+        <insert tableName="users">
+            <column name="username" value="torsten"/>
+            <column name="password" value="$2a$12$GxMFw6Nj5YMTtxZeiwhE4eZwlixuWeQsRZjd0wSZtFhz4iyAnKlcO"/>
+            <column name="apikey" value="92099550-5CED-4AD5-A6A5-CDF6BFAA4B84"/>
+        </insert>
     </changeSet>
 </databaseChangeLog>

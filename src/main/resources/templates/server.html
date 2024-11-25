@@ -39,7 +39,7 @@
     </div>
 
     <script>
-        if (sessionStorage.hasOwnProperty('last_rest_result')) {
+        if (sessionStorage.getItem('last_rest_result') != null) {
             let result = JSON.parse(sessionStorage.getItem('last_rest_result'));
             if (result.message)
                 document.getElementById('rest_result_message').innerHTML = result.message;

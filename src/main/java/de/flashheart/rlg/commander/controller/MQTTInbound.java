@@ -5,11 +5,9 @@ import com.google.common.collect.HashBiMap;
 import de.flashheart.rlg.commander.elements.Agent;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
-import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +20,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,14 +31,16 @@ import java.util.stream.Collectors;
  * The commander subscribes to the event messages from the agents. All Messages are processed within this class.
  */
 public class MQTTInbound {
-    @Value("${mqtt.url}")
-    public String mqtturl;
+    @Value("${mqtt.host}")
+    public String mqtt_host;
+    @Value("${mqtt.port}")
+    public String mqtt_port;
     @Value("${mqtt.inbound.topic}")
     public String inbound_topic;
     @Value("${mqtt.qos}")
     public int qos;
-    @Value("${mqtt.clientid}")
-    public String clientid;
+    @Value("${mqtt.client_id}")
+    public String client_id;
     MQTTOutbound mqttOutbound;
     AgentsService agentsService;
     GamesService gamesService;
@@ -63,7 +62,7 @@ public class MQTTInbound {
 
     @Bean
     public MessageProducer inbound() {
-        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(mqtturl, String.format("%s-inbound", clientid), inbound_topic);
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(String.format("tcp://%s:%s", mqtt_host, mqtt_port), String.format("%s-inbound", client_id), inbound_topic);
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
         adapter.setQos(qos);

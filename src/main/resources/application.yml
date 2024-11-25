@@ -43,10 +43,16 @@ mqtt:
   qos: '2'
   outbound:
     topic: rlg/cmd/
+    # client can subscribe to this topic to be informed about occurring events
+    # every game id has its own subtopics like rlg/notify/1
+    # agent events (independent of a running game) are posted below the game topics in rlg/notify
+    notification_topic: rlg/notify/
   inbound:
     topic: rlg/evt/#
-  clientid: rlgcmd@release
-  url: tcp://localhost:1883
+  client_id: rlgcmd@release
+  host: 192.168.64.14
+  port: 1883
+  ws_port: 8080
   max_inflight: '1000'
   automaticReconnect: 'true'
 

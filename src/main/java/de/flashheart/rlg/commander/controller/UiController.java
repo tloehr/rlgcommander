@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.flashheart.rlg.commander.configs.MyUserDetails;
 import de.flashheart.rlg.commander.games.*;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
@@ -14,7 +15,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,12 +27,18 @@ import java.util.stream.Collectors;
 @Controller
 @Log4j2
 @RequestMapping("ui")
-public class UiController {
+public class UiController extends MyParentController {
     @Value("${server.locale.default}")
     public String default_locale;
+    @Value("${mqtt.outbound.notification_topic}")
+    public String mqtt_notification_topic;
+    @Value("${mqtt.host}")
+    public String mqtt_host;
+    @Value("${mqtt.ws_port}")
+    public String mqtt_ws_port;
+
     private final GamesService gamesService;
     private final AgentsService agentsService;
-    private final ApplicationContext applicationContext;
     private final BuildProperties buildProperties;
     private final MyYamlConfiguration myYamlConfiguration;
     private final SavedGamesService savedGamesService;
@@ -49,11 +55,9 @@ public class UiController {
                     Game._state_EMPTY, new int[]{0, 0, 0, 0, 0, 0, 0, 0}
             );
 
-
-    public UiController(GamesService gamesService, AgentsService agentsService, ApplicationContext applicationContext, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration, SavedGamesService savedGamesService) {
+    public UiController(GamesService gamesService, AgentsService agentsService, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration, SavedGamesService savedGamesService) {
         this.gamesService = gamesService;
         this.agentsService = agentsService;
-        this.applicationContext = applicationContext;
         this.buildProperties = buildProperties;
         this.myYamlConfiguration = myYamlConfiguration;
         this.savedGamesService = savedGamesService;
@@ -64,9 +68,28 @@ public class UiController {
         return String.format("v%s b%s", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
+    @ModelAttribute("api_key")
+    public String getApiKey(@AuthenticationPrincipal MyUserDetails user) {
+        return user.getApi_key();
+    }
+
+    @ModelAttribute("mqtt_host")
+    public String getMqttHost() {
+        return mqtt_host;
+    }
+
+    @ModelAttribute("mqtt_ws_port")
+    public String getMqttPort() {
+        return mqtt_ws_port;
+    }
+
+    @ModelAttribute("mqtt_notification_topic")
+    public String getMqttNotificationTopic() {
+        return mqtt_notification_topic;
+    }
+
     @GetMapping("/upload")
     public String upload(Model model, @AuthenticationPrincipal MyUserDetails user) {
-        model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("params_active", "active");
         model.addAttribute("saved_games", savedGamesService.list_saved_games());
         return "upload";
@@ -74,7 +97,9 @@ public class UiController {
 
     @GetMapping("/home")
     public String home(Model model, @RequestParam(name = "locale") String locale, @AuthenticationPrincipal MyUserDetails user) {
-        model.addAttribute("api_key", user.getApi_key());
+//        model.addAttribute("api_key", user.getApi_key());
+//        model.addAttribute("mqtt_notification_topic", mqtt_notification_topic);
+//        model.addAttribute("mqtt_url", mqtt_url);
         model.addAttribute("home_active", "active");
         return "home_" + (locale.isEmpty() ? default_locale : locale);
     }
@@ -86,11 +111,8 @@ public class UiController {
 
     @GetMapping("/agents")
     public String agents(Model model, @AuthenticationPrincipal MyUserDetails user) {
-        model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("agents", agentsService.get_all_agents());
         model.addAttribute("agent_replacement_map", agentsService.get_agent_replacement_map());
-        // model.addAttribute("agents_active", "active");
-        // adding test list for the agents web interface
         ArrayList<Triplet<String, String, JSONObject>> list_of_tests = new ArrayList<>();
         try {
             JSONArray tests = new JSONObject(IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("agent_test_commands.json"), StandardCharsets.UTF_8)).getJSONArray("tests");
@@ -108,7 +130,6 @@ public class UiController {
 
     @GetMapping("/server")
     public String server(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
-        model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("server_status", gamesService.getGameState(game_id).toString(4));
         model.addAttribute("server_active", "active");
         return "server";
@@ -116,15 +137,13 @@ public class UiController {
 
     @GetMapping("/zeus/base")
     public String zeus(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
-        model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("active_active", "active");
         gamesService.getGame(game_id).ifPresent(game -> game.add_model_data(model));
         return model.containsAttribute("game_mode") ? "zeus/" + model.getAttribute("game_mode") : "error";
     }
 
     @GetMapping("/active/base")
-    public String active(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
-        model.addAttribute("api_key", user.getApi_key());
+    public String active(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) throws JsonProcessingException {
         model.addAttribute("active_active", "active");
         String game_mode = "";
 
@@ -132,13 +151,13 @@ public class UiController {
             game_mode = "empty";
             model.addAttribute("classname", Game._state_EMPTY);
             model.addAttribute("has_zeus", false);
-            model.addAttribute("active_command_buttons_enabled", new JSONArray(active_command_buttons_enabled.get(Game._state_EMPTY)));
+            model.addAttribute("active_command_buttons_enabled", active_command_buttons_enabled.get(Game._state_EMPTY));
             model.addAttribute("game_mode", "empty");
+            model.addAttribute("current_state", "EMPTY");
         } else {
-            //log.debug("add_model_data from webcontroller");
             Game game = gamesService.getGame(game_id).get();
             game.add_model_data(model);
-            model.addAttribute("active_command_buttons_enabled", new JSONArray(active_command_buttons_enabled.get(game.get_current_state())));
+            model.addAttribute("active_command_buttons_enabled", active_command_buttons_enabled.get(game.get_current_state()));
             game_mode = game.getGameMode();
         }
 
@@ -147,7 +166,6 @@ public class UiController {
 
     @GetMapping("/params/base")
     public String params(@RequestParam(name = "game_mode") String game_mode, Model model, @AuthenticationPrincipal MyUserDetails user) {
-        model.addAttribute("api_key", user.getApi_key());
         model.addAttribute("params_active", "active");
 
         //model.addAttribute("game_template", "nothing_here_yet");

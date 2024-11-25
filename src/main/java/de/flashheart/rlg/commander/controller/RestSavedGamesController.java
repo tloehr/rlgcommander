@@ -22,31 +22,13 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/saved_games")
 @Log4j2
-public class RestSavedGamesController {
+public class RestSavedGamesController extends MyParentController{
     private final SavedGamesService savedGamesService;
     private final UsersRepository usersRepository;
 
     public RestSavedGamesController(SavedGamesService savedGamesService, UsersRepository usersRepository) {
         this.savedGamesService = savedGamesService;
         this.usersRepository = usersRepository;
-    }
-
-    @ExceptionHandler({
-            JSONException.class,
-            NoSuchElementException.class,
-            ArrayIndexOutOfBoundsException.class,
-            ClassNotFoundException.class,
-            NoSuchMethodException.class,
-            InvocationTargetException.class,
-            InstantiationException.class,
-            IllegalAccessException.class,
-            IllegalStateException.class,
-            JsonParseException.class,
-            JsonProcessingException.class
-    })
-    public ResponseEntity<ErrorMessage> handleException(Exception exc) {
-        log.warn(exc.getMessage());
-        return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
     }
 
     @GetMapping("/list")

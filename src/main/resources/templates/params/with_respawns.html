@@ -4,6 +4,7 @@
 <head>
 
     <script>
+        let number_of_teams = 2; // default
 
         function read_respawns_form(game_parameters) {
             game_parameters.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
@@ -33,7 +34,8 @@
         }
 
         function preset_respawns_form(game_parameters) {
-            sessionStorage.setItem('number_of_teams_#' + get_game_id(), game_parameters.spawns.teams.length);
+            number_of_teams = game_parameters.spawns.teams.length;
+            //sessionStorage.setItem('number_of_teams_#' + get_game_id(), game_parameters.spawns.teams.length);
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
             document.getElementById('intro_voice').value = game_parameters.spawns.intro_voice;
             document.getElementById('audio_group').value = game_parameters.agents.audio ? game_parameters.agents.audio.join() : "";
@@ -58,13 +60,13 @@
             });
 
             // hide spawn entries if not needed
-            if (game_parameters.spawns.teams.length < 3) {
+            if (number_of_teams < 3) {
                 document.getElementById('yellow_spawn').classList.add("d-none");
             }
-            if (game_parameters.spawns.teams.length < 4) {
+            if (number_of_teams < 4) {
                 document.getElementById('green_spawn').classList.add("d-none");
             }
-            if (game_parameters.spawns.teams.length === 2) {
+            if (number_of_teams === 2) {
                 document.getElementById('swap_teams').className = "col-auto";
             } else {
                 document.getElementById('cycle_teams').className = "col-auto";
@@ -104,11 +106,11 @@
 
         function swap_teams() {
 
-            if (sessionStorage.getItem('number_of_teams_#' + get_game_id()) === '4') {
+            if (number_of_teams === 4) {
                 swap_4teams();
-            } else if (sessionStorage.getItem('number_of_teams_#' + get_game_id()) === '3') {
+            } else if (number_of_teams === 3) {
                 swap_3teams();
-            } else if (sessionStorage.getItem('number_of_teams_#' + get_game_id()) === '2') {
+            } else if (number_of_teams === 2) {
                 swap_2teams();
             }
         }

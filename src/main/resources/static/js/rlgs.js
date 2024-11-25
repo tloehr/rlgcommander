@@ -1,4 +1,5 @@
-var stompClient = null;
+let mqttClient;
+
 const game_state_colors = {
     "EMPTY": "lightgrey",
     "PROLOG": "#f7d1d5",
@@ -79,17 +80,45 @@ const statusMessages = {
     '599': 'Network connect timeout error'
 };
 
-function connect() {
-    var socket = new SockJS('/chat');
-    stompClient = Stomp.over(socket);
-    stompClient.connect({}, function (frame) {
-        stompClient.subscribe('/topic/messages', messageOutput => {
-            const output_message = JSON.parse(messageOutput.body);
-            //const state = JSON.parse(messageOutput.body)['game_state'];
-            sessionStorage.setItem('state_#' + output_message['game_id'], output_message['game_state']);
-            if (window.location.pathname === '/ui/active/base') window.location.reload();
-        });
-    });
+/**
+ * subscribes to the mqtt channel for the selected game
+ * @param channel
+ */
+function connect_to_mqtt() {
+    const host = sessionStorage.getItem('mqtt_host');
+    const port = sessionStorage.getItem('mqtt_ws_port');
+    const now = new Date();
+
+    const client_id = "webclient@" + now.toISOString();
+    // Create a client instance
+    mqttClient = new Paho.Client(host, Number(port), '/', client_id);
+
+    // set callback handlers
+    mqttClient.onConnectionLost = onConnectionLost;
+    mqttClient.onMessageArrived = onMessageArrived;
+
+    // connect the client
+    mqttClient.connect({onSuccess: onMQTTConnect});
+}
+
+// called when the client loses its connection
+function onConnectionLost(responseObject) {
+    if (responseObject.errorCode !== 0) {
+        console.log("onConnectionLost: " + responseObject.errorMessage);
+    }
+}
+
+function onMessageArrived(message) {
+    console.log('onMessageArrived: ' + message.payloadString + ' - ' + message.topic);
+    const msg = JSON.parse(message.payloadString);
+    sessionStorage.setItem('state_#' + msg.game_id, msg.game_state);
+    update_state_display();
+    if (window.location.pathname === '/ui/active/base') window.location.reload();
+}
+
+function onMQTTConnect() {
+    console.log("onConnect");
+    mqttClient.subscribe(sessionStorage.getItem('mqtt_notification_topic'));
 }
 
 // https://stackoverflow.com/a/78945/1171329
@@ -128,26 +157,26 @@ function navigate_to(destination, params) {
  */
 window.onbeforeunload = function () {
     // disable onclose handler first
-    disconnect();
+    console.log('disconnecting from server due to page change');
+    try{
+        mqttClient.disconnect();
+    } catch (e){
+        console.error(e);
+    }
+
 };
 
 // simple convenience function
-function get_game_id(){
+function get_game_id() {
     return new URL(window.location.href).searchParams.get("game_id") || '1'
 }
 
-function get_locale(){
+function get_locale() {
     return new URL(window.location.href).searchParams.get("locale") || 'de'
 }
 
-function disconnect() {
-    if (stompClient != null) {
-        stompClient.disconnect();
-    }
-}
-
 function update_state_display() {
-    const state = sessionStorage.getItem('state#' + get_game_id()) || 'EMPTY';
+    const state = sessionStorage.getItem('state_#' + get_game_id()) || 'EMPTY';
     const color = game_state_colors[state];
     document.getElementById('game_state').innerHTML = '&nbsp;' + state;
     document.getElementById('game_state').setAttribute('style', 'color: ' + color);
@@ -219,6 +248,9 @@ function update_rest_status_in_session(xhttp) {
     sessionStorage.setItem('rest_result_class', xhttp.status >= 400 ? 'bi bi-lightning-fill bi-md text-danger' : 'bi bi-check-circle-fill bi-md text-success');
 }
 
+/**
+ * this updates the bottom most line which shows the result status of the last REST contact
+ */
 function update_rest_status_line() {
     document.getElementById('rest_result').innerHTML = sessionStorage.getItem('rest_result_html') || '&nbsp;No REST status, yet.';
     document.getElementById('rest_result').className = sessionStorage.getItem('rest_result_class') || 'bi bi-question-circle-fill bi-md text-secondary';

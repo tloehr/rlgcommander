@@ -1,5 +1,6 @@
 package de.flashheart.rlg.commander.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.lalyos.jfiglet.FigletFont;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -10,10 +11,10 @@ import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
+import de.flashheart.rlg.commander.misc.OutputMessage;
 import de.flashheart.rlg.commander.persistence.SavedGamesService;
 import de.flashheart.rlg.commander.persistence.PlayedGamesService;
 import de.flashheart.rlg.commander.persistence.Users;
-import de.flashheart.rlg.commander.websockets.OutputMessage;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,7 +23,6 @@ import org.quartz.Scheduler;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -43,7 +43,7 @@ public class GamesService {
     private final Scheduler scheduler;
     private final AgentsService agentsService;
     private final BuildProperties buildProperties;
-    private final SimpMessagingTemplate simpMessagingTemplate;
+    //private final SimpMessagingTemplate simpMessagingTemplate;
     private final MyYamlConfiguration myYamlConfiguration;
     private final PlayedGamesService playedGamesService;
 
@@ -56,12 +56,12 @@ public class GamesService {
         log.info("RLG-Commander v{} b{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
-    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, SimpMessagingTemplate simpMessagingTemplate, MyYamlConfiguration myYamlConfiguration, PlayedGamesService playedGamesService, SavedGamesService savedGamesService) {
+    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties,  MyYamlConfiguration myYamlConfiguration, PlayedGamesService playedGamesService, SavedGamesService savedGamesService) {
         this.mqttOutbound = mqttOutbound;
         this.scheduler = scheduler;
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
-        this.simpMessagingTemplate = simpMessagingTemplate;
+//        this.simpMessagingTemplate = simpMessagingTemplate;
         this.playedGamesService = playedGamesService;
         this.loaded_games = new Optional[]{Optional.empty()};
         this.gameStateListeners = HashMultimap.create();
@@ -164,23 +164,22 @@ public class GamesService {
     }
 
     private void fireStateReached(int game_id, StateReachedEvent event) {
-        OutputMessage outputMessage = new OutputMessage(event.getState(), new SimpleDateFormat("HH:mm").format(new Date()), game_id);
-        simpMessagingTemplate.convertAndSend("/topic/messages", outputMessage); // STOMP
+        mqttOutbound.notify(game_id, new OutputMessage(game_id, event.getState(), new SimpleDateFormat("HH:mm").format(new Date())));
         gameStateListeners.get(game_id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
     }
 
-    public StateReachedListener addStateReachedListener(int id, StateReachedListener toAdd) {
-        try {
-            check_id(id);
-            gameStateListeners.put(id, toAdd);
-            // we need to send an event right away, otherwise the rlgrc won't realize that it has subscribed successfully
-            toAdd.onStateReached(new StateReachedEvent(loaded_games[id - 1].get().getState().getString("game_state")));
-        } catch (ArrayIndexOutOfBoundsException | IllegalStateException | JSONException ex) {
-            log.warn(ex.getMessage());
-            toAdd = null;
-        }
-        return toAdd;
-    }
+//    public StateReachedListener addStateReachedListener(int id, StateReachedListener toAdd) {
+//        try {
+//            check_id(id);
+//            gameStateListeners.put(id, toAdd);
+//            // we need to send an event right away, otherwise the rlgrc won't realize that it has subscribed successfully
+//            toAdd.onStateReached(new StateReachedEvent(loaded_games[id - 1].get().getState().getString("game_state")));
+//        } catch (ArrayIndexOutOfBoundsException | IllegalStateException | JSONException ex) {
+//            log.warn(ex.getMessage());
+//            toAdd = null;
+//        }
+//        return toAdd;
+//    }
 
 
 }

@@ -56,7 +56,7 @@
             class="bi bi-shuffle">&nbsp;Shuffle agents</span>
     </button>
     <script>
-        if (sessionStorage.getItem('show_agent_shuffle_button')) {
+        if (show_agent_shuffle_button) {
             document.getElementById('agent_shuffle_button').className = "col-auto align-self-center";
             document.getElementById('capture_points').rows = 3;
         }
