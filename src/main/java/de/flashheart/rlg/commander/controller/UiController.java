@@ -1,6 +1,7 @@
 package de.flashheart.rlg.commander.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.flashheart.rlg.commander.configs.MyUserDetails;
 import de.flashheart.rlg.commander.games.*;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
@@ -78,6 +79,15 @@ public class UiController extends MyParentController {
         return mqtt_host;
     }
 
+    @ModelAttribute("mqtt")
+    public String getMqtt() {
+        return new JSONObject()
+                .put("host", mqtt_host)
+                .put("ws_port", mqtt_ws_port)
+                .put("topic", mqtt_notification_topic)
+                .toString();
+    }
+
     @ModelAttribute("mqtt_ws_port")
     public String getMqttPort() {
         return mqtt_ws_port;
@@ -88,11 +98,11 @@ public class UiController extends MyParentController {
         return mqtt_notification_topic;
     }
 
-    @GetMapping("/upload")
+    @GetMapping("/params/upload")
     public String upload(Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("params_active", "active");
         model.addAttribute("saved_games", savedGamesService.list_saved_games());
-        return "upload";
+        return "params/upload";
     }
 
     @GetMapping("/home")
@@ -126,6 +136,18 @@ public class UiController extends MyParentController {
             model.addAttribute("test_list", list_of_tests);
         }
         return "agents";
+    }
+
+    @GetMapping("/user")
+    public String user(Model model, @AuthenticationPrincipal MyUserDetails user) {
+        model.addAttribute("user_active", "active");
+        return "user";
+    }
+
+    @GetMapping("/system")
+    public String system(Model model, @AuthenticationPrincipal MyUserDetails user) {
+        model.addAttribute("system_active", "active");
+        return "system";
     }
 
     @GetMapping("/server")

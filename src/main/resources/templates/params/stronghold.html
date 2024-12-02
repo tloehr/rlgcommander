@@ -7,7 +7,7 @@
     <title>Signal</title>
     <script>
 
-        function read_form(game_parameters) {
+        function read_form() {
             game_parameters.agents.blu = from_string_list(document.getElementById('blu').value);
             game_parameters.agents.grn = from_string_list(document.getElementById('grn').value);
             game_parameters.agents.ylw = from_string_list(document.getElementById('ylw').value);
@@ -23,10 +23,10 @@
                 game_parameters.agents.blu
             );
             console.log(JSON.stringify(game_parameters));
-            read_sirens_form(game_parameters);
+            read_sirens_form();
         }
 
-        function preset_form(game_parameters) {
+        function preset_form() {
             document.getElementById('red').value = game_parameters.agents.red.join();
             document.getElementById('ylw').value = game_parameters.agents.ylw.join();
             document.getElementById('grn').value = game_parameters.agents.grn.join();
@@ -35,7 +35,7 @@
             document.getElementById('check-allow-defuse').checked = game_parameters.allow_defuse;
             document.getElementById('count-respawns').checked = game_parameters.count_respawns;
 
-            preset_sirens_form(game_parameters);
+            preset_sirens_form();
         }
 
     </script>

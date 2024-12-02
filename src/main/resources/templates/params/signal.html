@@ -7,7 +7,7 @@
     <title>Signal</title>
     <script>
 
-        function read_form(game_parameters) {
+        function read_form() {
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
             game_parameters.unlock_time = parseInt(document.getElementById('unlock_time').value);
             game_parameters.agents.blu = from_string_list(document.getElementById('cps_for_blue').value);
@@ -17,16 +17,16 @@
                 game_parameters.agents.blu
             );
 
-            read_sirens_form(game_parameters);
+            read_sirens_form();
         }
 
-        function preset_form(game_parameters) {
+        function preset_form() {
             document.getElementById('game_time').value = game_parameters.game_time;
             document.getElementById('unlock_time').value = game_parameters.unlock_time;
             document.getElementById('cps_for_blue').value = game_parameters.agents.blu.join(); // join makes a comma separated list
             document.getElementById('cps_for_red').value = game_parameters.agents.red.join();
 
-            preset_sirens_form(game_parameters);
+            preset_sirens_form();
         }
 
     </script>

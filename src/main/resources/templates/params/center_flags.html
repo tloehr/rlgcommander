@@ -6,14 +6,14 @@
     <title>Center Flags</title>
     <script>
 
-        function read_form(game_parameters) {
+        function read_form() {
             game_parameters.count_respawns = document.getElementById('count-respawns').checked;
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
 
             read_cps_sirens_form(game_parameters);
         }
 
-        function preset_form(game_parameters) {
+        function preset_form() {
             document.getElementById('game_time').value = game_parameters.game_time;
             document.getElementById('count-respawns').checked = game_parameters.count_respawns;
 

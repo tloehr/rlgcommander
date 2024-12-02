@@ -6,26 +6,24 @@
 <head>
     <title>Setup Conquest</title>
     <script>
-        //sessionStorage.setItem('game_mode', 'conquest');
-
-        function read_form(game_parameters) {
+        function read_form() {
             game_parameters.respawn_tickets = parseInt(document.getElementById('respawn_tickets').value);
             game_parameters.not_bleeding_before_cps = parseInt(document.getElementById('not_bleeding_before_cps').value);
             game_parameters.start_bleed_interval = parseFloat(document.getElementById('start_bleed_interval').value);
             game_parameters.end_bleed_interval = parseFloat(document.getElementById('end_bleed_interval').value);
             game_parameters.ticket_price_for_respawn = parseInt(document.getElementById('ticket_price_for_respawn').value);
 
-            read_cps_sirens_form(game_parameters);
+            read_cps_sirens_form();
         }
 
-        function preset_form(game_parameters) {
+        function preset_form() {
             document.getElementById('respawn_tickets').value = game_parameters.respawn_tickets;
             document.getElementById('not_bleeding_before_cps').value = game_parameters.not_bleeding_before_cps;
             document.getElementById('start_bleed_interval').value = game_parameters.start_bleed_interval;
             document.getElementById('end_bleed_interval').value = game_parameters.end_bleed_interval;
             document.getElementById('ticket_price_for_respawn').value = game_parameters.ticket_price_for_respawn;
 
-            preset_cps_sirens_form(game_parameters);
+            preset_cps_sirens_form();
         }
 
 

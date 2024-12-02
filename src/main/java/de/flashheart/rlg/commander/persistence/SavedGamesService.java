@@ -56,20 +56,15 @@ public class SavedGamesService implements DefaultService<SavedGames> {
     }
 
     /**
-     * loads the entity and returns a json version of it
+     * loads the entity and returns a json version of the parameters
      *
-     * @param saved_game_id the PK of the requested game
-     * @return a JSON representation
-     * @throws NoSuchElementException if no entity was found
+     * @param saved_game_pk the PK of the requested game
+     * @return the stored parameters as string
+     * @throws JsonProcessingException shouldn't happen
      */
-    public String load_by_id(long saved_game_id) throws NoSuchElementException, JsonProcessingException {
-        Optional<SavedGames> game = savedGamesRepository.findById(saved_game_id);
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules(); // for the jdk8 datetimes
-        if (game.isPresent())
-            return objectMapper.writeValueAsString(game.get());
-        //return gson.toJson(game.get(), SavedGames.class);
-        throw new NoSuchElementException("Game with id " + saved_game_id + " does not exist");
+    public String load_by_id(long saved_game_pk) throws JsonProcessingException {
+        Optional<SavedGames> game = savedGamesRepository.findById(saved_game_pk);
+        return game.isPresent() ? game.get().getParameters() : "{}";
     }
 
     public String list_games() throws JsonProcessingException {

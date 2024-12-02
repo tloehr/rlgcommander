@@ -5,14 +5,14 @@
 <head>
 
     <script>
-        function read_sirens_form(game_parameters) {
+        function read_sirens_form() {
             game_parameters.agents.sirens = from_string_list(document.getElementById('sirens').value);
-            read_respawns_form(game_parameters);
+            read_respawns_form();
         }
 
-        function preset_sirens_form(game_parameters) {
+        function preset_sirens_form() {
             document.getElementById('sirens').value = game_parameters.agents.sirens.join(); // join makes a comma separated list
-            preset_respawns_form(game_parameters);
+            preset_respawns_form();
         }
     </script>
 

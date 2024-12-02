@@ -29,6 +29,6 @@ public class MyParentController {
     })
     public ResponseEntity<ErrorMessage> handleException(Exception exc) {
         log.warn(exc.getMessage());
-        return new ResponseEntity(exc, HttpStatus.NOT_ACCEPTABLE);
+        return new ResponseEntity(exc, HttpStatus.NOT_FOUND);
     }
 }

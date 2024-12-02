@@ -7,7 +7,7 @@
     <script>
         show_agent_shuffle_button = true;
 
-        function read_form(game_parameters) {
+        function read_form() {
             game_parameters.winning_score = document.getElementById('winning_score').value;
             game_parameters.flag_time_out = parseInt(document.getElementById('flag_time_out').value);
             game_parameters.flag_time_up = parseInt(document.getElementById('flag_time_up').value);
@@ -17,7 +17,7 @@
             read_cps_sirens_form(game_parameters);
         }
 
-        function preset_form(game_parameters) {
+        function preset_form() {
             document.getElementById('winning_score').value = game_parameters.winning_score;
             document.getElementById('flag_time_out').value = game_parameters.flag_time_out;
             document.getElementById('flag_time_up').value = game_parameters.flag_time_up;

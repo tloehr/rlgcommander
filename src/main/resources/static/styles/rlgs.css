@@ -79,3 +79,5 @@ body {
         transform: translateX(1.5rem);
     }
 }
+
+table.table { width:auto; }

@@ -2,6 +2,7 @@ package de.flashheart.rlg.commander.controller;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import de.flashheart.rlg.commander.persistence.SavedGames;
 import de.flashheart.rlg.commander.persistence.SavedGamesService;
 import de.flashheart.rlg.commander.persistence.Users;
 import de.flashheart.rlg.commander.persistence.UsersRepository;
@@ -41,11 +42,11 @@ public class RestSavedGamesController extends MyParentController{
     }
 
     @GetMapping("/")
-    public ResponseEntity<?> load(@RequestParam(name = "saved_game_id") long saved_game_id) throws JsonProcessingException {
-        return new ResponseEntity<>(savedGamesService.load_by_id(saved_game_id), HttpStatus.OK);
+    public ResponseEntity<?> load_single(@RequestParam(name = "saved_game_pk") long saved_game_pk) throws JsonProcessingException {
+        return new ResponseEntity<>(savedGamesService.load_by_id(saved_game_pk), HttpStatus.OK);
     }
 
-    @PostMapping("/")
+    @PutMapping("/")
     public ResponseEntity<?> save(@RequestParam(name = "title") String title,
                                   @RequestBody String params,
                                   Authentication authentication) {

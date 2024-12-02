@@ -143,8 +143,6 @@ function navigate_to(destination, params) {
     // game_id and locale are always present;
     url.searchParams.set('locale', document.getElementById('locale').value);
     url.searchParams.set('game_id', document.getElementById('game_id').value);
-    // I believe only locale is important as it is read by the spring i18n system
-    // the game_id is read by every method directly from the page element
 
     jQuery.each(params, (key, value) => url.searchParams.set(key, value));
     // reloads the window with the NEW params
@@ -158,9 +156,9 @@ function navigate_to(destination, params) {
 window.onbeforeunload = function () {
     // disable onclose handler first
     console.log('disconnecting from server due to page change');
-    try{
+    try {
         mqttClient.disconnect();
-    } catch (e){
+    } catch (e) {
         console.error(e);
     }
 
@@ -181,11 +179,6 @@ function update_state_display() {
     document.getElementById('game_state').innerHTML = '&nbsp;' + state;
     document.getElementById('game_state').setAttribute('style', 'color: ' + color);
 }
-
-// function update_game_state(message) {
-//     const state = message['game_state'];
-//     sessionStorage.setItem('state', state);
-// }
 
 function to_string_segment_list(jsonArray) {
     let result = [];
@@ -260,7 +253,7 @@ function on_ready_state_change(xhttp) {
     update_rest_status_in_session(xhttp);
     if (xhttp.readyState === 4) {
         sessionStorage.removeItem('last_rest_result');
-        if (xhttp.status >= 400) sessionStorage.setItem('last_rest_result', JSON.stringify(JSON.parse(xhttp.responseText), null, 4));
+        if (xhttp.status >= 400) sessionStorage.setItem('last_rest_result', xhttp.responseText);
     }
 }
 
@@ -292,6 +285,9 @@ function post_rest(rest_uri, param_json, body, callback) {
         console.log(xhttp);
         on_ready_state_change(xhttp);
     };
+    // add a slash if missing
+    if (rest_uri.slice(-1) !== '/') rest_uri += '/';
+    // create the uri
     const base_uri = window.location.origin + '/api/' + rest_uri;
 
     // param, traditional setting - see https://api.jquery.com/jQuery.param/#jQuery-param-obj-traditional
@@ -299,6 +295,31 @@ function post_rest(rest_uri, param_json, body, callback) {
     // async needs to be false, otherwise, Safari and Firefox will have wrong status reports on the xhttp.status
     // https://stackoverflow.com/a/61587856/1171329
     xhttp.open('POST', my_uri, false);
+    xhttp.setRequestHeader('Content-type', 'application/json');
+    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
+    xhttp.send(body ? JSON.stringify(body) : '{}');
+}
+
+function put_rest(rest_uri, param_json, body, callback) {
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = () => {
+        if (callback) callback(xhttp);
+    };
+
+    xhttp.onreadystatechange = () => {
+        console.log(xhttp);
+        on_ready_state_change(xhttp);
+    };
+    // add a slash if missing
+    if (rest_uri.slice(-1) !== '/') rest_uri += '/';
+    // create the uri
+    const base_uri = window.location.origin + '/api/' + rest_uri;
+
+    // param, traditional setting - see https://api.jquery.com/jQuery.param/#jQuery-param-obj-traditional
+    const my_uri = base_uri + (param_json ? '?' + jQuery.param(param_json, true) : '');
+    // async needs to be false, otherwise, Safari and Firefox will have wrong status reports on the xhttp.status
+    // https://stackoverflow.com/a/61587856/1171329
+    xhttp.open('PUT', my_uri, false);
     xhttp.setRequestHeader('Content-type', 'application/json');
     xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
     xhttp.send(body ? JSON.stringify(body) : '{}');
@@ -367,13 +388,33 @@ function get_simplified_elapsed_time(seconds) {
 }
 
 // https://stackoverflow.com/a/30800715
-function download_json(game_parameters, mode) {
-    //const mode = sessionStorage.getItem('game_mode');
+// >> Download JSON object as a file from browser <<
+function download_game_parameters() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(game_parameters, null, 4));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", mode + ".json");
+    downloadAnchorNode.setAttribute("download", game_parameters.mode + ".json");
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
 }
 
+function read_preset_game(saved_game_pk) {
+    const json_string = get_rest('saved_games/', {saved_game_pk});
+    game_parameters = JSON.parse(json_string);
+
+    if (!$.isEmptyObject(game_parameters)) { // check if game_parameters is not empty
+        sessionStorage.setItem('game_parameters', json_string);
+        navigate_to(window.location.origin + '/ui/params/base', {'game_mode': game_parameters.game_mode});
+    }
+}
+
+function loadFile(filePath) {
+    let result = null;
+    const xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", filePath, false);
+    xmlhttp.send();
+    if (xmlhttp.status == 200) {
+        result = xmlhttp.responseText;
+    }
+    return result;
+}

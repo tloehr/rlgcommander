@@ -6,22 +6,22 @@
     <title>Time Only</title>
     <script>
 
-        function read_form(game_parameters) {
+        function read_form() {
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
             game_parameters.spawns.count_respawns = document.getElementById('count-respawns').checked;
             game_parameters.display.line1 = document.getElementById('line1').value;
             game_parameters.display.line2 = document.getElementById('line2').value;
             game_parameters.display.line3 = document.getElementById('line3').value;
-            read_sirens_form(game_parameters);
+            read_sirens_form();
         }
 
-        function preset_form(game_parameters) {
+        function preset_form() {
             document.getElementById('game_time').value = game_parameters.game_time;
             document.getElementById('count-respawns').checked = game_parameters.spawns.count_respawns;
             document.getElementById('line1').value = game_parameters.display.line1;
             document.getElementById('line2').value = game_parameters.display.line2;
             document.getElementById('line3').value = game_parameters.display.line3;
-            preset_sirens_form(game_parameters);
+            preset_sirens_form();
         }
     </script>
 

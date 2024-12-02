@@ -66,6 +66,8 @@
 
 <section layout:fragment="content">
 
+    <h1 class="h1" th:text="#{agents.title}"></h1>
+
     <div class="row justify-content-end">
         <button id="select-all" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(true)">Select all
         </button>
@@ -74,7 +76,7 @@
         </button>
     </div>
     <div class="row">
-        <h3 class="h3" th:text="#{agents.active}"></h3>
+        <h2 class="h2" th:text="#{agents.active}"></h2>
         <table class="table table-striped table-sm">
             <thead>
             <tr>
@@ -186,7 +188,7 @@
     </div>
 
     <div class="row mt-2 justify-content-start">
-        <h3 class="h3">Replaced Agents</h3>
+        <h2 class="h2" th:text="#{agents.replaced}"></h2>
         <div class="col-auto">
             <div class="h4" th:if="${agent_replacement_map.isEmpty()}">No replacements yet.</div>
             <div

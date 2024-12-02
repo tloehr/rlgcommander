@@ -7,7 +7,7 @@
     <title>Farcry Assault</title>
     <script>
 
-        function read_form(game_parameters) {
+        function read_form() {
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
             game_parameters.bomb_time = parseInt(document.getElementById('bomb_time').value);
             game_parameters.agents.capture_sirens = from_string_list(document.getElementById('capture_sirens').value);
@@ -16,14 +16,14 @@
             read_cps_form(game_parameters);
         }
 
-        function preset_form(game_parameters) {
+        function preset_form() {
             document.getElementById('game_time').value = game_parameters.game_time;
             document.getElementById('bomb_time').value = game_parameters.bomb_time;
             document.getElementById('capture_sirens').value = game_parameters.agents.capture_sirens;
             document.getElementById('respawn_time').value = game_parameters.spawns.respawn_time;
             game_parameters.spawns.respawn_time = document.getElementById('respawn_time').value;
 
-            preset_cps_form(game_parameters);
+            preset_cps_form();
         }
 
 

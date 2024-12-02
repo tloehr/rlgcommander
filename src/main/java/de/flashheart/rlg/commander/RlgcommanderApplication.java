@@ -17,10 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableCaching
 @Log4j2
 public class RlgcommanderApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(RlgcommanderApplication.class, args);
     }
-
-
 }

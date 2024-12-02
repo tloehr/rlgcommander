@@ -11,13 +11,13 @@
 
     <script>
 
-        function read_form(game_parameters) {
+        function read_form() {
             game_parameters.ticket_price_for_respawn = parseInt(document.getElementById('ticket_price_for_respawn').value);
 
-            read_sirens_form(game_parameters);
+            read_sirens_form();
         }
 
-        function preset_form(game_parameters) {
+        function preset_form() {
             document.getElementById('ticket_price_for_respawn').value = game_parameters.ticket_price_for_respawn;
 
             const mesh_array = game_parameters.mesh;
@@ -27,7 +27,7 @@
 
             //document.getElementById('mesh').value =
 
-            preset_sirens_form(game_parameters);
+            preset_sirens_form();
         }
 
 

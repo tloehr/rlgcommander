@@ -6,8 +6,9 @@
 </head>
 <body>
 
-
 <section layout:fragment="content">
+    <h2 class="h2" th:text="#{params.upload.title}"></h2>
+    <h3 class="h3" th:text="#{params.saved_games_locally}"></h3>
     <div class="row mt-3">
         <div class="col-md-auto">
             <input class="form-control" id="jsonfile" type="file" accept="application/json">
@@ -23,12 +24,13 @@
                         const reader = new FileReader();
                         reader.readAsText(file, "UTF-8");
                         reader.onload = function (evt) {
-                            const game_parameters = JSON.parse(evt.target.result);
-                            sessionStorage.setItem('game_parameters_#' + get_game_id(), evt.target.result)
-                            navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})
+                            game_parameters = JSON.parse(evt.target.result);
+                            sessionStorage.setItem('game_parameters', evt.target.result)
+                            navigate_to(window.location.origin + '/ui/params/base', {'game_mode': game_parameters.game_mode})
                         }
                         reader.onerror = function (evt) {
-                            sessionStorage.removeItem('game_parameters_#' + get_game_id());
+                            game_parameters = {};
+                            sessionStorage.removeItem('game_parameters');
                             console.error(evt);
                         }
                     }
@@ -38,16 +40,8 @@
         </script>
     </div>
     <hr/>
-<!--    <script>-->
-<!--        function read_preset_game (saved_game_id) {-->
-<!--            const preset_game = get_rest('saved_games/', {saved_game_id});-->
-<!--            const game_parameters = JSON.parse(preset_game);-->
-<!--            sessionStorage.setItem('game_parameters_#' + get_game_id(), preset_game)-->
-<!--            navigate_to(window.location.origin + '/ui/params/base?', {'game_mode': game_parameters.game_mode})-->
-<!--        }-->
-<!--    </script>-->
     <div class="row mt-3">
-        <h3 class="h3" th:text="#{params.table.saved.games}"></h3>
+        <h3 class="h3" th:text="#{params.saved_games_on_server}"></h3>
         <table class="table table-striped table-sm">
             <thead>
             <tr>
@@ -68,7 +62,5 @@
         </table>
     </div>
 </section>
-
-
 </body>
 </html>

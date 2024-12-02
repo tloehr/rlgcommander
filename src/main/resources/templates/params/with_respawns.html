@@ -6,7 +6,7 @@
     <script>
         let number_of_teams = 2; // default
 
-        function read_respawns_form(game_parameters) {
+        function read_respawns_form() {
             game_parameters.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
             game_parameters.spawns.intro_voice = document.getElementById('intro_voice').value;
             game_parameters.agents.audio = from_string_list(document.getElementById('audio_group').value);
@@ -33,9 +33,8 @@
             });
         }
 
-        function preset_respawns_form(game_parameters) {
+        function preset_respawns_form() {
             number_of_teams = game_parameters.spawns.teams.length;
-            //sessionStorage.setItem('number_of_teams_#' + get_game_id(), game_parameters.spawns.teams.length);
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
             document.getElementById('intro_voice').value = game_parameters.spawns.intro_voice;
             document.getElementById('audio_group').value = game_parameters.agents.audio ? game_parameters.agents.audio.join() : "";

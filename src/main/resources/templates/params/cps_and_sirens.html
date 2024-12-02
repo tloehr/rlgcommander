@@ -5,21 +5,19 @@
 <head>
 
     <script>
-        function read_cps_sirens_form(game_parameters) {
+        function read_cps_sirens_form() {
             game_parameters.agents.capture_points = from_string_list(document.getElementById('capture_points').value);
             game_parameters.agents.sirens = from_string_list(document.getElementById('sirens').value);
-            read_respawns_form(game_parameters);
+            read_respawns_form();
         }
 
-        function preset_cps_sirens_form(game_parameters) {
+        function preset_cps_sirens_form() {
             document.getElementById('capture_points').value = game_parameters.agents.capture_points.join(); // join makes a comma separated list
             document.getElementById('sirens').value = game_parameters.agents.sirens.join(); // join makes a comma separated list
-            preset_respawns_form(game_parameters);
+            preset_respawns_form();
         }
 
         function reset_agents() {
-            const game_parameters_string = sessionStorage.getItem('game_parameters_#' + get_game_id());
-            const game_parameters = JSON.parse(game_parameters_string);
             document.getElementById('capture_points').value = game_parameters.agents.capture_points.join()
         }
 

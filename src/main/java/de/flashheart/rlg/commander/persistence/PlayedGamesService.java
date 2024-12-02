@@ -32,7 +32,7 @@ public class PlayedGamesService implements DefaultService<PlayedGames> {
         playedGames.setOwner(owner);
         playedGames.setGame_state(game_state.toString());
         playedGames.setMode(game_state.optString("game_mode", "ERROR"));
-        playedGames.setPit(ZonedDateTime.parse(game_state.getString("start_time")));
+        playedGames.setPit(ZonedDateTime.parse(game_state.optString("start_time", ZonedDateTime.now().toString())));
         return playedGames;
     }
 

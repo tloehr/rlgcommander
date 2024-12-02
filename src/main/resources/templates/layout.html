@@ -47,12 +47,11 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item"
-                               href="/ui/upload"><span
+                               href="/ui/params/upload"><span
                                 class="bi bi-upload" th:text="'&nbsp;'+#{main.upload.game}"></span></a></li>
                         <li><a class="dropdown-item"
                                onclick="
                                post_rest('game/unload',{'game_id': get_game_id()});
-                               sessionStorage.removeItem('game_parameters_#'+get_game_id());
                                sessionStorage.removeItem('state_#' + get_game_id())
                                navigate_to(window.location.origin+'/ui/active/base', {});">
                             <span th:text="'&nbsp;'+#{main.unload.game}" class="bi bi-cloud-slash-fill"></span></a>
@@ -115,6 +114,19 @@
                        th:text="#{main.agents}"></a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" th:classappend="${user_active}"
+                       onclick="navigate_to(window.location.origin+'/ui/user');"
+                       href="#" >
+                        <span class="bi bi-person" sec:authentication="name"></span>
+                    </a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAuthority('ROLE_ADMIN')">
+                    <a class="nav-link" th:classappend="${system_active}"
+                       onclick="navigate_to(window.location.origin+'/ui/system');"
+                       href="#"
+                       th:text="#{main.system}"></a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="/logout"
                        th:text="#{main.logout}"></a>
                 </li>
@@ -146,6 +158,7 @@
                     // only run once
                     // this is a valid api_key for REST requests. Or nothing when nobody is logged in.
                     sessionStorage.setItem('X-API-KEY', [[${api_key}]]);
+                    sessionStorage.setItem('mqtt', [[${mqtt}]] + "#");
                     sessionStorage.setItem('mqtt_notification_topic', [[${mqtt_notification_topic}]] + "#");
                     sessionStorage.setItem('mqtt_host', [[${mqtt_host}]]);
                     sessionStorage.setItem('mqtt_ws_port', [[${mqtt_ws_port}]]);
@@ -174,8 +187,7 @@
         <a href="https://flashheart.de">flashheart.de</a></div>
     <div class="text-center col-auto"><span id="rest_result"></span>
     </div>
-    <div sec:authorize="isAuthenticated()">
-        Authenticated as <span sec:authentication="name"></span></div>
+
     <script>
         update_rest_status_line();
     </script>

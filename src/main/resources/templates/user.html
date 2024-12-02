@@ -1,0 +1,24 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity5"
+      layout:decorate="~{layout.html}">
+<head><title th:text="#{main.user}"></title>
+
+</head>
+<body>
+
+<section layout:fragment="content">
+
+    <h1 class="h1" th:text="#{user.title}"></h1>
+
+    <div class="row">
+
+        <div sec:authorize="hasAuthority('ROLE_ADMIN')">is Admin</div>
+
+    </div>
+
+
+</section>
+
+</body>
+</html>
