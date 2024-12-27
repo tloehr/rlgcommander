@@ -235,9 +235,11 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     @Override
     public JSONObject getState() {
-        return super.getState()
+        JSONObject json = super.getState();
+        json.getJSONObject("played")
                 .put("red_points", red_points)
                 .put("blue_points", blue_points);
+        return json;
     }
 
 

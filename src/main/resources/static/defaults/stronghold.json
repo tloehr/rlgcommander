@@ -1,6 +1,7 @@
 {
   "mode": "stronghold",
-  "game_time": "600",
+  "file_version": 1,
+  "game_time": 600,
   "silent_game": false,
   "game_mode": "stronghold",
   "comment": "Stronghold",
@@ -13,13 +14,21 @@
         "role": "red_spawn",
         "name": "RedFor",
         "led": "red",
-        "agents": [["ag30"]]
+        "agents": [
+          [
+            "ag30"
+          ]
+        ]
       },
       {
         "role": "blue_spawn",
         "name": "BluFor",
         "led": "blu",
-        "agents": [["ag31"]]
+        "agents": [
+          [
+            "ag31"
+          ]
+        ]
       }
     ],
     "respawn_time": 0,
@@ -38,7 +47,13 @@
       "ag05",
       "ag06"
     ],
-    "sirens": ["ag50"],
+    "sirens": [
+      "ag50",
+      "ag51",
+      "ag52",
+      "ag53",
+      "ag54"
+    ],
     "ylw": [
       "ag03",
       "ag04"

@@ -29,27 +29,17 @@
 
 <section layout:fragment="gamemode_header">
     <h1>Center Flags</h1>
-    <p>Time restricted game mode. The team with the most summed-up time wins. To gain score it is necessary to switch
-        the flags to the respective team color.</p>
+<!--    <p>Time restricted game mode. The team with the most summed-up time wins. To gain score it is necessary to switch-->
+<!--        the flags to the respective team color.</p>-->
 </section>
 
 <section layout:fragment="params">
+    <section layout:fragment="game_time">
+        <!-- Will be replaced by content page -->
+    </section>
     <div class="row mb-3">
         <div class="col-auto">
-            <label for="game_time" class="form-label">Gametime in seconds</label>
-            <input type="number" inputmode="decimal" class="form-control" id="game_time" list="game_times" value="600"
-                   required
-                   min="1" pattern="\d*">
-            <datalist id="game_times">
-                <option value="120">2 Minuten</option>
-                <option value="300">5 Minuten</option>
-                <option value="600">10 Minuten</option>
-                <option value="900">15 Minuten</option>
-                <option value="1500">25 Minuten</option>
-                <option value="1800">30 Minuten</option>
-                <option value="2700">45 Minuten</option>
-                <option value="3600">60 Minuten</option>
-            </datalist>
+            <div th:replace="~{/includes :: game_time}"></div>
         </div>
 
         <div class="col-md-auto align-self-center">

@@ -11,6 +11,7 @@ import de.flashheart.rlg.commander.games.Game;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
+import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import de.flashheart.rlg.commander.misc.OutputMessage;
 import de.flashheart.rlg.commander.persistence.SavedGamesService;
 import de.flashheart.rlg.commander.persistence.PlayedGamesService;
@@ -56,7 +57,7 @@ public class GamesService {
         log.info("RLG-Commander v{} b{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
-    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties,  MyYamlConfiguration myYamlConfiguration, PlayedGamesService playedGamesService, SavedGamesService savedGamesService) {
+    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration, PlayedGamesService playedGamesService, SavedGamesService savedGamesService) {
         this.mqttOutbound = mqttOutbound;
         this.scheduler = scheduler;
         this.agentsService = agentsService;
@@ -80,7 +81,7 @@ public class GamesService {
         game_description.put("SCORE_CALCULATION_EVERY_N_SECONDS", myYamlConfiguration.getScore_broadcast().get("every_seconds"));
         game_description.put("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", myYamlConfiguration.getScore_broadcast().get("cycle_counter"));
         game_description.put("owner", owner.getUsername());
-        game_description.put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
+//        game_description.put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
 
         loaded_games[game_id - 1].ifPresent(game -> game.cleanup());
         final Game game = (Game) Class
@@ -95,6 +96,7 @@ public class GamesService {
         });
         game.addStateTransistionListener(event -> {
             if (event.getMessage().equals(Game._msg_GAME_OVER)) {
+                // save this game
                 playedGamesService.save(playedGamesService.createNew(owner, game.getState()));
             }
         });
@@ -133,8 +135,7 @@ public class GamesService {
             throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         JSONObject state = new JSONObject()
                 .put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")))
-                .put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
-                .put("mode", "server");
+                .put("timestamp", JavaTimeConverter.to_iso8601());
         return loaded_games[id - 1].isEmpty() ? state : MQTT.merge(state, loaded_games[id - 1].get().getState());
     }
 

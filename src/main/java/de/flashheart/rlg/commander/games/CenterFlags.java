@@ -285,8 +285,10 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
 
     @Override
     public JSONObject getState() {
-        return super.getState()
+        JSONObject json = super.getState();
+        json.getJSONObject("played")
                 .put("scores", new JSONObject(scores.columnMap()));
+        return json;
     }
 
     @Override

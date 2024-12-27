@@ -1,16 +1,19 @@
 package de.flashheart.rlg.commander.configs;
 
+import de.flashheart.rlg.commander.persistence.Users;
+import lombok.Getter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
 
+@Getter
 public class ApiKeyAuthentication extends AbstractAuthenticationToken {
-    private final String apiKey;
+    private final Users user;
 
-    public ApiKeyAuthentication(String apiKey, Collection<? extends GrantedAuthority> authorities) {
+    public ApiKeyAuthentication(Users user, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
-        this.apiKey = apiKey;
+        this.user = user;
         setAuthenticated(true);
     }
 
@@ -21,6 +24,6 @@ public class ApiKeyAuthentication extends AbstractAuthenticationToken {
 
     @Override
     public Object getPrincipal() {
-        return apiKey;
+        return user.getUsername();
     }
 }

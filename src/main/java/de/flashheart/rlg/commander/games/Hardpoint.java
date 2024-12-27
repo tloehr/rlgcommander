@@ -423,7 +423,10 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
 
     @Override
     public JSONObject getState() {
-        return MQTT.merge(super.getState(), get_vars());
+        JSONObject json = super.getState();
+        JSONObject played = MQTT.merge(json.getJSONObject("played"), get_vars());
+        json.put("played", played);
+        return json;
     }
 
     @Override

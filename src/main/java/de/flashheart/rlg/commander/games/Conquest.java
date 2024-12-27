@@ -353,11 +353,13 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     public JSONObject getState() {
         update_cps_held_by_list();
 
-        return super.getState()
+        JSONObject json = super.getState();
+        json.getJSONObject("played")
                 .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
                 .put("remaining_red_tickets", remaining_red_tickets.intValue())
                 .put("cps_held_by_blue", cps_held_by_blue)
                 .put("cps_held_by_red", cps_held_by_red);
+        return json;
     }
 
     @Override

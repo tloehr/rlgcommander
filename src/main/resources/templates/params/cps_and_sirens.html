@@ -1,7 +1,6 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{params/with_respawns.html}">
-
 <head>
 
     <script>
@@ -33,7 +32,7 @@
 
 <body>
 
-<div layout:fragment="capture_points" class="col-auto col-md-6">
+<div layout:fragment="capture_points" class="col-auto col-md-6 mt-4">
     <label for="capture_points" class="form-label">Capture-Points</label>
     <!-- only comma separated allowed -->
     <textarea type="text" class="form-control" value="ag01" id="capture_points" required
@@ -41,21 +40,21 @@
     <div id="cphelp" class="form-text">Agent IDs, comma separated</div>
 </div>
 
-<div layout:fragment="reset_agents" id="agent_reset_button" class="col-auto align-self-center">
+<div layout:fragment="reset_agents" id="agent_reset_button" class="col-auto mt-4 align-self-center">
     <button class="btn btn-secondary none" type="button"
             onclick="reset_agents()"><span
             class="bi bi-rewind">&nbsp;Reset agents</span>
     </button>
 </div>
 
-<div layout:fragment="shuffle_agents" id="agent_shuffle_button" class="d-none">
+<div layout:fragment="shuffle_agents" id="agent_shuffle_button" class="d-none mt-4">
     <button class="btn btn-primary none" type="button"
             onclick="shuffle_agents()"><span
             class="bi bi-shuffle">&nbsp;Shuffle agents</span>
     </button>
     <script>
         if (show_agent_shuffle_button) {
-            document.getElementById('agent_shuffle_button').className = "col-auto align-self-center";
+            document.getElementById('agent_shuffle_button').className = "col-auto mt-4 align-self-center";
             document.getElementById('capture_points').rows = 3;
         }
     </script>

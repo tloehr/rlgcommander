@@ -120,11 +120,13 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
 
     @Override
     public JSONObject getState() {
-        return super.getState()
+        JSONObject json = super.getState();
+        json.getJSONObject("played")
                 .put("match_length", game_time)
                 .put("start_time", start_time != null ? start_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")
                 .put("end_time", end_time != null ? end_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")
                 .put("remaining", getRemaining());
+        return json;
     }
 
 

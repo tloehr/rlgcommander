@@ -151,21 +151,21 @@ public class UiController extends MyParentController {
     }
 
     @GetMapping("/server")
-    public String server(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String server(@RequestParam int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("server_status", gamesService.getGameState(game_id).toString(4));
         model.addAttribute("server_active", "active");
         return "server";
     }
 
     @GetMapping("/zeus/base")
-    public String zeus(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String zeus(@RequestParam int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("active_active", "active");
         gamesService.getGame(game_id).ifPresent(game -> game.add_model_data(model));
         return model.containsAttribute("game_mode") ? "zeus/" + model.getAttribute("game_mode") : "error";
     }
 
     @GetMapping("/active/base")
-    public String active(@RequestParam(name = "game_id") int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) throws JsonProcessingException {
+    public String active(@RequestParam int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) throws JsonProcessingException {
         model.addAttribute("active_active", "active");
         String game_mode = "";
 

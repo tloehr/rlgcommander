@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
 //todo: when message "ready" is sent manually, the spawn agents do not move to the appropriate state.
 @Log4j2
  /*
@@ -469,7 +470,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
 
     // todo: this delayed_reaction could conflict with deriving classes
     @Override
-    public void play_later (JobDataMap map) {
+    public void play_later(JobDataMap map) {
         // spree announcement when necessary
         team_on_a_spree.ifPresent(stringIntegerPair -> {
             int spree = Math.min(stringIntegerPair.getRight(), ENEMY_SPREE_ANNOUNCEMENTS.length + 1);
@@ -505,19 +506,21 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
 
     @Override
     public JSONObject getState() {
-        final JSONObject statusObject = super.getState()
+        JSONObject json = super.getState();
+        json.getJSONObject("played")
                 .put("game_lobby", game_lobby)
                 .put("starter_countdown", starter_countdown)
                 .put("active_segment", active_segment);
 
+        JSONObject played = json.getJSONObject("played");
         spawn_segments.stream()
                 .filter(objects -> objects.getValue1().equals(active_segment))
-                .forEach(objects -> statusObject.getJSONObject("agent_states")
+                .forEach(objects -> played.getJSONObject("agent_states")
                         .put(objects.getValue2(), objects.getValue3().getCurrentState()));
 
-        team_registry.forEach((s, team) -> statusObject.put(team.getLed_device_id() + "_respawns", team.getRespawns()));
-
-        return statusObject;
+        team_registry.forEach((s, team) -> played.put(team.getLed_device_id() + "_respawns", team.getRespawns()));
+        json.put("played", played);
+        return json;
     }
 
     @Override

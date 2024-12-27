@@ -9,13 +9,22 @@
         // check if something is stored in the session
         // could be uploaded or loaded from the database
         let game_parameters = sessionStorage.getItem('game_parameters') === null ? {} : JSON.parse(sessionStorage.getItem('game_parameters'));
-        // we don't need it anymore
         sessionStorage.removeItem('game_parameters');
 
+        // nothing preloaded ?
         if ($.isEmptyObject(game_parameters)) {
             const url = new URL(window.location.href);
             const mode = url.searchParams.get('game_mode');
-            game_parameters = JSON.parse(loadFile(window.location.origin + '/defaults/' + mode + '.json'));
+
+            // is there a default in the database ?
+            game_parameters = JSON.parse(get_rest('saved_games/default', {mode}));
+
+            // still empty ?
+            if ($.isEmptyObject(game_parameters)){
+                // then we will use the default from the webserver ?
+                game_parameters = JSON.parse(loadFile(window.location.origin + '/defaults/' + mode + '.json'));
+            }
+
             console.log(JSON.stringify(game_parameters));
         }
 
@@ -23,8 +32,6 @@
             post_rest('game/load', {'game_id': get_game_id()}, game_parameters, function (xhttp) {
                 if (xhttp.status < 400) {
                     navigate_to(window.location.origin + '/ui/active/base');
-                } else {
-                    update_rest_status_line();
                 }
             });
         }
@@ -133,7 +140,7 @@
                                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{misc.close}"></button>
                             <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
                                     th:text="#{params.save}" onclick="save_game()"></button>
                         </div>

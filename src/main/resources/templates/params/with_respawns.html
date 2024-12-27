@@ -130,20 +130,18 @@
                 <option selected value="<none>">No intro</option>
                 <option th:each="intro : ${intros}" th:value="${intro.value0}" th:text="${intro.value1}"></option>
             </select>
-            <div id="intro_help" class="form-text">This song will be played on all agents in the AUDIO group.
-            </div>
         </div>
 
         <div class="col-md-3 col-sm-auto">
-            <label for="intro_voice" class="form-label">Voice</label>
+            <label for="intro_voice" class="form-label" th:text="#{params.with_respawns.voice}"></label>
             <select class="form-select " style="height: 40px;" id="intro_voice">
                 <option selected value="<none>">No voice</option>
                 <option th:each="voice : ${voices}" th:value="${voice.value0}" th:text="${voice.value1}"></option>
             </select>
-            <div id="voice_help" class="form-text">Voice file for intro and countdown</div>
         </div>
 
-        <div class="col-md-3  col-sm-auto">
+        <!-- todo: audio group tag for later -->
+        <div class="d-none  col-md-3  col-sm-auto">
             <label for="audio_group" class="form-label">Audio Group</label>
             <input type="text" class="form-control" id="audio_group"
                    placeholder="agents for playing audio files"/>
@@ -151,19 +149,20 @@
             </div>
         </div>
 
-        <div class="col-auto align-self-center form-check form-switch">
+        <div class="col-auto align-self-center form-check form-switch"
+             data-toggle="tooltip" data-placement="top" th:attr="title=#{params.with_respawns.player_lobby.help}">
             <input class="form-check-input" type="checkbox" role="switch" id="check-lobby">
-            <label class="form-check-label" for="check-lobby">Player Lobby</label>
+            <label class="form-check-label" for="check-lobby" th:text="#{params.with_respawns.player_lobby}"></label>
         </div>
 
         <div id="check-spree-widget" class="col-auto align-self-center form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="check-spree">
-            <label class="form-check-label" for="check-spree">Announce Killing Sprees</label>
+            <label class="form-check-label" for="check-spree" th:text="#{params.with_respawns.announce_killing_sprees}"></label>
         </div>
 
-        <div class="col-auto align-self-center form-check form-switch">
+        <div class="col-auto align-self-center form-check form-switch" id="check-silent-div">
             <input class="form-check-input" type="checkbox" role="switch" id="check-silent">
-            <label class="form-check-label" for="check-silent">Silent Game</label>
+            <label class="form-check-label" for="check-silent" th:text="#{params.with_respawns.silent_game}"></label>
         </div>
 
     </div>
@@ -172,8 +171,8 @@
     <div class="row">
         <div class="col-auto" id="red_spawn">
             <input type="text" class="form-control" style="border: 5px solid red;" id="redfor"
-                   value="ag30" placeholder="Spawn agents for team red"
-                   required/>
+                   value="ag30" required/>
+            <label class="form-check-label" for="redfor" th:text="#{params.with_respawns.spawn_redfor}" ></label>
         </div>
         <div class="d-none" id="swap_teams">
             <button type="button" class="btn btn-outline-secondary" onclick="swap_teams()"
@@ -182,18 +181,21 @@
         </div>
         <div class=" col-auto" id="blue_spawn">
             <input type="text" class="form-control" style="border: 5px solid blue;" id="blufor"
-                   value="ag31" placeholder="Spawn agents for team blue"
+                   value="ag31"
                    required/>
+            <label class="form-check-label" for="blufor" th:text="#{params.with_respawns.spawn_blufor}" ></label>
         </div>
         <div class=" col-auto" id="yellow_spawn">
             <input type="text" class="form-control" style="border: 5px solid yellow;" id="yellowfor"
-                   value="ag32" placeholder="Spawn agents for team yellow"
+                   value="ag32"
                    required/>
+            <label class="form-check-label" for="yellowfor" th:text="#{params.with_respawns.spawn_yellowfor}" ></label>
         </div>
         <div class=" col-auto" id="green_spawn">
             <input type="text" class="form-control" style="border: 5px solid green;" id="greenfor"
-                   value="ag33" placeholder="Spawn agents for team green"
+                   value="ag33"
                    required/>
+            <label class="form-check-label" for="greenfor" th:text="#{params.with_respawns.spawn_greenfor}" ></label>
         </div>
         <div class="d-none" id="cycle_teams">
             <button type="button" class="btn btn-outline-secondary" onclick="swap_teams()"

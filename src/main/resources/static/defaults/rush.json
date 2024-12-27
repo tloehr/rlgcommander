@@ -1,5 +1,6 @@
 {
   "comment": "3x2 CPs, Rush",
+  "file_version": 1,
   "class": "de.flashheart.rlg.commander.games.Rush",
   "game_mode": "rush",
   "sectors": [

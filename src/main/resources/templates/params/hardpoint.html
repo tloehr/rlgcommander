@@ -28,7 +28,6 @@
         }
 
 
-
     </script>
 
 </head>
@@ -37,81 +36,114 @@
 
 <section layout:fragment="gamemode_header">
     <h1>Hardpoint</h1>
-    <div class="accordion" id="accordionExample">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingOne">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne"
-                        aria-expanded="false" aria-controls="collapseOne">
-                    Explain
-                </button>
-            </h2>
-            <div id="collapseOne" class="accordion-collapse collapse " aria-labelledby="headingOne"
-                 data-bs-parent="#accordionExample">
-                <div class="accordion-body">
-                    <h3>Explanation</h3>
-                    <ul>
-                        <li>In <a href="https://cod-esports.fandom.com/wiki/New_To_Call_of_Duty/Modes/Hardpoint">Hardpoint</a>,
-                            two teams fight to control rotating objective areas on the map.
-                        </li>
-                        <li>There is <b>no absolute</b> time limit for the whole match. A point has to be occupied
-                            in order to make the game time pass. If an active point is neutral, the time is not
-                            counting down.
-                        </li>
-                        <li>A point needs to be switched to the team color in order to gain points. It can be turned
-                            back and forth.
-                        </li>
-                        <li>The team holding the flag, earns points for every second the flag stays in the team color.
-                        </li>
-                        <li>The first team to reach the <em>Winning Score</em> wins the game.</li>
-                        <li><b>Neutral Flag:</b> after <em>Flag timeOUT</em> seconds have passed and nobody was able to
-                            switch a flag from NEUTRAL to
-                            <span class="text-danger">RED</span> or <span class="text-primary">BLUE</span>, the system
-                            shuts down the flag and activates the next one.
-                        </li>
-                        <li><b>Occupied Flag:</b> After <em>Flag timeUP</em> seconds have passed, the system shuts down
-                            the flag and activates the next
-                            one. No matter which team is currently holding it.
-                        </li>
+    <!--    <div class="accordion" id="accordionExample">-->
+    <!--        <div class="accordion-item">-->
+    <!--            <h2 class="accordion-header" id="headingOne">-->
+    <!--                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne"-->
+    <!--                        aria-expanded="false" aria-controls="collapseOne">-->
+    <!--                    Explain-->
+    <!--                </button>-->
+    <!--            </h2>-->
+    <!--            <div id="collapseOne" class="accordion-collapse collapse " aria-labelledby="headingOne"-->
+    <!--                 data-bs-parent="#accordionExample">-->
+    <!--                <div class="accordion-body">-->
+    <!--                    <h3>Explanation</h3>-->
+    <!--                    <ul>-->
+    <!--                        <li>In <a href="https://cod-esports.fandom.com/wiki/New_To_Call_of_Duty/Modes/Hardpoint">Hardpoint</a>,-->
+    <!--                            two teams fight to control rotating objective areas on the map.-->
+    <!--                        </li>-->
+    <!--                        <li>There is <b>no absolute</b> time limit for the whole match. A point has to be occupied-->
+    <!--                            in order to make the game time pass. If an active point is neutral, the time is not-->
+    <!--                            counting down.-->
+    <!--                        </li>-->
+    <!--                        <li>A point needs to be switched to the team color in order to gain points. It can be turned-->
+    <!--                            back and forth.-->
+    <!--                        </li>-->
+    <!--                        <li>The team holding the flag, earns points for every second the flag stays in the team color.-->
+    <!--                        </li>-->
+    <!--                        <li>The first team to reach the <em>Winning Score</em> wins the game.</li>-->
+    <!--                        <li><b>Neutral Flag:</b> after <em>Flag timeOUT</em> seconds have passed and nobody was able to-->
+    <!--                            switch a flag from NEUTRAL to-->
+    <!--                            <span class="text-danger">RED</span> or <span class="text-primary">BLUE</span>, the system-->
+    <!--                            shuts down the flag and activates the next one.-->
+    <!--                        </li>-->
+    <!--                        <li><b>Occupied Flag:</b> After <em>Flag timeUP</em> seconds have passed, the system shuts down-->
+    <!--                            the flag and activates the next-->
+    <!--                            one. No matter which team is currently holding it.-->
+    <!--                        </li>-->
 
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!--                    </ul>-->
+    <!--                </div>-->
+    <!--            </div>-->
+    <!--        </div>-->
+    <!--    </div>-->
 </section>
 
 <section layout:fragment="params">
     <div class="row mt-3">
-        <div class="col-auto">
-            <label for="winning_score" class="form-label">Winning Score</label>
+        <div class="col-3">
+            <label for="winning_score" class="form-label" th:text="#{params.hardpoint.winning_score}"></label>
             <input type="number" class="form-control" id="winning_score" value="250" required
                    min="1" inputmode="decimal" pattern="\d*">
+            <small id="help3" class="form-text"
+                   th:text="#{params.hardpoint.winning_score.help}"></small>
         </div>
-        <div class="col-auto">
-            <label for="flag_time_out" class="form-label">Flag timeOUT</label>
+        <div class="col-3">
+            <label for="flag_time_out" class="form-label"  th:text="#{params.hardpoint.flag_time_out}"></label>
             <input type="number" class="form-control" id="flag_time_out" value="250" required
                    min="1" inputmode="decimal" pattern="\d*">
+            <small id="help4" class="form-text"
+                   th:text="#{params.hardpoint.flag_time_out.help}"></small>
         </div>
-        <div class="col-auto">
-            <label for="flag_time_up" class="form-label">Flag timeUP</label>
+        <div class="col-3">
+            <label for="flag_time_up" class="form-label" th:text="#{params.hardpoint.flag_time_up}"></label>
             <input type="number" class="form-control" id="flag_time_up" value="250" required
                    min="1" inputmode="decimal" pattern="\d*">
+            <small id="help5" class="form-text"
+                   th:text="#{params.hardpoint.flag_time_up.help}"></small>
         </div>
-        <div class="col-auto">
-            <label for="delay_until_next_flag" class="form-label">Delay between flags</label>
-            <input type="number" class="form-control" id="delay_until_next_flag" value="250" required
-                   min="0" inputmode="decimal" pattern="\d*">
-        </div>
-        <div class="col-auto">
-            <label for="delay_after_color_change" class="form-label"
-                   title="Number of seconds to pass before a flag accepts the first color change."><span
-                    class="bi bi-md bi-info-circle-fill"></span> Delay after first color change</label>
-            <input type="number" class="form-control" id="delay_after_color_change" value="1" required
-                   min="0.5" max="2.5" step="0.5" inputmode="decimal" pattern="\d*">
-        </div>
-        <div class="col-auto align-self-center form-check form-switch">
+        <div class="col-3 align-self-center form-check form-switch"
+             data-toggle="tooltip" data-placement="top" th:attr="title=#{params.hardpoint.hide_next_flag.help}">
             <input class="form-check-input" type="checkbox" role="switch" id="check-hide-next-flag">
-            <label class="form-check-label" for="check-hide-next-flag">Hide next Flag</label>
+            <label class="form-check-label" for="check-hide-next-flag"
+                   th:text="#{params.hardpoint.hide_next_flag}"></label>
+        </div>
+        <div class="col-auto">
+            <div class="accordion" id="expert_accordion">
+                <div class="accordion-item  mt-4">
+                    <h2 class="accordion-header" id="expert_heading">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#expert_content"
+                                aria-expanded="false" aria-controls="expert_content"
+                                th:text="#{misc.expert_settings}">
+                        </button>
+                    </h2>
+                    <div id="expert_content" class="accordion-collapse collapse " aria-labelledby="headingOne"
+                         data-bs-parent="#expert_accordion">
+                        <div class="accordion-body">
+                            <h3 th:text="#{misc.expert_settings}"></h3>
+                            <div class="col-auto">
+                                <label for="delay_until_next_flag" class="form-label"
+                                       th:text="#{params.hardpoint.flag.delay}"></label>
+                                <input type="number" class="form-control" id="delay_until_next_flag" value="250"
+                                       required
+                                       min="0" inputmode="decimal" pattern="\d*">
+                                <small id="help1" class="form-text"
+                                       th:text="#{params.hardpoint.flag.delay.help}"></small>
+                            </div>
+                            <div class="col-auto">
+                                <label for="delay_after_color_change" class="form-label"
+                                       th:text="#{params.hardpoint.change.delay}"></label>
+                                <input type="number" class="form-control" id="delay_after_color_change" value="1"
+                                       required
+                                       min="0.5" max="2.5" step="0.5" inputmode="decimal" pattern="\d*">
+                                <small id="help2" class="form-text"
+                                       th:text="#{params.hardpoint.change.delay.help}"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>

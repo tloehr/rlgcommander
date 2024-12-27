@@ -37,8 +37,7 @@
                 <li class="nav-item">
                     <a class="nav-link " aria-current="page" href="#"
                        onclick="navigate_to(window.location.origin+'/ui/home');"
-                       th:classappend="${home_active}"
-                       th:text="#{main.home}"></a>
+                       th:classappend="${home_active}"><span class="bi bi-house-heart" th:text="'&nbsp;'+#{main.home}"></span></a>
                 </li>
 
                 <li class="nav-item dropdown">
@@ -98,33 +97,29 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link" th:classappend="${active_active}"
                        onclick="navigate_to(window.location.origin+'/ui/active/base');"
-                       href="#"
-                       th:text="#{main.active.game}"></a>
+                       href="#"><span class="bi bi-activity" th:text="'&nbsp;'+#{main.active.game}"></span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${server_active}"
                        onclick="navigate_to(window.location.origin+'/ui/server');"
-                       href="#"
-                       th:text="#{main.server}"></a>
+                       href="#"><span class="bi bi-pc-display-horizontal" th:text="'&nbsp;'+#{main.server}"></span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${agents_active}"
                        onclick="navigate_to(window.location.origin+'/ui/agents');"
-                       href="#"
-                       th:text="#{main.agents}"></a>
+                       href="#"><span class="bi bi-pin-map" th:text="'&nbsp;'+#{main.agents}"></span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${user_active}"
                        onclick="navigate_to(window.location.origin+'/ui/user');"
-                       href="#" >
+                       href="#">
                         <span class="bi bi-person" sec:authentication="name"></span>
                     </a>
                 </li>
                 <li class="nav-item" sec:authorize="hasAuthority('ROLE_ADMIN')">
                     <a class="nav-link" th:classappend="${system_active}"
                        onclick="navigate_to(window.location.origin+'/ui/system');"
-                       href="#"
-                       th:text="#{main.system}"></a>
+                       href="#"><span class="bi bi-toggles" th:text="'&nbsp;'+#{main.system}"></span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/logout"
@@ -192,7 +187,6 @@
         update_rest_status_line();
     </script>
 </footer>
-</div>
 
 </body>
 </html>

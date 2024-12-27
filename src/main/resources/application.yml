@@ -1,8 +1,10 @@
 debug: 'false'
+
 logging:
   level:
     de:
-      flashheart: DEBUG
+      flashheart:
+        rlg: INFO
     org:
       eclipse:
         paho:
@@ -27,6 +29,8 @@ spring:
     url: jdbc:mysql://localhost:3306/rlgs_db
   jpa:
     show-sql: true
+  liquibase:
+    enabled: false
 
 rlgs:
   intros:
@@ -40,7 +44,7 @@ rlgs:
     cycle_counter: '10'
 
 mqtt:
-  qos: '2'
+  qos: 2
   outbound:
     topic: rlg/cmd/
     # client can subscribe to this topic to be informed about occurring events
@@ -50,10 +54,10 @@ mqtt:
   inbound:
     topic: rlg/evt/#
   client_id: rlgcmd@release
-  host: 192.168.64.14
+  host: localhost
   port: 1883
   ws_port: 8080
-  max_inflight: '1000'
+  max_inflight: 1000
   automaticReconnect: 'true'
 
 server:

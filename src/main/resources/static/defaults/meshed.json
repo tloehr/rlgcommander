@@ -1,5 +1,6 @@
 {
   "comment": "Mesh 5",
+  "file_version": 1,
   "class": "de.flashheart.rlg.commander.games.Meshed",
   "game_time": 600,
   "game_mode": "meshed",

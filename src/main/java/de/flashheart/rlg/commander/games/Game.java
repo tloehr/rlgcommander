@@ -193,7 +193,7 @@ public abstract class Game {
         on_transition(event.getOldState(), event.getMessage(), event.getNewState());
     }
 
-    private void fireStateReached(StateReachedEvent event){
+    private void fireStateReached(StateReachedEvent event) {
         stateReachedListeners.forEach(stateReachedListener -> stateReachedListener.onStateReached(event));
         log.debug("new state {}", event.getState());
         at_state(event.getState());
@@ -289,18 +289,18 @@ public abstract class Game {
 //        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agents.keySet());
 //        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agents.keySet());
         send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", ""), agents.keySet());
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.SIR_ALL, MQTT.OFF), roles.get("sirens"));
     }
 
     public void on_run() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
-        send("acoustic", MQTT.toJSON(MQTT.SIR1, MQTT.GAME_STARTS), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR1, MQTT.GAME_STARTS), roles.get("sirens"));
     }
 
     public void on_game_over() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
-        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR1, MQTT.GAME_ENDS), roles.get("sirens"));
-        log.info(getState().toString(4));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR1, MQTT.GAME_ENDS), roles.get("sirens"));
+        //log.info(getState().toString(4));
     }
 
     /**
@@ -393,9 +393,9 @@ public abstract class Game {
     protected void on_cleanup() {
         stateReachedListeners.clear();
         stateTransitionListeners.clear();
-        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), roles.get("sirens"));
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agents.keySet());
-        send("timers", MQTT.toJSON("_clearall", ""), agents.keySet());
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), roles.get("sirens"));
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agents.keySet());
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", ""), agents.keySet());
         play("", "", "");
     }
 
@@ -470,13 +470,17 @@ public abstract class Game {
     public JSONObject getState() {
         JSONObject agent_states = new JSONObject();
         cpFSMs.forEach((agentid, fsm) -> agent_states.put(agentid, fsm.getCurrentState()));
-        return new JSONObject(game_parameters.toString())
-                .put("class", this.getClass().getName())
-                .put("game_state", game_fsm.getCurrentState())
-                .put("in_game_events", new JSONArray(in_game_events))
-                .put("mode", getGameMode())
-                .put("game_init_at", JavaTimeConverter.to_iso8601(game_init_at))
-                .put("agent_states", agent_states);
+        JSONObject json = new JSONObject()
+                .put("setup", game_parameters)
+                .put("played", new JSONObject()
+//                        .put("class", this.getClass().getName())
+                        .put("game_state", game_fsm.getCurrentState())
+                        .put("in_game_events", new JSONArray(in_game_events))
+//                        .put("mode", getGameMode())
+                        .put("game_init_at", JavaTimeConverter.to_iso8601(game_init_at))
+                        .put("agent_states", agent_states)
+                );
+        return json;
     }
 
     /**

@@ -243,11 +243,12 @@ public class Rush extends Scheduled {
 
     @Override
     public JSONObject getState() {
-        return super.getState()
+        JSONObject json = super.getState();
+        json.getJSONObject("played")
                 .put("mode", "rush")
                 .put("bomb_time", bomb_timer)
                 .put("respawn_tickets", respawn_tickets);
-
+        return json;
     }
 
     @Override

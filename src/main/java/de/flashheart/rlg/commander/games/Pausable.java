@@ -140,8 +140,10 @@ public abstract class Pausable extends Scheduled {
 
     @Override
     public JSONObject getState() {
-        return super.getState()
+        JSONObject json = super.getState();
+        json.getJSONObject("played")
                 .put("resume_countdown", resume_countdown)
                 .put("pause_start_time", pausing_since.isPresent() ? pausing_since.get().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)) : JSONObject.NULL);
+        return json;
     }
 }

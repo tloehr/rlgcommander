@@ -1,6 +1,7 @@
 {
   "game_mode": "mag_speed",
-  "game_time": "180",
+  "file_version": 1,
+  "game_time": 180,
   "winning_token_uid": "af-fe-ea-cd",
   "silent_game": false,
   "display": {
@@ -45,7 +46,10 @@
   "agents": {
     "sirens": [
       "ag50",
-      "ag51"
+      "ag51",
+      "ag52",
+      "ag53",
+      "ag54"
     ]
   }
 }

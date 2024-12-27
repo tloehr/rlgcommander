@@ -30,7 +30,7 @@ public class PlayedGamesService implements DefaultService<PlayedGames> {
     public PlayedGames createNew(Users owner, JSONObject game_state) {
         PlayedGames playedGames = createNew();
         playedGames.setOwner(owner);
-        playedGames.setGame_state(game_state.toString());
+        playedGames.setGame(game_state);
         playedGames.setMode(game_state.optString("game_mode", "ERROR"));
         playedGames.setPit(ZonedDateTime.parse(game_state.optString("start_time", ZonedDateTime.now().toString())));
         return playedGames;

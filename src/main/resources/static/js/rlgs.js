@@ -215,25 +215,6 @@ function from_string_list(list) {
     return result;
 }
 
-function get_rest(rest_uri, param_json) {
-    const xhttp = new XMLHttpRequest();
-
-    xhttp.onreadystatechange = () => {
-        if (xhttp.readyState === 4) {
-            //if (xhttp.status === 200) {
-            //console.log(xhttp.responseText);
-            //update_game_state({'game_state': xhttp.responseText})
-            //}
-            update_rest_status_in_session(xhttp);
-        }
-    }
-    const base_url = window.location.origin + '/api/' + rest_uri;
-    const my_uri = base_url + (param_json ? '?' + jQuery.param(param_json, true) : '');
-    xhttp.open('GET', my_uri, false); // true for asynchronous
-    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
-    xhttp.send('{}');
-    return xhttp.response;
-}
 
 function update_rest_status_in_session(xhttp) {
     if (xhttp.readyState !== 4) return;
@@ -257,6 +238,27 @@ function on_ready_state_change(xhttp) {
     }
 }
 
+function get_rest(rest_uri, param_json) {
+    const xhttp = new XMLHttpRequest();
+
+    xhttp.onreadystatechange = () => {
+        if (xhttp.readyState === 4) {
+            //if (xhttp.status === 200) {
+            //console.log(xhttp.responseText);
+            //update_game_state({'game_state': xhttp.responseText})
+            //}
+            update_rest_status_in_session(xhttp);
+        }
+    }
+    const base_url = window.location.origin + '/api/' + rest_uri;
+    const my_uri = base_url + (param_json ? '?' + jQuery.param(param_json, true) : '');
+    xhttp.open('GET', my_uri, false); // true for asynchronous
+    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
+    xhttp.send('{}');
+    return xhttp.response;
+}
+
+
 function delete_rest(rest_uri, param_json) {
     const xhttp = new XMLHttpRequest();
 
@@ -275,7 +277,7 @@ function delete_rest(rest_uri, param_json) {
     xhttp.send();
 }
 
-function post_rest(rest_uri, param_json, body, callback) {
+function change_rest(rest_uri, param_json, http_method, body, callback) {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = () => {
         if (callback) callback(xhttp);
@@ -284,9 +286,8 @@ function post_rest(rest_uri, param_json, body, callback) {
     xhttp.onreadystatechange = () => {
         console.log(xhttp);
         on_ready_state_change(xhttp);
+        update_rest_status_line();
     };
-    // add a slash if missing
-    if (rest_uri.slice(-1) !== '/') rest_uri += '/';
     // create the uri
     const base_uri = window.location.origin + '/api/' + rest_uri;
 
@@ -294,35 +295,22 @@ function post_rest(rest_uri, param_json, body, callback) {
     const my_uri = base_uri + (param_json ? '?' + jQuery.param(param_json, true) : '');
     // async needs to be false, otherwise, Safari and Firefox will have wrong status reports on the xhttp.status
     // https://stackoverflow.com/a/61587856/1171329
-    xhttp.open('POST', my_uri, false);
+    xhttp.open(http_method, my_uri, false);
     xhttp.setRequestHeader('Content-type', 'application/json');
     xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
     xhttp.send(body ? JSON.stringify(body) : '{}');
 }
 
+function post_rest(rest_uri, param_json, body, callback) {
+    change_rest(rest_uri, param_json, 'POST', body, callback);
+}
+
 function put_rest(rest_uri, param_json, body, callback) {
-    const xhttp = new XMLHttpRequest();
-    xhttp.onload = () => {
-        if (callback) callback(xhttp);
-    };
+    change_rest(rest_uri, param_json, 'PUT', body, callback);
+}
 
-    xhttp.onreadystatechange = () => {
-        console.log(xhttp);
-        on_ready_state_change(xhttp);
-    };
-    // add a slash if missing
-    if (rest_uri.slice(-1) !== '/') rest_uri += '/';
-    // create the uri
-    const base_uri = window.location.origin + '/api/' + rest_uri;
-
-    // param, traditional setting - see https://api.jquery.com/jQuery.param/#jQuery-param-obj-traditional
-    const my_uri = base_uri + (param_json ? '?' + jQuery.param(param_json, true) : '');
-    // async needs to be false, otherwise, Safari and Firefox will have wrong status reports on the xhttp.status
-    // https://stackoverflow.com/a/61587856/1171329
-    xhttp.open('PUT', my_uri, false);
-    xhttp.setRequestHeader('Content-type', 'application/json');
-    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
-    xhttp.send(body ? JSON.stringify(body) : '{}');
+function patch_rest(rest_uri, param_json, body, callback) {
+    change_rest(rest_uri, param_json, 'PATCH', body, callback);
 }
 
 /**

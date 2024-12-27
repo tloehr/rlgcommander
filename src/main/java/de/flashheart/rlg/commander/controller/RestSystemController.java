@@ -15,6 +15,10 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.InvocationTargetException;
+import java.text.DateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -34,6 +38,8 @@ public class RestSystemController extends MyParentController {
 
     @GetMapping("/status")
     public ResponseEntity<?> status(@RequestParam(name = "game_id") int game_id) {
+        LocalDateTime now = LocalDateTime.now();
+        now.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM));
         return new ResponseEntity<>(new JSONObject().put("response", game_id).toString(4), HttpStatus.OK);
     }
 

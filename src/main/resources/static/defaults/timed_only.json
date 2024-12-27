@@ -1,6 +1,7 @@
 {
   "game_mode": "timed_only",
-  "game_time": "600",
+  "file_version": 1,
+  "game_time": 600,
   "silent_game": false,
   "display": {
     "line3": "uphold the law",
@@ -63,7 +64,11 @@
   "resume_countdown": "0",
   "agents": {
     "sirens": [
-      "ag50"
+      "ag50",
+      "ag51",
+      "ag52",
+      "ag53",
+      "ag54"
     ]
   }
 }

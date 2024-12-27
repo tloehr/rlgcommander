@@ -1,5 +1,6 @@
 {
   "comment": "Conquest 7",
+  "file_version": 1,
   "class": "de.flashheart.rlg.commander.games.Conquest",
   "respawn_tickets": 250,
   "not_bleeding_before_cps": 1,
@@ -20,7 +21,11 @@
       "ag07"
     ],
     "sirens": [
-      "ag50"
+      "ag50",
+      "ag51",
+      "ag52",
+      "ag53",
+      "ag54"
     ]
   },
   "spawns": {
