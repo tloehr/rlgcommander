@@ -9,11 +9,30 @@
 
 <section layout:fragment="content">
 
-    <h1 class="h1" th:text="#{user.title}"></h1>
+    <h2 class="h1" th:text="${user.username}+#{user.title}"></h2>
+    <h4 sec:authorize="hasAuthority('ROLE_ADMIN')" th:text="#{user.you_are_admin}"></h4>
 
     <div class="row">
+        <h3 th:text="#{user.change_your_password}"></h3>
 
-        <div sec:authorize="hasAuthority('ROLE_ADMIN')">is Admin</div>
+            <div class="col-auto align-self-end">
+                <label for="new_password" class="form-label" th:text="#{user.new_password}"></label>
+                <input type="password" class="form-control" id="new_password" required minlength="5"
+                       maxlength="20"/>
+            </div>
+            <div class="col-3 align-self-end">
+                <button class="btn btn-outline-info" type="button"
+                        onclick="change_password();"><span
+                        class="bi bi-key-fill" th:text="'&nbsp;'+#{user.set_password}"></span>
+                </button>
+            </div>
+
+        <script>
+            function change_password() {
+                const password = document.getElementById('new_password').value;
+                patch_rest('system/set_password', {password});
+            }
+        </script>
 
     </div>
 

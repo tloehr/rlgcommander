@@ -29,16 +29,12 @@ public class UsersService implements DefaultService<Users> {
     }
 
     @Override
-    public JpaRepository<Users, Long> getRepository() {
+    public UsersRepository getRepository() {
         return usersRepository;
     }
 
-    public Optional<Users> findByUsername(String username) {
-        return Optional.ofNullable(usersRepository.findByUsername(username));
-    }
-
     @Transactional
-    public void createNew(String username, String password, String... role_names) {
+    public Users createNew(String username, String password, String... role_names) {
         if (password.isBlank()) password = UUID.randomUUID().toString();
         Users user = createNew();
         user.setUsername(username);
@@ -49,6 +45,7 @@ public class UsersService implements DefaultService<Users> {
         // if additional roles are needed - we'll add them here
         Arrays.stream(role_names).forEach(role_name -> rolesService.save(rolesService.createNew(role_name, user)));
         log.info("Created user: {} with password: {}", username, password);
+        return user;
     }
 
     @Override
@@ -61,5 +58,11 @@ public class UsersService implements DefaultService<Users> {
         user.setLocale(default_locale);
         user.setRoles(new ArrayList<>());
         return user;
+    }
+
+    @Transactional
+    public void set_password(Users user, String newPassword) {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        save(user);
     }
 }

@@ -11,3 +11,4 @@
   * Datenbank installieren
 * application.yml
   * Users entfernen
+* application.yml.default beim package build entfernen

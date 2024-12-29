@@ -21,7 +21,7 @@ public class ApiKeyAuthenticationService {
         if (apiKey == null) {
             throw new BadCredentialsException("Invalid API Key");
         }
-        Optional<Users> optUser = Optional.ofNullable(usersRepository.findByApikey(apiKey));
+        Optional<Users> optUser = usersRepository.findByApikey(apiKey);
         if (optUser.isEmpty()) {
             throw new BadCredentialsException("Invalid API Key");
         }

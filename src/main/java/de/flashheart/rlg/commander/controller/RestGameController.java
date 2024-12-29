@@ -45,7 +45,7 @@ public class RestGameController extends MyParentController {
         ResponseEntity r;
         try {
             log.debug(description);
-            Optional<Users> optUsers = Optional.ofNullable(usersRepository.findByApikey(authentication.getPrincipal().toString()));
+            Optional<Users> optUsers = usersRepository.findByApikey(authentication.getPrincipal().toString());
             if (optUsers.isEmpty()) {
                 throw new BadCredentialsException("Invalid API Key");
             }

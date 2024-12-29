@@ -6,6 +6,8 @@ import de.flashheart.rlg.commander.configs.MyUserDetails;
 import de.flashheart.rlg.commander.games.*;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import de.flashheart.rlg.commander.persistence.SavedGamesService;
+import de.flashheart.rlg.commander.persistence.Users;
+import de.flashheart.rlg.commander.persistence.UsersService;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
@@ -43,6 +45,7 @@ public class UiController extends MyParentController {
     private final BuildProperties buildProperties;
     private final MyYamlConfiguration myYamlConfiguration;
     private final SavedGamesService savedGamesService;
+    private final UsersService usersService;
 
     private static final Map<String, int[]> active_command_buttons_enabled =
             Map.of(
@@ -56,12 +59,13 @@ public class UiController extends MyParentController {
                     Game._state_EMPTY, new int[]{0, 0, 0, 0, 0, 0, 0, 0}
             );
 
-    public UiController(GamesService gamesService, AgentsService agentsService, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration, SavedGamesService savedGamesService) {
+    public UiController(GamesService gamesService, AgentsService agentsService, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration, SavedGamesService savedGamesService, UsersService usersService) {
         this.gamesService = gamesService;
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
         this.myYamlConfiguration = myYamlConfiguration;
         this.savedGamesService = savedGamesService;
+        this.usersService = usersService;
     }
 
     @ModelAttribute("server_version")
@@ -141,6 +145,9 @@ public class UiController extends MyParentController {
     @GetMapping("/user")
     public String user(Model model, @AuthenticationPrincipal MyUserDetails user) {
         model.addAttribute("user_active", "active");
+        usersService.getRepository()
+                .findByUsername(user.getUsername())
+                .ifPresent(users -> model.addAttribute("user", users));
         return "user";
     }
 

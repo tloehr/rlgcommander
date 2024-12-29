@@ -2,8 +2,10 @@ package de.flashheart.rlg.commander.controller;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,21 +15,32 @@ import java.util.NoSuchElementException;
 
 @Log4j2
 public class MyParentController {
-    @ExceptionHandler({
-            JSONException.class,
-            NoSuchElementException.class,
-            ArrayIndexOutOfBoundsException.class,
-            ClassNotFoundException.class,
-            NoSuchMethodException.class,
-            InvocationTargetException.class,
-            InstantiationException.class,
-            IllegalAccessException.class,
-            IllegalStateException.class,
-            JsonParseException.class,
-            JsonProcessingException.class
-    })
+//    @ExceptionHandler({
+//            JSONException.class,
+//            NoSuchElementException.class,
+//            ArrayIndexOutOfBoundsException.class,
+//            ClassNotFoundException.class,
+//            NoSuchMethodException.class,
+//            InvocationTargetException.class,
+//            InstantiationException.class,
+//            IllegalAccessException.class,
+//            IllegalStateException.class,
+//            JsonParseException.class,
+//            JsonProcessingException.class
+//    })
+//    public ResponseEntity<?> handleException(Exception exc) {
+//        log.warn(exc.getMessage());
+//        return new ResponseEntity(exc, HttpStatus.NOT_FOUND);
+//    }
+
+
+    @ExceptionHandler({Exception.class})
     public ResponseEntity<?> handleException(Exception exc) {
         log.warn(exc.getMessage());
-        return new ResponseEntity(exc, HttpStatus.NOT_FOUND);
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        if (exc instanceof EntityNotFoundException) {
+            status = HttpStatus.NOT_FOUND;
+        }
+        return new ResponseEntity<>(new JSONObject().put(exc.getClass().getName(), exc.getMessage()).toString(), status);
     }
 }

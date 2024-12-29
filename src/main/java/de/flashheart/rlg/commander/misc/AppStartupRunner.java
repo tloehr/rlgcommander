@@ -23,9 +23,9 @@ public class AppStartupRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         // create a default admin user if not present
         // this is for new installations only.
-        Optional<Users> opt_admin_user = usersService.findByUsername("admin");
-        if (opt_admin_user.isEmpty()) {
-            usersService.createNew("admin", UUID.randomUUID().toString(), RolesService.ADMIN);
-        }
+//        Optional<Users> opt_admin_user = usersService.findByUsername("admin");
+//        if (opt_admin_user.isEmpty()) {
+//            usersService.createNew("admin", UUID.randomUUID().toString(), RolesService.ADMIN);
+//        }
     }
 }

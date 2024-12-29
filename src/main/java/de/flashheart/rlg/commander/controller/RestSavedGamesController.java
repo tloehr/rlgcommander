@@ -20,7 +20,6 @@ import java.util.Optional;
 public class RestSavedGamesController extends MyParentController {
     private final SavedGamesService savedGamesService;
     private final UsersRepository usersRepository;
-
     public RestSavedGamesController(SavedGamesService savedGamesService, UsersRepository usersRepository) {
         this.savedGamesService = savedGamesService;
         this.usersRepository = usersRepository;

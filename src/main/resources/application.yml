@@ -1,3 +1,9 @@
+### note to myself (ntm)
+# this is the basic application configuration which resides inside the application package.
+# it is read before any other configuration
+# the externalized application.yml (the one in the config file OUTSIDE the project)
+# only adds to or overrides the settings in this file - the one below
+
 debug: 'false'
 
 logging:
