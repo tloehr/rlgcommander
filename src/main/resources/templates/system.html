@@ -7,14 +7,89 @@
 <body>
 
 <section layout:fragment="content">
-
-    <h1 class="h1" th:text="#{system.title}"></h1>
-
-    <div class="row">
-
-
+    <h2 th:text="#{system.title}"></h2>
+    <div class="row mt-3">
+        <div id="user_table">
+        </div>
     </div>
 
+    <!--    this is where we show the error messages, if the SEND TO SERVER fails-->
+    <div class="row">
+        <div class="col-auto">
+            <div class="alert d-none" id="post_rest_result" role="alert">
+            </div>
+        </div>
+    </div>
+    <div class="row mt-3 justify-content-start">
+
+        <div class="col-md-auto">
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <span class="bi bi-person-fill-add" th:text="'&nbsp;'+#{system.create_new_user}"></span>
+            </button>
+
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel"
+                                th:text="#{system.create_new_user}"></h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group row">
+                                <label for="new_username" class="col-form-label"
+                                       th:text="#{login.enter.username}"></label>
+                                <input type="text" class="form-control" id="new_username" required
+                                       pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+                            </div>
+
+                            <div class="form-group row">
+                                <label for="new_password" class="col-form-label"
+                                       th:text="#{login.enter.password}"></label>
+                                <input type="password" class="form-control" id="new_password" required
+                                       pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                    th:text="#{misc.close}"></button>
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+                                    th:text="#{misc.save}" onclick="create_new_user();"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- scripts for this page -->
+    <script th:inline="javascript">
+
+        $(document).ready(function () {
+            refresh_user_table();
+        });
+
+        function refresh_user_table() {
+            $.get("fragments/user_table").done(function (fragment) { // get from controller
+                document.getElementById("user_table").innerHTML = fragment; // update snippet of page
+            });
+        }
+
+        function create_new_user() {
+            const username = document.getElementById('new_username').value;
+            const password = document.getElementById('new_password').value;
+            put_rest('system/new_user', {username, password}, {}, function (xhttp) {
+                document.getElementById('post_rest_result').classList.add('d-none');
+                if (xhttp.status >= 400){
+                    show_post_result_alert(xhttp, 'post_rest_result');
+                }
+                refresh_user_table();
+            });
+        }
+    </script>
 
 </section>
 

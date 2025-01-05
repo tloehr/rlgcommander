@@ -53,7 +53,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     boolean overtime;
     private boolean ran_once_already;
 
-    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException {
+    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws GameSetupException, ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         count_respawns = false;
         estimated_end_time = null;
@@ -74,7 +74,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         ran_once_already = false;
 
         if (capture_points.size() > MAX_CAPTURE_POINTS)
-            throw new ArrayIndexOutOfBoundsException("max number of capture points is " + MAX_CAPTURE_POINTS);
+            throw new GameSetupException("max number of capture points is " + MAX_CAPTURE_POINTS);
 
         sirs = game_parameters.getJSONObject("agents").getJSONArray("capture_sirens").toList();
         check_segment_sizes();
@@ -101,15 +101,12 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         ConcurrentMap<Object, Long> map_teams_to_segment_length = spawn_segments.stream().collect(Collectors.groupingByConcurrent(o -> o.getValue0(), Collectors.counting()));
 
         if (map_teams_to_segment_length.values().stream().distinct().count() > 1)
-            throw new JSONException("all teams must have the same number of spawn segments");
-
-//        if (spawn_segments.rowMap().values().stream().map(integerPairMap -> integerPairMap.keySet().size()).distinct().count() > 1)
-//            throw new JSONException("all teams must have the same number of spawn segments");
+            throw new GameSetupException("all teams must have the same number of spawn segments");
 
         long num_of_spawn_segments = new ArrayList<Long>(map_teams_to_segment_length.values()).get(0);
 
         if (!(num_of_spawn_segments == capture_points.size() && num_of_spawn_segments == sirs.size()))
-            throw new JSONException("number of segments mismatch. number of CPs, sirens and spawn_segments must match");
+            throw new GameSetupException("number of segments mismatch. number of CPs, sirens and spawn_segments must match");
     }
 
 
@@ -315,8 +312,8 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         String current_active_agent = capture_points.get(Math.min(
                 active_capture_point,
                 cpFSMs.size() - 1

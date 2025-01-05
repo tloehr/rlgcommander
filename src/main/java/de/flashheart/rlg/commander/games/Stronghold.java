@@ -346,8 +346,8 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         // everything is prepared already. simply copying over.
         JSONObject vars = get_variables();
         model.addAttribute("active_ring", vars.optString("active_ring"));

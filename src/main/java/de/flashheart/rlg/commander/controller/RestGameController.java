@@ -1,91 +1,78 @@
 package de.flashheart.rlg.commander.controller;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import de.flashheart.rlg.commander.games.Game;
-import de.flashheart.rlg.commander.persistence.Users;
-import de.flashheart.rlg.commander.persistence.UsersRepository;
+import de.flashheart.rlg.commander.configs.ApiKeyAuthentication;
+import de.flashheart.rlg.commander.games.GameSetupException;
+import de.flashheart.rlg.commander.persistence.SavedGamesService;
 import de.flashheart.rlg.commander.service.GamesService;
 import lombok.extern.log4j.Log4j2;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.support.ErrorMessage;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/game")
 @Log4j2
 public class RestGameController extends MyParentController {
     private final GamesService gamesService;
-    private final UsersRepository usersRepository;
+    private final SavedGamesService savedGamesService;
 
-    public RestGameController(GamesService gamesService, UsersRepository usersRepository) {
+
+    public RestGameController(GamesService gamesService, SavedGamesService savedGamesService) {
         this.gamesService = gamesService;
-        this.usersRepository = usersRepository;
+        this.savedGamesService = savedGamesService;
     }
 
-    /**
-     * emits server sent events on game state changes test with: curl -N "http://localhost:8090/api/game-sse?id=1"
-     *
-     * @return
-     */
-    @PostMapping("/load")
+    @PutMapping("/")
     // https://stackoverflow.com/a/57024167
-    public ResponseEntity<?> load_game(@RequestParam(name = "game_id") int game_id,
+    public ResponseEntity<?> load_game(@RequestParam int game_id,
+                                       @RequestParam(required = false, defaultValue = "de") String locale,
                                        @RequestBody String description,
-                                       Authentication authentication) {
-        ResponseEntity r;
-        try {
-            log.debug(description);
-            Optional<Users> optUsers = usersRepository.findByApikey(authentication.getPrincipal().toString());
-            if (optUsers.isEmpty()) {
-                throw new BadCredentialsException("Invalid API Key");
-            }
-            Game game = gamesService.load_game(game_id, description, optUsers.get());
-            r = new ResponseEntity<>(game.getState().toString(4), HttpStatus.ACCEPTED);
-        } catch (Exception e) {
-            // remember the constructor of the game class must be public
-            log.warn(e);
-            r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
-        }
-        return r;
+                                       ApiKeyAuthentication authentication) throws GameSetupException, IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        
+        gamesService.load_game(game_id, description, authentication.getUser(), Locale.forLanguageTag(locale));
+
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<?> save(@RequestParam int game_id,
+                                  ApiKeyAuthentication authentication) {
+        JSONObject game_state = gamesService.getGameState(game_id);
+        if (!game_state.has("setup"))
+            throw new IllegalArgumentException(String.format("Game %s does not exist", game_id));
+        String title = game_state.getJSONObject("setup").getString("comment") + " @ " + LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM));
+        savedGamesService.createNew(title, authentication.getUser(), gamesService.getGameState(game_id).getJSONObject("setup"));
+        return new ResponseEntity<>(new JSONObject().put("name", title).toString(), HttpStatus.CREATED);
     }
 
     @PostMapping("/zeus")
     public ResponseEntity<?> zeus(@RequestParam(name = "game_id") int game_id,
                                   @RequestBody String params) {
         gamesService.zeus(game_id, params);
-        return new ResponseEntity(HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
     @PostMapping("/process")
     public ResponseEntity<?> process(@RequestParam(name = "game_id") int game_id,
                                      @RequestParam(name = "message") String message) {
         gamesService.process_message(game_id, message);
-        return new ResponseEntity(HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
 
-    @PostMapping("/unload")
-    public ResponseEntity<?> unload(@RequestParam(name = "game_id") int game_id) {
-        ResponseEntity r;
-        try {
-            gamesService.unload_game(game_id);
-            r = new ResponseEntity(HttpStatus.ACCEPTED);
-        } catch (Exception e) {
-            // remember the constructor of the game class must be public
-            log.warn(e);
-            r = new ResponseEntity<>(e, HttpStatus.NOT_ACCEPTABLE);
-        }
-        return r;
+    @DeleteMapping("/")
+    public ResponseEntity<?> unload(@RequestParam(name = "game_id") int game_id) throws IOException {
+        gamesService.unload_game(game_id);
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
     @GetMapping("/status")
@@ -103,7 +90,7 @@ public class RestGameController extends MyParentController {
         try {
             return new ResponseEntity<>(gamesService.getGame(game_id).orElseThrow().getGame_parameters().toString(4), HttpStatus.OK);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            return new ResponseEntity<>(new JSONObject().put("error", e.getMessage()).toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 

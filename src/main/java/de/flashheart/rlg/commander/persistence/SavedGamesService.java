@@ -2,18 +2,20 @@ package de.flashheart.rlg.commander.persistence;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.data.domain.Example;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.random.RandomGenerator;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -45,6 +47,7 @@ public class SavedGamesService implements DefaultService<SavedGames> {
         savedGame.setDefaults(false);
         savedGame.setGame(game_parameters);
         savedGame.setPit(ZonedDateTime.now());
+        save(savedGame);
         return savedGame;
     }
 
@@ -69,15 +72,21 @@ public class SavedGamesService implements DefaultService<SavedGames> {
     }
 
     public Optional<SavedGames> find_default_for(String mode) {
-        return savedGamesRepository.findDefaultFor(mode);
+        Optional<SavedGames> opt_default_game = savedGamesRepository.findDefaultFor(mode);
+        if (opt_default_game.isPresent()) {
+            SavedGames default_game = opt_default_game.get();
+            default_game.getGame().put("saved_game_pk", default_game.getId());
+            return Optional.of(default_game);
+        }
+        return Optional.empty();
     }
 
-    public List<SavedGames> list_saved_games() {
-        return list_saved_games(Optional.empty(), Optional.empty(), Optional.empty());
+    public List<SavedGames> list_saved_games_by_mode(String mode) {
+        return savedGamesRepository.findByMode(mode);
     }
 
-    public List<SavedGames> list_saved_games(Optional<String> text, Optional<String> mode, Optional<String> owner) {
-        return savedGamesRepository.findAll();
+    public List<SavedGames> list_saved_games_by_text(String text) {
+        return savedGamesRepository.findByTextLikeIgnoreCase(text);
     }
 
     /**
@@ -89,7 +98,7 @@ public class SavedGamesService implements DefaultService<SavedGames> {
      */
     public JSONObject load_game_by_id(long saved_game_pk) throws JsonProcessingException {
         Optional<SavedGames> game = savedGamesRepository.findById(saved_game_pk);
-        return game.isPresent() ? game.get().getGame() : new JSONObject();
+        return game.isPresent() ? game.get().getGame().put("saved_game_pk", saved_game_pk) : new JSONObject();
     }
 
     public String list_games() throws JsonProcessingException {
@@ -97,4 +106,19 @@ public class SavedGamesService implements DefaultService<SavedGames> {
         objectMapper.findAndRegisterModules(); // for the jdk8 datetimes
         return objectMapper.writeValueAsString(savedGamesRepository.findAll());//gson.toJson(savedGamesRepository.findAll(), SavedGames.class);
     }
+
+    /**
+     * the primary key is stored in the game_parameters
+     *
+     * @param user
+     * @param game_parameters
+     */
+    @Transactional
+    public void update(Users user, JSONObject game_parameters) {
+        long pk = game_parameters.optLong("saved_game_pk");
+        Optional<SavedGames> opt_game = savedGamesRepository.findById(pk);
+        opt_game.ifPresent(game -> game.setGame(game_parameters));
+        save(opt_game.get());
+    }
+
 }

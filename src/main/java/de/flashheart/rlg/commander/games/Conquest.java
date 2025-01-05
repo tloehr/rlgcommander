@@ -79,7 +79,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         assert_two_teams_red_and_blue();
 
         int number_of_cps = roles.get("capture_points").size();
-        if (number_of_cps < 3) throw new ArrayIndexOutOfBoundsException("Minimum number of CPs: 3");
+        if (number_of_cps < 3) throw new GameSetupException("Minimum number of CPs: 3");
         count_respawns = true;
 
         this.respawn_tickets = game_parameters.getBigDecimal("respawn_tickets");
@@ -363,8 +363,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         update_cps_held_by_list();
         //JSONArray score_table = new JSONArray();
         JSONArray score_data_red = new JSONArray();

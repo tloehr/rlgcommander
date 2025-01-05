@@ -10,44 +10,47 @@
 
 <section layout:fragment="content">
 
-    <h1 th:text="#{server.current.status}"></h1>
+    <div class="row">
+        <h2 th:text="#{server.current.status}"></h2>
 
-    <div class="col-md-auto">
-        <button class="btn btn-outline-info" type="button"
-                th:onclick="download_json(
-                    JSON.parse([[${server_status}]])
+        <div class="col-md-auto">
+            <button class="btn btn-outline-info" type="button"
+                    th:onclick="download_json(
+                    JSON.parse([[${server_status}]]),
+                    'server_state'
                 )">
 
-            <span class="bi bi-download">&nbsp;Download State</span>
+                <span class="bi bi-download">&nbsp;Download State</span>
 
 
-        </button>
-    </div>
+            </button>
+        </div>
 
-    <div class="p-3 mb-2 bg-dark" style="color: #36FF33">
-        <pre id="server_status"></pre>
-        <script>
-            document.getElementById('server_status').innerText = get_rest('game/status', {'game_id': get_game_id()});
-        </script>
-    </div>
-
-    <div id="div_rest_result">
-        <h2 id="rest_result_message">POST REST Error Result</h2>
         <div class="p-3 mb-2 bg-dark" style="color: #36FF33">
-            <pre id="last_rest_result"></pre>
+            <pre id="server_status"></pre>
+            <script>
+                document.getElementById('server_status').innerText = get_rest('game/status', {'game_id': get_game_id()});
+            </script>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div id="div_rest_result" class="d-none">
+            <div></div>
+            <h2 th:text="#{server.last_rest_error}"></h2>
+            <h3 id="last_rest_error_status"></h3>
+            <div class="p-3 mb-2 bg-dark" style="color: #ff4b33">
+                <pre id="last_rest_error_response"></pre>
+            </div>
         </div>
     </div>
 
     <script>
-        if (sessionStorage.getItem('last_rest_result') != null) {
-            let result = JSON.parse(sessionStorage.getItem('last_rest_result'));
-            if (result.message)
-                document.getElementById('rest_result_message').innerHTML = result.message;
-            else
-                document.getElementById('rest_result_message').innerHTML = result.targetException.message;
-            document.getElementById('last_rest_result').innerHTML = sessionStorage.getItem('last_rest_result');
+        if (sessionStorage.getItem('last_rest_error_timestamp') != null) {
+            document.getElementById('last_rest_error_status').innerHTML = sessionStorage.getItem('last_rest_error_status') + ' @ ' + sessionStorage.getItem('last_rest_error_timestamp');
+            document.getElementById('last_rest_error_response').innerHTML = sessionStorage.getItem('last_rest_error_response');
+            document.getElementById('div_rest_result').classList.remove('d-none');
         } else {
-            document.getElementById('div_rest_result').className = 'd-none';
+            document.getElementById('div_rest_result').classList.add('d-none');
         }
     </script>
 

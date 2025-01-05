@@ -2,65 +2,7 @@
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
       layout:decorate="~{layout.html}">
 <head><title th:text="#{main.agents}"></title>
-    <script>
 
-        function set_checkboxes(select) {
-            document.getElementsByName('row_selector').forEach((element, i) => {
-                element.checked = select;
-            })
-        }
-
-        function remove_selected_agents() {
-            let selection = []
-            document.getElementsByName('row_selector').forEach((element, i) => {
-                if (element.checked) selection.push(element.getAttribute('id'));
-            })
-            if (!selection.length) return;
-
-            delete_rest('agent',
-                {'agents': selection}
-            );
-        }
-
-        function remove_replacement(old_agent) {
-            post_rest('agent/replace',
-                {
-                    'old': old_agent,
-                    'new': ''
-                }
-            );
-        }
-
-        function replace_agent() {
-            post_rest('agent/replace',
-                {
-                    'old': document.getElementById("old_agent").value,
-                    'new': document.getElementById("new_agent").value
-                }
-            );
-        }
-
-        function test_selected_agents() {
-            let selection = []
-            document.getElementsByName('row_selector').forEach((element, i) => {
-                if (element.checked) selection.push(element.getAttribute('id'));
-            })
-
-            if (!selection.length) return;
-
-            const elem_select = document.getElementById('agent_test_list');
-            const elem_option_dataset = elem_select.options[elem_select.selectedIndex].dataset;
-
-            post_rest('agent/test',
-                {'agents': selection},
-                {
-                    'command': elem_option_dataset.command,
-                    'pattern': JSON.parse(elem_option_dataset.pattern)
-                }
-            );
-        }
-
-    </script>
 </head>
 <body>
 
@@ -68,12 +10,11 @@
 
     <h1 class="h1" th:text="#{agents.title}"></h1>
 
-    <div class="row justify-content-end">
-        <button id="select-all" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(true)">Select all
-        </button>
-        <button id="clear-selection" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(false)">Clear
-            Selection
-        </button>
+    <div class="row">
+        <button id="select-all" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(true)"
+                th:text="#{misc.select_all}"></button>
+        <button id="clear-selection" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(false)"
+                th:text="#{misc.clear_selection}"></button>
     </div>
     <div class="row">
         <h2 class="h2" th:text="#{agents.active}"></h2>
@@ -113,7 +54,13 @@
                               class="badge text-bg-primary"><img src="/img/buzzer-invert.png" height="28"/>&nbsp;
 
                             <script th:inline="javascript">
-                                document.getElementById([[${agent.id}]] + '_btn01').innerHTML += get_simplified_elapsed_time([[${agent.getSecondsAgo(agent.getEvents().get(agent.BTN01).getEvent_time())}]]);
+                                document.getElementById([[${
+                                    agent
+                                    .id
+                                }]] + '_btn01').innerHTML += get_simplified_elapsed_time([[${
+                                    agent
+                                    .getSecondsAgo(agent.getEvents().get(agent.BTN01).getEvent_time())
+                                }]]);
                             </script>
                         </span>
                         <span class="badge text-bg-light"
@@ -135,7 +82,7 @@
         </table>
     </div>
 
-    <div class="row mt-2 justify-content-start">
+    <div class="row mt-2">
 
         <div class="col-auto">
             <select class="form-select form-select-lg" id="agent_test_list"
@@ -146,52 +93,60 @@
                 </option>
             </select>
         </div>
-
+    </div>
+    <div class="row mt-2">
         <button id="test_button"
-                class="btn btn-outline-primary btn-lg col-auto me-2"
-                onclick="test_selected_agents();">Test
-        </button>
-
+                class="btn btn-outline-success btn-lg col-auto me-2"
+                onclick="test_selected_agents();" th:text="#{misc.test}"></button>
         <button id="play_event_button"
-                class="btn btn-outline-secondary btn-lg col-auto me-2"
-                onclick="test_selected_agents();">
+                class="btn btn-outline-primary btn-lg col-auto me-2"
+                onclick="test_selected_agents_with('play',
+                    {
+                            channel: 'events',
+                            subpath: 'events',
+                            soundfile: '<random>'
+                    })">
             <i class="bi bi-lg bi-play-btn-fill"></i>
         </button>
         <button id="play_music_button"
                 class="btn btn-outline-primary btn-lg col-auto me-2"
-                onclick="test_selected_agents();">
+                onclick="test_selected_agents_with('play',
+                    {
+                            channel: 'pause',
+                            subpath: 'pause',
+                            soundfile: '<random>'
+                    })">
             <i class="bi bi-lg bi-music-note-beamed"></i>
         </button>
         <button id="stop_button"
-                class="btn btn-outline-danger btn-lg col-auto me-2"
-                onclick="test_selected_agents();">
+                class="btn btn-outline-secondary btn-lg col-auto me-2"
+                onclick="test_selected_agents_with('play',
+                    {
+                       channel: '',
+                       subpath: '',
+                       soundfile: ''
+                    })">
             <i class="bi bi-lg bi-stop-btn-fill"></i>
         </button>
-
         <button id="delete"
                 class="btn btn-outline-danger col-auto btn-lg me-2"
                 onclick="remove_selected_agents(); location.reload();"><i
                 class="bi bi-lg bi-x-circle-fill"></i>
         </button>
-
         <button title="Sleep" onclick="post_rest('agent/sleep'); location.reload();" type="button"
                 class="btn btn-outline-secondary btn-circle btn-lg col-auto me-2"><i
                 class="bi bi-moon-stars-fill bi-lg"></i>
         </button>
-
-
         <button title="Wake up" onclick="post_rest('agent/wakeup'); location.reload();" type="button"
                 class="btn btn-outline-warning btn-circle btn-lg col-auto"><i
                 class="bi bi-sun-fill bi-lg"></i>
         </button>
-
-
     </div>
 
     <div class="row mt-2 justify-content-start">
         <h2 class="h2" th:text="#{agents.replaced}"></h2>
         <div class="col-auto">
-            <div class="h4" th:if="${agent_replacement_map.isEmpty()}">No replacements yet.</div>
+            <div class="h4" th:if="${agent_replacement_map.isEmpty()}" th:text="#{agents.no_replacements_yet}"></div>
             <div
                     th:if="${!agent_replacement_map.isEmpty()}"
                     class="table table-striped">
@@ -199,13 +154,14 @@
                     <tbody>
                     <div th:each="old_new_agent_pair : ${agent_replacement_map.entrySet()}">
                         <tr>
-                            <td class="align-middle" th:text="${old_new_agent_pair.getKey()} + '&nbsp;&xrarr;&nbsp;' + ${old_new_agent_pair.getValue()}">
+                            <td class="align-middle"
+                                th:text="${old_new_agent_pair.getKey()} + '&nbsp;&xrarr;&nbsp;' + ${old_new_agent_pair.getValue()}">
                             </td>
                             <td>
                                 <!-- see: https://www.baeldung.com/thymeleaf-js-function-call#3-using-functions-with-dynamic-input -->
                                 <button title="delete" type="button" class="btn btn-sm"
-                                        th:onclick="remove_replacement([[${old_new_agent_pair.getKey()}]]); location.reload();"><i
-                                        class="bi bi-x-square-fill bi-lg text-danger"></i></button>
+                                        th:onclick="remove_replacement([[${old_new_agent_pair.getKey()}]]); location.reload();">
+                                    <i class="bi bi-x-square-fill bi-lg text-danger"></i></button>
                             </td>
                         </tr>
                     </div>
@@ -214,15 +170,86 @@
             </div>
         </div>
         <div class="col-auto">
-            <form class="needs-validation" onsubmit="replace_agent(); location.reload(); return false;" id="replace_agent_form">
-                <label for="old_agent" class="form-label">Old Agent</label>
+            <form class="needs-validation" onsubmit="replace_agent(); location.reload(); return false;"
+                  id="replace_agent_form">
+                <label for="old_agent" class="form-label" th:text="#{agents.old_agent}"></label>
                 <input type="text" class="form-control" id="old_agent" value="" required/>
-                <label for="new_agent" class="form-label">New Agent</label>
+                <label for="new_agent" class="form-label" th:text="#{agents.new_agent}"></label>
                 <input type="text" class="form-control" id="new_agent" value="" required/>
-                <button class="btn mt-2 btn-primary" type="submit">Add replacement</button>
+                <button class="btn mt-2 btn-primary" type="submit" th:text="#{agents.add_replacement}"></button>
             </form>
         </div>
     </div>
+
+    <script>
+
+        function set_checkboxes(select) {
+            document.getElementsByName('row_selector').forEach((element, i) => {
+                element.checked = select;
+            })
+        }
+
+        function remove_selected_agents() {
+            let selection = []
+            document.getElementsByName('row_selector').forEach((element, i) => {
+                if (element.checked) selection.push(element.getAttribute('id'));
+            })
+            if (!selection.length) return;
+
+            delete_rest('agent',
+                {'agents': selection}
+            );
+        }
+
+        function remove_replacement(old_agent) {
+            post_rest('agent/replace',
+                {
+                    'old': old_agent,
+                    'new': ''
+                }
+            );
+        }
+
+        function replace_agent() {
+            post_rest('agent/replace',
+                {
+                    'old': document.getElementById("old_agent").value,
+                    'new': document.getElementById("new_agent").value
+                }
+            );
+        }
+
+        function test_agents_with(selection, command, pattern) {
+            if (!selection.length) return;
+
+            post_rest('agent/test',
+                {'agents': selection},
+                {
+                    'command': command,
+                    'pattern': pattern
+                }
+            );
+        }
+
+        function test_selected_agents_with(command, pattern) {
+            let selection = []
+            document.getElementsByName('row_selector').forEach((element, i) => {
+                if (element.checked) selection.push(element.getAttribute('id'));
+            })
+            if (!selection.length) return;
+            test_agents_with(selection, command, pattern);
+        }
+
+        function test_selected_agents() {
+            const elem_select = document.getElementById('agent_test_list');
+            const elem_option_dataset = elem_select.options[elem_select.selectedIndex].dataset;
+
+            test_selected_agents_with(elem_option_dataset.command, JSON.parse(elem_option_dataset.pattern));
+        }
+
+    </script>
+
+
 </section>
 
 </body>

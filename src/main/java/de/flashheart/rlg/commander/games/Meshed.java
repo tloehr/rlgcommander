@@ -358,8 +358,8 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         model.addAttribute("vizdot", DOTWriter.write(mesh, map_dot_format));
     }
 }

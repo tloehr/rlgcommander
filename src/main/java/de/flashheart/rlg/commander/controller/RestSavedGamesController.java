@@ -19,10 +19,9 @@ import java.util.Optional;
 @Log4j2
 public class RestSavedGamesController extends MyParentController {
     private final SavedGamesService savedGamesService;
-    private final UsersRepository usersRepository;
-    public RestSavedGamesController(SavedGamesService savedGamesService, UsersRepository usersRepository) {
+
+    public RestSavedGamesController(SavedGamesService savedGamesService) {
         this.savedGamesService = savedGamesService;
-        this.usersRepository = usersRepository;
     }
 
     @GetMapping("/list")
@@ -57,7 +56,14 @@ public class RestSavedGamesController extends MyParentController {
     public ResponseEntity<?> save(@RequestParam String title,
                                   @RequestBody String params,
                                   ApiKeyAuthentication authentication) {
-        savedGamesService.save(savedGamesService.createNew(title, authentication.getUser(), new JSONObject(params)));
+        savedGamesService.createNew(title, authentication.getUser(), new JSONObject(params));
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<?> update(@RequestBody String params,
+                                    ApiKeyAuthentication authentication) {
+        savedGamesService.update(authentication.getUser(), new JSONObject(params));
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

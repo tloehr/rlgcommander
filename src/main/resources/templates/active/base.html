@@ -73,7 +73,7 @@
                 <button id="btn_reset"
                         onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'reset'});"
                         class="btn btn-outline-warning  col-sm-auto me-1"><span class="bi bi-skip-backward-circle-fill"
-                        th:text="'&nbsp;'+#{active.message.reset}"></span>
+                                                                                th:text="'&nbsp;'+#{active.message.reset}"></span>
                 </button>
                 <button id="btn_ready"
                         onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'ready'});"
@@ -97,12 +97,12 @@
                 <button id="btn_continue"
                         onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'continue'});"
                         class="btn btn-outline-secondary  col-sm-auto me-1">
-                        <span class="bi bi-fast-forward-circle" th:text="'&nbsp;'+#{active.message.continue}"></span>
+                    <span class="bi bi-fast-forward-circle" th:text="'&nbsp;'+#{active.message.continue}"></span>
                 </button>
                 <button id="btn_game_over"
                         onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'game_over'});"
                         class="btn btn-outline-secondary me-auto col-sm-auto">
-                        <span class="bi bi-stop-circle-fill" th:text="'&nbsp;'+#{active.message.game_over}"></span>
+                    <span class="bi bi-stop-circle-fill" th:text="'&nbsp;'+#{active.message.game_over}"></span>
                 </button>
                 <button id="btn_zeus" onclick="navigate_to(window.location.origin + '/ui/zeus/base');"
                         class="btn btn-outline-danger col-sm-auto"><span
@@ -122,7 +122,7 @@
                     <button id="btn_prepare2"
                             onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'prepare'});"
                             class="btn btn-primary col-sm-auto me-1">
-                            <span class="bi bi-rocket-takeoff-fill" th:text="'&nbsp;'+#{active.message.prepare}"></span>
+                        <span class="bi bi-rocket-takeoff-fill" th:text="'&nbsp;'+#{active.message.prepare}"></span>
                     </button>
                     <button id="btn_reset2"
                             onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'reset'});"
@@ -142,7 +142,7 @@
                     <button id="btn_pause2"
                             onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'pause'});"
                             class="btn btn-secondary  col-sm-auto me-1"><span
-                            class="bi bi-pause-circle-fill"  th:text="'&nbsp;'+#{active.message.pause}"></span>
+                            class="bi bi-pause-circle-fill" th:text="'&nbsp;'+#{active.message.pause}"></span>
                     </button>
                     <button id="btn_resume2"
                             onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'resume'});"
@@ -152,12 +152,12 @@
                     <button id="btn_continue2"
                             onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'continue'});"
                             class="btn btn-secondary  col-sm-auto me-1">
-                            <span class="bi bi-fast-forward-circle" th:text="'&nbsp;'+#{active.message.continue}"></span>
+                        <span class="bi bi-fast-forward-circle" th:text="'&nbsp;'+#{active.message.continue}"></span>
                     </button>
                     <button id="btn_game_over2"
                             onclick="post_rest('game/process', {'game_id':get_game_id(),'message':'game_over'});"
                             class="btn btn-secondary me-auto col-sm-auto">
-                            <span class="bi bi-stop-circle-fill" th:text="'&nbsp;'+#{active.message.game_over}"></span>
+                        <span class="bi bi-stop-circle-fill" th:text="'&nbsp;'+#{active.message.game_over}"></span>
                     </button>
                     <button id="btn_zeus2" onclick="navigate_to(window.location.origin + '/ui/zeus/base');"
                             class="btn btn-danger col-sm-auto"><span
@@ -179,7 +179,7 @@
         const game_at = new Date(Date.parse('[[${game_init_at}]]'));
         document.getElementById("comment_head").innerHTML = '[[${comment}]] &#64; ' + game_at.toLocaleString();
         sessionStorage.setItem('state_#' + get_game_id(), '[[${current_state}]]');
-        update_state_display();
+        update_game_state_upper_left();
     </script>
 
     <h2 th:if="${match_length != null && remaining != null}"
@@ -188,32 +188,61 @@
     <section layout:fragment="score">
     </section>
 
-    <div th:if="${red_respawns != null && blue_respawns != null}">
-        <h2 th:text="#{active.number_of_respawns}"></h2>
-        <h3 class="text-danger" th:text="#{active.team_red}+':&nbsp;' + ${red_respawns}"></h3>
-        <h3 class="text-primary" th:text="#{active.team_blue}+':&nbsp;' + ${blue_respawns}"></h3>
-    </div>
+    <div class="row">
+        <div th:if="${red_respawns != null && blue_respawns != null}">
+            <h2 th:text="#{active.number_of_respawns}"></h2>
+            <h3 class="text-danger" th:text="#{active.team_red}+':&nbsp;' + ${red_respawns}"></h3>
+            <h3 class="text-primary" th:text="#{active.team_blue}+':&nbsp;' + ${blue_respawns}"></h3>
+        </div>
 
-    <div class="col-auto" th:unless="${classname eq 'empty'}">
-        <h2  th:text="#{misc.events}"></h2>
-        <table class="table table-striped table-sm">
-            <thead>
-            <tr>
-                <th th:text="#{misc.timestamp}"></th>
-                <th th:text="#{misc.event}"></th>
-                <th th:text="#{misc.state}"></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="event : ${events}">
-                <td th:text="${event.value0}"></td>
-                <td th:text="${#strings.replace(event.value1,'=>','&rArr;')}"></td>
-                <td th:text="${event.value2}"></td>
-            </tr>
-            </tbody>
-        </table>
+        <div class="col-auto" th:unless="${classname eq 'empty'}">
+            <h2 th:text="#{misc.events}"></h2>
+            <table class="table table-striped table-sm">
+                <thead>
+                <tr>
+                    <th th:text="#{misc.timestamp}"></th>
+                    <th th:text="#{misc.event}"></th>
+                    <th th:text="#{misc.state}"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="event : ${events}">
+                    <td th:text="${event.value0}"></td>
+                    <td th:text="${#strings.replace(event.value1,'=>','&rArr;')}"></td>
+                    <td th:text="${event.value2}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-
+    <hr/>
+    <div class="row mt-4 mb-2">
+        <div class="col-md-auto">
+            <button class="btn btn-outline-primary" type="button"
+                    onclick="save_this_game_to_server();"><span
+                    class="bi bi-journal-bookmark-fill" th:text="'&nbsp;'+#{params.save.game}"></span>
+            </button>
+        </div>
+    </div>
+    <!--    this is where we show the error messages, if the SEND TO SERVER fails-->
+    <div class="row">
+        <div class="col-auto">
+            <div class="alert d-none" id="post_rest_result" role="alert">
+            </div>
+        </div>
+    </div>
+    <script th:inline="javascript">
+        function save_this_game_to_server() {
+            post_rest('game/save', {"game_id": get_game_id()}, {}, function (xhttp) {
+                if (xhttp.status >= 400) {
+                    show_post_result_alert(xhttp, 'post_rest_result')
+                } else {
+                    const response = JSON.parse(xhttp.responseText)
+                    show_result_alert('[(#{params.game_saved})]' + ' ' + response['name'], 'post_rest_result', 'alert-success')
+                }
+            });
+        }
+    </script>
 </section>
 
 

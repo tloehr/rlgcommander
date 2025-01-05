@@ -112,8 +112,8 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         model.addAttribute("match_length", JavaTimeConverter.format(Instant.ofEpochSecond(game_time)));
         model.addAttribute("remaining", JavaTimeConverter.format(Instant.ofEpochSecond(getRemaining())));
     }

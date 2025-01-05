@@ -29,6 +29,7 @@
 </nav>
 
 <script th:inline="javascript">
+    sessionStorage.clear();
     const url = new URL(window.location.href);
     selectElement('locale', url.searchParams.get('locale') ? url.searchParams.get('locale') : 'de');
 </script>

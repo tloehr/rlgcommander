@@ -36,23 +36,11 @@ public class RestAgentController extends MyParentController{
         return new ResponseEntity<>(agentsService.get_all_agent_states().toString(), HttpStatus.OK);
     }
 
-//    @PostMapping("/test")
-//    public ResponseEntity<?> test(@RequestParam(name = "agent_id") String agent_id, @RequestParam(name = "command") String command, @RequestParam(name = "pattern") String pattern) {
-//        agentsService.test_agent(agent_id, command, new JSONObject(pattern));
-//        return new ResponseEntity(HttpStatus.ACCEPTED);
-//    }
-
     @PostMapping("/replace")
     public ResponseEntity<?> replace(@RequestParam(name = "old") String old_agent, @RequestParam(name = "new") String new_agent) {
         agentsService.replace_agent(old_agent, new_agent);
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
-
-//    @DeleteMapping("/replacements")
-//    public ResponseEntity<?> clear_replacements() {
-//        agentsService.clear_replacements();
-//        return new ResponseEntity(HttpStatus.ACCEPTED);
-//    }
 
     @PostMapping("/test")
     public ResponseEntity<?> test(@RequestParam(value = "agents") List<String> agents, @RequestBody String body) {
@@ -77,9 +65,4 @@ public class RestAgentController extends MyParentController{
         agentsService.welcome_unused_agents();
         return new ResponseEntity(HttpStatus.ACCEPTED);
     }
-
-
-
-
-
 }

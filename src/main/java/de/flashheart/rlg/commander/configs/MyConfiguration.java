@@ -34,10 +34,10 @@ public class MyConfiguration {
      *
      * @return
      */
-    @Bean
-    public HashSet<String> rest_api_users() {
-        return new HashSet<>();
-    }
+//    @Bean
+//    public HashSet<String> rest_api_users() {
+//        return new HashSet<>();
+//    }
 
 
 }

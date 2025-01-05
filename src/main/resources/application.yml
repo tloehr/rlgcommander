@@ -37,6 +37,7 @@ spring:
     show-sql: true
   liquibase:
     enabled: false
+    change-log: classpath:/db/master.xml
 
 rlgs:
   intros:

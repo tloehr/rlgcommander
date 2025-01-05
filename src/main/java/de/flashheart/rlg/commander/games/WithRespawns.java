@@ -524,8 +524,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         if (count_respawns)
             team_registry.forEach((s, team) -> model.addAttribute(team.getColor() + "_respawns", team.getRespawns()));
 

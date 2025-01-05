@@ -20,7 +20,7 @@
             game_parameters = JSON.parse(get_rest('saved_games/default', {mode}));
 
             // still empty ?
-            if ($.isEmptyObject(game_parameters)){
+            if ($.isEmptyObject(game_parameters)) {
                 // then we will use the default from the webserver ?
                 game_parameters = JSON.parse(loadFile(window.location.origin + '/defaults/' + mode + '.json'));
             }
@@ -29,9 +29,12 @@
         }
 
         function send_to_server() {
-            post_rest('game/load', {'game_id': get_game_id()}, game_parameters, function (xhttp) {
+            read_base_form();
+            put_rest('game/', {'game_id': get_game_id()}, game_parameters, function (xhttp) {
                 if (xhttp.status < 400) {
                     navigate_to(window.location.origin + '/ui/active/base');
+                } else {
+                    show_post_result_alert(xhttp, 'post_rest_result');
                 }
             });
         }
@@ -53,7 +56,7 @@
 
     <hr/>
     <div class="row mb-2">
-        <form class="needs-validation" onsubmit="send_to_server(); return false;" id="params_form">
+        <form class="needs-validation" id="params_form">
             <div class="col-md-auto">
                 <label for="comment" class="form-label" th:text="#{params.common.game_description}"></label>
                 <input type="text" class="form-control" value="vanilla" id="comment" required minlength="1"
@@ -96,15 +99,16 @@
 
     <div class="row mt-4 mb-2">
         <div class="col-md-auto">
-            <button class="btn btn-outline-success" type="button"
-                    onclick="document.getElementById('btn_submit_param').click();"><span
+            <button class="btn btn-outline-danger" type="button"
+                    onclick="send_to_server()"><span
                     class="bi bi-cloud-upload-fill" th:text="'&nbsp;'+#{params.send.to.server}"></span>
             </button>
         </div>
         <div class="col-md-auto">
             <script>
                 function download_game() {
-                    download_game_parameters();
+                    read_base_form();
+                    download_json(game_parameters, game_parameters.game_mode);
                 }
 
                 function save_game() {
@@ -112,17 +116,27 @@
                     read_base_form();
                     put_rest('saved_games/', {title}, game_parameters);
                 }
+
+                function update_saved_game() {
+                    // game_parameters that have been loaded from the server
+                    // always have an additional key 'saved_game_pk' stored.
+                    // this is the primary key. If this entry is missing,
+                    // there is nothing to update.
+                    if (!game_parameters.saved_game_pk) return;
+                    read_base_form();
+                    patch_rest('saved_games/', {}, game_parameters);
+                }
             </script>
-            <button class="btn btn-outline-info" type="button"
+            <button class="btn btn-outline-warning" type="button"
                     onclick="download_game()"><span
-                    class="bi bi-download" th:text="'&nbsp;'+#{params.download.game}"></span>
+                    class="bi bi-cloud-download-fill" th:text="'&nbsp;'+#{params.download.game}"></span>
             </button>
         </div>
         <div class="col-md-auto">
             <!-- Button trigger modal -->
-            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#exampleModal"
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal"
                     onclick="document.getElementById('save-game-title').value = document.getElementById('comment').value;">
-                <span class="bi bi-save-fill" th:text="'&nbsp;'+#{params.save.game}"></span>
+                <span class="bi bi-journal-bookmark-fill" th:text="'&nbsp;'+#{params.save.game}"></span>
             </button>
 
             <!-- Modal -->
@@ -140,14 +154,32 @@
                                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{misc.close}"></button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                    th:text="#{misc.close}"></button>
                             <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
-                                    th:text="#{params.save}" onclick="save_game()"></button>
+                                    th:text="#{misc.save}" onclick="save_game()"></button>
                         </div>
                     </div>
                 </div>
             </div>
 
+        </div>
+        <div class="col-md-auto">
+            <button class="btn btn-outline-secondary" type="button"
+                    onclick="update_saved_game()" id="update_saved_game_button"><span
+                    class="bi bi-journal-arrow-up" th:text="'&nbsp;'+#{params.update.saved_game}"></span>
+            </button>
+        </div>
+        <script>
+            // disable the last button if this is not a 'saved_game'
+            document.getElementById('update_saved_game_button').disabled = game_parameters.saved_game_pk === undefined;
+        </script>
+    </div>
+    <!--    this is where we show the error messages, if the SEND TO SERVER fails-->
+    <div class="row">
+        <div class="col-auto">
+            <div class="alert alert-danger d-none" id="post_rest_result" role="alert">
+            </div>
         </div>
     </div>
 </section>

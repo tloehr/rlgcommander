@@ -1,12 +1,10 @@
 package de.flashheart.rlg.commander.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.flashheart.rlg.commander.configs.MyUserDetails;
 import de.flashheart.rlg.commander.games.*;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import de.flashheart.rlg.commander.persistence.SavedGamesService;
-import de.flashheart.rlg.commander.persistence.Users;
 import de.flashheart.rlg.commander.persistence.UsersService;
 import de.flashheart.rlg.commander.service.AgentsService;
 import de.flashheart.rlg.commander.service.GamesService;
@@ -18,6 +16,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -103,9 +103,8 @@ public class UiController extends MyParentController {
     }
 
     @GetMapping("/params/upload")
-    public String upload(Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String upload(Model model) {
         model.addAttribute("params_active", "active");
-        model.addAttribute("saved_games", savedGamesService.list_saved_games());
         return "params/upload";
     }
 
@@ -124,7 +123,7 @@ public class UiController extends MyParentController {
     }
 
     @GetMapping("/agents")
-    public String agents(Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String agents(Model model) {
         model.addAttribute("agents", agentsService.get_all_agents());
         model.addAttribute("agent_replacement_map", agentsService.get_agent_replacement_map());
         ArrayList<Triplet<String, String, JSONObject>> list_of_tests = new ArrayList<>();
@@ -142,37 +141,30 @@ public class UiController extends MyParentController {
         return "agents";
     }
 
-    @GetMapping("/user")
-    public String user(Model model, @AuthenticationPrincipal MyUserDetails user) {
-        model.addAttribute("user_active", "active");
-        usersService.getRepository()
-                .findByUsername(user.getUsername())
-                .ifPresent(users -> model.addAttribute("user", users));
-        return "user";
-    }
-
     @GetMapping("/system")
-    public String system(Model model, @AuthenticationPrincipal MyUserDetails user) {
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public String system(Model model) {
         model.addAttribute("system_active", "active");
+        model.addAttribute("users", usersService.getRepository().findAll(Sort.by(Sort.Direction.ASC, "username")));
         return "system";
     }
 
     @GetMapping("/server")
-    public String server(@RequestParam int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String server(@RequestParam int game_id, Model model) {
         model.addAttribute("server_status", gamesService.getGameState(game_id).toString(4));
         model.addAttribute("server_active", "active");
         return "server";
     }
 
     @GetMapping("/zeus/base")
-    public String zeus(@RequestParam int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String zeus(@RequestParam int game_id, Model model) {
         model.addAttribute("active_active", "active");
-        gamesService.getGame(game_id).ifPresent(game -> game.add_model_data(model));
+        gamesService.getGame(game_id).ifPresent(game -> game.fill_thymeleaf_model(model));
         return model.containsAttribute("game_mode") ? "zeus/" + model.getAttribute("game_mode") : "error";
     }
 
     @GetMapping("/active/base")
-    public String active(@RequestParam int game_id, Model model, @AuthenticationPrincipal MyUserDetails user) throws JsonProcessingException {
+    public String active(@RequestParam int game_id, Model model) throws JsonProcessingException {
         model.addAttribute("active_active", "active");
         String game_mode = "";
 
@@ -185,7 +177,7 @@ public class UiController extends MyParentController {
             model.addAttribute("current_state", "EMPTY");
         } else {
             Game game = gamesService.getGame(game_id).get();
-            game.add_model_data(model);
+            game.fill_thymeleaf_model(model);
             model.addAttribute("active_command_buttons_enabled", active_command_buttons_enabled.get(game.get_current_state()));
             game_mode = game.getGameMode();
         }
@@ -194,7 +186,7 @@ public class UiController extends MyParentController {
     }
 
     @GetMapping("/params/base")
-    public String params(@RequestParam(name = "game_mode") String game_mode, Model model, @AuthenticationPrincipal MyUserDetails user) {
+    public String params(@RequestParam(name = "game_mode") String game_mode, Model model) {
         model.addAttribute("params_active", "active");
 
         //model.addAttribute("game_template", "nothing_here_yet");
@@ -211,5 +203,26 @@ public class UiController extends MyParentController {
                         .collect(Collectors.toList())
         );
         return "params/" + game_mode;
+    }
+
+    @GetMapping("/user")
+    public String user(Model model, @AuthenticationPrincipal MyUserDetails user) {
+        model.addAttribute("user_active", "active");
+        usersService.getRepository()
+                .findByUsername(user.getUsername())
+                .ifPresent(users -> model.addAttribute("user", users));
+        return "user";
+    }
+
+    @GetMapping("/fragments/{fragment}")
+    public String get_fragment(@PathVariable String fragment,
+                               @RequestParam(required = false, defaultValue = "center_flags") String game_mode,
+                               Model model) {
+        if (fragment.equalsIgnoreCase("user_table")) {
+            model.addAttribute("users", usersService.getRepository().findAll(Sort.by(Sort.Direction.ASC, "username")));
+        } else if (fragment.equalsIgnoreCase("saved_games_table")) {
+            model.addAttribute("saved_games", savedGamesService.list_saved_games_by_mode(game_mode));
+        }
+        return String.format("/fragments :: %s", fragment);
     }
 }

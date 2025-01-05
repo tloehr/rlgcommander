@@ -288,8 +288,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         model.addAttribute("red_points", red_points);
         model.addAttribute("blue_points", blue_points);
     }

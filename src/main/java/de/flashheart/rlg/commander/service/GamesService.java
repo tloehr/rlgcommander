@@ -1,6 +1,5 @@
 package de.flashheart.rlg.commander.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.lalyos.jfiglet.FigletFont;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -8,12 +7,12 @@ import de.flashheart.rlg.commander.Exception.AgentInUseException;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.Game;
+import de.flashheart.rlg.commander.games.GameSetupException;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import de.flashheart.rlg.commander.misc.OutputMessage;
-import de.flashheart.rlg.commander.persistence.SavedGamesService;
 import de.flashheart.rlg.commander.persistence.PlayedGamesService;
 import de.flashheart.rlg.commander.persistence.Users;
 import lombok.extern.log4j.Log4j2;
@@ -23,28 +22,27 @@ import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.context.MessageSource;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @Log4j2
 public class GamesService {
+    private final MessageSource messageSource;
     private final MQTTOutbound mqttOutbound;
     private final Scheduler scheduler;
     private final AgentsService agentsService;
     private final BuildProperties buildProperties;
-    //private final SimpMessagingTemplate simpMessagingTemplate;
     private final MyYamlConfiguration myYamlConfiguration;
     private final PlayedGamesService playedGamesService;
 
@@ -57,31 +55,33 @@ public class GamesService {
         log.info("RLG-Commander v{} b{}", buildProperties.getVersion(), buildProperties.get("buildNumber"));
     }
 
-    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration, PlayedGamesService playedGamesService, SavedGamesService savedGamesService) {
+    public GamesService(MQTTOutbound mqttOutbound, Scheduler scheduler, AgentsService agentsService, BuildProperties buildProperties, MyYamlConfiguration myYamlConfiguration, PlayedGamesService playedGamesService, MessageSource messageSource) {
         this.mqttOutbound = mqttOutbound;
         this.scheduler = scheduler;
         this.agentsService = agentsService;
         this.buildProperties = buildProperties;
-//        this.simpMessagingTemplate = simpMessagingTemplate;
         this.playedGamesService = playedGamesService;
+        this.messageSource = messageSource;
         this.loaded_games = new Optional[]{Optional.empty()};
         this.gameStateListeners = HashMultimap.create();
         this.myYamlConfiguration = myYamlConfiguration;
     }
 
-    public Game load_game(final int game_id, String json, Users owner) throws AgentInUseException, ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
+    public Game load_game(final int game_id, String json, Users owner, Locale locale) throws GameSetupException, AgentInUseException, ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
         if (game_id < 1 || game_id > MAX_NUMBER_OF_GAMES)
-            throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
-        if (loaded_games[game_id - 1].isPresent())
-            throw new IllegalAccessException("id " + game_id + " is in use. Unload first.");
+            throw new GameSetupException(String.format(messageSource.getMessage("game_setup_exception.max_games_allowed", null, locale), MAX_NUMBER_OF_GAMES));
+        if (loaded_games[game_id - 1].isPresent()) {
+            log.debug(locale.getLanguage());
+            throw new GameSetupException(String.format(messageSource.getMessage("game_setup_exception.game_id_in_use", null, locale), game_id));
+            //throw new GameSetupException(String.format("GAME id:#%d is already loaded.", game_id));
+        }
         log.debug("\n" + FigletFont.convertOneLine("LOADING GAME #" + game_id));
         JSONObject game_description = new JSONObject(json);
 
-        // add parameters from application.yml
+        // add base parameters from application.yml
         game_description.put("SCORE_CALCULATION_EVERY_N_SECONDS", myYamlConfiguration.getScore_broadcast().get("every_seconds"));
         game_description.put("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", myYamlConfiguration.getScore_broadcast().get("cycle_counter"));
         game_description.put("owner", owner.getUsername());
-//        game_description.put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")));
 
         loaded_games[game_id - 1].ifPresent(game -> game.cleanup());
         final Game game = (Game) Class
@@ -126,13 +126,13 @@ public class GamesService {
 
     public Optional<Game> getGame(int id) throws ArrayIndexOutOfBoundsException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
-            throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
+            throw new GameSetupException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         return loaded_games[id - 1];
     }
 
     public JSONObject getGameState(int id) throws ArrayIndexOutOfBoundsException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
-            throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
+            throw new GameSetupException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         JSONObject state = new JSONObject()
                 .put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")))
                 .put("timestamp", JavaTimeConverter.to_iso8601());
@@ -160,7 +160,7 @@ public class GamesService {
 
     private void check_id(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
-            throw new ArrayIndexOutOfBoundsException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
+            throw new GameSetupException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         if (loaded_games[id - 1].isEmpty()) throw new IllegalStateException("Game #" + id + " not loaded.");
     }
 
@@ -168,19 +168,5 @@ public class GamesService {
         mqttOutbound.notify(game_id, new OutputMessage(game_id, event.getState(), new SimpleDateFormat("HH:mm").format(new Date())));
         gameStateListeners.get(game_id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
     }
-
-//    public StateReachedListener addStateReachedListener(int id, StateReachedListener toAdd) {
-//        try {
-//            check_id(id);
-//            gameStateListeners.put(id, toAdd);
-//            // we need to send an event right away, otherwise the rlgrc won't realize that it has subscribed successfully
-//            toAdd.onStateReached(new StateReachedEvent(loaded_games[id - 1].get().getState().getString("game_state")));
-//        } catch (ArrayIndexOutOfBoundsException | IllegalStateException | JSONException ex) {
-//            log.warn(ex.getMessage());
-//            toAdd = null;
-//        }
-//        return toAdd;
-//    }
-
 
 }

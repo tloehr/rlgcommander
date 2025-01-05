@@ -42,41 +42,51 @@
     <hr/>
     <div class="row mt-3">
         <h3 class="h3" th:text="#{params.saved_games_on_server}"></h3>
+        <script>
+
+        </script>
         <div class="col-auto">
-            <table class="table table-striped table-sm">
-                <thead>
-                <tr>
-                    <th th:text="#{params.table.col.text}"></th>
-                    <th th:text="#{params.table.col.timestamp}"></th>
-                    <th th:text="#{params.table.col.mode}"></th>
-                    <th th:text="#{params.table.col.owner}"></th>
-                    <th th:text="#{misc.operations}"></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="game : ${saved_games}">
-                    <td><a href="#" th:text="${game.text}" th:onclick="read_preset_game([[${game.id}]])"></a></td>
-                    <td th:text="${#temporals.format(game.pit, 'dd-MM-yyyy HH:mm')}"></td>
-                    <td th:text="${game.mode}"></td>
-                    <td th:text="${game.owner.username}"></td>
-                    <td>
-                        <button th:id="${game.id}+'_btn_favorite'"
-                                th:onclick="patch_rest('saved_games/default', {'saved_game_pk':[[${game.id}]]}); reload();"
-                                class="btn btn-outline-primary">
-                            <span th:if="${game.defaults}" class="bi bi-star-fill text-warning"></span>
-                            <span th:if="${!game.defaults}" class="bi bi-star text-warning"></span>
-                        </button>
-                        <button th:id="${game.id}+'_btn_delete'"
-                                th:onclick="delete_rest('saved_games/default', {'saved_game_pk':[[${game.id}]]}); reload();"
-                                class="btn btn-outline-primary">
-                            <span class="bi bi-x-circle-fill text-danger"></span>
-                        </button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            <select class="form-select" id="game_mode" value="center_flags"
+                    onchange="refresh_saved_games_table()">
+                <option value="center_flags">Center Flags</option>
+                <option value="conquest">Conquest</option>
+                <option value="farcry">Farcry</option>
+                <option value="harpoint">Hardpoint</option>
+                <option value="signal">Signal</option>
+                <option value="stronghold">Stronghold</option>
+            </select>
+            <script>
+                selectElement('game_mode', get_current_search_param_value('game_mode', 'center_flags'));
+            </script>
+        </div>
+        <div id="saved_games_table">
         </div>
     </div>
+    <!-- scripts for this page -->
+    <script th:inline="javascript">
+
+        $(document).ready(function () {
+            refresh_saved_games_table();
+        });
+
+        function refresh_saved_games_table() {
+            $.ajax({
+                url: '/ui/fragments/saved_games_table',
+                data: {'game_mode': document.getElementById("game_mode").value},
+                success: function (response) {
+                    document.getElementById("saved_games_table").innerHTML = response;
+                },
+                error: function (xhr) {
+                    console.error(xhr);
+                }
+            });
+
+            // $.get("fragments/saved_games_table").done(function (fragment) { // get from controller
+            //     document.getElementById("user_table").innerHTML = fragment; // update snippet of page
+            // });
+        }
+
+    </script>
 </section>
 </body>
 </html>

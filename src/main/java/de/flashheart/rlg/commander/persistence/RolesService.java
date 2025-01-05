@@ -4,10 +4,12 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class RolesService implements DefaultService<Roles> {
     public final static String ADMIN = "ROLE_ADMIN";
-    public final static String USER  = "ROLE_USER";
+    public final static String USER = "ROLE_USER";
 
     final RolesRepository rolesRepository;
 
@@ -23,6 +25,15 @@ public class RolesService implements DefaultService<Roles> {
     @Override
     public Roles createNew() {
         return new Roles();
+    }
+
+    @Transactional
+    public void toggle_role(final String role_name, final Users user) {
+        rolesRepository.findByRoleAndUsers(role_name, user)
+                .ifPresentOrElse(role -> {
+                    user.getRoles().remove(role);
+                    delete(role);
+                }, () -> save(createNew(role_name, user)));
     }
 
     @Transactional

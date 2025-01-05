@@ -430,8 +430,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         JSONObject vars = get_vars();
         model.addAttribute("score_red", vars.getLong("score_red"));
         model.addAttribute("score_blue", vars.getLong("score_blue"));

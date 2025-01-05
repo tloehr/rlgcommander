@@ -112,7 +112,7 @@ function onMessageArrived(message) {
     console.log('onMessageArrived: ' + message.payloadString + ' - ' + message.topic);
     const msg = JSON.parse(message.payloadString);
     sessionStorage.setItem('state_#' + msg.game_id, msg.game_state);
-    update_state_display();
+    update_game_state_upper_left();
     if (window.location.pathname === '/ui/active/base') window.location.reload();
 }
 
@@ -123,8 +123,8 @@ function onMQTTConnect() {
 
 // https://stackoverflow.com/a/78945/1171329
 function selectElement(id, valueToSelect) {
-    let element = document.getElementById(id);
-    element.value = valueToSelect;
+    //const element = document.getElementById(id);
+    document.getElementById(id).value = valueToSelect;
 }
 
 function reload(params) {
@@ -150,6 +150,13 @@ function navigate_to(destination, params) {
     return false; // to prevent a-tag default behaviour
 }
 
+function get_current_search_param_value(param, default_value) {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (!default_value) default_value = "";
+    if (urlParams.has(param)) return urlParams.get(param);
+    else return default_value;
+}
+
 /**
  * Registers cleanup functions before we navigate to a different page.
  */
@@ -173,7 +180,7 @@ function get_locale() {
     return new URL(window.location.href).searchParams.get("locale") || 'de'
 }
 
-function update_state_display() {
+function update_game_state_upper_left() {
     const state = sessionStorage.getItem('state_#' + get_game_id()) || 'EMPTY';
     const color = game_state_colors[state];
     document.getElementById('game_state').innerHTML = '&nbsp;' + state;
@@ -215,13 +222,6 @@ function from_string_list(list) {
     return result;
 }
 
-
-function update_rest_status_in_session(xhttp) {
-    if (xhttp.readyState !== 4) return;
-    sessionStorage.setItem('rest_result_html', `&nbsp;${xhttp.status}&nbsp;${statusMessages[xhttp.status]}`);
-    sessionStorage.setItem('rest_result_class', xhttp.status >= 400 ? 'bi bi-lightning-fill bi-md text-danger' : 'bi bi-check-circle-fill bi-md text-success');
-}
-
 /**
  * this updates the bottom most line which shows the result status of the last REST contact
  */
@@ -230,54 +230,20 @@ function update_rest_status_line() {
     document.getElementById('rest_result').className = sessionStorage.getItem('rest_result_class') || 'bi bi-question-circle-fill bi-md text-secondary';
 }
 
-function on_ready_state_change(xhttp) {
-    update_rest_status_in_session(xhttp);
-    if (xhttp.readyState === 4) {
-        sessionStorage.removeItem('last_rest_result');
-        if (xhttp.status >= 400) sessionStorage.setItem('last_rest_result', xhttp.responseText);
+function update_rest_status_in_session_storage(xhttp) {
+    if (xhttp.readyState !== 4) return;
+    sessionStorage.setItem('rest_result_html', `&nbsp;${xhttp.status}&nbsp;${statusMessages[xhttp.status]}`);
+    sessionStorage.setItem('rest_result_class', xhttp.status >= 400 ? 'bi bi-lightning-fill bi-md text-danger' : 'bi bi-check-circle-fill bi-md text-success');
+    if (xhttp.status >= 400) {
+        const now = new Date();
+        sessionStorage.setItem('last_rest_error_timestamp', now.toLocaleString());
+        sessionStorage.setItem('last_rest_error_status', `${statusMessages[xhttp.status]}`);
+        sessionStorage.setItem('last_rest_error_response', xhttp.response);
     }
 }
 
-function get_rest(rest_uri, param_json) {
-    const xhttp = new XMLHttpRequest();
 
-    xhttp.onreadystatechange = () => {
-        if (xhttp.readyState === 4) {
-            //if (xhttp.status === 200) {
-            //console.log(xhttp.responseText);
-            //update_game_state({'game_state': xhttp.responseText})
-            //}
-            update_rest_status_in_session(xhttp);
-        }
-    }
-    const base_url = window.location.origin + '/api/' + rest_uri;
-    const my_uri = base_url + (param_json ? '?' + jQuery.param(param_json, true) : '');
-    xhttp.open('GET', my_uri, false); // true for asynchronous
-    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
-    xhttp.send('{}');
-    return xhttp.response;
-}
-
-
-function delete_rest(rest_uri, param_json) {
-    const xhttp = new XMLHttpRequest();
-
-    xhttp.onreadystatechange = () => {
-        on_ready_state_change(xhttp);
-    };
-
-    const base_uri = window.location.origin + '/api/' + rest_uri;
-
-    // param, traditional setting - see https://api.jquery.com/jQuery.param/#jQuery-param-obj-traditional
-    const my_uri = base_uri + (param_json ? '?' + jQuery.param(param_json, true) : '');
-    // async needs to be false, otherwise, Safari and Firefox will have wrong status reports on the xhttp.status
-    // https://stackoverflow.com/a/61587856/1171329
-    xhttp.open('DELETE', my_uri, false);
-    xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
-    xhttp.send();
-}
-
-function change_rest(rest_uri, param_json, http_method, body, callback) {
+function rest(rest_uri, param_json, http_method, body, callback) {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = () => {
         if (callback) callback(xhttp);
@@ -285,11 +251,13 @@ function change_rest(rest_uri, param_json, http_method, body, callback) {
 
     xhttp.onreadystatechange = () => {
         console.log(xhttp);
-        on_ready_state_change(xhttp);
-        update_rest_status_line();
+        update_rest_status_in_session_storage(xhttp);
+        if (http_method !== "GET") update_rest_status_line();
     };
     // create the uri
     const base_uri = window.location.origin + '/api/' + rest_uri;
+    // always add the locale if possible
+    if (http_method !== "GET") param_json.locale = document.getElementById('locale').value;
 
     // param, traditional setting - see https://api.jquery.com/jQuery.param/#jQuery-param-obj-traditional
     const my_uri = base_uri + (param_json ? '?' + jQuery.param(param_json, true) : '');
@@ -299,18 +267,27 @@ function change_rest(rest_uri, param_json, http_method, body, callback) {
     xhttp.setRequestHeader('Content-type', 'application/json');
     xhttp.setRequestHeader('X-API-KEY', sessionStorage.getItem('X-API-KEY'));
     xhttp.send(body ? JSON.stringify(body) : '{}');
+    return xhttp.response
+}
+
+function get_rest(rest_uri, param_json, callback) {
+    return rest(rest_uri, param_json, 'GET', {}, callback);
+}
+
+function delete_rest(rest_uri, param_json, body, callback) {
+    rest(rest_uri, param_json, 'DELETE', body, callback);
 }
 
 function post_rest(rest_uri, param_json, body, callback) {
-    change_rest(rest_uri, param_json, 'POST', body, callback);
+    rest(rest_uri, param_json, 'POST', body, callback);
 }
 
 function put_rest(rest_uri, param_json, body, callback) {
-    change_rest(rest_uri, param_json, 'PUT', body, callback);
+    rest(rest_uri, param_json, 'PUT', body, callback);
 }
 
 function patch_rest(rest_uri, param_json, body, callback) {
-    change_rest(rest_uri, param_json, 'PATCH', body, callback);
+    rest(rest_uri, param_json, 'PATCH', body, callback);
 }
 
 /**
@@ -376,15 +353,25 @@ function get_simplified_elapsed_time(seconds) {
 }
 
 // https://stackoverflow.com/a/30800715
-// >> Download JSON object as a file from browser <<
-function download_game_parameters() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(game_parameters, null, 4));
+function download_json(data, filename) {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 4));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", game_parameters.mode + ".json");
+    downloadAnchorNode.setAttribute("download", filename + ".json");
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
 }
+
+// https://stackoverflow.com/a/30800715
+// >> Download JSON object as a file from browser <<
+// function download_game_parameters() {
+//     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(game_parameters, null, 4));
+//     const downloadAnchorNode = document.createElement('a');
+//     downloadAnchorNode.setAttribute("href", dataStr);
+//     downloadAnchorNode.setAttribute("download", game_parameters.mode + ".json");
+//     downloadAnchorNode.click();
+//     downloadAnchorNode.remove();
+// }
 
 function read_preset_game(saved_game_pk) {
     const json_string = get_rest('saved_games/', {saved_game_pk});
@@ -394,6 +381,29 @@ function read_preset_game(saved_game_pk) {
         sessionStorage.setItem('game_parameters', json_string);
         navigate_to(window.location.origin + '/ui/params/base', {'game_mode': game_parameters.game_mode});
     }
+}
+
+function show_result_alert(message, element_id, alert_class){
+    document.getElementById(element_id).innerHTML = message;
+    document.getElementById(element_id).classList.remove('d-none');
+    document.getElementById(element_id).classList.add('fade');
+    document.getElementById(element_id).classList.add('show');
+    document.getElementById(element_id).classList.add(alert_class);
+    setTimeout(function (){
+        document.getElementById(element_id).classList.add('d-none');
+    },4000);
+}
+
+function show_post_result_alert(xhttp, element_id){
+    const response = JSON.parse(xhttp.responseText)
+    document.getElementById(element_id).innerHTML = response['message'];
+    document.getElementById(element_id).classList.remove('d-none');
+    document.getElementById(element_id).classList.add('fade');
+    document.getElementById(element_id).classList.add('show');
+    document.getElementById(element_id).classList.add(xhttp.status >= 400 ? 'alert-danger' : 'alert-primary');
+    setTimeout(function (){
+        document.getElementById(element_id).classList.add('d-none');
+    },4000);
 }
 
 function loadFile(filePath) {

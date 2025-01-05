@@ -2,9 +2,7 @@ package de.flashheart.rlg.commander.games;
 
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Team;
-import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
-import org.javatuples.Quartet;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
@@ -13,9 +11,6 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -55,8 +50,8 @@ public class MagSpeed extends TimedOnly {
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         model.addAttribute("winner", winner);
     }
 }

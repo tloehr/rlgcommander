@@ -1,12 +1,10 @@
 package de.flashheart.rlg.commander.games;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.github.lalyos.jfiglet.FigletFont;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import de.flashheart.rlg.commander.Exception.AgentInUseException;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
@@ -102,7 +100,7 @@ public abstract class Game {
     protected final Map<String, FSM> cpFSMs;
     private LocalDateTime game_init_at;
 
-    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
+    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws GameSetupException, ParserConfigurationException, IOException, SAXException, JSONException {
         log.info("\n{}", FigletFont.convertOneLine(getGameMode()));
         uuid = UUID.randomUUID();
         game_init_at = LocalDateTime.now();
@@ -425,7 +423,7 @@ public abstract class Game {
         return "";
     }
 
-    public void add_model_data(Model model) {
+    public void fill_thymeleaf_model(Model model) {
         model.addAttribute("comment", game_parameters.getString("comment"));
         final ArrayList<Quartet<String, String, String, LocalDateTime>> events = new ArrayList<>();
         // toArray to avoid concurrent modification exception when things get busy.

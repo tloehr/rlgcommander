@@ -139,7 +139,6 @@
             <artifactId>paho-mqtt</artifactId>
             <version>${paho.js.version}</version>
         </dependency>
-
         <!--
                    _   _
               ___ | |_| |__   ___ _ __

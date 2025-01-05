@@ -292,8 +292,8 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void add_model_data(Model model) {
-        super.add_model_data(model);
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
         final ArrayList<Quartet<String, String, String, String>> my_scores = new ArrayList<>();
         cpFSMs.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(agent_fsm -> {
             String css_classname = "table-light";

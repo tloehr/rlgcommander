@@ -2,6 +2,7 @@ package de.flashheart.rlg.commander.controller;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import de.flashheart.rlg.commander.games.GameSetupException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
@@ -40,7 +41,18 @@ public class MyParentController {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         if (exc instanceof EntityNotFoundException) {
             status = HttpStatus.NOT_FOUND;
+        } else if (exc instanceof IllegalArgumentException
+                || exc instanceof NoSuchElementException
+                || exc instanceof ArrayIndexOutOfBoundsException) {
+            status = HttpStatus.UNPROCESSABLE_ENTITY;
+        } else if (exc instanceof InvocationTargetException && exc.getCause() instanceof Exception){
+            // throw cause instead
+            exc = (Exception) exc.getCause();
+        } else if (exc instanceof GameSetupException){
+            status = HttpStatus.NOT_ACCEPTABLE;
         }
-        return new ResponseEntity<>(new JSONObject().put(exc.getClass().getName(), exc.getMessage()).toString(), status);
+        return new ResponseEntity<>(new JSONObject()
+                .put("exception", exc.getClass().getName())
+                .put("message", exc.getMessage()).toString(4), status);
     }
 }
