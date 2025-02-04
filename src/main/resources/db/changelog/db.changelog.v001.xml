@@ -1,6 +1,6 @@
 <?xml version="1.1" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-    <changeSet author="tloehr (generated)" id="1735211621799-1">
+    <changeSet author="tloehr (generated)" id="1735755812869-1">
         <createTable tableName="played_games">
             <column autoIncrement="true" name="id" type="BIGINT UNSIGNED">
                 <constraints nullable="false" primaryKey="true"/>
@@ -14,7 +14,7 @@
             <column name="mode" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
-            <column name="game" type="JSON">
+            <column name="game" remarks="16MB of Text is enough" type="JSON">
                 <constraints nullable="false"/>
             </column>
             <column defaultValueNumeric="0" name="version" type="BIGINT UNSIGNED">
@@ -22,7 +22,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="tloehr (generated)" id="1735211621799-2">
+    <changeSet author="tloehr (generated)" id="1735755812869-2">
         <createTable tableName="roles">
             <column autoIncrement="true" name="id" type="BIGINT UNSIGNED">
                 <constraints nullable="false" primaryKey="true"/>
@@ -38,7 +38,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="tloehr (generated)" id="1735211621799-3">
+    <changeSet author="tloehr (generated)" id="1735755812869-3">
         <createTable tableName="saved_games">
             <column autoIncrement="true" name="id" type="BIGINT UNSIGNED">
                 <constraints nullable="false" primaryKey="true"/>
@@ -64,7 +64,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="tloehr (generated)" id="1735211621799-4">
+    <changeSet author="tloehr (generated)" id="1735755812869-4">
         <createTable tableName="users">
             <column autoIncrement="true" name="id" type="BIGINT UNSIGNED">
                 <constraints nullable="false" primaryKey="true"/>
@@ -76,7 +76,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="apikey" type="VARCHAR(100)">
-                <constraints nullable="false"  unique="true"/>
+                <constraints nullable="false" unique="true"/>
             </column>
             <column defaultValue="de" name="locale" type="VARCHAR(10)">
                 <constraints nullable="false"/>

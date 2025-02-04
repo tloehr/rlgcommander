@@ -80,4 +80,14 @@ body {
     }
 }
 
+/* yellow flash a certain element on the screen without javascript */
+@keyframes flash_me {
+    from { background-color: yellow; }
+    to { background-color: inherit; }
+}
+.flash_me {
+    animation:         flash_me 3s ; /* IE 10+ */
+}
+
+
 table.table { width:auto; }

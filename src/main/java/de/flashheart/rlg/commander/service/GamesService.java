@@ -11,8 +11,9 @@ import de.flashheart.rlg.commander.games.GameSetupException;
 import de.flashheart.rlg.commander.games.events.StateReachedEvent;
 import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
+import de.flashheart.rlg.commander.misc.GameStateChangedMessage;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
-import de.flashheart.rlg.commander.misc.OutputMessage;
+import de.flashheart.rlg.commander.misc.ClientNotificationMessage;
 import de.flashheart.rlg.commander.persistence.PlayedGamesService;
 import de.flashheart.rlg.commander.persistence.Users;
 import lombok.extern.log4j.Log4j2;
@@ -136,7 +137,7 @@ public class GamesService {
         JSONObject state = new JSONObject()
                 .put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")))
                 .put("timestamp", JavaTimeConverter.to_iso8601());
-        return loaded_games[id - 1].isEmpty() ? state : MQTT.merge(state, loaded_games[id - 1].get().getState());
+        return loaded_games[id - 1].isEmpty() ? state.put("played", new JSONObject().put("game_fsm_current_state", "EMPTY")): MQTT.merge(state, loaded_games[id - 1].get().getState());
     }
 
     public void process_message(int id, String message) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -165,7 +166,7 @@ public class GamesService {
     }
 
     private void fireStateReached(int game_id, StateReachedEvent event) {
-        mqttOutbound.notify(game_id, new OutputMessage(game_id, event.getState(), new SimpleDateFormat("HH:mm").format(new Date())));
+        mqttOutbound.notify(game_id, new GameStateChangedMessage(game_id, event.getState()));
         gameStateListeners.get(game_id).forEach(gameStateListener -> gameStateListener.onStateReached(event));
     }
 

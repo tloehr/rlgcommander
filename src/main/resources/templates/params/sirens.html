@@ -21,10 +21,10 @@
 <body>
 
 <div layout:fragment="sirens" class="col-lg-12 col-sm-auto col-md-auto">
-    <label for="sirens" class="form-label">Sirens</label>
+    <label for="sirens" class="form-label"  th:text="#{params.misc.sirens}"></label>
     <input type="text" class="form-control" value="ag50" id="sirens" required
            pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
-    <div id="sirenhelp" class="form-text">Agent IDs, comma separated</div>
+    <div id="sirenhelp" class="form-text" th:text="#{params.misc.agent_list}"></div>
 </div>
 
 

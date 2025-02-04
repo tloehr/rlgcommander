@@ -3,7 +3,7 @@ package de.flashheart.rlg.commander.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.HashBiMap;
-import de.flashheart.rlg.commander.misc.OutputMessage;
+import de.flashheart.rlg.commander.misc.ClientNotificationMessage;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -11,6 +11,7 @@ import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.javatuples.Pair;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -133,22 +134,29 @@ public class MQTTOutbound {
     /**
      * this method sends notifications for the clients
      *
-     * @param channel the game_id of the game this event belongs to. 0 if it is about an agent event
+     * @param channel the game_id of the game this event belongs to. 0 is for agent events.
      * @param msg
      */
-    public void notify(int channel, OutputMessage msg) {
+    public void notify(int channel, ClientNotificationMessage msg) {
         String my_topic = notification_topic + "/" + channel;
         log.trace("sending {}", my_topic);
-        ObjectMapper mapper = new ObjectMapper();
-        String json = "{}";
+        JSONObject message;
         try {
-            json = mapper.writeValueAsString(msg);
-        } catch (JsonProcessingException e) {
+            message = new JSONObject(msg);
+        } catch (JSONException e) {
             log.warn(e.getMessage());
+            message = new JSONObject(e);
         }
-        gateway.sendToMqtt(json, qos, false, my_topic);
+        gateway.sendToMqtt(message.toString(), 0, false, my_topic);
     }
 
+    /**
+     * inner method where all the commands for the agents run through.
+     *
+     * @param agent
+     * @param cmd
+     * @param payload
+     */
     private void send(String agent, String cmd, JSONObject payload) {
         log.trace("sending {}", topic + agent + "/" + cmd);
         boolean retained = !cmd.equals(MQTT.CMD_ACOUSTIC) && !cmd.equals(MQTT.CMD_PLAY) && !cmd.equals(MQTT.CMD_TIMERS);

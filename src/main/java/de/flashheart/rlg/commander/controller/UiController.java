@@ -2,6 +2,7 @@ package de.flashheart.rlg.commander.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import de.flashheart.rlg.commander.configs.MyUserDetails;
+import de.flashheart.rlg.commander.elements.Agent;
 import de.flashheart.rlg.commander.games.*;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import de.flashheart.rlg.commander.persistence.SavedGamesService;
@@ -34,7 +35,7 @@ public class UiController extends MyParentController {
     @Value("${server.locale.default}")
     public String default_locale;
     @Value("${mqtt.outbound.notification_topic}")
-    public String mqtt_notification_topic;
+    public String mqtt_client_notification_topic;
     @Value("${mqtt.host}")
     public String mqtt_host;
     @Value("${mqtt.ws_port}")
@@ -78,28 +79,13 @@ public class UiController extends MyParentController {
         return user.getApi_key();
     }
 
-    @ModelAttribute("mqtt_host")
-    public String getMqttHost() {
-        return mqtt_host;
-    }
-
     @ModelAttribute("mqtt")
     public String getMqtt() {
         return new JSONObject()
                 .put("host", mqtt_host)
                 .put("ws_port", mqtt_ws_port)
-                .put("topic", mqtt_notification_topic)
+                .put("client_notification_topic", mqtt_client_notification_topic)
                 .toString();
-    }
-
-    @ModelAttribute("mqtt_ws_port")
-    public String getMqttPort() {
-        return mqtt_ws_port;
-    }
-
-    @ModelAttribute("mqtt_notification_topic")
-    public String getMqttNotificationTopic() {
-        return mqtt_notification_topic;
     }
 
     @GetMapping("/params/upload")
@@ -110,11 +96,8 @@ public class UiController extends MyParentController {
 
     @GetMapping("/home")
     public String home(Model model, @RequestParam(name = "locale") String locale, @AuthenticationPrincipal MyUserDetails user) {
-//        model.addAttribute("api_key", user.getApi_key());
-//        model.addAttribute("mqtt_notification_topic", mqtt_notification_topic);
-//        model.addAttribute("mqtt_url", mqtt_url);
         model.addAttribute("home_active", "active");
-        return "home_" + (locale.isEmpty() ? default_locale : locale);
+        return "home_" + (locale.isEmpty() ? user.getLocale() : locale);
     }
 
     @GetMapping("/error")
@@ -167,18 +150,18 @@ public class UiController extends MyParentController {
     public String active(@RequestParam int game_id, Model model) throws JsonProcessingException {
         model.addAttribute("active_active", "active");
         String game_mode = "";
-
+        model.addAttribute("game_id", game_id);
         if (gamesService.getGame(game_id).isEmpty()) {
             game_mode = "empty";
             model.addAttribute("classname", Game._state_EMPTY);
             model.addAttribute("has_zeus", false);
             model.addAttribute("active_command_buttons_enabled", active_command_buttons_enabled.get(Game._state_EMPTY));
             model.addAttribute("game_mode", "empty");
-            model.addAttribute("current_state", "EMPTY");
+            model.addAttribute("game_fsm_current_state", Game._state_EMPTY);
         } else {
             Game game = gamesService.getGame(game_id).get();
             game.fill_thymeleaf_model(model);
-            model.addAttribute("active_command_buttons_enabled", active_command_buttons_enabled.get(game.get_current_state()));
+            model.addAttribute("active_command_buttons_enabled", active_command_buttons_enabled.get(game.game_fsm_get_current_state()));
             game_mode = game.getGameMode();
         }
 
@@ -224,5 +207,15 @@ public class UiController extends MyParentController {
             model.addAttribute("saved_games", savedGamesService.list_saved_games_by_mode(game_mode));
         }
         return String.format("/fragments :: %s", fragment);
+    }
+
+    @GetMapping("/agent_table_row/{agent_id}")
+    public String get_single_agent_row(@PathVariable String agent_id) {
+        Optional<Agent> optionalAgent = agentsService.get_all_agents()
+                .stream()
+                .filter(agent -> agent.getId().equals(agent_id))
+                .findFirst();
+        if (optionalAgent.isEmpty()) return "agents";
+        return String.format("/fragments :: agent_table_row(agent='%s')", new JSONObject(optionalAgent.get()));
     }
 }

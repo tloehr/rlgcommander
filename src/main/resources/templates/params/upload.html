@@ -48,12 +48,12 @@
         <div class="col-auto">
             <select class="form-select" id="game_mode" value="center_flags"
                     onchange="refresh_saved_games_table()">
-                <option value="center_flags">Center Flags</option>
-                <option value="conquest">Conquest</option>
-                <option value="farcry">Farcry</option>
-                <option value="harpoint">Hardpoint</option>
-                <option value="signal">Signal</option>
-                <option value="stronghold">Stronghold</option>
+                <option value="center_flags" th:text="#{games.center_flags}"></option>
+                <option value="conquest" th:text="#{games.conquest}"></option>
+                <option value="farcry" th:text="#{games.farcry}"></option>
+                <option value="harpoint" th:text="#{games.hardpoint}"></option>
+                <option value="signal" th:text="#{games.signal}"></option>
+                <option value="stronghold" th:text="#{games.stronghold}"></option>
             </select>
             <script>
                 selectElement('game_mode', get_current_search_param_value('game_mode', 'center_flags'));

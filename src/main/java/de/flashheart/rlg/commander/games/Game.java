@@ -439,7 +439,7 @@ public abstract class Game {
         model.addAttribute("events", events.stream()
                 .sorted((o1, o2) -> o1.getValue3().compareTo(o2.getValue3()) * -1)
                 .collect(Collectors.toList()));
-        model.addAttribute("current_state", get_current_state());
+        model.addAttribute("game_fsm_current_state", game_fsm_get_current_state());
         model.addAttribute("has_zeus", hasZeus());
         model.addAttribute("game_mode", getGameMode());
         model.addAttribute("game_init_at", JavaTimeConverter.to_iso8601(game_init_at));
@@ -447,7 +447,7 @@ public abstract class Game {
         //game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList()));
     }
 
-    public String get_current_state() {
+    public String game_fsm_get_current_state(){
         return game_fsm.getCurrentState();
     }
 
@@ -471,10 +471,8 @@ public abstract class Game {
         JSONObject json = new JSONObject()
                 .put("setup", game_parameters)
                 .put("played", new JSONObject()
-//                        .put("class", this.getClass().getName())
-                        .put("game_state", game_fsm.getCurrentState())
+                        .put("game_fsm_current_state", game_fsm_get_current_state())
                         .put("in_game_events", new JSONArray(in_game_events))
-//                        .put("mode", getGameMode())
                         .put("game_init_at", JavaTimeConverter.to_iso8601(game_init_at))
                         .put("agent_states", agent_states)
                 );

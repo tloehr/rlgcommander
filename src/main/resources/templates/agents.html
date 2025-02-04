@@ -28,7 +28,8 @@
             </thead>
             <tbody>
             <div th:each="agent : ${agents}">
-                <tr>
+<!--               <div th:id="'row_'+${agent.id}" th:replace="~{/fragments :: agent_table_row(${agent})}"></div>-->
+                <tr th:id="'tr-' + ${agent.id}">
                     <!-- data-toggle if für die tooltips, name verbindet alle checkboxen bzgl. ihrer Funktion
                     in der Zeile. id entspricht immer den zugehörigen agenten namen -->
                     <td data-toggle="tooltip" data-placement="top" th:attr="title=${agent.getSoftware_version()}">
@@ -81,9 +82,7 @@
             </tbody>
         </table>
     </div>
-
     <div class="row mt-2">
-
         <div class="col-auto">
             <select class="form-select form-select-lg" id="agent_test_list"
                     onchange="test_selected_agents()">
@@ -93,8 +92,6 @@
                 </option>
             </select>
         </div>
-    </div>
-    <div class="row mt-2">
         <button id="test_button"
                 class="btn btn-outline-success btn-lg col-auto me-2"
                 onclick="test_selected_agents();" th:text="#{misc.test}"></button>

@@ -22,11 +22,11 @@
 
 
 <div layout:fragment="capture_points" class="col-sm-auto col-md-auto col-lg-6">
-    <label for="capture_points" class="form-label">Capture-Points</label>
+    <label for="capture_points" class="form-label" th:text="#{misc.capture_points}"></label>
     <!-- only comma separated allowed -->
     <input type="text" class="form-control" value="ag01" id="capture_points" required
            pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
-    <div id="cphelp" class="form-text">Agent IDs, comma separated</div>
+    <div id="cphelp" class="form-text" th:text="#{params.misc.agent_list}"></div>
 </div>
 
 </body>

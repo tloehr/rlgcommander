@@ -1,5 +1,19 @@
 let mqttClient;
 
+/**
+ * Registers cleanup functions before we navigate to a different page.
+ */
+window.onbeforeunload = function () {
+    // disable onclose handler first
+    console.log('disconnecting from server due to page change');
+    try {
+        mqttClient.disconnect();
+    } catch (e) {
+        console.error(e);
+    }
+
+};
+
 const game_state_colors = {
     "EMPTY": "lightgrey",
     "PROLOG": "#f7d1d5",
@@ -81,17 +95,17 @@ const statusMessages = {
 };
 
 /**
- * subscribes to the mqtt channel for the selected game
+ * connects to the mqtt broker for every new page - the connection is terminated every time
+ * a page unloads when navigating to a different one
+ *
  * @param channel
  */
 function connect_to_mqtt() {
-    const host = sessionStorage.getItem('mqtt_host');
-    const port = sessionStorage.getItem('mqtt_ws_port');
     const now = new Date();
-
     const client_id = "webclient@" + now.toISOString();
+
     // Create a client instance
-    mqttClient = new Paho.Client(host, Number(port), '/', client_id);
+    mqttClient = new Paho.Client(sessionStorage.getItem('mqtt_host'), Number(sessionStorage.getItem('mqtt_ws_port')), '/', client_id);
 
     // set callback handlers
     mqttClient.onConnectionLost = onConnectionLost;
@@ -104,21 +118,26 @@ function connect_to_mqtt() {
 // called when the client loses its connection
 function onConnectionLost(responseObject) {
     if (responseObject.errorCode !== 0) {
-        console.log("onConnectionLost: " + responseObject.errorMessage);
+        console.error("onConnectionLost: " + responseObject.errorMessage);
     }
 }
 
 function onMessageArrived(message) {
     console.log('onMessageArrived: ' + message.payloadString + ' - ' + message.topic);
     const msg = JSON.parse(message.payloadString);
-    sessionStorage.setItem('state_#' + msg.game_id, msg.game_state);
-    update_game_state_upper_left();
-    if (window.location.pathname === '/ui/active/base') window.location.reload();
+    // update_game_state(msg);
+    // if (msg.message_class === '') {
+    //
+    // }
+    update_game_state_by_message(msg);
+    update_agent_state_by_message(msg);
+    //if (window.location.pathname === '/ui/active/base') window.location.reload();
 }
 
 function onMQTTConnect() {
     console.log("onConnect");
-    mqttClient.subscribe(sessionStorage.getItem('mqtt_notification_topic'));
+    // this is for the update of the upper left game state
+    mqttClient.subscribe(sessionStorage.getItem('mqtt_client_notification_topic') + "#");
 }
 
 // https://stackoverflow.com/a/78945/1171329
@@ -157,20 +176,6 @@ function get_current_search_param_value(param, default_value) {
     else return default_value;
 }
 
-/**
- * Registers cleanup functions before we navigate to a different page.
- */
-window.onbeforeunload = function () {
-    // disable onclose handler first
-    console.log('disconnecting from server due to page change');
-    try {
-        mqttClient.disconnect();
-    } catch (e) {
-        console.error(e);
-    }
-
-};
-
 // simple convenience function
 function get_game_id() {
     return new URL(window.location.href).searchParams.get("game_id") || '1'
@@ -180,8 +185,24 @@ function get_locale() {
     return new URL(window.location.href).searchParams.get("locale") || 'de'
 }
 
-function update_game_state_upper_left() {
-    const state = sessionStorage.getItem('state_#' + get_game_id()) || 'EMPTY';
+function update_agent_state_by_message(message) {
+    if (window.location.pathname !== '/ui/agents') return;
+
+    if ('agent_state_change'.localeCompare(message.message_class) !== 0
+        && 'agent_event'.localeCompare(message.message_class) !== 0) return;
+
+    window.location.reload();
+}
+
+function update_game_state_by_message(message) {
+    if ('game_state_change'.localeCompare(message.message_class) !== 0) return;
+    // this is for a different game - don't care right now
+    if (parseInt(get_game_id()) !== message.game_id) return;
+    update_game_state_upper_left(message.game_state.state);
+    if (window.location.pathname === '/ui/active/base') window.location.reload();
+}
+
+function update_game_state_upper_left(state) {
     const color = game_state_colors[state];
     document.getElementById('game_state').innerHTML = '&nbsp;' + state;
     document.getElementById('game_state').setAttribute('style', 'color: ' + color);
@@ -246,6 +267,7 @@ function update_rest_status_in_session_storage(xhttp) {
 function rest(rest_uri, param_json, http_method, body, callback) {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = () => {
+        console.debug(xhttp);
         if (callback) callback(xhttp);
     };
 
@@ -383,27 +405,27 @@ function read_preset_game(saved_game_pk) {
     }
 }
 
-function show_result_alert(message, element_id, alert_class){
+function show_result_alert(message, element_id, alert_class) {
     document.getElementById(element_id).innerHTML = message;
     document.getElementById(element_id).classList.remove('d-none');
     document.getElementById(element_id).classList.add('fade');
     document.getElementById(element_id).classList.add('show');
     document.getElementById(element_id).classList.add(alert_class);
-    setTimeout(function (){
+    setTimeout(function () {
         document.getElementById(element_id).classList.add('d-none');
-    },4000);
+    }, 4000);
 }
 
-function show_post_result_alert(xhttp, element_id){
+function show_post_result_alert(xhttp, element_id) {
     const response = JSON.parse(xhttp.responseText)
     document.getElementById(element_id).innerHTML = response['message'];
     document.getElementById(element_id).classList.remove('d-none');
     document.getElementById(element_id).classList.add('fade');
     document.getElementById(element_id).classList.add('show');
     document.getElementById(element_id).classList.add(xhttp.status >= 400 ? 'alert-danger' : 'alert-primary');
-    setTimeout(function (){
+    setTimeout(function () {
         document.getElementById(element_id).classList.add('d-none');
-    },4000);
+    }, 4000);
 }
 
 function loadFile(filePath) {

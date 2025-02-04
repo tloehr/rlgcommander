@@ -2,18 +2,17 @@
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{zeus/base.html}">
 
-<head><title>Zeus for Hardpoint</title></head>
+<head><title  th:text="#{zeus.for}+'&nbsp;'+#{games.hardpoint}"></title></head>
 
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1 class="mt-2">
-        <img src="/img/zeus.png" height="64" width="64"/>
-        Zeus - Hardpoint</h1>
+    <h1 class="mt-2" th:text="#{zeus.for}+'&nbsp;'+#{games.hardpoint}">
+        <img src="/img/zeus.png" height="64" width="64"/></h1>
 </section>
 
 <section layout:fragment="zeus_form">
-
+    <h2 th:text="#{zeus.reset_flag}"></h2>
     <div class="row mt-4">
         <div class="col-3">
         <form id="zeus_to_neutral" onsubmit="return false" href="#">
@@ -27,12 +26,12 @@
                         {
                             'operation': 'to_neutral',
                             'agent':document.getElementById('agents_to_neutral').value
-                        }); go_back_to_active_game();">
-                    Back to neutral
+                        }); go_back_to_active_game();" th:text="#{zeus.back_to_neutral}">
                 </button>
             </div>
         </form>
         </div>
+        <h2 th:text="#{zeus.select_next_flag}"></h2>
         <div class="col-3">
             <form id="zeus_next_flag" onsubmit="return false" href="#">
                 <div class="input-group">
@@ -41,8 +40,7 @@
                         {'game_id':get_game_id()},
                         {
                             'operation': 'next_flag'
-                        }); navigate_to(window.location.origin+'/ui/active/base');">
-                        Select next flag
+                        }); navigate_to(window.location.origin+'/ui/active/base');"  th:text="#{zeus.select_next_flag}">
                     </button>
                 </div>
 

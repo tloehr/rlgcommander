@@ -2,18 +2,18 @@
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{zeus/base.html}">
 
-<head><title>Zeus for Signal</title></head>
+<head><title  th:text="#{zeus.for}+'&nbsp;'+#{games.signal}"></title></head>
 
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1 class="mt-2">
+    <h1 class="mt-2" th:text="#{zeus.for}+'&nbsp;'+#{games.signal}">
         <img src="/img/zeus.png" height="64" width="64"/>
-        Zeus - Signal</h1>
+        </h1>
 </section>
 
 <section layout:fragment="zeus_form">
-    <h2>Unlock all flags & revert score</h2>
+    <h2 th:text="#{zeus.revert_score_unlock_flags}"></h2>
     <div class="row mb-2">
         <form id="zeus_unlock" onsubmit="return false" href="#">
             <div class="input-group">
@@ -22,8 +22,7 @@
                         {'game_id':get_game_id()},
                         {
                             'operation': 'unlock'
-                        }); navigate_to(window.location.origin+'/ui/active/base');">
-                    Back to neutral
+                        }); navigate_to(window.location.origin+'/ui/active/base');" th:text="#{zeus.back_to_neutral}">
                 </button>
             </div>
         </form>

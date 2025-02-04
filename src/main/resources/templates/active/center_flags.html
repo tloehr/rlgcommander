@@ -6,7 +6,7 @@
 
 <section layout:fragment="score">
     <div class="col-auto">
-        <h2>Flag Times</h2>
+        <h2 th:text="#{active.center_flags.flag_times}"></h2>
         <table class="table table-striped table-sm">
             <thead>
             <tr>
@@ -24,7 +24,7 @@
             </tbody>
             <thead>
             <tr>
-                <th>SUMs</th>
+                <th th:text="#{active.center_flags.sums}"></th>
                 <th th:text="${sum_blue}"></th>
                 <th th:text="${sum_red}"></th>
             </tr>

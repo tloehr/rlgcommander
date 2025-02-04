@@ -6,6 +6,8 @@ import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.elements.Agent;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
+import de.flashheart.rlg.commander.misc.AgentEventMessage;
+import de.flashheart.rlg.commander.misc.AgentStateChangeMessage;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
@@ -74,22 +76,27 @@ public class AgentsService {
         live_agents.remove(agentid);
     }
 
-    public void agent_reported_status(String agentid, JSONObject status) {
-        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid, status));
-        if (live_agents.containsKey(agentid)) my_agent.setStatus(status);
+    public void agent_reported_status(String agent_id, JSONObject state) {
+        Agent my_agent = live_agents.getOrDefault(agent_id, new Agent(agent_id, state));
+        // notify clients about agent even
+        mqttOutbound.notify(0, new AgentStateChangeMessage(agent_id, state.toString()));
+        if (live_agents.containsKey(agent_id)) my_agent.setStatus(state);
         // status_counter==0 is valid when an agent restarts - so it will receive another welcome message
         // even if it was known before
-        if (!live_agents.containsKey(agentid) || status.getInt("status_counter") == 0)
+        if (!live_agents.containsKey(agent_id) || state.getInt("status_counter") == 0)
             welcome(my_agent);
-        live_agents.put(agentid, my_agent);
+        live_agents.put(agent_id, my_agent);
     }
 
-    public void agent_reported_event(String agentid, String device, JSONObject message) {
-        Agent my_agent = live_agents.getOrDefault(agentid, new Agent(agentid));
-        // we will send a welcome message, if the agent is yet unknown
-        if (!live_agents.containsKey(agentid))
+    public void agent_reported_event(String agent_id, String device, JSONObject message) {
+        Agent my_agent = live_agents.getOrDefault(agent_id, new Agent(agent_id));
+        mqttOutbound.notify(0, new AgentEventMessage(agent_id, device, message.toString()));
+        // if the agent is not yet known, we ask for a complete status
+        if (!live_agents.containsKey(agent_id)) {
             welcome(my_agent);
-        live_agents.putIfAbsent(agentid, my_agent);
+            mqttOutbound.send(MQTT.CMD_STATUS_REQUEST, new JSONObject(), my_agent.getId());
+        }
+        live_agents.putIfAbsent(agent_id, my_agent);
 
         if (device.equalsIgnoreCase("rfid"))
             my_agent.event_occured(Agent.RFID, message.optString("uid", "none"));
@@ -99,11 +106,6 @@ public class AgentsService {
             my_agent.event_occured(Agent.BTN02, "");
 
     }
-//
-//    public boolean agent_belongs_to_game(String agentid, int gameid) {
-//        Agent myAgent = live_agents.getOrDefault(agentid, new Agent());
-//        return myAgent.getGameid() == gameid;
-//    }
 
     /**
      * return a list of all agents that are not DUMMIES and have reported their status at least once

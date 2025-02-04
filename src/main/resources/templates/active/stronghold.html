@@ -4,6 +4,11 @@
 <head><title>Stronghold</title></head>
 <body>
 
+active.stronghold.overall=Overall
+active.stronghold.current_ring=Current ring
+active.stronghold.broken_capture_points=Broken Capture Points:
+active.stronghold.stable_capture_points=Stable Capture Points:
+
 <section layout:fragment="score">
     <h2>Progress</h2>
     <div class="col-auto">
@@ -42,8 +47,9 @@
         const segment_progress = remain_in_this_segment / total_in_this_segment * 100;
         const broken_agents = /*[[${broken_agents}]]*/ 'default';
         const stable_agents = /*[[${stable_agents}]]*/ 'default';
+        const i18n_text = /*[[#{active.stronghold.broken_rings}]]*/ 'Broken rings';
 
-        document.getElementById("score_text").innerHTML = `Broken Rings: ${rings_taken} / ${total_rings}`
+        document.getElementById("score_text").innerHTML = `${i18n_text}: ${rings_taken} / ${total_rings}`
 
         if (total_rings > 1) {
             const total_progress = rings_taken / total_rings * 100;

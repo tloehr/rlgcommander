@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Getter
@@ -15,12 +16,14 @@ public class MyUserDetails implements UserDetails {
     private final String username;
     private final String password;
     private final String api_key;
+    private final String locale;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    private MyUserDetails(String username, String password, String api_key, Collection<? extends GrantedAuthority> authorities) {
+    private MyUserDetails(String username, String password, String api_key, String locale,Collection<? extends GrantedAuthority> authorities) {
         this.username = username;
         this.password = password;
         this.api_key = api_key;
+        this.locale = locale;
         this.authorities = authorities;
     }
 
@@ -29,6 +32,7 @@ public class MyUserDetails implements UserDetails {
                 user.getUsername(),
                 user.getPassword(),
                 user.getApikey(),
+                user.getLocale(),
                 user.getRoles().stream().map(roles -> new SimpleGrantedAuthority(roles.getRole())).toList()
         );
     }
@@ -47,7 +51,6 @@ public class MyUserDetails implements UserDetails {
     public String getUsername() {
         return username;
     }
-
 
     @Override
     public boolean isAccountNonExpired() {

@@ -4,7 +4,7 @@
 
 
 <head>
-    <title>Farcry Assault</title>
+    <title  th:text="#{games.farcry}"></title>
     <script>
 
         function read_form() {
@@ -34,48 +34,8 @@
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1>FarCry (2004) Assault</h1>
-<!--    <div class="accordion" id="accordionExample">-->
-<!--        <div class="accordion-item">-->
-<!--            <h2 class="accordion-header" id="headingOne">-->
-<!--                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne"-->
-<!--                        aria-expanded="false" aria-controls="collapseOne">-->
-<!--                    Explain-->
-<!--                </button>-->
-<!--            </h2>-->
-<!--            <div id="collapseOne" class="accordion-collapse collapse " aria-labelledby="headingOne"-->
-<!--                 data-bs-parent="#accordionExample">-->
-<!--                <div class="accordion-body">-->
-<!--                    <h3>Explanation</h3>-->
-<!--                    <ul>-->
-<!--                        <li>In <a href="https://farcry.fandom.com/wiki/Far_Cry#Multiplayer">Assault</a>,-->
-<!--                            we have two teams with different roles. Attackers and defenders. Every flag starts in the-->
-<!--                            <strong>COLD</strong> state.-->
-<!--                        </li>-->
-<!--                        <li>-->
-<!--                            The attackers try to activate the next flag by pushing its button and-->
-<!--                            changing the state to <strong>HOT</strong>. To capture that point, the flag must stay-->
-<!--                            <strong>HOT</strong>-->
-<!--                            until the flag-timer runs out.-->
-<!--                        </li>-->
-<!--                        <li>If the button is pushed again <em>before</em> the flag-timer ran out, the flag-->
-<!--                            returns back to the <strong>COLD</strong> state.-->
-<!--                        </li>-->
-<!--                        <li>There is a time limit to capture all flags. When the game time is nearly over, and-->
-<!--                            the attacking team turns a flag to the <strong>HOT</strong> state,-->
-<!--                            that last attack can be finished, even if the flag-timer exceeds the remaining game-time.-->
-<!--                            In that case we go into <strong>OVERTIME</strong>.-->
-<!--                        </li>-->
-<!--                        <li>-->
-<!--                            When a flag is deactivated in <strong>OVERTIME</strong>, it is <strong>GAME OVER</strong>-->
-<!--                            immediately.-->
-<!--                        </li>-->
-<!--                    </ul>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--    <p>Very old online game similar to BF Rush.</p>-->
+    <h1  th:text="#{games.farcry}"></h1>
+    <a th:href="#{params.farcry.href}" th:text="#{params.misc.click_here_for_more}"></a>
 </section>
 
 <section layout:fragment="params">
@@ -86,24 +46,26 @@
         </div>
 
         <div class="col-auto">
-            <label for="bomb_time" class="form-label" title="Time period in seconds the attacking team will have to hold the
-                capture point to take it."><span class="bi bi-md bi-info-circle-fill"></span> Bomb Time</label>
+            <label for="bomb_time" class="form-label" th:title="#{params.farcry.bomb_timer_help}"
+                   th:text="'&nbsp;'+#{params.farcry.bomb_timer}">
+                <span class="bi bi-md bi-info-circle-fill"></span></label>
             <input type="number" class="form-control" id="bomb_time" value="60" required
                    min="10" inputmode="decimal" pattern="\d*">
         </div>
 
         <div class="col-auto">
-            <label for="respawn_time" class="form-label" title="Time period between each respawn signal. If 0, no signal will be sent.">
-                <span class="bi bi-md bi-info-circle-fill"></span> Respawn timer</label>
+            <label for="respawn_time" class="form-label" th:title="#{params.farcry.respawn_timer_help}"
+                   th:text="'&nbsp;'+#{params.farcry.respawn_timer}">
+                <span class="bi bi-md bi-info-circle-fill" th:text="'&nbsp;'+#{params.farcry.respawn_timer}"></span></label>
             <input type="number" class="form-control" id="respawn_time" value="30" required
                    min="0" inputmode="decimal" pattern="\d*">
         </div>
 
         <div layout:fragment="sirens" class="col-lg-12 col-sm-auto col-md-auto">
-            <label for="capture_sirens" class="form-label">Sirens</label>
+            <label for="capture_sirens" class="form-label" th:text="#{params.misc.sirens}"></label>
             <input type="text" class="form-control" value="ag50" id="capture_sirens" required
                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
-            <div id="sirenhelp" class="form-text">Agent IDs, comma separated</div>
+            <div id="sirenhelp" class="form-text" th:text="#{params.misc.agent_list}"></div>
         </div>
 
     </div>

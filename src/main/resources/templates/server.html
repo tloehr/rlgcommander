@@ -13,18 +13,18 @@
     <div class="row">
         <h2 th:text="#{server.current.status}"></h2>
 
-        <div class="col-md-auto">
-            <button class="btn btn-outline-info" type="button"
-                    th:onclick="download_json(
-                    JSON.parse([[${server_status}]]),
-                    'server_state'
-                )">
+<!--        <div class="col-md-auto">-->
+<!--            <button class="btn btn-outline-info" type="button"-->
+<!--                    th:onclick="download_json(-->
+<!--                    JSON.parse([[${server_status}]]),-->
+<!--                    'server_state'-->
+<!--                )">-->
 
-                <span class="bi bi-download">&nbsp;Download State</span>
+<!--                <span class="bi bi-download">&nbsp;Download State</span>-->
 
 
-            </button>
-        </div>
+<!--            </button>-->
+<!--        </div>-->
 
         <div class="p-3 mb-2 bg-dark" style="color: #36FF33">
             <pre id="server_status"></pre>

@@ -4,7 +4,7 @@
 
 
 <head>
-    <title>Setup Conquest</title>
+    <title th:text="#{games.conquest}"></title>
     <script>
         function read_form() {
             game_parameters.respawn_tickets = parseInt(document.getElementById('respawn_tickets').value);
@@ -34,8 +34,8 @@
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1>Conquest</h1>
-    <p>Popular game mode inspired by the Battlefield&trade; online game.</p>
+    <h1 th:text="#{games.conquest}"></h1>
+    <a th:href="#{params.conquest.href}" th:text="#{params.misc.click_here_for_more}"></a>
 </section>
 
 <section layout:fragment="params">
@@ -46,31 +46,50 @@
             <input type="number" class="form-control" id="respawn_tickets" value="250" required
                    min="10" inputmode="decimal" pattern="\d*">
         </div>
+    </div>
 
-        <div class="col-auto">
-            <label for="not_bleeding_before_cps" class="form-label">Not bleeding before</label>
-            <input type="number" class="form-control" id="not_bleeding_before_cps" value="1" required
-                   min="1" inputmode="decimal" pattern="\d*">
-        </div>
-        <div class="col-auto">
-            <label for="start_bleed_interval" class="form-label">Start bleed interval</label>
-            <input type="number" placeholder="1.0" step="0.1" min="1.0" max="10.0"
-                   class="form-control" id="start_bleed_interval" value="5.0"  pattern="\d*"
-                   inputmode="decimal" required>
-        </div>
+    <div class="col-auto">
+        <div class="accordion" id="expert_accordion">
+            <div class="accordion-item  mt-4">
+                <h2 class="accordion-header" id="expert_heading">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#expert_content"
+                            aria-expanded="false" aria-controls="expert_content"
+                            th:text="#{misc.expert_settings}">
+                    </button>
+                </h2>
+                <div id="expert_content" class="accordion-collapse collapse " aria-labelledby="headingOne"
+                     data-bs-parent="#expert_accordion">
+                    <div class="accordion-body">
+                        <h3 th:text="#{misc.expert_settings}"></h3>
 
-        <div class="col-auto">
-            <label for="end_bleed_interval" class="form-label">End bleed interval</label>
-            <input type="number" placeholder="1.0" step="0.1" min="0.2" max="10.0"
-                   class="form-control" id="end_bleed_interval" value="0.5"
-                   inputmode="decimal" pattern="\d*" required>
-        </div>
-        <div class="col-auto">
-            <label for="ticket_price_for_respawn" class="form-label">Ticket price</label>
-            <input type="number" class="form-control" id="ticket_price_for_respawn" value="1" required
-                   min="1" pattern="\d*" inputmode="decimal">
-        </div>
+                        <div class="col-auto">
+                            <label for="not_bleeding_before_cps" class="form-label" th:text="#{params.conquest.not_bleeding_before}"></label>
+                            <input type="number" class="form-control" id="not_bleeding_before_cps" value="1" required
+                                   min="1" inputmode="decimal" pattern="\d*">
+                        </div>
+                        <div class="col-auto">
+                            <label for="start_bleed_interval" class="form-label" th:text="#{params.conquest.start_bleed_interval}"></label>
+                            <input type="number" placeholder="1.0" step="0.1" min="1.0" max="10.0"
+                                   class="form-control" id="start_bleed_interval" value="5.0" pattern="\d*"
+                                   inputmode="decimal" required>
+                        </div>
 
+                        <div class="col-auto">
+                            <label for="end_bleed_interval" class="form-label" th:text="#{params.conquest.end_bleed_interval}"></label>
+                            <input type="number" placeholder="1.0" step="0.1" min="0.2" max="10.0"
+                                   class="form-control" id="end_bleed_interval" value="0.5"
+                                   inputmode="decimal" pattern="\d*" required>
+                        </div>
+                        <div class="col-auto">
+                            <label for="ticket_price_for_respawn" class="form-label" th:text="#{params.conquest.ticket_price}"></label>
+                            <input type="number" class="form-control" id="ticket_price_for_respawn" value="1" required
+                                   min="1" pattern="\d*" inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </section>

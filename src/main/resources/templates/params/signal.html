@@ -4,7 +4,7 @@
 
 
 <head>
-    <title>Signal</title>
+    <title  th:text="#{games.signal}"></title>
     <script>
 
         function read_form() {
@@ -36,8 +36,8 @@
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1>Signal</h1>
-    <p>Very specialized game mode. Ask about it.</p>
+    <h1 th:text="#{games.signal}"></h1>
+    <a th:href="#{params.signal.href}" th:text="#{params.misc.click_here_for_more}"></a>
 </section>
 
 <section layout:fragment="params">
@@ -51,25 +51,24 @@
             <label for="unlock_time" class="form-label">Unlock Time</label>
             <input type="number" class="form-control" id="unlock_time" value="10" required
                    min="1" inputmode="decimal" pattern="\d*">
-            <small id="unlock_time_help" class="form-text">Time in seconds that closed flags will wait until they are
-                accessible again.</small>
+            <small id="unlock_time_help" class="form-text" th:text="#{params.signal.unlock_time_help}"></small>
         </div>
     </div>
 
     <div class="row mb-3">
         <div class="col-auto">
-            <label for="cps_for_red" class="form-label">Red Capture-Points</label>
+            <label for="cps_for_red" class="form-label" th:text="#{params.signal.red_cps}"></label>
             <!-- only comma separated allowed -->
             <input type="text" class="form-control" value="ag01" id="cps_for_red" required
                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
-            <div id="cphelp1" class="form-text">Agent IDs, comma separated</div>
+            <div id="cphelp1" class="form-text" th:text="#{params.misc.agent_list}"></div>
         </div>
         <div class="col-auto">
-            <label for="cps_for_blue" class="form-label">Blue Capture-Points</label>
+            <label for="cps_for_blue" class="form-label" th:text="#{params.signal.blue_cps}"></label>
             <!-- only comma separated allowed -->
             <input type="text" class="form-control" value="ag02" id="cps_for_blue" required
                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
-            <div id="cphelp2" class="form-text">Agent IDs, comma separated</div>
+            <div id="cphelp2" class="form-text"  th:text="#{params.misc.agent_list}"></div>
         </div>
     </div>
 </section>

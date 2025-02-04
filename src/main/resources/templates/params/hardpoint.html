@@ -3,7 +3,7 @@
       layout:decorate="~{params/cps_and_sirens.html}">
 
 <head>
-    <title>Setup Hardpoint</title>
+    <title  th:text="#{games.hardpoint}"></title>
     <script>
         show_agent_shuffle_button = true;
 
@@ -35,48 +35,8 @@
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1>Hardpoint</h1>
-    <!--    <div class="accordion" id="accordionExample">-->
-    <!--        <div class="accordion-item">-->
-    <!--            <h2 class="accordion-header" id="headingOne">-->
-    <!--                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne"-->
-    <!--                        aria-expanded="false" aria-controls="collapseOne">-->
-    <!--                    Explain-->
-    <!--                </button>-->
-    <!--            </h2>-->
-    <!--            <div id="collapseOne" class="accordion-collapse collapse " aria-labelledby="headingOne"-->
-    <!--                 data-bs-parent="#accordionExample">-->
-    <!--                <div class="accordion-body">-->
-    <!--                    <h3>Explanation</h3>-->
-    <!--                    <ul>-->
-    <!--                        <li>In <a href="https://cod-esports.fandom.com/wiki/New_To_Call_of_Duty/Modes/Hardpoint">Hardpoint</a>,-->
-    <!--                            two teams fight to control rotating objective areas on the map.-->
-    <!--                        </li>-->
-    <!--                        <li>There is <b>no absolute</b> time limit for the whole match. A point has to be occupied-->
-    <!--                            in order to make the game time pass. If an active point is neutral, the time is not-->
-    <!--                            counting down.-->
-    <!--                        </li>-->
-    <!--                        <li>A point needs to be switched to the team color in order to gain points. It can be turned-->
-    <!--                            back and forth.-->
-    <!--                        </li>-->
-    <!--                        <li>The team holding the flag, earns points for every second the flag stays in the team color.-->
-    <!--                        </li>-->
-    <!--                        <li>The first team to reach the <em>Winning Score</em> wins the game.</li>-->
-    <!--                        <li><b>Neutral Flag:</b> after <em>Flag timeOUT</em> seconds have passed and nobody was able to-->
-    <!--                            switch a flag from NEUTRAL to-->
-    <!--                            <span class="text-danger">RED</span> or <span class="text-primary">BLUE</span>, the system-->
-    <!--                            shuts down the flag and activates the next one.-->
-    <!--                        </li>-->
-    <!--                        <li><b>Occupied Flag:</b> After <em>Flag timeUP</em> seconds have passed, the system shuts down-->
-    <!--                            the flag and activates the next-->
-    <!--                            one. No matter which team is currently holding it.-->
-    <!--                        </li>-->
-
-    <!--                    </ul>-->
-    <!--                </div>-->
-    <!--            </div>-->
-    <!--        </div>-->
-    <!--    </div>-->
+    <h1 th:text="#{games.hardpoint}"></h1>
+    <a th:href="#{params.hardpoint.href}" th:text="#{params.misc.click_here_for_more}"></a>
 </section>
 
 <section layout:fragment="params">

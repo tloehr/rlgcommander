@@ -184,7 +184,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     @Override
     protected long getRemaining() {
-        if (get_current_state().equals(_state_EPILOG)) return super.getRemaining();
+        if (game_fsm_get_current_state().equals(_state_EPILOG)) return super.getRemaining();
         return estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : super.getRemaining();
     }
 
@@ -320,11 +320,14 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         )).toString();
         model.addAttribute("capture_points_taken", active_capture_point);
         model.addAttribute("max_capture_points", cpFSMs.size());
-        if (game_fsm.getCurrentState().equals(_state_EPILOG)) {
-            model.addAttribute("current_game_situation", "GAME OVER");
-        } else {
-            model.addAttribute("current_game_situation", String.format("%s: %s, %s", current_active_agent, cpFSMs.get(current_active_agent).getCurrentState(), get_next_cp()));
-        }
+        model.addAttribute("current_active_agent",  current_active_agent);
+        model.addAttribute("current_active_agent_state", cpFSMs.get(current_active_agent).getCurrentState());
+        model.addAttribute("next_active_agent", get_next_cp());
+//        if (game_fsm_get_current_state().equals(_state_EPILOG)) {
+//            model.addAttribute("current_game_situation", _state_EPILOG);
+//        } else {
+//            model.addAttribute("current_game_situation", String.format("%s: %s, %s", current_active_agent, cpFSMs.get(current_active_agent).getCurrentState(), get_next_cp()));
+//        }
     }
 
     @Override

@@ -48,7 +48,33 @@
         <script>
             function change_password() {
                 const password = document.getElementById('new_password').value;
-                patch_rest('system/set_password', {password});
+                patch_rest('system/set_user_password', {password});
+            }
+        </script>
+
+    </div>
+    <div class="row  mt-3">
+        <h4 th:text="#{user.set_default_language}"></h4>
+
+        <div class="col-md-auto me-4">
+            <select class="form-select" id="user_default_language">
+                <option value="de">deutsch</option>
+                <option value="en">english</option>
+                <option value="ru">русский</option>
+            </select>
+        </div>
+
+        <div class="col-3 align-self-end">
+            <button class="btn btn-outline-info" type="button"
+                    onclick="set_default_language();"><span
+                    class="bi bi-key-fill" th:text="'&nbsp;'+#{misc.save}"></span>
+            </button>
+        </div>
+
+        <script>
+            function set_default_language() {
+                const user_default_language = document.getElementById('user_default_language').value;
+                patch_rest('system/set_user_language', {user_default_language});
             }
         </script>
 

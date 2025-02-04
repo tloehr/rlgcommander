@@ -30,8 +30,8 @@
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1>Time Only</h1>
-    <p>A game mode only to keep the time for You.</p>
+    <h1 th:text="#{games.timed_only}"></h1>
+    <a th:href="#{params.timed_only.href}" th:text="#{params.misc.click_here_for_more}"></a>
 </section>
 
 <section layout:fragment="params">
@@ -40,24 +40,24 @@
             <div th:replace="~{/fragments :: game_time}"></div>
         </div>
         <div class="col-auto">
-            <label for="line1" class="form-label">Line 1</label>
+            <label for="line1" class="form-label" th:text="#{misc.line}+'&nbsp;1'"></label>
             <input type="text" class="form-control" value="vanilla" id="line1" required minlength="0"
                    maxlength="20"/>
         </div>
         <div class="col-auto">
-            <label for="line2" class="form-label">Line 2</label>
+            <label for="line2" class="form-label" th:text="#{misc.line}+'&nbsp;2'"></label>
             <input type="text" class="form-control" value="vanilla" id="line2" required minlength="0"
                    maxlength="20"/>
         </div>
         <div class="col-auto">
-            <label for="line3" class="form-label">Line 3</label>
+            <label for="line3" class="form-label" th:text="#{misc.line}+'&nbsp;3'"></label>
             <input type="text" class="form-control" value="vanilla" id="line3" required minlength="0"
                    maxlength="20"/>
         </div>
 
         <div class="col-auto align-self-center form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="count-respawns">
-            <label class="form-check-label" for="count-respawns">Count respawns</label>
+            <label class="form-check-label" for="count-respawns" th:text="#{params.misc.count_respawns}"></label>
         </div>
 
     </div>

@@ -33,24 +33,24 @@
 <body>
 
 <div layout:fragment="capture_points" class="col-auto col-md-6 mt-4">
-    <label for="capture_points" class="form-label">Capture-Points</label>
+    <label for="capture_points" class="form-label" th:text="#{misc.capture_points}"></label>
     <!-- only comma separated allowed -->
     <textarea type="text" class="form-control" value="ag01" id="capture_points" required
               pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$" rows="1"> </textarea>
-    <div id="cphelp" class="form-text">Agent IDs, comma separated</div>
+    <div id="cphelp" class="form-text" th:text="#{params.misc.agent_list}"></div>
 </div>
 
 <div layout:fragment="reset_agents" id="agent_reset_button" class="col-auto mt-4 align-self-center">
     <button class="btn btn-secondary none" type="button"
             onclick="reset_agents()"><span
-            class="bi bi-rewind">&nbsp;Reset agents</span>
+            class="bi bi-rewind"  th:text="'&nbsp;'+#{params.cps_and_sirens.reset_agents}"></span>
     </button>
 </div>
 
 <div layout:fragment="shuffle_agents" id="agent_shuffle_button" class="d-none mt-4">
     <button class="btn btn-primary none" type="button"
             onclick="shuffle_agents()"><span
-            class="bi bi-shuffle">&nbsp;Shuffle agents</span>
+            class="bi bi-shuffle" th:text="'&nbsp;'+#{params.cps_and_sirens.shuffle_agents}"></span>
     </button>
     <script>
         if (show_agent_shuffle_button) {
@@ -62,10 +62,10 @@
 
 <div layout:fragment="sirens" class="col-auto col-md-4">
 
-    <label for="sirens" class="form-label">Sirens</label>
+    <label for="sirens" class="form-label" th:text="#{params.misc.sirens}"></label>
     <input type="text" class="form-control" value="ag50" id="sirens" required
            pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
-    <div id="sirenhelp" class="form-text">Agent IDs, comma separated</div>
+    <div id="sirenhelp" class="form-text" th:text="#{params.misc.agent_list}"></div>
 
 </div>
 

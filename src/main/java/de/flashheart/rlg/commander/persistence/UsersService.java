@@ -5,6 +5,7 @@ import com.github.lalyos.jfiglet.JFiglet;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.Get;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,13 +24,17 @@ public class UsersService implements DefaultService<Users> {
     final PasswordEncoder passwordEncoder;
     final UsersRepository usersRepository;
     final RolesService rolesService;
+    private final Get get;
+    @Value("${rlgs.admin.set_password:#{null}}")
+    public Optional<String> admin_password_to_be_set;
     @Value("${server.locale.default}")
     public String default_locale;
 
-    public UsersService(PasswordEncoder passwordEncoder, UsersRepository usersRepository, RolesService rolesService) {
+    public UsersService(PasswordEncoder passwordEncoder, UsersRepository usersRepository, RolesService rolesService, Get get) {
         this.passwordEncoder = passwordEncoder;
         this.usersRepository = usersRepository;
         this.rolesService = rolesService;
+        this.get = get;
     }
 
     @Override
@@ -48,7 +53,7 @@ public class UsersService implements DefaultService<Users> {
         rolesService.save(rolesService.createNew(RolesService.USER, user));
         // if additional roles are needed - we'll add them here
         Arrays.stream(role_names).forEach(role_name -> rolesService.save(rolesService.createNew(role_name, user)));
-        log.info("Created user: {} with password: {}", username, password);
+        log.debug("Created user: {} with password: {}", username, password);
         save(user);
         return user;
     }
@@ -88,27 +93,27 @@ public class UsersService implements DefaultService<Users> {
     }
 
     @Transactional
-    public void change_locale(long user_pk, final String new_locale) throws EntityNotFoundException {
-        Optional<Users> optionalUsers = usersRepository.findById(user_pk);
-        if (optionalUsers.isEmpty()) {
-            throw new EntityNotFoundException(String.format("User with id %d was not found", user_pk));
-        }
-        optionalUsers.get().setLocale(new_locale);
-        save(optionalUsers.get());
+    public void change_locale(Users user, final String new_locale) throws EntityNotFoundException {
+        user.setLocale(new_locale);
+        save(user);
     }
 
-
     /**
-     *  check if the database is empty, if yes -> this is the first start
-     *  in this case we need to create a first admin user and write the password to the system log
+     * check if the database is empty, if yes -> this is the first start
+     * in this case we need to create a first admin user and write the password to the system log
+     * if there is a password set in application.yml this will be used instead
      */
     @Transactional
     public void first_time_run_check() {
-        // there are already users. Nothing to do.
-        if (usersRepository.count() > 0) return;
-        String password = UUID.randomUUID().toString();
-        Users first_admin  = createNew("admin", password, RolesService.ADMIN);
-        log.info("Created first admin user: {} with password: {}", first_admin.getUsername(), password);
+        if (usersRepository.count() == 0) {
+            String password = this.admin_password_to_be_set.orElse(UUID.randomUUID().toString());
+            Users first_admin = createNew("admin", password, RolesService.ADMIN);
+            log.info("Created first admin user: {} with password: {}", first_admin.getUsername(), password);
+        } else if (this.admin_password_to_be_set.isPresent()) {
+            Users admin = getRepository().findByUsername("admin").get();
+            admin.setPassword(passwordEncoder.encode(this.admin_password_to_be_set.get()));
+            log.info("Setting admin user password: {}", this.admin_password_to_be_set);
+            save(admin);
+        }
     }
-
 }

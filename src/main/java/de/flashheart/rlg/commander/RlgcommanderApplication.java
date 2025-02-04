@@ -26,8 +26,6 @@ public class RlgcommanderApplication {
 
     @Bean
     CommandLineRunner init(UsersService usersService) {
-        return (args) -> {
-            usersService.first_time_run_check();
-        };
+        return (args) -> usersService.first_time_run_check();
     }
 }

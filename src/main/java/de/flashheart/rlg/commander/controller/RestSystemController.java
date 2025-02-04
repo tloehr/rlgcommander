@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -75,8 +76,8 @@ public class RestSystemController extends MyParentController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PatchMapping("/set_password")
-    public ResponseEntity<?> set_password(@RequestParam(required = false) Long user_pk, @RequestParam String password, ApiKeyAuthentication authentication) {
+    @PatchMapping("/set_user_password")
+    public ResponseEntity<?> set_user_password(@RequestParam(required = false) Long user_pk, @RequestParam String password, ApiKeyAuthentication authentication) {
         Optional<Users> optionalUser = user_pk == null ?
                 Optional.of(authentication.getUser()) :
                 usersService.getRepository().findById(user_pk);
@@ -91,6 +92,14 @@ public class RestSystemController extends MyParentController {
         usersService.set_password(optionalUser.get(), password);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @PatchMapping("/set_default_language")
+    public ResponseEntity<?> set_user_language(@RequestParam String user_default_language, ApiKeyAuthentication authentication) {
+        if (!List.of("en", "de", "ru").contains(user_default_language)) throw new RuntimeException("Language not supported");
+        usersService.change_locale( authentication.getUser(), user_default_language);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 
 }
 

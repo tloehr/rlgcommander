@@ -3,7 +3,7 @@
       layout:decorate="~{params/cps_and_sirens.html}">
 
 <head>
-    <title>Center Flags</title>
+    <title  th:text="#{games.center_flags}"></title>
     <script>
 
         function read_form() {
@@ -28,7 +28,8 @@
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1>Center Flags</h1>
+    <h1  th:text="#{games.center_flags}"></h1>
+    <a th:href="#{params.center_flags.href}" th:text="#{params.misc.click_here_for_more}"></a>
 <!--    <p>Time restricted game mode. The team with the most summed-up time wins. To gain score it is necessary to switch-->
 <!--        the flags to the respective team color.</p>-->
 </section>

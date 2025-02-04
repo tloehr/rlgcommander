@@ -4,9 +4,8 @@
 
 
 <head>
-    <title>Signal</title>
+    <title th:text="#{games.stronghold}"></title>
     <script>
-
         function read_form() {
             game_parameters.agents.blu = from_string_list(document.getElementById('blu').value);
             game_parameters.agents.grn = from_string_list(document.getElementById('grn').value);
@@ -45,12 +44,8 @@
 <body>
 
 <section layout:fragment="gamemode_header">
-    <h1>Stronghold</h1>
-    <p><a href="https://flashheart.de/doku.php/rlgs:games:stronghold">Stronghold</a> is about defensive <em>rings</em> around a central point - like a castle.
-        The players have to break those defensive lines, by activating all the flags in that ring.
-        Then they can move on to the next one. The attacking team wins, When all rings are broken.
-        The defenders win, when the time runs out first.
-    </p>
+    <h1 th:text="#{games.stronghold}"></h1>
+    <a th:href="#{params.stronghold.href}" th:text="#{params.misc.click_here_for_more}"></a>
 </section>
 
 <section layout:fragment="params">
@@ -62,31 +57,35 @@
 
         <div class="col-auto align-self-center form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="check-allow-defuse">
-            <label class="form-check-label" for="check-allow-defuse">Allow Defuse</label>
+            <label class="form-check-label" for="check-allow-defuse"
+                   th:text="#{params.stronghold.allow_defuse}"></label>
         </div>
         <div class="col-auto align-self-center form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="count-respawns">
-            <label class="form-check-label" for="count-respawns">Count respawns</label>
+            <label class="form-check-label" for="count-respawns" th:text="#{params.misc.count_respawns}"></label>
         </div>
     </div>
     <div class="row mb-3">
         <div class="col-auto">
             <label for="red" class="form-label"><span
-                    class="bi bi-circle-fill bi-md text-danger">&nbsp;Ring 1</span></label>
+                    class="bi bi-circle-fill bi-md text-danger"
+                    th:text="#{params.stronghold.ring_wall}+'&nbsp;1'"></span></label>
             <!-- only comma separated allowed -->
             <input type="text" class="form-control" id="red" required
                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
         </div>
         <div class="col-auto">
             <label for="ylw" class="form-label"><span
-                    class="bi bi-circle-fill bi-md text-warning">&nbsp;Ring 2</span></label>
+                    class="bi bi-circle-fill bi-md text-warning"
+                    th:text="#{params.stronghold.ring_wall}+'&nbsp;2'"></span></label>
             <!-- only comma separated allowed -->
             <input type="text" class="form-control" id="ylw"
                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
         </div>
         <div class="col-auto">
             <label for="grn" class="form-label"><span
-                    class="bi bi-circle-fill bi-md text-success">&nbsp;Ring 3</span></label>
+                    class="bi bi-circle-fill bi-md text-success"
+                    th:text="#{params.stronghold.ring_wall}+'&nbsp;3'"></span></label>
             <!-- only comma separated allowed -->
             <input type="text" class="form-control"
                    id="grn"
@@ -94,7 +93,8 @@
         </div>
         <div class="col-auto">
             <label for="blu" class="form-label"><span
-                    class="bi bi-circle-fill bi-md text-primary">&nbsp;Ring 4</span></label>
+                    class="bi bi-circle-fill bi-md text-primary"
+                    th:text="#{params.stronghold.ring_wall}+'&nbsp;4'"></span></label>
             <!-- only comma separated allowed -->
             <input type="text" class="form-control" id="blu"
                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>

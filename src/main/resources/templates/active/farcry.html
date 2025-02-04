@@ -6,10 +6,12 @@
 
 <section layout:fragment="score">
     <div class="col-auto">
-        <h2 th:text="|Capture Points taken: ${capture_points_taken} out of ${max_capture_points}|"></h2>
-        <h3 th:text="${current_game_situation}"></h3>
+        <h2 th:text="#{active.farcry.progress_text(${capture_points_taken}, ${max_capture_points})}"></h2>
+
+        <h3 th:if="${game_fsm_current_state} eq 'EPILOG'" th:text="#{active.message.game_over}"></h3>
+        <h3 th:if="${game_fsm_current_state} ne 'EPILOG'"
+            th:text="#{active.farcry.game_situation(${current_active_agent},${current_active_agent_state},${next_active_agent})}"></h3>
     </div>
 </section>
-
 </body>
 </html>

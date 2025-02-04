@@ -178,8 +178,7 @@
     <script>
         const game_at = new Date(Date.parse('[[${game_init_at}]]'));
         document.getElementById("comment_head").innerHTML = '[[${comment}]] &#64; ' + game_at.toLocaleString();
-        sessionStorage.setItem('state_#' + get_game_id(), '[[${current_state}]]');
-        update_game_state_upper_left();
+        // sessionStorage.setItem('state_#' + get_game_id(), '[[${current_state}]]');
     </script>
 
     <h2 th:if="${match_length != null && remaining != null}"

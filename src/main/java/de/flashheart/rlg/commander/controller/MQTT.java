@@ -62,9 +62,10 @@ public class MQTT {
     public static final String CMD_DISPLAY = "paged";
     public static final String CMD_TIMERS = "timers";
     public static final String CMD_PAGED = "paged";
+    public static final String CMD_STATUS_REQUEST = "status";
 
     /**
-     * helper method to create a set_page command
+     * helper method to create a set_mqttOutbound.send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", "0"), my_agent.getId());page command
      *
      * @param page_handle
      * @param content

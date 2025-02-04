@@ -88,7 +88,6 @@ public class MQTTInbound {
                     agentsService.agent_reported_status(incoming_from, status);
                 } catch (JSONException e) {
                     log.error(e.getMessage());
-                    //agentsService.remove(agentid);
                 }
             } else { // must be a button or rfid
                 log.trace(message.toString());

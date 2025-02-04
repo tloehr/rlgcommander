@@ -80,10 +80,10 @@ public class RestGameController extends MyParentController {
         return new ResponseEntity<>(gamesService.getGameState(game_id).toString(4), HttpStatus.OK);
     }
 
-    @GetMapping("/current_state")
-    public ResponseEntity<?> current_state_game(@RequestParam(name = "game_id") int game_id) {
-        return new ResponseEntity<>(gamesService.getGameState(game_id).optString("game_state", "EMPTY"), HttpStatus.OK);
-    }
+//    @GetMapping("/current_state")
+//    public ResponseEntity<?> current_state_game(@RequestParam(name = "game_id") int game_id) {
+//        return new ResponseEntity<>(gamesService.getGameState(game_id).optString("game_state", "EMPTY"), HttpStatus.OK);
+//    }
 
     @GetMapping("/parameters")
     public ResponseEntity<?> parameters(@RequestParam(name = "game_id") int game_id) {
