@@ -93,9 +93,10 @@ public class UsersService implements DefaultService<Users> {
     }
 
     @Transactional
-    public void change_locale(Users user, final String new_locale) throws EntityNotFoundException {
-        user.setLocale(new_locale);
-        save(user);
+    public void change_locale(long user_pk, final String new_locale) throws EntityNotFoundException {
+        Users myuser = getRepository().findById(user_pk).get();
+        myuser.setLocale(new_locale);
+        save(myuser);
     }
 
     /**

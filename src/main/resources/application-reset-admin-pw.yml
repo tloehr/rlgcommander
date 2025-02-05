@@ -1,0 +1,7 @@
+# (re)set the admin password
+# can be commented out, once it has been set
+# can be used if You forgot the admin password
+#
+#rlgs:
+#  admin:
+#    set_password: adminpw

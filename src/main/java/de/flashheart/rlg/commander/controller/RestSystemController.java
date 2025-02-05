@@ -93,10 +93,10 @@ public class RestSystemController extends MyParentController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PatchMapping("/set_default_language")
-    public ResponseEntity<?> set_user_language(@RequestParam String user_default_language, ApiKeyAuthentication authentication) {
-        if (!List.of("en", "de", "ru").contains(user_default_language)) throw new RuntimeException("Language not supported");
-        usersService.change_locale( authentication.getUser(), user_default_language);
+    @PatchMapping("/set_user_language")
+    public ResponseEntity<?> set_user_language(@RequestParam String lang, ApiKeyAuthentication authentication) {
+        if (!List.of("en", "de", "ru").contains(lang)) throw new RuntimeException("Language not supported");
+        usersService.change_locale(authentication.getUser().getId(), lang);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

@@ -150,7 +150,7 @@
                 </li>
             </ul>
             <div class="col-md-auto me-4">
-                <select class="form-select" id="locale" onchange="reload();">
+                <select class="form-select" id="locale" onchange="set_default_language(); reload();">
                     <option value="de">deutsch</option>
                     <option value="en">english</option>
                     <option value="ru">русский</option>
@@ -165,8 +165,11 @@
                     <!--                    <option value="3">Game #3</option>-->
                 </select>
             </div>
-            <script th:inline="javascript">
-
+            <script>
+                function set_default_language() {
+                    const lang = document.getElementById('locale').value;
+                    patch_rest('system/set_user_language', {lang});
+                }
             </script>
         </div>
         <div class="col-auto">

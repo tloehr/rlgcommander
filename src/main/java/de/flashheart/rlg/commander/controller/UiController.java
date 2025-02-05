@@ -197,7 +197,7 @@ public class UiController extends MyParentController {
         return "user";
     }
 
-    @GetMapping("/fragments/{fragment}")
+    @GetMapping("fragments/{fragment}")
     public String get_fragment(@PathVariable String fragment,
                                @RequestParam(required = false, defaultValue = "center_flags") String game_mode,
                                Model model) {
@@ -206,7 +206,7 @@ public class UiController extends MyParentController {
         } else if (fragment.equalsIgnoreCase("saved_games_table")) {
             model.addAttribute("saved_games", savedGamesService.list_saved_games_by_mode(game_mode));
         }
-        return String.format("/fragments :: %s", fragment);
+        return String.format("fragments :: %s", fragment);
     }
 
     @GetMapping("/agent_table_row/{agent_id}")
@@ -216,6 +216,6 @@ public class UiController extends MyParentController {
                 .filter(agent -> agent.getId().equals(agent_id))
                 .findFirst();
         if (optionalAgent.isEmpty()) return "agents";
-        return String.format("/fragments :: agent_table_row(agent='%s')", new JSONObject(optionalAgent.get()));
+        return String.format("fragments :: agent_table_row(agent='%s')", new JSONObject(optionalAgent.get()));
     }
 }
