@@ -1,0 +1,57 @@
+# docker-compose for the rlgcommander
+# this works only for Ubuntu / Raspbian
+# installation via the install-commander.sh script
+services:
+
+  broker:
+    image: eclipse-mosquitto:2.0.20
+    container_name: rlgs_broker
+    volumes:
+      - /var/lib/docker/_rlgs/mosquitto:/mosquitto/config:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    ports:
+      - "1883:1883"
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - rlgs-net
+
+  db:
+    image: mysql:9.2.0-oraclelinux9
+    container_name: rlgs_db
+    volumes:
+      - /var/lib/docker/_rlgs/db:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    cap_add:
+      - SYS_NICE
+    environment:
+      - MYSQL_ROOT_PASSWORD=santana
+      - MYSQL_USER=rlgs_user
+      - MYSQL_PASSWORD=83jg00hm1
+      - MYSQL_DATABASE=rlgs_db
+    restart: unless-stopped
+    networks:
+      - rlgs-net
+
+  commander:
+    image: rlgs/commander:1.11b752
+    depends_on:
+      - db
+      - broker
+    container_name: rlgs_commander
+    ports:
+      - "8090:8090"
+    volumes:
+      - /var/lib/docker/_rlgs/config:/opt/rlgcommander/config
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    restart: unless-stopped
+    networks:
+      - rlgs-net
+
+networks:
+  rlgs-net:
+    name: rlgs-net
+    external: false
