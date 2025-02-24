@@ -194,7 +194,7 @@ public class Rush extends Scheduled {
     }
 
     @Override
-    public void process_external_message(String sender, String item, JSONObject message) {
+    public void on_external_message(String sender, String item, JSONObject message) {
 
         // internal message OR message I am interested in
         if (sender.equalsIgnoreCase("_bombtimer_")) {

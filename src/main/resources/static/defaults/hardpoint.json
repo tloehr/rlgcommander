@@ -4,6 +4,7 @@
   "class": "de.flashheart.rlg.commander.games.Hardpoint",
   "game_mode": "hardpoint",
   "winning_score": 300,
+  "who_goes_first": "blue",
   "flag_time_out": 90,
   "flag_time_up": 60,
   "delay_until_next_flag": 0,

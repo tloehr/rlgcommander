@@ -130,14 +130,14 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     @Override
-    public void process_external_message(String agent_id, String source, JSONObject message) {
+    public void on_external_message(String agent_id, String source, JSONObject message) {
         if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
             if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
             if (!message.getString("button").equalsIgnoreCase("up")) return;
             if (!cpFSMs.get(agent_id).getCurrentState().equals(_state_OPEN)) return;
             cpFSMs.get(agent_id).ProcessFSM(_msg_START_CLOSING);
         } else
-            super.process_external_message(agent_id, source, message);
+            super.on_external_message(agent_id, source, message);
     }
 
     private void cp_to_neutral(String agent) {

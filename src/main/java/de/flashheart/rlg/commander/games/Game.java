@@ -278,7 +278,7 @@ public abstract class Game {
      * @param message  the payload of that message. Button up or down, UID of the tag...
      * @throws IllegalStateException an event is not important or doesn't make any sense an ISE is thrown
      */
-    public abstract void process_external_message(String agent_id, String source, JSONObject message);
+    public abstract void on_external_message(String agent_id, String source, JSONObject message);
 
     public void on_reset() {
         game_init_at = LocalDateTime.now();

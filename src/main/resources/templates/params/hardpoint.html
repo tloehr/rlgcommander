@@ -3,7 +3,7 @@
       layout:decorate="~{params/cps_and_sirens.html}">
 
 <head>
-    <title  th:text="#{games.hardpoint}"></title>
+    <title th:text="#{games.hardpoint}"></title>
     <script>
         show_agent_shuffle_button = true;
 
@@ -14,6 +14,7 @@
             game_parameters.delay_until_next_flag = parseInt(document.getElementById('delay_until_next_flag').value);
             game_parameters.delay_after_color_change = parseInt(document.getElementById('delay_after_color_change').value);
             game_parameters.hide_next_flag = document.getElementById('check-hide-next-flag').checked;
+            game_parameters.who_goes_first = document.getElementById('who-goes-first').value;
             read_cps_sirens_form(game_parameters);
         }
 
@@ -24,6 +25,7 @@
             document.getElementById('delay_until_next_flag').value = game_parameters.delay_until_next_flag;
             document.getElementById('delay_after_color_change').value = game_parameters.delay_after_color_change;
             document.getElementById('check-hide-next-flag').checked = game_parameters.hide_next_flag;
+            selectElement('who-goes-first', game_parameters.who_goes_first);
             preset_cps_sirens_form(game_parameters);
         }
 
@@ -49,7 +51,7 @@
                    th:text="#{params.hardpoint.winning_score.help}"></small>
         </div>
         <div class="col-3">
-            <label for="flag_time_out" class="form-label"  th:text="#{params.hardpoint.flag_time_out}"></label>
+            <label for="flag_time_out" class="form-label" th:text="#{params.hardpoint.flag_time_out}"></label>
             <input type="number" class="form-control" id="flag_time_out" value="250" required
                    min="1" inputmode="decimal" pattern="\d*">
             <small id="help4" class="form-text"
@@ -62,14 +64,19 @@
             <small id="help5" class="form-text"
                    th:text="#{params.hardpoint.flag_time_up.help}"></small>
         </div>
-        <div class="col-3 align-self-center form-check form-switch"
-             data-toggle="tooltip" data-placement="top" th:attr="title=#{params.hardpoint.hide_next_flag.help}">
-            <input class="form-check-input" type="checkbox" role="switch" id="check-hide-next-flag">
-            <label class="form-check-label" for="check-hide-next-flag"
-                   th:text="#{params.hardpoint.hide_next_flag}"></label>
+        <div class="col-3">
+            <label for="who-goes-first" class="form-label" th:text="#{params.hardpoint.who_goes_first}"></label>
+            <select class="form-select" id="who-goes-first">
+                <option value="blue" th:text="#{misc.blue}"></option>
+                <option value="red" th:text="#{misc.red}"></option>
+            </select>
+            <small id="help-for-who-goes-first" class="form-text"
+                   th:text="#{params.hardpoint.who_goes_first.help}"></small>
         </div>
+
         <div class="col-auto">
             <div class="accordion" id="expert_accordion">
+
                 <div class="accordion-item  mt-4">
                     <h2 class="accordion-header" id="expert_heading">
                         <button class="accordion-button" type="button" data-bs-toggle="collapse"
@@ -82,6 +89,13 @@
                          data-bs-parent="#expert_accordion">
                         <div class="accordion-body">
                             <h3 th:text="#{misc.expert_settings}"></h3>
+                            <div class="col-auto align-self-center form-check form-switch"
+                                 data-toggle="tooltip" data-placement="top"
+                                 th:attr="title=#{params.hardpoint.hide_next_flag.help}">
+                                <input class="form-check-input" type="checkbox" role="switch" id="check-hide-next-flag">
+                                <label class="form-check-label" for="check-hide-next-flag"
+                                       th:text="#{params.hardpoint.hide_next_flag}"></label>
+                            </div>
                             <div class="col-auto">
                                 <label for="delay_until_next_flag" class="form-label"
                                        th:text="#{params.hardpoint.flag.delay}"></label>

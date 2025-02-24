@@ -383,7 +383,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
     }
 
     @Override
-    public void process_external_message(String sender, String source, JSONObject message) {
+    public void on_external_message(String sender, String source, JSONObject message) {
         if (source.equals(_msg_RFID)) {
 //            String spawn_role = spawn_segments.column(active_segment).get("");
             get_spawn_role_for(sender, active_segment).ifPresent(spawn_role -> {

@@ -283,7 +283,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     }
 
     @Override
-    public void process_external_message(String agent_id, String source, JSONObject message) {
+    public void on_external_message(String agent_id, String source, JSONObject message) {
         if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)
                 && cpFSMs.get(agent_id).getCurrentState().
                 matches(_state_FUSED + "|" + _state_DEFUSED + "|" + _state_OVERTIME)) {
@@ -291,7 +291,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
             if (!message.getString("button").equalsIgnoreCase("up")) return;
             cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
         } else
-            super.process_external_message(agent_id, source, message);
+            super.on_external_message(agent_id, source, message);
     }
 
     @Override

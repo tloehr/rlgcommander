@@ -16,6 +16,12 @@
 ## current work
 i18n - testen - siehe layout #30
 
+## todo
+* FarCry Anzeige Fixen. Restzeit und Spielzeit
+* Hardpoint Rundungsfehler bei Flaggenpunkten
+  * Wählen können ob blau oder rot zuerst drann kommt beim Drücken
+
+
 ## Release Notes
 ### 1.11
 #### Vor update - Umgebung anpassen

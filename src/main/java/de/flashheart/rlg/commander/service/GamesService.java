@@ -13,7 +13,6 @@ import de.flashheart.rlg.commander.games.events.StateReachedListener;
 import de.flashheart.rlg.commander.configs.MyYamlConfiguration;
 import de.flashheart.rlg.commander.misc.GameStateChangedMessage;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
-import de.flashheart.rlg.commander.misc.ClientNotificationMessage;
 import de.flashheart.rlg.commander.persistence.PlayedGamesService;
 import de.flashheart.rlg.commander.persistence.Users;
 import lombok.extern.log4j.Log4j2;
@@ -29,9 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -152,7 +149,7 @@ public class GamesService {
 
     public void process_message(int id, String agent, String source, JSONObject payload) throws IllegalStateException, ArrayIndexOutOfBoundsException {
         check_id(id);
-        loaded_games[id - 1].get().process_external_message(agent, source, payload);
+        loaded_games[id - 1].get().on_external_message(agent, source, payload);
     }
 
     public JSONArray get_games() {

@@ -29,6 +29,8 @@ spring:
         quartz:
           scheduler:
             instanceId: my_scheduler
+  application:
+    name: rlgcommander
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://db:3306/rlgs_db

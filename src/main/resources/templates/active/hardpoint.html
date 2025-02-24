@@ -12,8 +12,12 @@
         <ul>
             <li th:utext="#{active.hardpoint.game_info.winning_score(${winning_score})}"></li>
             <li th:utext="#{active.hardpoint.game_info.neutral_flag(${flag_time_out})}"></li>
-            <li th:utext="#{active.hardpoint.game_info.active_flag(${flag_time_up})}"></li>
-            <li th:if="${delay_until_next_flag > 0}" th:utext="#{active.hardpoint.game_info.cool_down(${delay_until_next_flag})}"></li>
+            <li> <span th:utext="#{active.hardpoint.game_info.active_flag(${flag_time_up})}"></span>
+                &nbsp;
+                <span th:utext="#{active.hardpoint.game_info.who_goes_first(${who_goes_first_style}, ${who_goes_first})}"></span>
+            </li>
+            <li th:if="${delay_until_next_flag > 0}"
+                th:utext="#{active.hardpoint.game_info.cool_down(${delay_until_next_flag})}"></li>
             <li th:text="#{active.hardpoint.game_info.current_flag(${active_agent},${active_state})}"></li>
             <li th:text="#{active.hardpoint.game_info.next_flag(${next_agent})}"></li>
         </ul>

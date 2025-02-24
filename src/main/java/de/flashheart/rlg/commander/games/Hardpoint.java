@@ -40,6 +40,8 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasScoreBroadcast, HasActivation, HasTimeOut, HasFlagTimer {
     public static final String _msg_TO_NEUTRAL = "to_neutral";
     public static final String _msg_DEACTIVATE = "deactivate";
+    public static final String _msg_TO_BLUE = "to_blue";
+    public static final String _msg_TO_RED = "to_red";
     public static final String _msg_GO = "go";
     public static final String _msg_ACCEPTED = "accepted";
     public static final String _msg_NEXT_FLAG = "next_flag";
@@ -51,6 +53,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     private static final String _flag_state_PROLOG = _state_PROLOG;
     private long broadcast_cycle_counter;
     private final long winning_score, flag_time_up, flag_time_out, delay_until_next_flag;
+    private final String who_goes_first;
     private final BigDecimal delay_after_color_change;
     private final List<String> capture_points;
     private final Table<String, String, Long> scores;
@@ -66,7 +69,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         assert_two_teams_red_and_blue();
 
         count_respawns = false;
-
+        this.who_goes_first = game_parameters.optString("who_goes_first", "blue");
         this.winning_score = game_parameters.optLong("winning_score", 250);
         this.flag_time_out = game_parameters.optLong("flag_time_out", 120);
         this.flag_time_up = game_parameters.optLong("flag_time_up", 120);
@@ -247,6 +250,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         log.trace("cp_to_neutral {}", agent);
         create_job(flag_time_out_jobkey, LocalDateTime.now().plusSeconds(flag_time_out), TimeOutJob.class, Optional.empty());
         send("timers", MQTT.toJSON("timer", Long.toString(flag_time_out)), agents.keySet());
+        // notify the players that this flag is active now
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_VERY_LONG), agent);
         String label = "actv:" + get_active_flag();
         if (!hide_next_flag) label += " next:" + peek_next_flag();
         send("vars", MQTT.toJSON("timelabel", "Next Flag in", "label", label), agents.keySet());
@@ -280,6 +285,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         deleteJob(flag_time_out_jobkey);
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.MEDIUM), roles.get("sirens"));
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, color, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
         send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag is " + COLOR),
@@ -387,13 +393,17 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     }
 
     @Override
-    public void process_external_message(String agent_id, String source, JSONObject message) {
+    public void on_external_message(String agent_id, String source, JSONObject message) {
         if (game_fsm.getCurrentState().equals(_state_RUNNING) && get_active_flag().equalsIgnoreCase(agent_id)) {
             if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
             if (!message.getString("button").equalsIgnoreCase("up")) return;
-            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+            if (cpFSMs.get(agent_id).getCurrentState().equalsIgnoreCase(_flag_state_NEUTRAL)) {
+                cpFSMs.get(agent_id).ProcessFSM(who_goes_first.equalsIgnoreCase("blue") ? _msg_TO_BLUE : _msg_TO_RED);
+            } else {
+                cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+            }
         } else
-            super.process_external_message(agent_id, source, message);
+            super.on_external_message(agent_id, source, message);
     }
 
     @Override
@@ -442,6 +452,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         model.addAttribute("next_agent", capture_points.get(next_capture_point));
 
         model.addAttribute("winning_score", winning_score);
+        model.addAttribute("who_goes_first", who_goes_first.toUpperCase());
+        model.addAttribute("who_goes_first_style", who_goes_first.equals("blue") ? "text-primary" : "text-danger");
         model.addAttribute("flag_time_out", flag_time_out);
         model.addAttribute("flag_time_up", flag_time_up);
         model.addAttribute("delay_until_next_flag", delay_until_next_flag);
