@@ -47,7 +47,8 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         signal_unlock_job = new JobKey("signal_unlock_job", uuid.toString());
         cps_for_red = game_parameters.getJSONObject("agents").getJSONArray("red").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
         cps_for_blue = game_parameters.getJSONObject("agents").getJSONArray("blu").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
-        roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
+        // really ?
+        //roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
         send("paged", MQTT.page("page0",
                 "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
     }
@@ -105,7 +106,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_CLOSE));
 
         // create unlock job
-        create_job(signal_unlock_job, LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.empty());
+        create_job_with_reschedule(signal_unlock_job, LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.empty());
     }
 
     private void closed(String agent) {

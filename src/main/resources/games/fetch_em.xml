@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- "Fetch em" FSM for capture points -->
+<FSM>
+    <STATE id="PROLOG" type="ID">
+        <MESSAGE id="run" nextState="NEUTRAL"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="NEUTRAL">
+        <MESSAGE id="to_blue" nextState="BLUE"/>
+        <MESSAGE id="to_red" nextState="RED"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="BLUE">
+        <MESSAGE id="btn01" nextState="RED"/>
+        <MESSAGE id="accepted" nextState="BLUE_SCORING"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="RED">
+        <MESSAGE id="btn01" nextState="BLUE"/>
+        <MESSAGE id="accepted" nextState="RED_SCORING"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="BLUE_SCORING">
+        <MESSAGE id="flag_time_is_up" nextState="NEUTRAL"/>
+        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="RED_SCORING">
+        <MESSAGE id="flag_time_is_up" nextState="NEUTRAL"/>
+        <MESSAGE id="to_neutral" nextState="NEUTRAL"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+    <STATE id="GAME_OVER">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+    </STATE>
+</FSM>
+

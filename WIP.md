@@ -11,6 +11,11 @@
 * geändert, dass bei Agenten die noch unbekannt sind und bei denen man eine Taste gedrückt hat, der commander sofort eine State Abfrage stellt. Dann braucht man nicht immer die ganze Minute zu warten.
 * das admin password kann nun über einen Eintrag in application.yml gesetzt werden.
   * rlgs:admin:set_password: password
+* Hardpoint
+  * Wählen können ob blau oder rot zuerst drann kommt beim Drücken
+  * Buzzer bei neu aktivierten Flaggen
+* FetchEm
+  * Neuer Modus - Toby
   
 
 ## current work
@@ -18,8 +23,14 @@ i18n - testen - siehe layout #30
 
 ## todo
 * FarCry Anzeige Fixen. Restzeit und Spielzeit
-* Hardpoint Rundungsfehler bei Flaggenpunkten
+* FetchEm
+  * erstellen
+* Conquest
   * Wählen können ob blau oder rot zuerst drann kommt beim Drücken
+* CenterFlags
+  * Wählen können ob blau oder rot zuerst drann kommt beim Drücken
+* Stronghold
+  * Timelimit für eine Wall
 
 
 ## Release Notes

@@ -135,7 +135,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         final JobDataMap jdm = new JobDataMap();
         jdm.put("bombid", agent);
         estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
-        create_resumable_job(bombTimerJobkey, estimated_end_time, FlagTimerJob.class, Optional.of(jdm));
+        create_job_with_reschedule(bombTimerJobkey, estimated_end_time, FlagTimerJob.class, Optional.of(jdm));
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
         play("voice2", AGENT_EVENT_PATH, "selfdestruct", get_active_spawn_agents());
         // send("acoustic", Tools.getProgressTickingScheme(MQTT.SIR2, bomb_timer * 1000), map_of_agents_and_sirens.get(agent).toString());
@@ -249,7 +249,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         super.on_run();
         // create timed respawn if necessary
         if (respawn_timer > 0) {
-            create_resumable_job(respawnTimerJobkey,
+            create_job_with_suspension(respawnTimerJobkey,
                     SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
                     RespawnTimerJob.class, Optional.empty());
         }

@@ -1,7 +1,6 @@
 package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.fsm.FSM;
-import com.github.lalyos.jfiglet.FigletFont;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.BroadcastScoreJob;
@@ -18,6 +17,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
@@ -30,7 +30,6 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     public TimedOnly(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
-        jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
         vars = game_parameters.getJSONObject("display");
     }
 
@@ -46,7 +45,7 @@ public class TimedOnly extends Timed implements HasScoreBroadcast {
     public void on_run() {
         super.on_run();
         long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
-        create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
+        create_job_with_suspension(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class, Optional.empty());
         broadcast_cycle_counter = 0L;
     }
 

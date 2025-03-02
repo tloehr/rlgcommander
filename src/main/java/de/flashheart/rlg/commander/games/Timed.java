@@ -78,7 +78,7 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
         super.on_run();
         start_time = LocalDateTime.now();
         end_time = start_time.plusSeconds(game_time);
-        create_resumable_job(game_timer_jobkey, end_time, GameTimeIsUpJob.class, Optional.empty());
+        create_job_with_reschedule(game_timer_jobkey, end_time, GameTimeIsUpJob.class, Optional.empty());
     }
 
     @Override

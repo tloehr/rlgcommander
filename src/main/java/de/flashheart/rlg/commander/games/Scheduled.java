@@ -48,6 +48,7 @@ public abstract class Scheduled extends Game {
 
     protected void deleteJob(JobKey jobKey) {
         if (jobKey == null) return;
+        if (!jobs.containsKey(jobKey)) return;
         try {
             log.trace("deleting Job {}", jobKey);
             scheduler.interrupt(jobKey);
@@ -98,37 +99,7 @@ public abstract class Scheduled extends Game {
             log.fatal(e);
         }
     }
-    protected void pause_job(JobKey jobKey) {
-        try {
-            scheduler.pauseJob(jobKey);
-        } catch (SchedulerException e) {
-            log.error(e);
-        }
-    }
-    protected void reschedule_job(JobKey jobKey, long delayed_by_seconds) {
-        try {
-            if (!scheduler.checkExists(jobKey)) return;
-            TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName() + "-trigger", uuid.toString());
-            Trigger oldTrigger = scheduler.getTrigger(triggerKey);
 
-            LocalDateTime new_start_time = JavaTimeConverter.toJavaLocalDateTime(oldTrigger.getStartTime()).plusSeconds(delayed_by_seconds);
-
-            Trigger newTrigger = newTrigger()
-                    .withIdentity(triggerKey)
-                    .startAt(JavaTimeConverter.toDate(new_start_time))
-                    .build();
-            scheduler.rescheduleJob(triggerKey, newTrigger);
-        } catch (SchedulerException e) {
-            log.error(e);
-        }
-    }
-    protected void resume_job(JobKey jobKey) {
-        try {
-            scheduler.resumeJob(jobKey);
-        } catch (SchedulerException e) {
-            log.error(e);
-        }
-    }
     protected boolean check_exists(JobKey jobKey) {
         boolean check;
         try {

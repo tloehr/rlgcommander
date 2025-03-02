@@ -128,7 +128,9 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         log.trace("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
         ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
-        jobs_to_suspend_during_pause.add(ticketBleedingJobkey);
+
+
+        // todo: add "who_goes_first": "blue",
 
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Tickets: %s", respawn_tickets.intValue()),
@@ -240,7 +242,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         super.on_run();
         // setup and start bleeding job
         long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
-        create_job(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class);
+        create_job_with_suspension(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class, Optional.empty());
         broadcast_cycle_counter = 0;
     }
 
@@ -268,11 +270,11 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         JSONObject vars = MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
                 "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()));
 
-        String[] red_flags = get_flag_list(20, cps_held_by_red);
+        String[] red_flags = split_list_to_lines(20, cps_held_by_red, "", "", "");
         vars.put("red_l1", red_flags[0]);
         vars.put("red_l2", red_flags[1]);
 
-        String[] blue_flags = get_flag_list(20, cps_held_by_blue);
+        String[] blue_flags = split_list_to_lines(20, cps_held_by_blue, "", "", "");
         vars.put("blue_l1", blue_flags[0]);
         vars.put("blue_l2", blue_flags[1]);
 
@@ -284,22 +286,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
         log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
         log.trace(vars.toString(4));
-    }
-
-    /**
-     * split list of flags to lines
-     *
-     * @param linelength
-     * @param set
-     * @return
-     */
-    String[] get_flag_list(int linelength, Collection<String> set) {
-        if (set.isEmpty()) return new String[]{"", "", ""};
-        String[] lines = new String[]{"", "", ""};
-        String list_of_flags = WordUtils.wrap(set.stream().sorted().collect(Collectors.joining(" ")), linelength);
-        String[] flags = list_of_flags.split(System.lineSeparator());
-        for (int i = 0; i < Math.min(lines.length, flags.length); i++) lines[i] = flags[i];
-        return lines;
     }
 
     @Override

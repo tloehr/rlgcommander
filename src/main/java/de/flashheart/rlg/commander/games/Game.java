@@ -14,6 +14,7 @@ import de.flashheart.rlg.commander.games.events.StateTransitionListener;
 import de.flashheart.rlg.commander.misc.*;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.text.WordUtils;
 import org.javatuples.Quartet;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -447,7 +448,7 @@ public abstract class Game {
         //game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList()));
     }
 
-    public String game_fsm_get_current_state(){
+    public String game_fsm_get_current_state() {
         return game_fsm.getCurrentState();
     }
 
@@ -488,6 +489,21 @@ public abstract class Game {
     public void setGameDescription(String... lines) {
         game_description.clear();
         game_description.addAll(Arrays.asList(lines));
+    }
+
+    /**
+     * split list of flags to lines
+     *
+     * @param line_length
+     * @param set
+     * @return
+     */
+    String[] split_list_to_lines(int line_length, Collection<String> set, String... lines) {
+        if (set.isEmpty()) return lines;
+        String list_of_flags = WordUtils.wrap(set.stream().sorted().collect(Collectors.joining(" ")), line_length);
+        String[] flags = list_of_flags.split(System.lineSeparator());
+        System.arraycopy(flags, 0, lines, 0, Math.min(lines.length, flags.length));
+        return lines;
     }
 
 

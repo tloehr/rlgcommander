@@ -327,7 +327,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
                 // the intro music and countdown are the same for all players. Hence, the "audio" group
                 play("music", AGENT_MUSIC_PATH, intro_mp3);
                 play("countdown", AGENT_VOICE_PATH, intro_voice);
-                create_job(deferredRunGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
+                create_job_with_reschedule(deferredRunGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
             } else {
                 process_internal_message(_msg_RUN);
             }
@@ -464,7 +464,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
             team_on_a_spree = Optional.of(new ImmutablePair<>(TEAM2, team2_killing_spree_length));
         team_on_a_spree.ifPresent(stringIntegerPair -> {
             if (!announced_long_spree_already)
-                create_job(delayed_announcement_jobkey, LocalDateTime.now().plusSeconds(3), DelayedAudioJob.class, Optional.empty());
+                create_job_with_reschedule(delayed_announcement_jobkey, LocalDateTime.now().plusSeconds(3), DelayedAudioJob.class, Optional.empty());
         });
     }
 

@@ -1,11 +1,15 @@
 {
   "mode": "stronghold",
-  "file_version": 1,
+  "file_version": 2,
   "game_time": 600,
   "silent_game": false,
   "game_mode": "stronghold",
   "comment": "Stronghold",
   "allow_defuse": false,
+  "red_time_limit": 0,
+  "ylw_time_limit": 0,
+  "blu_time_limit": 0,
+  "grn_time_limit": 0,
   "spawns": {
     "count_respawns": true,
     "starter_countdown": "0",

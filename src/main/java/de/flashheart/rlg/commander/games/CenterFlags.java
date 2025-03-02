@@ -46,7 +46,6 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         scores = HashBasedTable.create();
         reset_score_table();
         broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
-        jobs_to_suspend_during_pause.add(broadcastScoreJobkey);
     }
 
     private void reset_score_table() {
@@ -147,7 +146,7 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     public void on_run() {
         super.on_run();
         long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
-        create_job(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class);
+        create_job_with_suspension(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class, Optional.empty());
         broadcast_cycle_counter = 0;
     }
 
