@@ -114,7 +114,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void taken(String agent) {
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.MEDIUM), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.SCHEME_MEDIUM), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
     }
 
@@ -164,7 +164,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     private void activate_ring() {
         roles.get(rings_in_progress.getFirst()).forEach(agent -> cpFSMs.get(agent).ProcessFSM(_msg_ACTIVATE));
         if (rings_in_progress.size() < rings_in_use.size() && rings_in_use.size() > 1) // not with the first or only ring
-            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.LONG), roles.get("sirens"));
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.SCHEME_LONG), roles.get("sirens"));
         add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", "activated"));
         broadcast_score();
     }

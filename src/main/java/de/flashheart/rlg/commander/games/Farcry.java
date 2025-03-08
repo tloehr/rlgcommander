@@ -165,7 +165,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     private void taken(String agent) {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "taken"));
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.LONG), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.SCHEME_LONG), agent);
         active_capture_point++;
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.OFF), map_of_agents_assigned_to_sirens.get(agent).toString());
 
@@ -176,7 +176,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
             game_fsm.ProcessFSM(_msg_GAME_OVER);
         } else {
             send(MQTT.CMD_VISUAL, new JSONObject(MQTT.LED_ALL, MQTT.OFF, MQTT.RED, MQTT.FLAG_TAKEN), agent);
-            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.SCHEME_LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
             next_spawn_segment();
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_ACTIVATE);
         }
@@ -221,7 +221,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
                     send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.OFF), map_of_agents_assigned_to_sirens.get(agent).toString());
-                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR3, MQTT.LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
+                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR3, MQTT.SCHEME_LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
                     play("voice3", AGENT_EVENT_PATH, "shutdown", get_active_spawn_agents());
                     return true;
                 }
@@ -233,7 +233,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
                     send("vars", MQTT.toJSON("active_cp", agent), get_all_spawn_agents());
                     add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     if (active_capture_point > 0)
-                        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
+                        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.SCHEME_LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
                     return true;
                 }
             });
@@ -297,7 +297,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     @Override
     public void on_time_to_respawn(JobDataMap map) {
 //        create_job(misc1JobKey, LocalDateTime.now().plusSeconds(respawn_timer), Misc1Job.class, Optional.empty());
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.LONG), get_active_spawn_agents());
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_LONG), get_active_spawn_agents());
         send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
     }
 

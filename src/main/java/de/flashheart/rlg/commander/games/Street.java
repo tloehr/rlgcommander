@@ -14,7 +14,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,7 +43,7 @@ public class Street extends Timed {
             fsm.setAction(_flag_state_GET_READY, _msg_GO, new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.LONG), roles.get("sirens"));
+                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
                     return true;
                 }
             });
@@ -89,7 +88,7 @@ public class Street extends Timed {
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.GREEN, MQTT.RECURRING_SCHEME_NORMAL), agent);
         if (!is_last(agent)) {
             // the game is over now. no siren needed.
-            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.LONG), roles.get("sirens"));
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
             active_capture_point++;
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_GO);
             broadcast_score();

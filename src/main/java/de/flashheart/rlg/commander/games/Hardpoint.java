@@ -10,7 +10,6 @@ import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.*;
 import de.flashheart.rlg.commander.games.traits.*;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -123,7 +122,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     if (delay_until_next_flag > 0L)
-                        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SHUTDOWN_SIREN, MQTT.LONG), roles.get("sirens"));
+                        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SHUTDOWN_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
                     log.trace("flag ended with score red {} and blue {}", iteration_score_red / 1000L, iteration_score_blue / 1000L);
                     if (iteration_score_red + iteration_score_blue > 0) {
                         add_in_game_event(new JSONObject().put("message", String.format("Flag %s added %s points for RED and %s points for BLUE", agent, iteration_score_red / 1000L, iteration_score_blue / 1000L)).put("agent", agent), "free_text");
@@ -136,7 +135,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
             fsm.setAction(_flag_state_GET_READY, _msg_GO, new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.LONG), roles.get("sirens"));
+                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
                     return true;
                 }
             });
@@ -233,7 +232,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
         create_job_with_reschedule(flag_time_out_jobkey, LocalDateTime.now().plusSeconds(flag_time_out), TimeOutJob.class, Optional.empty());
         send("timers", MQTT.toJSON("timer", Long.toString(flag_time_out)), agents.keySet());
         // notify the players that this flag is active now
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_VERY_LONG), agent);
+        if (buzzer_on_flag_activation) send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_LONG), agent);
         String label = "actv:" + get_active_flag();
         if (!hide_next_flag) label += " next:" + peek_next_flag();
         send("vars", MQTT.toJSON("timelabel", "Next Flag in", "label", label), agents.keySet());
@@ -265,7 +264,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasSc
     private void cp_to_scoring_color(String agent, String color) {
         String COLOR = (color.equalsIgnoreCase("blu") ? "BLUE" : "RED");
         deleteJob(flag_time_out_jobkey);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.MEDIUM), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.SCHEME_MEDIUM), roles.get("sirens"));
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, color, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send(MQTT.CMD_PAGED,
                 MQTT.page("page0",

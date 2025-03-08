@@ -30,20 +30,20 @@ public class MQTT {
     public static final String ACOUSTICS = SIR1 + "|" + SIR2 + "|" + SIR3 + "|" + SIR4 + "|" + BUZZER;
 
 
-    public static final String SCHEME_VERY_LONG = "very_long";
-    public static final String LONG = "long";
-    public static final String MEDIUM = "medium";
-    public static final String SCHEME_SHORT = "short";
-    public static final String SCHEME_VERY_SHORT = "very_short";
-    public static final String RECURRING_SCHEME_VERY_SLOW = "very_slow";
-    public static final String RECURRING_SCHEME_SLOW = "slow";
-    public static final String RECURRING_SCHEME_NORMAL = "normal";
-    public static final String RECURRING_SCHEME_FAST = "fast";
+    public static final String SCHEME_VERY_LONG = "very_long"; //5000ms
+    public static final String SCHEME_LONG = "long"; // 2500ms
+    public static final String SCHEME_MEDIUM = "medium"; // 1000ms
+    public static final String SCHEME_SHORT = "short"; // 500ms
+    public static final String SCHEME_VERY_SHORT = "very_short"; // 250ms
+    public static final String RECURRING_SCHEME_VERY_SLOW = "very_slow"; // 1000,-5000
+    public static final String RECURRING_SCHEME_SLOW = "slow"; // 1000, -2000
+    public static final String RECURRING_SCHEME_NORMAL = "normal"; // 1000, -1000
+    public static final String RECURRING_SCHEME_FAST = "fast"; // 500, -500
     public static final String OFF = "off";
-    public static final String RECURRING_SCHEME_VERY_FAST = "very_fast";
+    public static final String RECURRING_SCHEME_VERY_FAST = "very_fast"; // 100, -100
     public static final String RECURRING_SCHEME_MEGA_FAST = "mega_fast";
-    public static final String RECURRING_SCHEME_SIGNAL_STRENGTH = "signal_strength";
-    public static final String RECURRING_SCHEME_NO_WIFI = "no_wifi";
+    public static final String RECURRING_SCHEME_SIGNAL_STRENGTH = "signal_strength"; // 255, -750
+    public static final String RECURRING_SCHEME_NO_WIFI = "no_wifi"; // 100, -1000
     public static final String SINGLE_BUZZ = "single_buzz";
     public static final String DOUBLE_BUZZ = "double_buzz";
     public static final String TRIPLE_BUZZ = "triple_buzz";

@@ -169,7 +169,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
                     MQTT.page("page1", "THIS SPAWN IS", "", "INACTIVE", "")), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_PREPARING, (state, obj) -> {
-            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.MEDIUM), agent);
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_MEDIUM), agent);
             // play("music", AGENT_PAUSE_PATH, pause_mp3, agent);
             send(MQTT.CMD_DISPLAY, MQTT.merge(
                     MQTT.page("page0", " !! GAME LOBBY !! ", "", "Press button", "when ready"),
@@ -188,7 +188,7 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
             ), agent);
         });
         fsm.setStatesAfterTransition(_state_WE_ARE_READY, (state, obj) -> {
-            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.MEDIUM), agent);
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_MEDIUM), agent);
             if (spawn_segments.stream()
                     .filter(o -> o.getValue1() == active_segment)
                     .allMatch(o2 -> o2.getValue3().getCurrentState().equals(_state_WE_ARE_READY))
@@ -420,8 +420,8 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
                 .put("team", this_team.getLed_device_id())
                 .put("value", this_team.getRespawns())
         );
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.MEDIUM), agent_id);
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.WHITE, MQTT.MEDIUM), agent_id);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_MEDIUM), agent_id);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.WHITE, MQTT.SCHEME_MEDIUM), agent_id);
 
         log.trace(this_team);
 

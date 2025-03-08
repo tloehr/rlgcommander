@@ -8,7 +8,6 @@ import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.commons.text.WordUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,7 +33,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
 
     private long broadcast_cycle_counter;
-    private final BigDecimal respawn_tickets, ticket_price_for_respawn, not_bleeding_before_cps, start_bleed_interval, end_bleed_interval;
+    private final BigDecimal respawn_tickets;
+    private final BigDecimal ticket_price_for_respawn;
 
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
     private final HashSet<String> cps_held_by_blue, cps_held_by_red;
@@ -83,9 +83,9 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         count_respawns = true;
 
         this.respawn_tickets = game_parameters.getBigDecimal("respawn_tickets");
-        this.not_bleeding_before_cps = game_parameters.getBigDecimal("not_bleeding_before_cps");
-        this.start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
-        this.end_bleed_interval = game_parameters.getBigDecimal("end_bleed_interval");
+        BigDecimal not_bleeding_before_cps = game_parameters.getBigDecimal("not_bleeding_before_cps");
+        BigDecimal start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
+        BigDecimal end_bleed_interval = game_parameters.getBigDecimal("end_bleed_interval");
         this.ticket_price_for_respawn = game_parameters.getBigDecimal("ticket_price_for_respawn");
 
         cps_held_by_blue = new HashSet<>();

@@ -100,7 +100,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         broadcast_score();
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), get_all_spawn_agents());
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.LONG), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.SCHEME_LONG), roles.get("sirens"));
 
         // closing everybody
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_CLOSE));
@@ -125,7 +125,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     private void open_all() {
         // unlocking everyone
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR3, MQTT.LONG), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR3, MQTT.SCHEME_LONG), roles.get("sirens"));
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_OPEN));
         active_color = "";
     }
