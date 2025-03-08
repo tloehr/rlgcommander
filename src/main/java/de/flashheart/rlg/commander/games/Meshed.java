@@ -187,8 +187,8 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
      * @param state
      */
     private void switch_cp(String agent, String state) {
-        send("visual", MQTT.toJSON(get_flag_blinking_scheme_for(agent, state)), agent);
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(get_flag_blinking_scheme_for(agent, state)), agent);
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
 
         // add in game event to the event list
         add_in_game_event(new JSONObject()
@@ -292,7 +292,7 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
     private void update_adjacent_flags_to(String agent) {
         mesh.adjacentNodes(agent)
                 .forEach(neighbour ->
-                        send("visual",
+                        send(MQTT.CMD_VISUAL,
                                 MQTT.toJSON(get_flag_blinking_scheme_for(agent)), agent));
     }
 

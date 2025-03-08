@@ -16,7 +16,7 @@ public class FlagTimerJob extends QuartzJobBean implements InterruptableJob {
         try {
             String uuid = jobExecutionContext.getMergedJobDataMap().getString("uuid");
             HasFlagTimer game = (HasFlagTimer) jobExecutionContext.getScheduler().getContext().get(uuid);
-            game.flag_time_is_up(jobExecutionContext.getMergedJobDataMap().getString("bombid"));
+            game.flag_time_is_up(jobExecutionContext.getMergedJobDataMap().getString("agent_id"));
         } catch (SchedulerException e) {
             log.error(e);
         }

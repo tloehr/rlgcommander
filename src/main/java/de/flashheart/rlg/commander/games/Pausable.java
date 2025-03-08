@@ -62,14 +62,14 @@ public abstract class Pausable extends Scheduled {
             pausing_since = Optional.of(LocalDateTime.now());
             jobs_to_reschedule_after_pause.forEach(this::pause_job);
             jobs_to_suspend_during_pause.forEach(this::pause_job);
-            send("acoustic", MQTT.toJSON(MQTT.SIR1, "game_ends"), roles.get("sirens"));
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR1, "game_ends"), roles.get("sirens"));
         }
         if (message.equals(_msg_CONTINUE)) {
             jobs_to_reschedule_after_pause.removeIf(jobKey -> !check_exists(jobKey));
             final long seconds_elapsed = ChronoUnit.SECONDS.between(pausing_since.get(), LocalDateTime.now());
             jobs_to_reschedule_after_pause.forEach(jobKey -> reschedule_job(jobKey, seconds_elapsed));
             jobs_to_suspend_during_pause.forEach(this::resume_job);
-            send("acoustic", MQTT.toJSON(MQTT.SIR1, "game_starts"), roles.get("sirens"));
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR1, "game_starts"), roles.get("sirens"));
         }
     }
 

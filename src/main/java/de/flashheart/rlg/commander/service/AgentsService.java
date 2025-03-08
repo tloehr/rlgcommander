@@ -171,8 +171,8 @@ public class AgentsService {
     }
 
     private void powersave(String agent) {
-        mqttOutbound.send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
-        mqttOutbound.send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
+        mqttOutbound.send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
+        mqttOutbound.send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
     }
 
     /**

@@ -49,7 +49,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         cps_for_blue = game_parameters.getJSONObject("agents").getJSONArray("blu").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
         // really ?
         //roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-        send("paged", MQTT.page("page0",
+        send(MQTT.CMD_PAGED, MQTT.page("page0",
                 "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
     }
 
@@ -84,9 +84,9 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     private void open(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF,
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF,
                 get_color_for(agent), MQTT.RECURRING_SCHEME_NORMAL), agent);
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_OPEN));
     }
 
@@ -98,9 +98,9 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _msg_START_CLOSING));
         broadcast_score();
-        send("acoustic", MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), get_all_spawn_agents());
-        send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.LONG), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), get_all_spawn_agents());
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.LONG), roles.get("sirens"));
 
         // closing everybody
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_CLOSE));
@@ -112,9 +112,9 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     private void closed(String agent) {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_CLOSED));
         if (active_color.equals(get_color_for(agent))) {
-            send("visual", MQTT.toJSON(active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), agent);
+            send(MQTT.CMD_VISUAL, MQTT.toJSON(active_color, MQTT.RECURRING_SCHEME_MEGA_FAST), agent);
         } else {
-            send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
+            send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
         }
     }
 
@@ -125,7 +125,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
 
     private void open_all() {
         // unlocking everyone
-        send("acoustic", MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR3, MQTT.LONG), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR3, MQTT.LONG), roles.get("sirens"));
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_OPEN));
         active_color = "";
     }
@@ -142,7 +142,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     }
 
     private void cp_to_neutral(String agent) {
-        send("paged",
+        send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
                         "I am ${agentname}...", "...and Your Flag", "", ""),
                 agent);
@@ -196,7 +196,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         super.on_transition(old_state, message, new_state);
         if (message.equals(_msg_RUN)) { // need to react on the message here rather than the state, because it would mess up the game after a potential "continue" which also ends in the state "RUNNING"
             broadcast_score();
-            // send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
+            // send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), get_all_spawn_agents());
         }
     }
 

@@ -83,7 +83,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
 //                @Override
 //                public boolean action(String curState, String message, String nextState, Object args) {
 //                    // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
-//                    send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.OFF, MQTT.SIR3, "medium"), roles.get("sirens"));
+//                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.OFF, MQTT.SIR3, "medium"), roles.get("sirens"));
 //                    return true;
 //                }
 //            });
@@ -114,12 +114,12 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     private void taken(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.MEDIUM), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.MEDIUM), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
     }
 
     private void fused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_FUSED));
         if (!allow_defuse) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
         if (active_ring_taken()) {
@@ -134,7 +134,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
             if (rings_in_progress.isEmpty()) game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
             else activate_ring();
         } else {
-            send("acoustic", MQTT.toJSON("sir2", "medium"), roles.get("sirens"));
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON("sir2", "medium"), roles.get("sirens"));
         }
         broadcast_score();
     }
@@ -164,24 +164,24 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     private void activate_ring() {
         roles.get(rings_in_progress.getFirst()).forEach(agent -> cpFSMs.get(agent).ProcessFSM(_msg_ACTIVATE));
         if (rings_in_progress.size() < rings_in_use.size() && rings_in_use.size() > 1) // not with the first or only ring
-            send("acoustic", MQTT.toJSON(MQTT.SIR4, MQTT.LONG), roles.get("sirens"));
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.LONG), roles.get("sirens"));
         add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", "activated"));
         broadcast_score();
     }
 
     private void defused(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, map_agent_to_ring_color.get(agent), MQTT.RECURRING_SCHEME_FAST), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, map_agent_to_ring_color.get(agent), MQTT.RECURRING_SCHEME_FAST), agent);
     }
 
     private void nearly_defused(String agent) {
         cpFSMs.get(agent).ProcessFSM(_msg_DEFUSE);
-        send("acoustic", MQTT.toJSON(MQTT.SIR2, MQTT.OFF, MQTT.SIR3, "medium"), roles.get("sirens"));
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.OFF, MQTT.SIR3, "medium"), roles.get("sirens"));
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_DEFUSED));
         broadcast_score();
     }
 
     private void standby(String agent) {
-        send("visual", MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
         //addEvent(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_STANDBY));
     }
 

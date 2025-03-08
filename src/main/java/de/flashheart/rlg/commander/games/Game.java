@@ -67,6 +67,19 @@ public abstract class Game {
     public static final String _flag_state_BLUE = "BLUE";
     public static final String _flag_state_YELLOW = "YELLOW";
     public static final String _flag_state_GREEN = "GREEN";
+    public static final String _msg_TO_NEUTRAL = "to_neutral";
+    public static final String _msg_DEACTIVATE = "deactivate";
+    public static final String _msg_TO_BLUE = "to_blue";
+    public static final String _msg_TO_RED = "to_red";
+    public static final String _msg_GO = "go";
+    public static final String _msg_ACCEPTED = "accepted";
+    public static final String _msg_NEXT_FLAG = "next_flag";
+    public static final String _flag_state_RED_SCORING = "RED_SCORING";
+    public static final String _flag_state_BLUE_SCORING = "BLUE_SCORING";
+    public static final String _flag_state_GET_READY = "GET_READY";
+    public static final String _flag_state_STAND_BY = "STAND_BY";
+    public static final String _flag_state_ACTIVE = "ACTIVE";
+    public static final String _flag_state_AFTER_FLAG_TIME_UP = "AFTER_FLAG_TIME_IS_UP";
     public static final String[] OUT_ALL_LEDS = new String[]{OUT_LED_WHITE, OUT_LED_RED, OUT_LED_BLUE, OUT_LED_YELLOW, OUT_LED_GREEN};
     public static final List<String> _flag_ALL_RUNNING_STATES = List.of(_flag_state_RED, _flag_state_YELLOW, _flag_state_GREEN, _flag_state_BLUE);
     public static final List<String> ALL_LEDS = List.of(OUT_LED_WHITE, OUT_LED_RED, OUT_LED_YELLOW, OUT_LED_GREEN, OUT_LED_BLUE);
@@ -127,13 +140,13 @@ public abstract class Game {
         this.game_fsm = createFSM();
         this.game_description = new ArrayList<>();
 
-        send("paged", MQTT.page("page0",
+        send(MQTT.CMD_PAGED, MQTT.page("page0",
                 "I am ${agentname}", "", "", "I am a Siren"), roles.get("sirens")
         );
 
         // generic creation of capture_points - if needed
         roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
-        send("paged", MQTT.page("page0",
+        send(MQTT.CMD_PAGED, MQTT.page("page0",
                 "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
 
     }
