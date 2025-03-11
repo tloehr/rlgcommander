@@ -2,14 +2,13 @@ package de.flashheart.rlg.commander.games;
 
 import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.jobs.DelayedReactionJob;
 import de.flashheart.rlg.commander.games.jobs.FlagTimerJob;
-import de.flashheart.rlg.commander.games.traits.*;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,13 +20,9 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Game mode that has been proposed by Toby. Players have to be quick to "gather" flags on the field by activating them. Those CPs stay active for a while
@@ -40,30 +35,10 @@ import java.util.stream.Collectors;
  * </ul>
  */
 @Log4j2
-public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScoreBroadcast, HasActivation, HasFlagTimer {
-
-    private final long winning_score, flag_time_up;
-    private final String who_goes_first;
-    private final List<String> capture_points;
-    private final MultiKeyMap<String, JobKey> flag_jobs;
-    private final BigDecimal delay_after_color_change;
-    private long last_job_broadcast;
-    private final Table<String, String, Long> scores;
+public class FetchEm extends Hardpoint {
 
     public FetchEm(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        assert_two_teams_red_and_blue();
-
-        this.flag_jobs = new MultiKeyMap<>();
-        this.who_goes_first = game_parameters.optString("who_goes_first", "blue");
-        this.winning_score = game_parameters.optLong("winning_score", 250);
-        this.flag_time_up = game_parameters.optLong("flag_time_up", 120);
-        this.delay_after_color_change = game_parameters.optBigDecimal("delay_after_color_change", BigDecimal.ONE);
-        count_respawns = false;
-        this.scores = HashBasedTable.create();
-        this.capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).collect(Collectors.toList());
-
-        setup_scheduler_jobs();
 
         setGameDescription(
                 game_parameters.getString("comment"),
@@ -78,26 +53,26 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
         return "fetch_em";
     }
 
+    @Override
     protected void setup_scheduler_jobs() {
-        JobKey broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
-        flag_jobs.put("broadcast_score", "", broadcastScoreJobkey);
         capture_points.forEach(agent -> {
-            UUID my_uuid = UUID.randomUUID();
-            JobKey delayed_reaction = new JobKey("delayed_reaction", my_uuid.toString());
-            JobKey flag_time_up = new JobKey("flag_time_up", my_uuid.toString());
-            flag_jobs.put("delayed_reaction", agent, delayed_reaction);
-            flag_jobs.put("flag_time_up", agent, flag_time_up);
+            JobKey delayed_reaction = new JobKey("delayed_reaction_" + agent, uuid.toString());
+            JobKey flag_time_up = new JobKey("flag_time_up_" + agent, uuid.toString());
+            jobs.put("delayed_reaction_" + agent, delayed_reaction);
+            jobs.put("flag_time_up_" + agent, flag_time_up);
         });
     }
 
     @Override
     public FSM create_CP_FSM(final String agent) {
+        final JobDataMap jdm = new JobDataMap();
+        jdm.put("agent_id", agent);
         try {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/fetch_em.xml"), null);
             fsm.setStatesAfterTransition(_flag_state_PROLOG, (state, obj) -> cp_prolog(agent));
             fsm.setStatesAfterTransition(_flag_state_NEUTRAL, (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition(Lists.newArrayList(_flag_state_RED, _flag_state_BLUE), (state, obj) ->
-                    cp_to_color(agent, StringUtils.left(state.toLowerCase(), 3))
+                    cp_to_color("delayed_reaction_" + agent, agent, StringUtils.left(state.toLowerCase(), 3), jdm)
             );
             fsm.setStatesAfterTransition(Lists.newArrayList(_flag_state_RED_SCORING, _flag_state_BLUE_SCORING), (state, obj) ->
                     cp_to_scoring_color(agent, StringUtils.left(state.toLowerCase(), 3))
@@ -106,7 +81,7 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
             fsm.setAction(Lists.newArrayList(_flag_state_BLUE, _flag_state_RED), _msg_ACCEPTED, new FSMAction() {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
-                    create_job_with_reschedule(flag_jobs.get("flag_time_up", agent), LocalDateTime.now().plusSeconds(flag_time_up), FlagTimerJob.class, Optional.empty());
+                    create_job_with_reschedule("flag_time_up_" + agent, LocalDateTime.now().plusSeconds(flag_time_up), FlagTimerJob.class, Optional.of(jdm));
                     return true;
                 }
             });
@@ -118,21 +93,15 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
         }
     }
 
-    private void cp_prolog(String agent) {
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
+    private void cp_to_neutral(String agent) {
+        deleteJob("delayed_reaction_" + agent);
+        deleteJob("flag_time_up_" + agent);
         send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
-                        "I am ${agentname}", "", "", "PROLOG"),
+                        "I am ${agentname}", "", "", "Flag is NEUTRAL"),
                 agent);
-    }
-
-    private void cp_to_color(String agent, String color) {
-        create_job_with_reschedule(flag_jobs.get("delayed_reaction", agent),
-                LocalDateTime.now().plus(delay_after_color_change.multiply(new BigDecimal(1000L)).longValue(), ChronoUnit.MILLIS),
-                DelayedReactionJob.class, Optional.empty());
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, color, MQTT.RECURRING_SCHEME_NORMAL), agent);
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "NEUTRAL"));
     }
 
     private void cp_to_scoring_color(String agent, String color) {
@@ -146,17 +115,6 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", COLOR));
     }
 
-    protected void cp_to_neutral(String agent) {
-        deleteJob(flag_jobs.get("delayed_reaction", agent));
-        deleteJob(flag_jobs.get("flag_time_up", agent));
-        send(MQTT.CMD_PAGED,
-                MQTT.page("page0",
-                        "I am ${agentname}", "", "", "Flag is NEUTRAL"),
-                agent);
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
-        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "NEUTRAL"));
-    }
-
     @Override
     public void on_external_message(String agent_id, String source, JSONObject message) {
         if (game_fsm.getCurrentState().equals(_state_RUNNING) && capture_points.contains(agent_id)) {
@@ -164,22 +122,17 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
             if (!message.getString("button").equalsIgnoreCase("up")) return;
             if (cpFSMs.get(agent_id).getCurrentState().equalsIgnoreCase(_flag_state_NEUTRAL)) {
                 cpFSMs.get(agent_id).ProcessFSM(who_goes_first.equalsIgnoreCase("blue") ? _msg_TO_BLUE : _msg_TO_RED);
+            } else if (cpFSMs.get(agent_id).getCurrentState().matches(_flag_state_BLUE + "|" + _flag_state_RED)) {
+                cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
             }
         } else
             super.on_external_message(agent_id, source, message);
     }
 
-    @Override
-    public void on_reset() {
-        super.on_reset();
-        flag_jobs.values().forEach(this::deleteJob);
-        last_job_broadcast = 0L;
-        broadcast_score();
-    }
 
     @Override
-    public void delayed_reaction(JobDataMap map) {
-        cpFSMs.get(map.getString("agent")).ProcessFSM(_msg_ACCEPTED);
+    public void activate(JobDataMap map) {
+        // nop
     }
 
     @Override
@@ -207,7 +160,8 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
         return MQTT.page("page0", game_description);
     }
 
-    protected JSONObject get_vars() {
+    @Override
+    protected JSONObject get_broadcast_vars() {
         // determine which flag has which scoring color
         Multimap<String, String> map = HashMultimap.create();
         cpFSMs.forEach((key, value) -> {
@@ -216,7 +170,7 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
         });
         String[] red_flags_lines = split_list_to_lines(20, map.get(_flag_state_RED_SCORING), "", "");
         String[] blue_flags_lines = split_list_to_lines(20, map.get(_flag_state_BLUE_SCORING), "", "");
-        return new JSONObject()
+        return super.get_broadcast_vars()
                 .put("red_flags", map.get(_flag_state_RED_SCORING))
                 .put("red_flags1", red_flags_lines[0])
                 .put("red_flags2", red_flags_lines[1])
@@ -230,7 +184,7 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
     @Override
     public void fill_thymeleaf_model(Model model) {
         super.fill_thymeleaf_model(model);
-        JSONObject vars = get_vars();
+        JSONObject vars = get_broadcast_vars();
         model.addAttribute("score_red", vars.getLong("score_red"));
         model.addAttribute("score_blue", vars.getLong("score_blue"));
         model.addAttribute("red_flags", vars.getString("red_flags"));
@@ -240,20 +194,5 @@ public class FetchEm extends WithRespawns implements HasDelayedReaction, HasScor
         model.addAttribute("who_goes_first", who_goes_first.toUpperCase());
         model.addAttribute("who_goes_first_style", who_goes_first.equals("blue") ? "text-primary" : "text-danger");
         model.addAttribute("flag_time_up", flag_time_up);
-    }
-
-    @Override
-    public void activate(JobDataMap map) {
-
-    }
-
-    @Override
-    public void flag_time_is_up(String agent_id) {
-
-    }
-
-    @Override
-    public void broadcast_score() {
-
     }
 }

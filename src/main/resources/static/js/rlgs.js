@@ -123,7 +123,7 @@ function onConnectionLost(responseObject) {
 }
 
 function onMessageArrived(message) {
-    console.log('onMessageArrived: ' + message.payloadString + ' - ' + message.topic);
+    console.debug('onMessageArrived: ' + message.payloadString + ' - ' + message.topic);
     const msg = JSON.parse(message.payloadString);
     // update_game_state(msg);
     // if (msg.message_class === '') {

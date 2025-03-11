@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  /*
   Games deriving from this class will have team respawn agents with optional countdown functions.
  */
-public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
+public abstract class WithRespawns extends ScoreCalculator implements HasDelayedAudio {
     public static final String _state_WE_ARE_PREPARING = "WE_ARE_PREPARING";
     public static final String _state_STANDBY = "STAND_BY";
     public static final String _state_WE_ARE_READY = "WE_ARE_READY";
@@ -275,6 +275,12 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
     }
 
     @Override
+    protected void on_ready() {
+        if (!game_fsm_get_current_state().equalsIgnoreCase(_state_TEAMS_NOT_READY)) return;
+        send_message_to_agents_in_segment(active_segment, _msg_START_COUNTDOWN);
+    }
+
+    @Override
     public void on_run() {
         super.on_run();
         deleteJob(deferredRunGameJob);
@@ -290,9 +296,10 @@ public abstract class WithRespawns extends Pausable implements HasDelayedAudio {
     @Override
     protected void on_transition(String old_state, String message, String new_state) {
         super.on_transition(old_state, message, new_state);
-        if (message.equals(_msg_PAUSE)) send("timers", MQTT.toJSON("_clearall", ""), get_active_spawn_agents());
+        if (message.equals(_msg_PAUSE)) send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", ""), get_active_spawn_agents());
         if (message.equals(_msg_CONTINUE)) send_message_to_agents_in_segment(active_segment, _msg_CONTINUE);
     }
+
 
     @Override
     public void on_reset() {

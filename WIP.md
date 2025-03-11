@@ -26,11 +26,16 @@ i18n - testen - siehe layout #30
 * FetchEm
   * erstellen
 * Conquest
-  * Wählen können ob blau oder rot zuerst drann kommt beim Drücken
+  * Wählen können ob blau oder rot zuerst drann kommt beim Drücken - erl.
 * CenterFlags
   * Wählen können ob blau oder rot zuerst drann kommt beim Drücken
 * Stronghold
   * Timelimit für eine Wall
+* ScoreBroadcasting
+  * Habe eine eigene Zwischen Klasse nur für das Score Senden und evtl. auch berechnen erstellt und einezogen. Bestehende Klassen angepasst. Testen
+    * conquest
+    * center_flags
+    * farcry
 
 
 ## Release Notes

@@ -3,15 +3,12 @@ package de.flashheart.rlg.commander.games;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.jobs.ConquestTicketBleedingJob;
-import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
@@ -26,22 +23,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
-
 @Log4j2
-public class Conquest extends WithRespawns implements HasScoreBroadcast {
+public class Conquest extends WithRespawns {
     //    private final BigDecimal BLEEDING_DIVISOR = BigDecimal.valueOf(2);
 
-    private long broadcast_cycle_counter;
+    //private long broadcast_cycle_counter;
     private final BigDecimal respawn_tickets;
     private final BigDecimal ticket_price_for_respawn;
 
     private BigDecimal remaining_blue_tickets, remaining_red_tickets;
     private final HashSet<String> cps_held_by_blue, cps_held_by_red;
-    private final JobKey ticketBleedingJobkey;
     private final BigDecimal[] ticket_bleed_table; // bleeding tickets per second per number of flags taken
     // todo: idea - add chart for the tickets over time
     private final ArrayList<Triple<LocalDateTime, BigDecimal, BigDecimal>> scores;
+    private final String who_goes_first;
+    private long time_since_last_score_storage;
 
     /**
      * This class creates a conquest style game as known from Battlefield.
@@ -82,7 +78,11 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         if (number_of_cps < 3) throw new GameSetupException("Minimum number of CPs: 3");
         count_respawns = true;
 
+        this.who_goes_first = game_parameters.optString("who_goes_first", "blue");
         this.respawn_tickets = game_parameters.getBigDecimal("respawn_tickets");
+        remaining_blue_tickets = respawn_tickets;
+        remaining_red_tickets = respawn_tickets;
+
         BigDecimal not_bleeding_before_cps = game_parameters.getBigDecimal("not_bleeding_before_cps");
         BigDecimal start_bleed_interval = game_parameters.getBigDecimal("start_bleed_interval");
         BigDecimal end_bleed_interval = game_parameters.getBigDecimal("end_bleed_interval");
@@ -127,7 +127,7 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         log.trace("Ticket Bleeding per {} seconds: {}", SCORE_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
         log.trace("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
 
-        ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
+        //ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
 
 
         // todo: add "who_goes_first": "blue",
@@ -155,7 +155,11 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
             if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
             if (!message.getString("button").equalsIgnoreCase("up")) return;
-            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+            if (cpFSMs.get(agent_id).getCurrentState().equalsIgnoreCase(_flag_state_NEUTRAL)) {
+                cpFSMs.get(agent_id).ProcessFSM(who_goes_first.equalsIgnoreCase("blue") ? _msg_TO_BLUE : _msg_TO_RED);
+            } else {
+                cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+            }
         } else
             super.on_external_message(agent_id, source, message);
     }
@@ -166,13 +170,11 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
             FSM fsm = new FSM(this.getClass().getClassLoader().getResourceAsStream("games/conquest.xml"), null);
             fsm.setStatesAfterTransition("PROLOG", (state, obj) -> cp_to_neutral(agent));
             fsm.setStatesAfterTransition("NEUTRAL", (state, obj) -> {
-                broadcast_score();
                 cp_to_neutral(agent);
             });
             fsm.setStatesAfterTransition((new ArrayList<>(Arrays.asList("BLUE", "RED"))), (state, obj) -> {
                 if (state.equalsIgnoreCase("BLUE")) cp_to_blue(agent);
                 else cp_to_red(agent);
-                broadcast_score();
             });
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
@@ -198,32 +200,6 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "red"));
     }
 
-    public void ticket_bleeding_cycle() {
-        broadcast_cycle_counter++;
-
-        update_cps_held_by_list();
-
-        remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue.size()]);
-        remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_red.size()]);
-
-        log.trace("Cp: R{} B{}", cps_held_by_red, cps_held_by_blue);
-        log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
-
-        if (broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
-            //scores.add(new ImmutableTriple<>(LocalDateTime.now(), remaining_red_tickets, remaining_blue_tickets));
-            broadcast_score();
-        }
-
-        if (broadcast_cycle_counter % NUMBER_OF_BROADCAST_EVENTS_PER_MINUTE == 0) {
-            scores.add(new ImmutableTriple<>(LocalDateTime.now(), remaining_red_tickets, remaining_blue_tickets));
-        }
-
-        if (remaining_blue_tickets.intValue() <= 0 || remaining_red_tickets.intValue() <= 0) {
-            broadcast_score();
-            process_internal_message(_msg_GAME_OVER);
-        }
-    }
-
     private void update_cps_held_by_list() {
         cps_held_by_blue.clear();
         cps_held_by_red.clear();
@@ -238,18 +214,8 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    public void on_run() {
-        super.on_run();
-        // setup and start bleeding job
-        long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000l)).longValue();
-        create_job_with_suspension(ticketBleedingJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), ConquestTicketBleedingJob.class, Optional.empty());
-        broadcast_cycle_counter = 0;
-    }
-
-    @Override
     public void on_reset() {
         super.on_reset();
-        deleteJob(ticketBleedingJobkey);
         remaining_blue_tickets = respawn_tickets;
         remaining_red_tickets = respawn_tickets;
         cps_held_by_blue.clear();
@@ -258,34 +224,46 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    public void on_game_over() {
-        super.on_game_over();
-        deleteJob(ticketBleedingJobkey); // this cycle has no use anymore
-//        log.info("Red Respawns #{}, Blue Respawns #{}", red_respawns, blue_respawns);
-        broadcast_score(); // one last time
+    protected void calculate_score() {
+        super.calculate_score();
+        update_cps_held_by_list();
+        remaining_red_tickets = remaining_red_tickets.subtract(ticket_bleed_table[cps_held_by_blue.size()]);
+        remaining_blue_tickets = remaining_blue_tickets.subtract(ticket_bleed_table[cps_held_by_red.size()]);
+
+        // only once every minute
+        time_since_last_score_storage += time_passed_since_last_calculation;
+        if (time_since_last_score_storage >= 60000L) {
+            time_since_last_score_storage = 0L;
+            scores.add(new ImmutableTriple<>(LocalDateTime.now(), remaining_red_tickets, remaining_blue_tickets));
+        }
+
+        log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
+        log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
+
+        if (game_fsm.getCurrentState().equalsIgnoreCase(_state_RUNNING) &&
+                (remaining_blue_tickets.intValue() <= 0 || remaining_red_tickets.intValue() <= 0))
+            process_internal_message(_msg_GAME_OVER);
     }
 
     @Override
-    public void broadcast_score() {
-        JSONObject vars = MQTT.toJSON("red_tickets", Integer.toString(remaining_red_tickets.intValue()),
-                "blue_tickets", Integer.toString(remaining_blue_tickets.intValue()));
+    protected JSONObject get_broadcast_vars() {
+        JSONObject vars = super.get_broadcast_vars();
 
-        String[] red_flags = split_list_to_lines(20, cps_held_by_red, "", "", "");
-        vars.put("red_l1", red_flags[0]);
-        vars.put("red_l2", red_flags[1]);
+        vars.put("red_tickets", Integer.toString(remaining_red_tickets.intValue()));
+        vars.put("blue_tickets", Integer.toString(remaining_blue_tickets.intValue()));
 
-        String[] blue_flags = split_list_to_lines(20, cps_held_by_blue, "", "", "");
-        vars.put("blue_l1", blue_flags[0]);
-        vars.put("blue_l2", blue_flags[1]);
+//        String[] red_flags = split_list_to_lines(20, cps_held_by_red, "", "", "");
+//        vars.put("red_l1", red_flags[0]);
+//        vars.put("red_l2", red_flags[1]);
+//
+//        String[] blue_flags = split_list_to_lines(20, cps_held_by_blue, "", "", "");
+//        vars.put("blue_l1", blue_flags[0]);
+//        vars.put("blue_l2", blue_flags[1]);
 
         vars.put("red_flags", cps_held_by_red.size());
         vars.put("blue_flags", cps_held_by_blue.size());
 
-        send("vars", vars, get_active_spawn_agents());
-
-        log.trace("Cp: R{} B{}", cps_held_by_red.size(), cps_held_by_blue.size());
-        log.trace("Tk: R{} B{}", remaining_red_tickets.intValue(), remaining_blue_tickets.intValue());
-        log.trace(vars.toString(4));
+        return vars;
     }
 
     @Override
@@ -352,19 +330,16 @@ public class Conquest extends WithRespawns implements HasScoreBroadcast {
     public void fill_thymeleaf_model(Model model) {
         super.fill_thymeleaf_model(model);
         update_cps_held_by_list();
-        //JSONArray score_table = new JSONArray();
         JSONArray score_data_red = new JSONArray();
         JSONArray score_data_blue = new JSONArray();
 
         scores.forEach(triple -> {
-//            JSONArray row = new JSONArray();
-//            row.put(triple.getLeft())
-//                    .put(triple.getMiddle())
-//                    .put(triple.getRight());
             score_data_red.put(triple.getMiddle());
             score_data_blue.put(triple.getRight());
         });
 
+        model.addAttribute("who_goes_first", who_goes_first.toUpperCase());
+        model.addAttribute("who_goes_first_style", who_goes_first.equals("blue") ? "text-primary" : "text-danger");
         model.addAttribute("cps_held_by_blue", cps_held_by_blue.stream().sorted().collect(Collectors.toList()));
         model.addAttribute("cps_held_by_red", cps_held_by_red.stream().sorted().collect(Collectors.toList()));
         model.addAttribute("remaining_blue_tickets", remaining_blue_tickets.intValue());

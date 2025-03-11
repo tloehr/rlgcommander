@@ -1,11 +1,17 @@
 {
-  "mode": "stronghold",
+  "mode": "stronghold2",
   "file_version": 2,
   "silent_game": false,
   "game_mode": "stronghold",
   "comment": "Stronghold",
   "allow_defuse": false,
   "game_time": 600,
+  "ring_time_limits": {
+    "blu": 150,
+    "grn": 150,
+    "ylw": 150,
+    "red": 150
+  },
   "spawns": {
     "count_respawns": true,
     "starter_countdown": "0",
@@ -36,7 +42,7 @@
     "intro_mp3": "<none>",
     "intro_voice": "sharon30s"
   },
-  "class": "de.flashheart.rlg.commander.games.Stronghold",
+  "class": "de.flashheart.rlg.commander.games.Stronghold2",
   "resume_countdown": "0",
   "agents": {
     "red": [

@@ -45,11 +45,14 @@ public class MyParentController {
                 || exc instanceof NoSuchElementException
                 || exc instanceof ArrayIndexOutOfBoundsException) {
             status = HttpStatus.UNPROCESSABLE_ENTITY;
-        } else if (exc instanceof InvocationTargetException && exc.getCause() instanceof Exception){
+        } else if (exc instanceof InvocationTargetException && exc.getCause() instanceof Exception) {
             // throw cause instead
             exc = (Exception) exc.getCause();
-        } else if (exc instanceof GameSetupException){
+        } else if (exc instanceof GameSetupException) {
             status = HttpStatus.NOT_ACCEPTABLE;
+        } else {
+            exc.printStackTrace();
+            log.error(exc.getStackTrace());
         }
         return new ResponseEntity<>(new JSONObject()
                 .put("exception", exc.getClass().getName())

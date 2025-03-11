@@ -59,6 +59,7 @@ public class MQTT {
     public static final String CMD_ACOUSTIC = "acoustic";
     public static final String CMD_PLAY = "play";
     public static final String CMD_VISUAL = "visual";
+    public static final String CMD_VARS = "vars";
     public static final String CMD_DISPLAY = "paged";
     public static final String CMD_TIMERS = "timers";
     public static final String CMD_PAGED = "paged";

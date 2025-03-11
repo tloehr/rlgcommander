@@ -4,7 +4,6 @@ import com.github.ankzz.dynamicfsm.fsm.FSM;
 import com.google.common.graph.*;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.DOTWriter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Log4j2
-public class Meshed extends WithRespawns implements HasScoreBroadcast {
+public class Meshed extends WithRespawns {
 
     // key names for blinking schemes as defined in meshed.json
     private final String FLAG_IMMUTABLE = "flag_immutable";
@@ -353,8 +352,9 @@ public class Meshed extends WithRespawns implements HasScoreBroadcast {
     }
 
     @Override
-    public void broadcast_score() {
+    protected JSONObject get_broadcast_vars() {
         log.debug(DOTWriter.write(mesh, map_dot_format));
+        return super.get_broadcast_vars();
     }
 
     @Override

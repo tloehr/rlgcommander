@@ -9,14 +9,14 @@
         function read_form() {
             game_parameters.count_respawns = document.getElementById('count-respawns').checked;
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
-
+            game_parameters.who_goes_first = document.getElementById('who-goes-first').value;
             read_cps_sirens_form(game_parameters);
         }
 
         function preset_form() {
             document.getElementById('game_time').value = game_parameters.game_time;
             document.getElementById('count-respawns').checked = game_parameters.count_respawns;
-
+            selectElement('who-goes-first', game_parameters.who_goes_first);
             preset_cps_sirens_form(game_parameters);
         }
 
@@ -41,6 +41,16 @@
     <div class="row mb-3">
         <div class="col-auto">
             <div th:replace="~{fragments :: game_time}"></div>
+        </div>
+
+        <div class="col-3">
+            <label for="who-goes-first" class="form-label" th:text="#{params.common.who_goes_first}"></label>
+            <select class="form-select" id="who-goes-first">
+                <option value="blue" th:text="#{misc.blue}"></option>
+                <option value="red" th:text="#{misc.red}"></option>
+            </select>
+            <small id="help-for-who-goes-first" class="form-text"
+                   th:text="#{params.common.who_goes_first.help}"></small>
         </div>
 
         <div class="col-md-auto align-self-center">

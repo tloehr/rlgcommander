@@ -228,6 +228,7 @@ public abstract class Game {
      */
     protected void on_transition(String old_state, String message, String new_state) {
         if (message.equals(_msg_RUN)) on_run();
+        if (message.equals(_msg_READY)) on_ready();
         if (message.equals(_msg_GAME_OVER)) on_game_over();
         if (message.equals(_msg_RESET)) on_reset();
     }
@@ -294,7 +295,7 @@ public abstract class Game {
      */
     public abstract void on_external_message(String agent_id, String source, JSONObject message);
 
-    public void on_reset() {
+    protected void on_reset() {
         game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
         //play("","","");
@@ -304,10 +305,12 @@ public abstract class Game {
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.SIR_ALL, MQTT.OFF), roles.get("sirens"));
     }
 
-    public void on_run() {
+    protected void on_run() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RUN));
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR1, MQTT.GAME_STARTS), roles.get("sirens"));
     }
+
+    protected abstract void on_ready();
 
     public void on_game_over() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));

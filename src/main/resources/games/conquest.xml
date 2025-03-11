@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  Finite State Machine to implement a capture point for CONQUEST type of games
+  Finite State Machine to implement a capture point for CONQUEST __AND__ Center Flags
 
   https://github.com/Ankzz/easyfsm
 -->
@@ -12,8 +12,8 @@
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
     <STATE id="NEUTRAL">
-        <!-- As we have only one button it always starts with blue. red players have to push twice.-->
-        <MESSAGE id="btn01" nextState="BLUE"/>
+        <MESSAGE id="to_blue" nextState="BLUE"/>
+        <MESSAGE id="to_red" nextState="RED"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>

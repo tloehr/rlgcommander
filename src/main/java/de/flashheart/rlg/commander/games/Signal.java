@@ -5,12 +5,10 @@ import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.DelayedReactionJob;
 import de.flashheart.rlg.commander.games.traits.HasDelayedReaction;
-import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
@@ -23,7 +21,7 @@ import java.util.stream.Collectors;
 
 
 @Log4j2
-public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadcast {
+public class Signal extends Timed implements HasDelayedReaction {
     public static final String _msg_CLOSE = "close";
     public static final String _msg_START_CLOSING = "start_closing";
     public static final String _msg_OPEN = "open";
@@ -33,24 +31,28 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     private final List<String> cps_for_red;
     private final List<String> cps_for_blue;
     private String active_color = "";
-    private JSONObject variables_for_score_broadcasting;
+    //private JSONObject variables_for_score_broadcasting;
     private int blue_points, red_points;
     private final long UNLOCK_TIME;
-    private final JobKey signal_unlock_job;
 
     public Signal(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
         count_respawns = false;
-        variables_for_score_broadcasting = new JSONObject();
+        //variables_for_score_broadcasting = new JSONObject();
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
-        signal_unlock_job = new JobKey("signal_unlock_job", uuid.toString());
         cps_for_red = game_parameters.getJSONObject("agents").getJSONArray("red").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
         cps_for_blue = game_parameters.getJSONObject("agents").getJSONArray("blu").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
         // really ?
         //roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
         send(MQTT.CMD_PAGED, MQTT.page("page0",
                 "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
+    }
+
+    @Override
+    protected void setup_scheduler_jobs() {
+        super.setup_scheduler_jobs();
+        register_job("signal_unlock");
     }
 
     @Override
@@ -106,7 +108,7 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_CLOSE));
 
         // create unlock job
-        create_job_with_reschedule(signal_unlock_job, LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.empty());
+        create_job_with_reschedule("signal_unlock", LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.empty());
     }
 
     private void closed(String agent) {
@@ -209,29 +211,21 @@ public class Signal extends Timed implements HasDelayedReaction, HasScoreBroadca
     @Override
     public void on_reset() {
         super.on_reset();
-        deleteJob(signal_unlock_job);
         // spawn agents are used as display not for a specific team
-        empty_lines();
+//        empty_lines();
         blue_points = 0;
         red_points = 0;
     }
 
-    @Override
-    public void on_game_over() {
-        super.on_game_over();
-        deleteJob(signal_unlock_job);
-        broadcast_score(); // one last time
-    }
-
-    void empty_lines() {
-        variables_for_score_broadcasting = MQTT.toJSON("line1", "", "line2", "", "line3", "", "line4", "");
-    }
+//    void empty_lines() {
+//        variables_for_score_broadcasting = MQTT.toJSON("line1", "", "line2", "", "line3", "", "line4", "");
+//    }
 
     @Override
-    public void broadcast_score() {
-        send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
-        variables_for_score_broadcasting.put("red_points", red_points).put("blue_points", blue_points);
-        send("vars", variables_for_score_broadcasting, get_all_spawn_agents());
+    protected JSONObject get_broadcast_vars() {
+        return super.get_broadcast_vars()
+                .put("red_points", red_points)
+                .put("blue_points", blue_points);
     }
 
     @Override

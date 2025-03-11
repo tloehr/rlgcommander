@@ -3,7 +3,6 @@ package de.flashheart.rlg.commander.games;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
 import de.flashheart.rlg.commander.games.jobs.GameTimeIsUpJob;
-import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
@@ -28,7 +27,7 @@ import java.util.TimeZone;
  * time, NOT about END-SCORES or RUNNING OUT OF RESOURCES.
  */
 @Log4j2
-public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
+public abstract class Timed extends WithRespawns {
     final String _msg_GAME_TIME_IS_UP = "game_time_is_up";
     /**
      * the length of the match in seconds. Due to the nature of certain gamemodes (like farcry) this value is rather a
@@ -47,19 +46,22 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
     LocalDateTime end_time;
     ZonedDateTime ldt_game_time;
 
-    final JobKey game_timer_jobkey;
-
     Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         this.game_time = game_parameters.getInt("game_time");
         ldt_game_time = ZonedDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
-        game_timer_jobkey = new JobKey("gametime", uuid.toString());
         start_time = null;
         end_time = null;
 
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "",
                 " ".repeat(18) + "${wifi_signal}");
+    }
+
+    @Override
+    protected void setup_scheduler_jobs() {
+        super.setup_scheduler_jobs();
+        jobs.put("game_timer", new JobKey("game_timer", uuid.toString()));
     }
 
     @Override
@@ -78,7 +80,7 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
         super.on_run();
         start_time = LocalDateTime.now();
         end_time = start_time.plusSeconds(game_time);
-        create_job_with_reschedule(game_timer_jobkey, end_time, GameTimeIsUpJob.class, Optional.empty());
+        create_job_with_reschedule("game_timer", end_time, GameTimeIsUpJob.class, Optional.empty());
     }
 
     @Override
@@ -86,13 +88,12 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
         super.on_reset();
         start_time = null;
         end_time = null;
-        deleteJob(game_timer_jobkey);
     }
 
     @Override
-    public void on_game_over() {
-        super.on_game_over();
-        deleteJob(game_timer_jobkey);
+    protected void broadcast_score() {
+        super.broadcast_score();
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("remaining", Long.toString(getRemaining())), get_active_spawn_agents());
     }
 
     protected long getRemaining() {
@@ -104,11 +105,6 @@ public abstract class Timed extends WithRespawns implements HasScoreBroadcast {
     public void game_time_is_up() {
         log.info("Game time is up");
         game_fsm.ProcessFSM(_msg_GAME_OVER);
-    }
-
-    @Override
-    public void broadcast_score() {
-        send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_all_spawn_agents());
     }
 
     @Override

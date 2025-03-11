@@ -12,7 +12,6 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SimpleScheduleBuilder;
 import org.springframework.ui.Model;
@@ -42,8 +41,6 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     private static final int MAX_CAPTURE_POINTS = 6;
 
     private final int bomb_timer;
-
-    private final JobKey bombTimerJobkey, respawnTimerJobkey;
     private final List<Object> capture_points;
     private final List<Object> sirs;
     private LocalDateTime estimated_end_time;
@@ -58,8 +55,6 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         count_respawns = false;
         estimated_end_time = null;
 
-        this.bombTimerJobkey = new JobKey("bomb_timer", uuid.toString());
-        this.respawnTimerJobkey = new JobKey("timed_respawn", uuid.toString());
         this.bomb_timer = game_parameters.getInt("bomb_time");
         LocalDateTime ldtFlagTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(bomb_timer), TimeZone.getTimeZone("UTC").toZoneId());
         LocalDateTime ldtRespawn = LocalDateTime.ofInstant(Instant.ofEpochSecond(respawn_timer), TimeZone.getTimeZone("UTC").toZoneId());
@@ -82,6 +77,13 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
             map_of_agents_assigned_to_sirens.put(capture_points.get(i), sirs.get(i));
             roles.put("sirens", sirs.get(i).toString()); // add these sirens to the siren list
         }
+    }
+
+    @Override
+    protected void setup_scheduler_jobs() {
+        super.setup_scheduler_jobs();
+        register_job("bomb_timer");
+        register_job("timed_respawn");
     }
 
     /**
@@ -108,8 +110,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         if (!(num_of_spawn_segments == capture_points.size() && num_of_spawn_segments == sirs.size()))
             throw new GameSetupException("number of segments mismatch. number of CPs, sirens and spawn_segments must match");
     }
-
-
+    
     @Override
     public String getGameMode() {
         return "farcry";
@@ -119,12 +120,12 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     public void on_reset() {
         super.on_reset();
         estimated_end_time = null;
-        deleteJob(bombTimerJobkey);
+        deleteJob("bomb_timer");
         delete_timed_respawn();
         active_capture_point = 0;
         overtime = false;
         ran_once_already = false;
-        send("vars", MQTT.toJSON("overtime", ""), get_all_spawn_agents());
+        send(MQTT.CMD_VARS, MQTT.toJSON("overtime", ""), get_all_spawn_agents());
     }
 
     private void standby(String agent) {
@@ -133,33 +134,33 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     private void fused(String agent) {
         final JobDataMap jdm = new JobDataMap();
-        jdm.put("bombid", agent);
+        jdm.put("agent_id", agent);
         estimated_end_time = LocalDateTime.now().plusSeconds(bomb_timer);
-        create_job_with_reschedule(bombTimerJobkey, estimated_end_time, FlagTimerJob.class, Optional.of(jdm));
+        create_job_with_reschedule("bomb_timer", estimated_end_time, FlagTimerJob.class, Optional.of(jdm));
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "fused"));
         play("voice2", AGENT_EVENT_PATH, "selfdestruct", get_active_spawn_agents());
         // send(MQTT.CMD_ACOUSTIC, Tools.getProgressTickingScheme(MQTT.SIR2, bomb_timer * 1000), map_of_agents_and_sirens.get(agent).toString());
         // HURRY UP SIGNAL zweckentfremdet
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.TEAM_HURRY_UP_SIGNAL), map_of_agents_assigned_to_sirens.get(agent).toString());
-        send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         send(MQTT.CMD_VISUAL, new JSONObject().put("progress", "remaining"), agent);
-        send("vars", MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), get_all_spawn_agents());
+        send(MQTT.CMD_VARS, MQTT.toJSON("fused", "hot", "next_cp", get_next_cp()), get_all_spawn_agents());
     }
 
     private void defused(String agent) {
         estimated_end_time = end_time;
-        deleteJob(bombTimerJobkey);
+        deleteJob("bomb_timer");
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defused"));
-        send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("remaining", Long.toString(getRemaining())), agents.keySet());
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.BLUE, MQTT.RECURRING_SCHEME_NORMAL), agent);
-        send("vars", MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), get_all_spawn_agents());
+        send(MQTT.CMD_VARS, MQTT.toJSON("fused", "cold", "next_cp", get_next_cp()), get_all_spawn_agents());
         // the defuse siren is activated here: find SIR3 in create_CP_FSM()
     }
 
     private void defended(String agent) {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "defended"));
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.BLUE, MQTT.RECURRING_SCHEME_VERY_FAST), agent);
-        send("vars", MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), get_all_spawn_agents());
+        send(MQTT.CMD_VARS, MQTT.toJSON("overtime", overtime ? "SUDDEN DEATH" : ""), get_all_spawn_agents());
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
 
@@ -230,7 +231,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
                 @Override
                 public boolean action(String curState, String message, String nextState, Object args) {
                     // start siren for the next flag - starting with the second flag
-                    send("vars", MQTT.toJSON("active_cp", agent), get_all_spawn_agents());
+                    send(MQTT.CMD_VARS, MQTT.toJSON("active_cp", agent), get_all_spawn_agents());
                     add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "activated"));
                     if (active_capture_point > 0)
                         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.SCHEME_LONG), map_of_agents_assigned_to_sirens.get(agent).toString());
@@ -249,7 +250,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         super.on_run();
         // create timed respawn if necessary
         if (respawn_timer > 0) {
-            create_job_with_suspension(respawnTimerJobkey,
+            create_job_with_suspension("timed_respawn",
                     SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(respawn_timer).repeatForever(),
                     RespawnTimerJob.class, Optional.empty());
         }
@@ -277,7 +278,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     private void overtime() {
         add_in_game_event(new JSONObject().put("item", "overtime"));
-        send("vars", MQTT.toJSON("overtime", "overtime"), get_all_spawn_agents());
+        send(MQTT.CMD_VARS, MQTT.toJSON("overtime", "overtime"), get_all_spawn_agents());
         play("voice1", AGENT_EVENT_PATH, "overtime", get_active_spawn_agents());
         overtime = true;
     }
@@ -296,9 +297,8 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     @Override
     public void on_time_to_respawn(JobDataMap map) {
-//        create_job(misc1JobKey, LocalDateTime.now().plusSeconds(respawn_timer), Misc1Job.class, Optional.empty());
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.SCHEME_LONG), get_active_spawn_agents());
-        send("timers", MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("respawn", Integer.toString(respawn_timer)), get_active_spawn_agents());
     }
 
 
@@ -320,14 +320,9 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         )).toString();
         model.addAttribute("capture_points_taken", active_capture_point);
         model.addAttribute("max_capture_points", cpFSMs.size());
-        model.addAttribute("current_active_agent",  current_active_agent);
+        model.addAttribute("current_active_agent", current_active_agent);
         model.addAttribute("current_active_agent_state", cpFSMs.get(current_active_agent).getCurrentState());
         model.addAttribute("next_active_agent", get_next_cp());
-//        if (game_fsm_get_current_state().equals(_state_EPILOG)) {
-//            model.addAttribute("current_game_situation", _state_EPILOG);
-//        } else {
-//            model.addAttribute("current_game_situation", String.format("%s: %s, %s", current_active_agent, cpFSMs.get(current_active_agent).getCurrentState(), get_next_cp()));
-//        }
     }
 
     @Override
@@ -342,14 +337,14 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     }
 
     protected void delete_timed_respawn() {
-        deleteJob(respawnTimerJobkey);
+        deleteJob("timed_respawn");
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.OFF), get_active_spawn_agents());
-        send("timers", MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("respawn", "0"), get_active_spawn_agents());
     }
 
     private String get_next_cp() {
         if (capture_points.size() == 1) return "This is the only one";
-        return active_capture_point == capture_points.size() - 1 ? "This is the LAST" : "Next: " + capture_points.get(active_capture_point + 1);
+        return active_capture_point >= capture_points.size() - 1 ? "This is the LAST" : "Next: " + capture_points.get(active_capture_point + 1);
     }
 
     @Override

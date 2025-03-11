@@ -4,7 +4,6 @@ import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.Tools;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
@@ -15,17 +14,22 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
 
 /**
- * defense rings have to be taken in order blue -> green -> yellow -> red maximum number of rings: 4 if we need only one
+ * <h1>Stronghold</h1>
+ * defense rings have to be taken in order blue -> green -> yellow -> red
+ * maximum number of rings: 4 if we need only one
  * ring we start with red then red, yellow and so on
+ *
  */
 @Log4j2
-public class Stronghold extends Timed implements HasScoreBroadcast {
+public class Stronghold extends Timed {
     // intermediate step to separate from activation -> defused transition
     public static final String _state_NEARLY_DEFUSED = "NEARLY_DEFUSED";
     public static final String _state_DEFUSED = "DEFUSED";
@@ -35,12 +39,10 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     public static final String _msg_LOCK = "lock";
     public static final String _msg_TAKEN = "taken";
     public static final String _msg_DEFUSE = "defuse";
-    private String active_ring;
-    private boolean allow_defuse;
+    private final boolean allow_defuse;
     LinkedList<String> rings_in_progress;
-    //String[] rings = new String[]{"red", "ylw", "grn", "blu"};
     ArrayList<String> rings_taken, rings_in_use;
-    private HashMap<String, String> map_agent_to_ring_color;
+    private final HashMap<String, String> map_agent_to_ring_color;
 
     public Stronghold(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
@@ -48,12 +50,14 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
         rings_in_progress = new LinkedList<>();
         rings_taken = new ArrayList<>();
         rings_in_use = new ArrayList<>();
+
         allow_defuse = game_parameters.optBoolean("allow_defuse");
         map_agent_to_ring_color = new HashMap<>();
 
         List.of("blu", "grn", "ylw", "red").forEach(color -> {
             if (roles.get(color).isEmpty()) return;
             rings_in_use.add(color);
+
             roles.get(color).forEach(agent ->
                     map_agent_to_ring_color.put(agent, color));
         });
@@ -63,7 +67,6 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
                 String.format("Number of rings: %s", rings_in_use.size()),
                 " ".repeat(18) + "${wifi_signal}"
         );
-
     }
 
     @Override
@@ -77,16 +80,6 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
             fsm.setStatesAfterTransition(_state_FUSED, (state, obj) -> fused(agent));
             fsm.setStatesAfterTransition(_state_FUSED, (state, obj) -> fused(agent));
             fsm.setStatesAfterTransition(_state_TAKEN, (state, obj) -> taken(agent));
-
-            // DEFUSED => FUSED
-//            fsm.setAction(_state_FUSED, _msg_BUTTON_01, new FSMAction() {
-//                @Override
-//                public boolean action(String curState, String message, String nextState, Object args) {
-//                    // the siren is activated on the message NOT on the state, so it won't be activated when the game starts only when the flag has been defused.
-//                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR2, MQTT.OFF, MQTT.SIR3, "medium"), roles.get("sirens"));
-//                    return true;
-//                }
-//            });
 
             fsm.setAction(_state_STANDBY, _msg_ACTIVATE, new FSMAction() {
                 @Override
@@ -146,19 +139,12 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
         rings_in_progress.clear();
         rings_taken.clear();
         rings_in_progress.addAll(rings_in_use);
-        broadcast_score();
     }
 
     @Override
     public void on_run() {
         super.on_run();
         activate_ring();
-    }
-
-    @Override
-    public void on_game_over() {
-        super.on_game_over();
-        broadcast_score();
     }
 
     private void activate_ring() {
@@ -234,13 +220,8 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void broadcast_score() {
-        super.broadcast_score();
-        send("vars", get_variables(), get_all_spawn_agents());
-    }
-
-    JSONObject get_variables() {
-        JSONObject variables = new JSONObject();
+    protected JSONObject get_broadcast_vars() {
+        JSONObject variables = super.get_broadcast_vars();
 
         String progress = rings_taken.stream().collect(Collectors.joining(","));
         if (!rings_in_progress.isEmpty())
@@ -259,7 +240,6 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
             variables.put("total_in_this_segment", total_in_this_segment);
             variables.put("remain_in_this_segment", remain_in_this_segment);
 
-            // todo: change to two lines of agents like in CenterFlags Lists.partition
             String stable_agents = roles.get(rings_in_progress.getFirst()).stream()
                     .filter(agent ->
                             cpFSMs.get(agent).getCurrentState()
@@ -349,7 +329,7 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     public void fill_thymeleaf_model(Model model) {
         super.fill_thymeleaf_model(model);
         // everything is prepared already. simply copying over.
-        JSONObject vars = get_variables();
+        JSONObject vars = get_broadcast_vars();
         model.addAttribute("active_ring", vars.optString("active_ring"));
         model.addAttribute("rings_taken", vars.optInt("rings_taken"));
         model.addAttribute("rings_to_go", vars.optInt("rings_to_go"));
@@ -377,8 +357,8 @@ public class Stronghold extends Timed implements HasScoreBroadcast {
     public JSONObject getState() {
         //log.debug("getState");
         JSONObject json = super.getState();
-        JSONObject played = MQTT.merge(super.getState().getJSONObject("played"), get_variables());
-        json.put("played",played);
+        JSONObject played = MQTT.merge(super.getState().getJSONObject("played"), get_broadcast_vars());
+        json.put("played", played);
         return json;
     }
 }

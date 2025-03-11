@@ -7,45 +7,36 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
-import de.flashheart.rlg.commander.games.jobs.BroadcastScoreJob;
-import de.flashheart.rlg.commander.games.traits.HasScoreBroadcast;
 import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Quartet;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
-
 @Log4j2
-public class CenterFlags extends Timed implements HasScoreBroadcast {
-    private long broadcast_cycle_counter;
+public class CenterFlags extends Timed {
     private final List<String> capture_points;
     private final Table<String, String, Long> scores;
-    private final JobKey broadcastScoreJobkey;
-    private long last_job_broadcast;
-
+    private final String who_goes_first;
 
     public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
-        capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
-        scores = HashBasedTable.create();
+        this.who_goes_first = game_parameters.optString("who_goes_first", "blue");
+        this.capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
+        this.scores = HashBasedTable.create();
+
         reset_score_table();
-        broadcastScoreJobkey = new JobKey("broadcast_score", uuid.toString());
     }
 
     private void reset_score_table() {
@@ -125,51 +116,24 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
     }
 
     @Override
-    public void on_game_over() {
-        super.on_game_over();
-        deleteJob(broadcastScoreJobkey); // this cycle has no use anymore
-        //todo: this is not called the last time. agents show an outdated score after game over - WHY ?
-        broadcast_score(); // one last time
-    }
-
-    @Override
     public void on_reset() {
         super.on_reset();
-        deleteJob(broadcastScoreJobkey);
-        broadcast_cycle_counter = 0L;
-        last_job_broadcast = 0L;
         reset_score_table();
-        broadcast_score();
     }
 
     @Override
-    public void on_run() {
-        super.on_run();
-        long repeat_every_ms = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
-        create_job_with_suspension(broadcastScoreJobkey, simpleSchedule().withIntervalInMilliseconds(repeat_every_ms).repeatForever(), BroadcastScoreJob.class, Optional.empty());
-        broadcast_cycle_counter = 0;
+    protected void calculate_score() {
+        super.calculate_score();
+        cpFSMs.forEach((key, value) -> add_score_for(key, value.getCurrentState(), time_passed_since_last_calculation));
     }
 
     @Override
-    public void broadcast_score() {
-        final long now = ZonedDateTime.now().toInstant().toEpochMilli();
-        final long time_to_add = now - last_job_broadcast;
-        last_job_broadcast = now;
-
-        if (game_fsm.getCurrentState().equals(_state_RUNNING))
-            cpFSMs.entrySet().forEach(stringFSMEntry -> add_score_for(stringFSMEntry.getKey(), stringFSMEntry.getValue().getCurrentState(), time_to_add));
-
-        broadcast_cycle_counter++;
-        if (!game_fsm.getCurrentState().equals(_state_RUNNING) || broadcast_cycle_counter % BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES == 0) {
-            JSONObject vars = MQTT.merge(scores_to_vars(),
-                    get_agents_states_for_lcd_with("red"),
-                    get_agents_states_for_lcd_with("blue")
-            );
-            send("timers", MQTT.toJSON("remaining", Long.toString(getRemaining())), get_active_spawn_agents());
-            send("vars", vars, agents.keySet());
-            log.trace(vars.toString(4));
-        }
-
+    protected JSONObject get_broadcast_vars() {
+        return MQTT.merge(super.get_broadcast_vars(),
+                scores_to_vars(),
+                get_agents_states_for_lcd_with("red"),
+                get_agents_states_for_lcd_with("blue")
+        );
     }
 
     private ArrayList<String> get_agents_with(String _color) {
@@ -229,7 +193,11 @@ public class CenterFlags extends Timed implements HasScoreBroadcast {
         if (cpFSMs.containsKey(agent_id) && game_fsm.getCurrentState().equals(_state_RUNNING)) {
             if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
             if (!message.getString("button").equalsIgnoreCase("up")) return;
-            cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+            if (cpFSMs.get(agent_id).getCurrentState().equalsIgnoreCase(_flag_state_NEUTRAL)) {
+                cpFSMs.get(agent_id).ProcessFSM(who_goes_first.equalsIgnoreCase("blue") ? _msg_TO_BLUE : _msg_TO_RED);
+            } else {
+                cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
+            }
         } else
             super.on_external_message(agent_id, source, message);
     }

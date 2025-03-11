@@ -9,7 +9,7 @@
         function read_respawns_form() {
             game_parameters.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
             game_parameters.spawns.intro_voice = document.getElementById('intro_voice').value;
-            game_parameters.agents.audio = from_string_list(document.getElementById('audio_group').value);
+            //game_parameters.agents.audio = from_string_list(document.getElementById('audio_group').value);
             game_parameters.silent_game = document.getElementById('check-silent').checked;
             game_parameters.spawns.game_lobby = document.getElementById('check-lobby').checked;
             if (game_parameters.spawns.announce_sprees)
@@ -37,7 +37,7 @@
             number_of_teams = game_parameters.spawns.teams.length;
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
             document.getElementById('intro_voice').value = game_parameters.spawns.intro_voice;
-            document.getElementById('audio_group').value = game_parameters.agents.audio ? game_parameters.agents.audio.join() : "";
+            //document.getElementById('audio_group').value = game_parameters.agents.audio ? game_parameters.agents.audio.join() : "";
             document.getElementById('check-lobby').checked = game_parameters.spawns.game_lobby;
             if (game_parameters.spawns.hasOwnProperty('announce_sprees')) {
                 document.getElementById('check-spree').checked = game_parameters.spawns.announce_sprees;
@@ -139,15 +139,16 @@
                 <option th:each="voice : ${voices}" th:value="${voice.value0}" th:text="${voice.value1}"></option>
             </select>
         </div>
-
+    </div>
+    <div class="row mb-3">
         <!-- todo: audio group tag for later -->
-        <div class="d-none  col-md-3  col-sm-auto">
-            <label for="audio_group" class="form-label" th:text="#{params.with_respawns.audio_group}"></label>
-            <input type="text" class="form-control" id="audio_group"
-                   placeholder="agents for playing audio files"/>
-            <div id="audio_group_help" class="form-text" th:text="#{params.with_respawns.audio_group_help}">
-            </div>
-        </div>
+<!--        <div class="d-none  col-md-3  col-sm-auto">-->
+<!--            <label for="audio_group" class="form-label" th:text="#{params.with_respawns.audio_group}"></label>-->
+<!--            <input type="text" class="form-control" id="audio_group"-->
+<!--                   placeholder="agents for playing audio files"/>-->
+<!--            <div id="audio_group_help" class="form-text" th:text="#{params.with_respawns.audio_group_help}">-->
+<!--            </div>-->
+<!--        </div>-->
 
         <div class="col-auto align-self-center form-check form-switch"
              data-toggle="tooltip" data-placement="top" th:attr="title=#{params.with_respawns.player_lobby.help}">
@@ -160,7 +161,7 @@
             <label class="form-check-label" for="check-spree" th:text="#{params.with_respawns.announce_killing_sprees}"></label>
         </div>
 
-        <div class="d-none col-auto align-self-center form-check form-switch" id="check-silent-div">
+        <div class="col-auto align-self-center form-check form-switch" id="check-silent-div">
             <input class="form-check-input" type="checkbox" role="switch" id="check-silent">
             <label class="form-check-label" for="check-silent" th:text="#{params.with_respawns.silent_game}"></label>
         </div>
@@ -168,7 +169,7 @@
     </div>
 
 
-    <div class="row">
+    <div class="row mb-3">
         <div class="col-auto" id="red_spawn">
             <input type="text" class="form-control" style="border: 5px solid red;" id="redfor"
                    value="ag30" required/>

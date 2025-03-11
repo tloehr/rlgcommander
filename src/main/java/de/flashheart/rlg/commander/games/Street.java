@@ -116,7 +116,6 @@ public class Street extends Timed {
     public void on_reset() {
         super.on_reset();
         active_capture_point = 0;
-        broadcast_score();
     }
 
     private boolean is_last(String agent) {
@@ -129,7 +128,7 @@ public class Street extends Timed {
     }
 
 
-    protected JSONObject get_vars() {
+    protected JSONObject get_broadcast_vars() {
         JSONObject vars = new JSONObject();
         long num_flags = cpFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equals(_flag_state_TAKEN)).count();
         BigDecimal bd_taken = new BigDecimal(num_flags);

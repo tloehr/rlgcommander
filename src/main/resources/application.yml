@@ -51,9 +51,6 @@ rlgs:
     sharon30s: Sharon (AI)
   access_points:
     00223f97a198: NETGEAR
-  score_broadcast:
-    every_seconds: '0.5'
-    cycle_counter: '10'
 
 mqtt:
   qos: 2

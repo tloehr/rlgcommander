@@ -82,6 +82,7 @@ public abstract class Pausable extends Scheduled {
             log.error(e);
         }
     }
+
     private void reschedule_job(JobKey jobKey, long delayed_by_seconds) {
         try {
             if (!scheduler.checkExists(jobKey)) return;
@@ -99,6 +100,7 @@ public abstract class Pausable extends Scheduled {
             log.error(e);
         }
     }
+
     private void resume_job(JobKey jobKey) {
         try {
             scheduler.resumeJob(jobKey);
@@ -140,9 +142,19 @@ public abstract class Pausable extends Scheduled {
         jobs_to_suspend_during_pause.add(jobKey);
     }
 
+    protected void create_job_with_suspension(String job_key, SimpleScheduleBuilder ssb, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
+        create_job(jobs.get(job_key), ssb, clazz, jobDataMap);
+        jobs_to_suspend_during_pause.add(jobs.get(job_key));
+    }
+
     protected void create_job_with_reschedule(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
         create_job(jobKey, start_time, clazz, jobDataMap);
         jobs_to_reschedule_after_pause.add(jobKey);
+    }
+
+    protected void create_job_with_reschedule(String job_key, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
+        create_job(jobs.get(job_key), start_time, clazz, jobDataMap);
+        jobs_to_reschedule_after_pause.add(jobs.get(job_key));
     }
 
     @Override

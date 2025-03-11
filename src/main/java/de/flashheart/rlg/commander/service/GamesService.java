@@ -77,8 +77,8 @@ public class GamesService {
         JSONObject game_description = new JSONObject(json);
 
         // add base parameters from application.yml
-        game_description.put("SCORE_CALCULATION_EVERY_N_SECONDS", myYamlConfiguration.getScore_broadcast().get("every_seconds"));
-        game_description.put("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", myYamlConfiguration.getScore_broadcast().get("cycle_counter"));
+//        game_description.put("SCORE_CALCULATION_EVERY_N_SECONDS", myYamlConfiguration.getScore_broadcast().get("every_seconds"));
+//        game_description.put("BROADCAST_SCORE_EVERY_N_TICKET_CALCULATION_CYCLES", myYamlConfiguration.getScore_broadcast().get("cycle_counter"));
         game_description.put("owner", owner.getUsername());
 
         loaded_games[game_id - 1].ifPresent(game -> game.cleanup());
