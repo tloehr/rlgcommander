@@ -19,8 +19,6 @@ import java.util.stream.Collectors;
 
 @Log4j2
 public class Street extends Timed {
-    public static final String _msg_DEACTIVATE = "deactivate";
-    public static final String _msg_REACTIVATE = "reactivate";
     public static final String _msg_GO = "go";
     public static final String _flag_state_TAKEN = "TAKEN";
     protected final List<String> capture_points;
@@ -40,21 +38,13 @@ public class Street extends Timed {
             fsm.setStatesAfterTransition(_flag_state_STAND_BY, (state, obj) -> cp_to_stand_by(agent));
             fsm.setStatesAfterTransition(_flag_state_ACTIVE, (state, obj) -> cp_to_active(agent));
             fsm.setStatesAfterTransition(_flag_state_TAKEN, (state, obj) -> taken(agent));
-            fsm.setAction(_flag_state_GET_READY, _msg_GO, new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
-                    return true;
-                }
-            });
-            // after a flag has been accepted for the first time
-            fsm.setAction(_msg_GO, new FSMAction() {
-                @Override
-                public boolean action(String curState, String message, String nextState, Object args) {
-
-                    return true;
-                }
-            });
+//            fsm.setAction(_flag_state_GET_READY, _msg_GO, new FSMAction() {
+//                @Override
+//                public boolean action(String curState, String message, String nextState, Object args) {
+//                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
+//                    return true;
+//                }
+//            });
 
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
@@ -81,6 +71,8 @@ public class Street extends Timed {
     }
 
     protected void cp_to_active(String agent) {
+        if (active_capture_point > 0) // after the first flag has been taken, not earlier.
+            send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.RED, MQTT.RECURRING_SCHEME_NORMAL), agent);
     }
 
@@ -130,11 +122,11 @@ public class Street extends Timed {
 
     protected JSONObject get_broadcast_vars() {
         JSONObject vars = new JSONObject();
-        long num_flags = cpFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equals(_flag_state_TAKEN)).count();
-        BigDecimal bd_taken = new BigDecimal(num_flags);
+        long taken_flags = cpFSMs.values().stream().filter(fsm -> fsm.getCurrentState().equals(_flag_state_TAKEN)).count();
+        //BigDecimal bd_taken = new BigDecimal(num_flags);
         vars.put("num_flags", cpFSMs.size());
-        vars.put("taken", bd_taken.longValue());
-        vars.put("percent", bd_taken.divide(new BigDecimal(cpFSMs.size()), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
+        vars.put("taken", taken_flags);
+        //vars.put("percent", bd_taken.divide(new BigDecimal(cpFSMs.size()), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
         return vars;
     }
 
@@ -150,12 +142,12 @@ public class Street extends Timed {
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return MQTT.merge(
                     MQTT.page("page0",
-                            "Progress   ${wifi_signal}",
+                            "Time: ${remaining}  ${wifi_signal}",
                             "Taken ${taken}/${num_flags}",
                             "${percent}%",
                             "${remaining}"),
                     MQTT.page("page1",
-                            "Fortschritt   ${wifi_signal}",
+                            "Förtschritt   ${wifi_signal}",
                             "Erobert ${taken}/${num_flags}",
                             "${percent}%",
                             "${remaining}"),

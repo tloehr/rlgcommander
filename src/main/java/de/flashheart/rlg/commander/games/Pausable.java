@@ -83,6 +83,10 @@ public abstract class Pausable extends Scheduled {
         }
     }
 
+    protected void reschedule_job(String job_key, long delayed_by_seconds) {
+        reschedule_job(jobs.get(job_key), delayed_by_seconds);
+    }
+
     private void reschedule_job(JobKey jobKey, long delayed_by_seconds) {
         try {
             if (!scheduler.checkExists(jobKey)) return;

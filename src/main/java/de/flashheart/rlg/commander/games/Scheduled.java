@@ -34,10 +34,6 @@ public abstract class Scheduled extends Game {
         } catch (SchedulerException se) {
             log.fatal(se);
         }
-        setup_scheduler_jobs();
-    }
-
-    protected void setup_scheduler_jobs() {
     }
 
     protected void register_job(String job_key){

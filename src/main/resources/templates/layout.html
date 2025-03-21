@@ -88,15 +88,20 @@
                         <hr/>
                         <!-- calls the base.html but clears the game_parameters from storage -->
                         <li><a class="dropdown-item"
-                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'farcry'});">
-                            <span class="bi bi-file-earmark-play"  th:text="'&nbsp;'+#{games.farcry}"></span></a></li>
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'center_flags'});">
+                            <span class="bi bi-file-earmark-play" th:text="'&nbsp;'+#{games.center_flags}"></span></a>
+                        </li>
                         <li><a class="dropdown-item"
                                onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'conquest'});">
                             <span class="bi bi-file-earmark-play" th:text="'&nbsp;'+#{games.conquest}" ></span></a>
                         </li>
                         <li><a class="dropdown-item"
-                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'center_flags'});">
-                            <span class="bi bi-file-earmark-play" th:text="'&nbsp;'+#{games.center_flags}"></span></a>
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'farcry'});">
+                            <span class="bi bi-file-earmark-play"  th:text="'&nbsp;'+#{games.farcry}"></span></a>
+                        </li>
+                        <li><a class="dropdown-item"
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'fetch_em'});">
+                            <span class="bi bi-file-earmark-play" th:text="'&nbsp;'+#{games.fetch_em}"></span></a>
                         </li>
                         <li><a class="dropdown-item"
                                onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'hardpoint'});">
@@ -107,8 +112,17 @@
                             <span class="bi bi-file-earmark-play" th:text="'&nbsp;'+#{games.signal}"></span></a>
                         </li>
                         <li><a class="dropdown-item"
+                               onclick="navigate_to(window.location.
+                               origin+'/ui/params/base', {'game_mode': 'street'});">
+                            <span class="bi bi-file-earmark-play" th:text="'&nbsp;'+#{games.street}"></span></a>
+                        </li>
+                        <li><a class="dropdown-item"
                                onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'stronghold'});">
                             <span class="bi bi-file-earmark-play" th:text="'&nbsp;'+#{games.stronghold}"></span></a>
+                        </li>
+                        <li><a class="dropdown-item"
+                               onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'stronghold2'});">
+                            <span class="bi bi-file-earmark-play" th:text="'&nbsp;'+#{games.stronghold2}"></span></a>
                         </li>
                         <li><a class="dropdown-item"
                                onclick="navigate_to(window.location.origin+'/ui/params/base', {'game_mode': 'timed_only'});">

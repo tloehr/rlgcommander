@@ -197,6 +197,7 @@ public class UiController extends MyParentController {
         return "user";
     }
 
+    // https://www.baeldung.com/spring-thymeleaf-fragments
     @GetMapping("fragments/{fragment}")
     public String get_fragment(@PathVariable String fragment,
                                @RequestParam(required = false, defaultValue = "center_flags") String game_mode,

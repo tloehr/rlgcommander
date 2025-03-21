@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Game mode that has been proposed by Toby. Players have to be quick to "gather" flags on the field by activating them. Those CPs stay active for a while
@@ -39,7 +40,6 @@ public class FetchEm extends Hardpoint {
 
     public FetchEm(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-
         setGameDescription(
                 game_parameters.getString("comment"),
                 String.format("Winning@ %s", this.winning_score),
@@ -49,18 +49,18 @@ public class FetchEm extends Hardpoint {
     }
 
     @Override
-    public String getGameMode() {
-        return "fetch_em";
+    protected void setup_scheduler_jobs() {
+        register_job("flag_time_up");
+        register_job("delayed_reaction");
+        capture_points.forEach(agent -> {
+            register_job("delayed_reaction_" + agent);
+            register_job("flag_time_up_" + agent);
+        });
     }
 
     @Override
-    protected void setup_scheduler_jobs() {
-        capture_points.forEach(agent -> {
-            JobKey delayed_reaction = new JobKey("delayed_reaction_" + agent, uuid.toString());
-            JobKey flag_time_up = new JobKey("flag_time_up_" + agent, uuid.toString());
-            jobs.put("delayed_reaction_" + agent, delayed_reaction);
-            jobs.put("flag_time_up_" + agent, flag_time_up);
-        });
+    public String getGameMode() {
+        return "fetch_em";
     }
 
     @Override
@@ -171,10 +171,10 @@ public class FetchEm extends Hardpoint {
         String[] red_flags_lines = split_list_to_lines(20, map.get(_flag_state_RED_SCORING), "", "");
         String[] blue_flags_lines = split_list_to_lines(20, map.get(_flag_state_BLUE_SCORING), "", "");
         return super.get_broadcast_vars()
-                .put("red_flags", map.get(_flag_state_RED_SCORING))
+                .put("red_flags", map.get(_flag_state_RED_SCORING).stream().sorted().toList().toString())
                 .put("red_flags1", red_flags_lines[0])
                 .put("red_flags2", red_flags_lines[1])
-                .put("blue_flags", map.get(_flag_state_BLUE_SCORING))
+                .put("blue_flags", map.get(_flag_state_BLUE_SCORING).stream().sorted().toList().toString())
                 .put("blue_flags1", blue_flags_lines[0])
                 .put("blue_flags2", blue_flags_lines[1])
                 .put("score_blue", scores.get("all", "blue") / 1000L)

@@ -12,8 +12,9 @@
   "comment": "Mag Speed",
   "spawns": {
     "starter_countdown": "30",
-    "count_respawns": false,
+    "count_respawns_mode": "never",
     "announce_sprees": false,
+    "count_respawns": false,
     "teams": [
       {
         "role": "red_spawn",

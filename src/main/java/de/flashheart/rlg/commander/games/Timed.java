@@ -30,38 +30,36 @@ import java.util.TimeZone;
 public abstract class Timed extends WithRespawns {
     final String _msg_GAME_TIME_IS_UP = "game_time_is_up";
     /**
-     * the length of the match in seconds. Due to the nature of certain gamemodes (like farcry) this value is rather a
-     * proposal than a constant value
+     * the length of the match in seconds. Due to the nature of certain game_modes (like farcry or stronghold2)
+     * this value is rather an assumption than a constant value
+     * The Timed class will call the game_time_is_up() method at the end of this period,
+     * UNLESS a subclass calls the extend_game_time method first.
      */
-    final int game_time;
+    private final long game_time;
     /**
      * start_time is the timestamp when the game started. it will shift forward when the game was paused and is
      * resumed.
      */
-    LocalDateTime start_time;
+    private LocalDateTime start_time;
     /**
      * estimated_end_time is the timestamp when the game will possibly end. can change due to game situations like in
      * Farcry (last moment flag activations or quick attacker)
      */
-    LocalDateTime end_time;
-    ZonedDateTime ldt_game_time;
+    protected LocalDateTime end_time;
+    protected ZonedDateTime ldt_game_time;
+    private long last_extended_time;
 
     Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        this.game_time = game_parameters.getInt("game_time");
-        ldt_game_time = ZonedDateTime.ofInstant(Instant.ofEpochSecond(game_time), TimeZone.getTimeZone("UTC").toZoneId());
+        this.game_time = game_parameters.getLong("game_time");
+        ldt_game_time = seconds_to_zdt(game_time);
+        last_extended_time = 0L;
         start_time = null;
         end_time = null;
-
+        register_job("game_timer");
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))), "",
                 " ".repeat(18) + "${wifi_signal}");
-    }
-
-    @Override
-    protected void setup_scheduler_jobs() {
-        super.setup_scheduler_jobs();
-        jobs.put("game_timer", new JobKey("game_timer", uuid.toString()));
     }
 
     @Override
@@ -83,6 +81,14 @@ public abstract class Timed extends WithRespawns {
         create_job_with_reschedule("game_timer", end_time, GameTimeIsUpJob.class, Optional.empty());
     }
 
+    protected void extend_game_time(long seconds) {
+        if (end_time == null) return;
+        last_extended_time = seconds;
+        reschedule_job("game_timer", seconds);
+        add_in_game_event(new JSONObject().put("item", "extended timed").put("time", seconds_to_zdt(last_extended_time).format(DateTimeFormatter.ofPattern("mm:ss"))));
+        end_time = end_time.plusSeconds(seconds);
+    }
+
     @Override
     public void on_reset() {
         super.on_reset();
@@ -98,8 +104,7 @@ public abstract class Timed extends WithRespawns {
 
     protected long getRemaining() {
         if (start_time == null) return game_time;
-        long elapsed_time = start_time.until(pausing_since.orElse(LocalDateTime.now()), ChronoUnit.SECONDS);
-        return Math.max(0L, game_time - elapsed_time);
+        return LocalDateTime.now().until(end_time, ChronoUnit.SECONDS) + 1;
     }
 
     public void game_time_is_up() {
@@ -121,8 +126,15 @@ public abstract class Timed extends WithRespawns {
                 .put("match_length", game_time)
                 .put("start_time", start_time != null ? start_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")
                 .put("end_time", end_time != null ? end_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")
-                .put("remaining", getRemaining());
+                .put("remaining", getRemaining())
+                .put("extended_time", last_extended_time == 0 ? "" : seconds_to_zdt(last_extended_time).format(DateTimeFormatter.ofPattern("mm:ss")))
+                .put("extended_time_label", last_extended_time == 0 ? "" : "extended time by:");
+
         return json;
+    }
+
+    protected ZonedDateTime seconds_to_zdt(long seconds) {
+        return ZonedDateTime.ofInstant(Instant.ofEpochSecond(seconds), TimeZone.getTimeZone("UTC").toZoneId());
     }
 
 

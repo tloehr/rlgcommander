@@ -14,9 +14,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,7 +24,6 @@ import java.util.stream.Collectors;
  * defense rings have to be taken in order blue -> green -> yellow -> red
  * maximum number of rings: 4 if we need only one
  * ring we start with red then red, yellow and so on
- *
  */
 @Log4j2
 public class Stronghold extends Timed {
@@ -40,23 +37,23 @@ public class Stronghold extends Timed {
     public static final String _msg_TAKEN = "taken";
     public static final String _msg_DEFUSE = "defuse";
     private final boolean allow_defuse;
-    LinkedList<String> rings_in_progress;
-    ArrayList<String> rings_taken, rings_in_use;
+    LinkedList<String> rings_to_go;
+    ArrayList<String> rings_taken, rings_total;
     private final HashMap<String, String> map_agent_to_ring_color;
 
     public Stronghold(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
-        rings_in_progress = new LinkedList<>();
+        rings_to_go = new LinkedList<>();
         rings_taken = new ArrayList<>();
-        rings_in_use = new ArrayList<>();
+        rings_total = new ArrayList<>();
 
         allow_defuse = game_parameters.optBoolean("allow_defuse");
         map_agent_to_ring_color = new HashMap<>();
 
         List.of("blu", "grn", "ylw", "red").forEach(color -> {
             if (roles.get(color).isEmpty()) return;
-            rings_in_use.add(color);
+            rings_total.add(color);
 
             roles.get(color).forEach(agent ->
                     map_agent_to_ring_color.put(agent, color));
@@ -64,7 +61,7 @@ public class Stronghold extends Timed {
 
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Gametime: %s", ldt_game_time.format(DateTimeFormatter.ofPattern("mm:ss"))),
-                String.format("Number of rings: %s", rings_in_use.size()),
+                String.format("Number of rings: %s", rings_total.size()),
                 " ".repeat(18) + "${wifi_signal}"
         );
     }
@@ -77,7 +74,6 @@ public class Stronghold extends Timed {
             fsm.setStatesAfterTransition(_state_STANDBY, (state, obj) -> standby(agent));
             fsm.setStatesAfterTransition(_state_DEFUSED, (state, obj) -> defused(agent));
             fsm.setStatesAfterTransition(_state_NEARLY_DEFUSED, (state, obj) -> nearly_defused(agent));
-            fsm.setStatesAfterTransition(_state_FUSED, (state, obj) -> fused(agent));
             fsm.setStatesAfterTransition(_state_FUSED, (state, obj) -> fused(agent));
             fsm.setStatesAfterTransition(_state_TAKEN, (state, obj) -> taken(agent));
 
@@ -98,7 +94,7 @@ public class Stronghold extends Timed {
 
     @Override
     public void on_external_message(String agent_id, String source, JSONObject message) {
-        if (game_fsm.getCurrentState().equals(_state_RUNNING) && roles.get(rings_in_progress.getFirst()).contains(agent_id)) {
+        if (game_fsm.getCurrentState().equals(_state_RUNNING) && roles.get(rings_to_go.getFirst()).contains(agent_id)) {
             if (!source.equalsIgnoreCase(_msg_BUTTON_01)) return;
             if (!message.getString("button").equalsIgnoreCase("up")) return;
             cpFSMs.get(agent_id).ProcessFSM(_msg_BUTTON_01);
@@ -117,14 +113,14 @@ public class Stronghold extends Timed {
         if (!allow_defuse) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
         if (active_ring_taken()) {
             // the others are still locked. Need to be TAKEN now
-            roles.get(rings_in_progress.getFirst())
+            roles.get(rings_to_go.getFirst())
                     .stream()
-                    .filter(s -> !cpFSMs.get(s).equals(_state_TAKEN)) // only those which are not already taken
+                    .filter(s -> !cpFSMs.get(s).getCurrentState().equals(_state_TAKEN)) // only those which are not already taken
                     .forEach(other_agents_in_this_ring -> cpFSMs.get(other_agents_in_this_ring).ProcessFSM(_msg_TAKEN)
                     );
-            add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", _state_TAKEN));
-            rings_taken.add(rings_in_progress.pop());
-            if (rings_in_progress.isEmpty()) game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
+            add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_to_go.getFirst()).put("state", _state_TAKEN));
+            rings_taken.add(rings_to_go.pop());
+            if (rings_to_go.isEmpty()) game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
             else activate_ring();
         } else {
             send(MQTT.CMD_ACOUSTIC, MQTT.toJSON("sir2", "medium"), roles.get("sirens"));
@@ -136,9 +132,9 @@ public class Stronghold extends Timed {
     @Override
     public void on_reset() {
         super.on_reset();
-        rings_in_progress.clear();
+        rings_to_go.clear();
         rings_taken.clear();
-        rings_in_progress.addAll(rings_in_use);
+        rings_to_go.addAll(rings_total);
     }
 
     @Override
@@ -147,11 +143,12 @@ public class Stronghold extends Timed {
         activate_ring();
     }
 
-    private void activate_ring() {
-        roles.get(rings_in_progress.getFirst()).forEach(agent -> cpFSMs.get(agent).ProcessFSM(_msg_ACTIVATE));
-        if (rings_in_progress.size() < rings_in_use.size() && rings_in_use.size() > 1) // not with the first or only ring
+    // activate the current ring
+    protected void activate_ring() {
+        roles.get(rings_to_go.getFirst()).forEach(agent -> cpFSMs.get(agent).ProcessFSM(_msg_ACTIVATE));
+        if (rings_to_go.size() < rings_total.size() && rings_total.size() > 1) // not with the first or only ring
             send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR4, MQTT.SCHEME_LONG), roles.get("sirens"));
-        add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_in_progress.getFirst()).put("state", "activated"));
+        add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_to_go.getFirst()).put("state", "activated"));
         broadcast_score();
     }
 
@@ -177,7 +174,7 @@ public class Stronghold extends Timed {
     }
 
     private boolean active_ring_taken() {
-        return roles.get(rings_in_progress.getFirst()).stream()
+        return roles.get(rings_to_go.getFirst()).stream()
                 .allMatch(agent ->
                         cpFSMs.get(agent).getCurrentState()
                                 .matches(_state_FUSED + "|" + _state_LOCKED + "|" + _state_TAKEN));
@@ -190,30 +187,31 @@ public class Stronghold extends Timed {
                     MQTT.page("page0",
                             "Game Over",
                             "",
-                            "Broken Rings",
+                            "Rings broken:",
                             "${rings_taken}/${rings_in_use}")
             );
         }
 
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
-            JSONObject pages = MQTT.merge(MQTT.page("page0",
-                            "Remaining:  ${remaining}",
-                            "Integrity of active",
-                            "ring: ${active_ring}",
-                            "${active_progress}"),
-                    MQTT.page("page1",
-                            "Remaining:  ${remaining}",
-                            "",
-                            "Agents still alive",
+            JSONObject pages = MQTT.merge(
+                    MQTT.page("page0",
+                            "Time:  ${remaining}  ${wifi_signal}",
+                            "${rings_taken}/${rings_in_use} -> ${active_ring}",
+                            "Alive:",
                             "${stable_agents}")
             ); //todo: make 2 lines for stable_agents
-            if (rings_in_use.size() > 1) pages = MQTT.merge(pages,
-                    MQTT.page("page2",
-                            "Remaining:  ${remaining}",
-                            "Integrity",
-                            "Total",
-                            "${total_progress}")
-            );
+//            if (rings_total.size() > 1) pages = MQTT.merge(pages,
+//                    MQTT.page("page2",
+//                            "Remaining:  ${remaining}",
+//                            "Integrity",
+//                            "Total",
+//                            "${total_progress}")
+//            );
+//            MQTT.page("page0",
+//                    "Remaining:  ${remaining}",
+//                    "Integrity of active",
+//                    "ring: ${active_ring}",
+//                    "${active_progress}"),
             return pages;
         }
         return MQTT.page("page0", game_description);
@@ -224,14 +222,14 @@ public class Stronghold extends Timed {
         JSONObject variables = super.get_broadcast_vars();
 
         String progress = rings_taken.stream().collect(Collectors.joining(","));
-        if (!rings_in_progress.isEmpty())
-            progress += " **" + rings_in_progress.getFirst().toUpperCase() + "** ";
-        if (rings_in_progress.size() > 1)
-            progress += rings_in_progress.subList(1, rings_in_progress.size()).stream().collect(Collectors.joining(","));
+        if (!rings_to_go.isEmpty())
+            progress += " **" + rings_to_go.getFirst().toUpperCase() + "** ";
+        if (rings_to_go.size() > 1)
+            progress += rings_to_go.subList(1, rings_to_go.size()).stream().collect(Collectors.joining(","));
 
-        if (!rings_in_progress.isEmpty()) {
-            int total_in_this_segment = roles.get(rings_in_progress.getFirst()).size();
-            int remain_in_this_segment = Math.toIntExact(roles.get(rings_in_progress.getFirst()).stream()
+        if (!rings_to_go.isEmpty()) {
+            int total_in_this_segment = roles.get(rings_to_go.getFirst()).size();
+            int remain_in_this_segment = Math.toIntExact(roles.get(rings_to_go.getFirst()).stream()
                     .filter(agent ->
                             cpFSMs.get(agent).getCurrentState()
                                     .matches(_state_FUSED + "|" + _state_LOCKED + "|" + _state_TAKEN))
@@ -240,27 +238,26 @@ public class Stronghold extends Timed {
             variables.put("total_in_this_segment", total_in_this_segment);
             variables.put("remain_in_this_segment", remain_in_this_segment);
 
-            String stable_agents = roles.get(rings_in_progress.getFirst()).stream()
+            String stable_agents = roles.get(rings_to_go.getFirst()).stream()
                     .filter(agent ->
                             cpFSMs.get(agent).getCurrentState()
                                     .matches(_state_DEFUSED))
                     .sorted()
                     .collect(Collectors.joining(","));
 
-
             variables.put("active_progress", Tools.get_progress_bar(total_in_this_segment - remain_in_this_segment, total_in_this_segment));
             variables.put("stable_agents", stable_agents);
 
         }
 
-        variables.put("active_ring", rings_in_progress.isEmpty() ? "" : rings_in_progress.getFirst());
+        variables.put("active_ring", rings_to_go.isEmpty() ? "" : rings_to_go.getFirst());
         variables.put("rings_taken", rings_taken.size());
-        variables.put("rings_to_go", Math.max(rings_in_progress.size() - 1, 0));
+        variables.put("rings_to_go", Math.max(rings_to_go.size() - 1, 0));
         variables.put("rings_progress", progress);
-        variables.put("rings_in_use", rings_in_use.size());
+        variables.put("rings_in_use", rings_total.size());
 
-        if (rings_in_use.size() > 1)
-            variables.put("total_progress", Tools.get_progress_bar(rings_in_use.size() - rings_taken.size(), rings_in_use.size()));
+        if (rings_total.size() > 1)
+            variables.put("total_progress", Tools.get_progress_bar(rings_total.size() - rings_taken.size(), rings_total.size()));
         else
             variables.put("total_progress", "");
 
@@ -337,15 +334,15 @@ public class Stronghold extends Timed {
         model.addAttribute("total_rings", vars.optInt("rings_in_use"));
         model.addAttribute("total_in_this_segment", vars.optInt("total_in_this_segment"));
         model.addAttribute("remain_in_this_segment", vars.optInt("remain_in_this_segment"));
-        model.addAttribute("stable_agents", rings_in_progress.isEmpty() ? new ArrayList<>() : roles.get(
-                        rings_in_progress.getFirst()).stream().filter(agent ->
+        model.addAttribute("stable_agents", rings_to_go.isEmpty() ? new ArrayList<>() : roles.get(
+                        rings_to_go.getFirst()).stream().filter(agent ->
                         cpFSMs.get(agent).getCurrentState()
                                 .matches(_state_DEFUSED))
                 .sorted()
                 .collect(Collectors.toList())
         );
-        model.addAttribute("broken_agents", rings_in_progress.isEmpty() ? new ArrayList<>() : roles.get(
-                        rings_in_progress.getFirst()).stream().filter(agent ->
+        model.addAttribute("broken_agents", rings_to_go.isEmpty() ? new ArrayList<>() : roles.get(
+                        rings_to_go.getFirst()).stream().filter(agent ->
                         cpFSMs.get(agent).getCurrentState()
                                 .matches(_state_FUSED + "|" + _state_LOCKED + "|" + _state_TAKEN))
                 .sorted()

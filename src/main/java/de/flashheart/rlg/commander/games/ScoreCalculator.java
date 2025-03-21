@@ -27,16 +27,10 @@ public abstract class ScoreCalculator extends Pausable {
 
     public ScoreCalculator(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-
+        register_job("calculate_score");
         REPEAT_EVERY_MS = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
 //        NUMBER_OF_BROADCAST_EVENTS_PER_MINUTE = BigDecimal.valueOf(60L).divide(SCORE_CALCULATION_EVERY_N_SECONDS, RoundingMode.HALF_UP).longValue();
 
-    }
-
-    @Override
-    protected void setup_scheduler_jobs() {
-        super.setup_scheduler_jobs();
-        register_job("calculate_score");
     }
 
     @Override

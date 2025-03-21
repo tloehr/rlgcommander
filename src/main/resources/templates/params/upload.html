@@ -30,7 +30,6 @@
                         }
                         reader.onerror = function (evt) {
                             game_parameters = {};
-                            sessionStorage.removeItem('game_parameters');
                             console.error(evt);
                         }
                     }

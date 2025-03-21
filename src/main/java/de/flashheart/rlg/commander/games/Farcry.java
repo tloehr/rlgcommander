@@ -52,7 +52,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws GameSetupException, ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        count_respawns = false;
+
         estimated_end_time = null;
 
         this.bomb_timer = game_parameters.getInt("bomb_time");
@@ -71,6 +71,9 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         if (capture_points.size() > MAX_CAPTURE_POINTS)
             throw new GameSetupException("max number of capture points is " + MAX_CAPTURE_POINTS);
 
+        register_job("bomb_timer");
+        register_job("timed_respawn");
+
         sirs = game_parameters.getJSONObject("agents").getJSONArray("capture_sirens").toList();
         check_segment_sizes();
         for (int i = 0; i < capture_points.size(); i++) {
@@ -79,12 +82,6 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
         }
     }
 
-    @Override
-    protected void setup_scheduler_jobs() {
-        super.setup_scheduler_jobs();
-        register_job("bomb_timer");
-        register_job("timed_respawn");
-    }
 
     /**
      * checks whether the spawn segment definitions are valid
@@ -185,7 +182,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
     @Override
     protected long getRemaining() {
-        if (game_fsm_get_current_state().equals(_state_EPILOG)) return super.getRemaining();
+        //if (game_fsm_get_current_state().equals(_state_EPILOG)) return super.getRemaining();
         return estimated_end_time != null ? LocalDateTime.now().until(estimated_end_time, ChronoUnit.SECONDS) + 1 : super.getRemaining();
     }
 

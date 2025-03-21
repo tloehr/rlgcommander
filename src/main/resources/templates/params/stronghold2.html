@@ -1,0 +1,118 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      layout:decorate="~{params/sirens.html}">
+
+
+<head>
+    <title th:text="#{games.stronghold2}"></title>
+    <script>
+        function read_form() {
+            game_parameters.agents.blu = from_string_list(document.getElementById('blu').value);
+            game_parameters.agents.grn = from_string_list(document.getElementById('grn').value);
+            game_parameters.agents.ylw = from_string_list(document.getElementById('ylw').value);
+            game_parameters.agents.red = from_string_list(document.getElementById('red').value);
+            // ring times
+            game_parameters.ring_time_limits.blu = parseInt(document.getElementById('time-blu').value);
+            game_parameters.ring_time_limits.grn = parseInt(document.getElementById('time-grn').value);
+            game_parameters.ring_time_limits.ylw = parseInt(document.getElementById('time-ylw').value);
+            game_parameters.ring_time_limits.red = parseInt(document.getElementById('time-red').value);
+            // game time is always the time of the first ring that is not empty
+            if (game_parameters.agents.blu) game_parameters.game_time = game_parameters.ring_time_limits.blu;
+            else if (game_parameters.agents.grn) game_parameters.game_time = game_parameters.ring_time_limits.grn;
+            else if (game_parameters.agents.ylw) game_parameters.game_time = game_parameters.ring_time_limits.ylw;
+            else game_parameters.game_time = game_parameters.ring_time_limits.red;
+            //
+            game_parameters.allow_defuse = document.getElementById('check-allow-defuse').checked;
+
+            game_parameters.agents.capture_points = [].concat(
+                game_parameters.agents.red,
+                game_parameters.agents.ylw,
+                game_parameters.agents.grn,
+                game_parameters.agents.blu
+            );
+            console.log(JSON.stringify(game_parameters));
+            read_sirens_form();
+        }
+
+        function preset_form() {
+            document.getElementById('red').value = game_parameters.agents.red.join();
+            document.getElementById('ylw').value = game_parameters.agents.ylw.join();
+            document.getElementById('grn').value = game_parameters.agents.grn.join();
+            document.getElementById('blu').value = game_parameters.agents.blu.join();
+            document.getElementById('time-red').value = game_parameters.ring_time_limits.red;
+            document.getElementById('time-ylw').value = game_parameters.ring_time_limits.ylw;
+            document.getElementById('time-grn').value = game_parameters.ring_time_limits.grn;
+            document.getElementById('time-blu').value = game_parameters.ring_time_limits.blu;
+            document.getElementById('check-allow-defuse').checked = game_parameters.allow_defuse;
+
+            preset_sirens_form();
+        }
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1 th:text="#{games.stronghold2}"></h1>
+    <a th:href="#{params.stronghold2.href}" th:text="#{params.misc.click_here_for_more}"></a>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mb-3">
+        <div class="col-auto">
+            <div th:replace="~{fragments :: game_time}"></div>
+        </div>
+
+
+        <div class="col-auto align-self-center form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="check-allow-defuse">
+            <label class="form-check-label" for="check-allow-defuse"
+                   th:text="#{params.stronghold.allow_defuse}"></label>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-auto bg-danger">
+            <label for="red" class="form-label text-white bi-md" th:text="#{params.stronghold.ring_wall}+'&nbsp;1'"></label>
+            <input type="text" class="form-control text-bg-danger" id="red" required
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <label for="time-red" class="form-label text-white bi-md" th:text="#{misc.time_limit_in_seconds}"></label>
+            <input type="number" inputmode="decimal" class="form-control" id="time-red" value="600"
+                   required min="1" pattern="\d*">
+            <div>&nbsp;</div>
+        </div>
+        <div class="col-auto bg-warning">
+            <label for="ylw" class="form-label text-white bi-md" th:text="#{params.stronghold.ring_wall}+'&nbsp;2'"></label>
+            <!-- only comma separated allowed -->
+            <input type="text" class="form-control" id="ylw"
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <label for="time-ylw" class="form-label text-white bi-md" th:text="#{misc.time_limit_in_seconds}"></label>
+            <input type="number" inputmode="decimal" class="form-control" id="time-ylw" value="600"
+                   required min="1" pattern="\d*">
+            <div>&nbsp;</div>
+        </div>
+        <div class="col-auto bg-success">
+            <label for="grn" class="form-label text-white bi-md" th:text="#{params.stronghold.ring_wall}+'&nbsp;3'"></label>
+            <input type="text" class="form-control"
+                   id="grn"
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <label for="time-grn" class="form-label text-white bi-md" th:text="#{misc.time_limit_in_seconds}"></label>
+            <input type="number" inputmode="decimal" class="form-control" id="time-grn" value="600"
+                   required min="1" pattern="\d*">
+            <div>&nbsp;</div>
+        </div>
+        <div class="col-auto bg-primary">
+            <label for="blu" class="form-label text-white bi-md" th:text="#{params.stronghold.ring_wall}+'&nbsp;4'"></label>
+            <input type="text" class="form-control" id="blu"
+                   pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
+            <label for="time-blu" class="form-label text-white bi-md" th:text="#{misc.time_limit_in_seconds}"></label>
+            <input type="number" inputmode="decimal" class="form-control" id="time-blu" value="600"
+                   required min="1" pattern="\d*">
+            <div>&nbsp;</div>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

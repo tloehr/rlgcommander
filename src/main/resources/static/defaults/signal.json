@@ -29,6 +29,9 @@
     ]
   },
   "spawns": {
+    "count_respawns_mode": "never",
+    "announce_sprees": false,
+    "count_respawns": false,
     "game_lobby": false,
     "intro_mp3": "bf3",
     "intro_voice": "sharon30s",

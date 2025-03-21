@@ -7,7 +7,6 @@
     <script>
 
         function read_form() {
-            game_parameters.count_respawns = document.getElementById('count-respawns').checked;
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
             game_parameters.who_goes_first = document.getElementById('who-goes-first').value;
             read_cps_sirens_form(game_parameters);
@@ -15,7 +14,6 @@
 
         function preset_form() {
             document.getElementById('game_time').value = game_parameters.game_time;
-            document.getElementById('count-respawns').checked = game_parameters.count_respawns;
             selectElement('who-goes-first', game_parameters.who_goes_first);
             preset_cps_sirens_form(game_parameters);
         }

@@ -1,6 +1,8 @@
 package de.flashheart.rlg.commander.games;
 
+import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
+import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
@@ -8,11 +10,11 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.TimeZone;
 
 /**
  * <h1>Stronghold 2</h1>
@@ -25,33 +27,46 @@ import java.util.Optional;
  * <li>if the time runs out on a wall - game is over</li>
  * <li>if a wall is taken, the remaining time is added to the time limit for that wall - so a quick team will have a benefit</li>
  */
+@Log4j2
 public class Stronghold2 extends Stronghold {
-    private final boolean classic_game_time_mode; // meaning at least one ring had a 0 time limit.
-    private Optional<LocalDateTime> estimated_end_time;
-    //private final long stronghold_max_game_time;
-    ArrayList<Integer> ring_times;
+    ArrayList<Long> ring_times;
 
     public Stronghold2(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
-        this.estimated_end_time = Optional.empty();
+        // game_time always equals the time limit of the first ring.
+        // the game_time extends as the rings are broken
+        // the game_parameters have to be set correctly by the frontend
         this.ring_times = new ArrayList<>();
-        // at least one limit is 0 - CLASSIC MODE
-        classic_game_time_mode = ring_times.stream().anyMatch(integer -> integer == 0);
-        //stronghold_max_game_time = ring_times.stream().mapToLong(Integer::longValue).sum();
-        rings_in_use.forEach(color ->
-                ring_times.add(game_parameters.getJSONObject("ring_time_limit").getInt(color))
+        rings_total.forEach(color ->
+                ring_times.add(game_parameters.getJSONObject("ring_time_limits").getLong(color))
         );
-
+        setGameDescription(game_parameters.getString("comment"),
+                String.format("Number of rings: %s", rings_total.size()),
+                String.format("Ring-Times: %s", ring_times.toString()),
+                " ".repeat(18) + "${wifi_signal}"
+        );
     }
 
     @Override
-    protected long getRemaining() {
-        if (game_fsm_get_current_state().equals(_state_EPILOG)) return super.getRemaining();
-        return estimated_end_time
-                .map(localDateTime -> LocalDateTime.now().until(localDateTime, ChronoUnit.SECONDS) + 1)
-                .orElseGet(super::getRemaining);
+    protected void activate_ring() {
+        super.activate_ring();
+        if (rings_to_go.size() < rings_total.size() && rings_total.size() > 1) {  // not with the first or only ring
+            extend_game_time(ring_times.get(rings_taken.size()));
+        }
     }
 
+    @Override
+    protected JSONObject getSpawnPages(String state) {
+        JSONObject pages = super.getSpawnPages(state);
+        if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
+            pages = MQTT.merge(pages, MQTT.page("page0",
+                    "Time:  ${remaining}  ${wifi_signal}",
+                    "${rings_taken}/${rings_in_use} -> ${active_ring}",
+                    "${extended_time_label}",
+                    "${extended_time}"));
+        }
+        return pages;
+    }
 
     @Override
     public String getGameMode() {

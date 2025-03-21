@@ -76,7 +76,6 @@ public class Conquest extends WithRespawns {
 
         int number_of_cps = roles.get("capture_points").size();
         if (number_of_cps < 3) throw new GameSetupException("Minimum number of CPs: 3");
-        count_respawns = true;
 
         this.who_goes_first = game_parameters.optString("who_goes_first", "blue");
         this.respawn_tickets = game_parameters.getBigDecimal("respawn_tickets");

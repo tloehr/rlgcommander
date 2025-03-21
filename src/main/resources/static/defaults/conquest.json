@@ -34,7 +34,9 @@
     "intro_mp3": "<none>",
     "intro_voice": "sharon30s",
     "starter_countdown": 0,
+    "count_respawns_mode": "ask",
     "announce_sprees": true,
+    "count_respawns": true,
     "respawn_time": 0,
     "teams": [
       {

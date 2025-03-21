@@ -38,21 +38,15 @@ public class Signal extends Timed implements HasDelayedReaction {
     public Signal(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
-        count_respawns = false;
         //variables_for_score_broadcasting = new JSONObject();
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
         cps_for_red = game_parameters.getJSONObject("agents").getJSONArray("red").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
         cps_for_blue = game_parameters.getJSONObject("agents").getJSONArray("blu").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
+        register_job("signal_unlock");
         // really ?
         //roles.get("capture_points").forEach(agent -> cpFSMs.put(agent, create_CP_FSM(agent)));
         send(MQTT.CMD_PAGED, MQTT.page("page0",
                 "I am ${agentname}", "", "I will be a", "Capture Point"), roles.get("capture_points"));
-    }
-
-    @Override
-    protected void setup_scheduler_jobs() {
-        super.setup_scheduler_jobs();
-        register_job("signal_unlock");
     }
 
     @Override

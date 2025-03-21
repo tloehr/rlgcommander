@@ -24,7 +24,6 @@ public class MagSpeed extends TimedOnly {
     public MagSpeed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
         super(game_parameters, scheduler, mqttOutbound);
         this.winner = Optional.empty();
-        this.count_respawns = false;
         this.winning_token_uid = game_parameters.getString("winning_token_uid");
     }
 

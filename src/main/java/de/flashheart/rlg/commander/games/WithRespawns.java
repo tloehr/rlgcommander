@@ -47,7 +47,6 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
     public static final String _msg_ACTIVATE = "activate";
     public static final String _msg_REINIT = "reinit";
     public static final String _msg_ANOTHER_TEAM_IS_READY = "another_team_is_ready";
-//    public static final String _msg_BUTTON_01 = "respawn_signal";
 
     public static final String[] SPREE_ANNOUNCEMENTS = new String[]{"doublekill", "triplekill", "quadrakill", "pentakill", "spree"};
     public static final String[] ENEMY_SPREE_ANNOUNCEMENTS = new String[]{"enemydoublekill", "enemytriplekill", "enemyquadrakill", "enemypentakill", "enemyspree"};
@@ -57,7 +56,6 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
     private final int starter_countdown;
     private final String intro_mp3, intro_voice, pause_mp3;
     private final boolean game_lobby;
-    private final boolean announce_sprees;
     private int team1_killing_spree_length;
     private int team2_killing_spree_length;
     private String TEAM1, TEAM2;
@@ -65,7 +63,8 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
     private boolean announced_long_spree_already;
     private final JobKey delayed_announcement_jobkey, deferredRunGameJob;
     //    private final HashMap<String, JobKey> audio_jobs;
-    protected boolean count_respawns;
+    protected final boolean count_respawns;
+    private final boolean announce_sprees;
 
     // Table of Teams in rows, segments in cols
     // cells contain pairs of agent names and FSMs
@@ -89,6 +88,8 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
         this.intro_mp3 = spawn_parameters.optString("intro_mp3", "<none>");
         this.pause_mp3 = spawn_parameters.optString("pause_mp3", "in-the-air-tonight");
         this.intro_voice = spawn_parameters.optString("intro_voice", "<none>");
+
+        // may be changed in subclasses
         this.count_respawns = spawn_parameters.optBoolean("count_respawns");
 
         this.deferredRunGameJob = new JobKey("run_the_game", uuid.toString());
@@ -530,13 +531,6 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
         return json;
     }
 
-    @Override
-    public void fill_thymeleaf_model(Model model) {
-        super.fill_thymeleaf_model(model);
-        if (count_respawns)
-            team_registry.forEach((s, team) -> model.addAttribute(team.getColor() + "_respawns", team.getRespawns()));
-
-    }
 
     protected Collection<String> get_active_spawn_agents() {
         return spawn_segments.stream()
@@ -589,6 +583,13 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
                 .filter(o1 -> o1.getValue1() == segment)
                 .map(Quartet::getValue2)
                 .toList().get(0); // can only be one - ensure by throwing an exception in the constructor
+    }
+
+    @Override
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
+        if (count_respawns)
+            team_registry.forEach((s, team) -> model.addAttribute(team.getColor() + "_respawns", team.getRespawns()));
     }
 
 }

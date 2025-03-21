@@ -1,0 +1,42 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      layout:decorate="~{params/cps_and_sirens.html}">
+
+
+<head>
+    <title  th:text="#{games.street}"></title>
+    <script>
+
+        function read_form() {
+            game_parameters.game_time = parseInt(document.getElementById('game_time').value);
+            read_cps_sirens_form();
+        }
+
+        function preset_form() {
+            document.getElementById('game_time').value = game_parameters.game_time;
+            preset_cps_sirens_form();
+        }
+
+    </script>
+
+</head>
+
+<body>
+
+<section layout:fragment="gamemode_header">
+    <h1 th:text="#{games.street}"></h1>
+    <a th:href="#{params.street.href}" th:text="#{params.misc.click_here_for_more}"></a>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mb-3">
+
+        <div class="col-auto">
+            <div th:replace="~{fragments :: game_time}"></div>
+        </div>
+
+    </div>
+</section>
+
+</body>
+</html>

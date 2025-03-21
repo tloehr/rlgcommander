@@ -11,8 +11,9 @@
   "comment": "Timed Game",
   "spawns": {
     "starter_countdown": "0",
-    "count_respawns": true,
+    "count_respawns_mode": "ask",
     "announce_sprees": true,
+    "count_respawns": true,
     "teams": [
       {
         "role": "red_spawn",

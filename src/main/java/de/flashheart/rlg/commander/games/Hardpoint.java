@@ -50,7 +50,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
         super(game_parameters, scheduler, mqttOutbound);
         assert_two_teams_red_and_blue();
 
-        count_respawns = false;
         this.who_goes_first = game_parameters.optString("who_goes_first", "blue");
         this.buzzer_on_flag_activation = game_parameters.optBoolean("buzzer_on_flag_activation");
         this.winning_score = game_parameters.optLong("winning_score", 250);
@@ -71,6 +70,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
         if (delay_until_next_flag > 0L) last_line_in_description = String.format("Delay %s", delay_until_next_flag);
         last_line_in_description = StringUtils.rightPad(last_line_in_description, 18, " ") + "${wifi_signal}";
 
+        setup_scheduler_jobs();
+
         setGameDescription(
                 game_parameters.getString("comment"),
                 String.format("Winning@ %s", winning_score),
@@ -79,13 +80,12 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
         );
     }
 
-    @Override
+
     protected void setup_scheduler_jobs() {
-        super.setup_scheduler_jobs();
-        jobs.put("flag_activation", new JobKey("flag_activation", uuid.toString()));
-        jobs.put("flag_time_up", new JobKey("flag_time_up", uuid.toString()));
-        jobs.put("flag_time_out", new JobKey("flag_time_out", uuid.toString()));
-        jobs.put("delayed_reaction", new JobKey("delayed_reaction", uuid.toString()));
+        register_job("flag_activation");
+        register_job("flag_time_up");
+        register_job("flag_time_out");
+        register_job("delayed_reaction");
     }
 
     @Override
@@ -287,9 +287,9 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
 
     @Override
     public void on_reset() {
+        reset_score_table(); // muss zuerst, damit die scores initialisiert sind.
         super.on_reset();
         active_capture_point = 0;
-        reset_score_table();
     }
 
     @Override

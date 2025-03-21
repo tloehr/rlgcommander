@@ -23,6 +23,9 @@
     "game_lobby": true,
     "intro_mp3": "<none>",
     "intro_voice": "sharon30s",
+    "count_respawns_mode": "never",
+    "announce_sprees": false,
+    "count_respawns": false,
     "starter_countdown": 0,
     "respawn_time": 0,
     "teams": [

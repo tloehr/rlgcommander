@@ -8,7 +8,6 @@
 
         function read_form() {
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
-            game_parameters.spawns.count_respawns = document.getElementById('count-respawns').checked;
             game_parameters.display.line1 = document.getElementById('line1').value;
             game_parameters.display.line2 = document.getElementById('line2').value;
             game_parameters.display.line3 = document.getElementById('line3').value;
@@ -17,7 +16,6 @@
 
         function preset_form() {
             document.getElementById('game_time').value = game_parameters.game_time;
-            document.getElementById('count-respawns').checked = game_parameters.spawns.count_respawns;
             document.getElementById('line1').value = game_parameters.display.line1;
             document.getElementById('line2').value = game_parameters.display.line2;
             document.getElementById('line3').value = game_parameters.display.line3;
@@ -55,10 +53,6 @@
                    maxlength="20"/>
         </div>
 
-        <div class="col-auto align-self-center form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="count-respawns">
-            <label class="form-check-label" for="count-respawns" th:text="#{params.misc.count_respawns}"></label>
-        </div>
 
     </div>
 

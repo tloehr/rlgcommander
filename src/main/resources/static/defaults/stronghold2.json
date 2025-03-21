@@ -1,20 +1,20 @@
 {
-  "mode": "stronghold2",
   "file_version": 2,
   "silent_game": false,
-  "game_mode": "stronghold",
-  "comment": "Stronghold",
+  "game_mode": "stronghold2",
+  "comment": "Stronghold 2",
   "allow_defuse": false,
-  "game_time": 600,
+  "game_time": 60,
   "ring_time_limits": {
-    "blu": 150,
-    "grn": 150,
-    "ylw": 150,
-    "red": 150
+    "blu": 600,
+    "grn": 600,
+    "ylw": 600,
+    "red": 600
   },
   "spawns": {
-    "count_respawns": true,
-    "starter_countdown": "0",
+    "count_respawns_mode": "never",
+    "announce_sprees": false,
+    "count_respawns": false,
     "teams": [
       {
         "role": "red_spawn",

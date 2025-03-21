@@ -1,0 +1,120 @@
+<!doctype html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{params/cps_and_sirens.html}">
+
+<head>
+    <title th:text="#{games.fetch_em}"></title>
+    <script>
+
+        function read_form() {
+            game_parameters.winning_score = document.getElementById('winning_score').value;
+            game_parameters.flag_time_up = parseInt(document.getElementById('flag_time_up').value);
+            game_parameters.delay_after_color_change = parseInt(document.getElementById('delay_after_color_change').value);
+            game_parameters.who_goes_first = document.getElementById('who-goes-first').value;
+            game_parameters.buzzer_on_flag_activation = document.getElementById('check-buzzer-on-flag-activation').checked;
+            read_cps_sirens_form(game_parameters);
+        }
+
+        function preset_form() {
+            document.getElementById('winning_score').value = game_parameters.winning_score;
+            document.getElementById('flag_time_up').value = game_parameters.flag_time_up;
+            document.getElementById('delay_after_color_change').value = game_parameters.delay_after_color_change;
+            document.getElementById('check-buzzer-on-flag-activation').checked = game_parameters.buzzer_on_flag_activation;
+            selectElement('who-goes-first', game_parameters.who_goes_first);
+            preset_cps_sirens_form(game_parameters);
+        }
+
+
+    </script>
+
+</head>
+
+<body>
+<section layout:fragment="gamemode_header">
+    <h1 th:text="#{games.fetch_em}"></h1>
+    <a th:href="#{params.fetch_em.href}" th:text="#{params.misc.click_here_for_more}"></a>
+</section>
+
+<section layout:fragment="params">
+    <div class="row mt-3">
+        <div class="col-3">
+            <label for="winning_score" class="form-label" th:text="#{params.hardpoint.winning_score}"></label>
+            <input type="number" class="form-control" id="winning_score" value="250" required
+                   min="1" inputmode="decimal" pattern="\d*">
+            <small id="help3" class="form-text"
+                   th:text="#{params.hardpoint.winning_score.help}"></small>
+        </div>
+        <div class="col-3">
+            <label for="flag_time_up" class="form-label" th:text="#{params.hardpoint.flag_time_up}"></label>
+            <input type="number" class="form-control" id="flag_time_up" value="250" required
+                   min="1" inputmode="decimal" pattern="\d*">
+            <small id="help5" class="form-text"
+                   th:text="#{params.hardpoint.flag_time_up.help}"></small>
+        </div>
+        <div class="col-3">
+            <label for="who-goes-first" class="form-label" th:text="#{params.common.who_goes_first}"></label>
+            <select class="form-select" id="who-goes-first">
+                <option value="blue" th:text="#{misc.blue}"></option>
+                <option value="red" th:text="#{misc.red}"></option>
+            </select>
+            <small id="help-for-who-goes-first" class="form-text"
+                   th:text="#{params.common.who_goes_first.help}"></small>
+        </div>
+        <div class="col-auto align-self-center form-check form-switch"
+             data-toggle="tooltip" data-placement="top"
+             th:attr="title=#{params.hardpoint.buzzer_on_flag_activation.help}">
+            <input class="form-check-input" type="checkbox" role="switch" id="check-buzzer-on-flag-activation">
+            <label class="form-check-label" for="check-buzzer-on-flag-activation"
+                   th:text="#{params.hardpoint.buzzer_on_flag_activation}"></label>
+        </div>
+        <!--                       _                _   _
+          _____  ___ __   ___ _ __| |_     ___  ___| |_| |_(_)_ __   __ _ ___
+         / _ \ \/ / '_ \ / _ \ '__| __|   / __|/ _ \ __| __| | '_ \ / _` / __|
+        |  __/>  <| |_) |  __/ |  | |_    \__ \  __/ |_| |_| | | | | (_| \__ \
+         \___/_/\_\ .__/ \___|_|   \__|___|___/\___|\__|\__|_|_| |_|\__, |___/
+                  |_|                |_____|                        |___/
+        -->
+        <div class="col-auto">
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal"
+                    onclick="document.getElementById('save-game-title').value = document.getElementById('comment').value;">
+                <span class="bi bi-wrench-adjustable" th:text="'&nbsp;'+#{misc.expert_settings}"></span>
+            </button>
+
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel"
+                                th:text="#{misc.expert_settings}"></h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h3 th:text="#{misc.expert_settings}"></h3>
+                            <div class="col-auto">
+                                <label for="delay_after_color_change" class="form-label"
+                                       th:text="#{params.hardpoint.change.delay}"></label>
+                                <input type="number" class="form-control" id="delay_after_color_change" value="1"
+                                       required
+                                       min="0.5" max="2.5" step="0.5" inputmode="decimal" pattern="\d*">
+                                <small id="help2" class="form-text"
+                                       th:text="#{params.hardpoint.change.delay.help}"></small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                    th:text="#{misc.close}"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</section>
+
+</body>
+</html>

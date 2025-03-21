@@ -94,6 +94,11 @@ const statusMessages = {
     '599': 'Network connect timeout error'
 };
 
+// for parameter setup about asking if to count the respawns
+const COUNT_NEVER = 0;
+const COUNT_ASK = 1;
+const COUNT_ALWAYS = 2;
+
 /**
  * connects to the mqtt broker for every new page - the connection is terminated every time
  * a page unloads when navigating to a different one

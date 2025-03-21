@@ -13,7 +13,6 @@
             game_parameters.agents.red = from_string_list(document.getElementById('red').value);
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
             game_parameters.allow_defuse = document.getElementById('check-allow-defuse').checked;
-            game_parameters.count_respawns = document.getElementById('count-respawns').checked;
 
             game_parameters.agents.capture_points = [].concat(
                 game_parameters.agents.red,
@@ -21,7 +20,6 @@
                 game_parameters.agents.grn,
                 game_parameters.agents.blu
             );
-            console.log(JSON.stringify(game_parameters));
             read_sirens_form();
         }
 
@@ -32,7 +30,6 @@
             document.getElementById('blu').value = game_parameters.agents.blu.join();
             document.getElementById('game_time').value = game_parameters.game_time;
             document.getElementById('check-allow-defuse').checked = game_parameters.allow_defuse;
-            document.getElementById('count-respawns').checked = game_parameters.count_respawns;
 
             preset_sirens_form();
         }
@@ -59,10 +56,6 @@
             <input class="form-check-input" type="checkbox" role="switch" id="check-allow-defuse">
             <label class="form-check-label" for="check-allow-defuse"
                    th:text="#{params.stronghold.allow_defuse}"></label>
-        </div>
-        <div class="col-auto align-self-center form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="count-respawns">
-            <label class="form-check-label" for="count-respawns" th:text="#{params.misc.count_respawns}"></label>
         </div>
     </div>
     <div class="row mb-3">
