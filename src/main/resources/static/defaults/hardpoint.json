@@ -1,6 +1,6 @@
 {
   "comment": "Hardpoint",
-  "file_version": 2,
+  "file_version": 3,
   "class": "de.flashheart.rlg.commander.games.Hardpoint",
   "game_mode": "hardpoint",
   "winning_score": 300,

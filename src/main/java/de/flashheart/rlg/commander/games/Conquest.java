@@ -313,10 +313,10 @@ public class Conquest extends WithRespawns {
     }
 
     @Override
-    public JSONObject getState() {
+    public JSONObject get_full_state() {
         update_cps_held_by_list();
 
-        JSONObject json = super.getState();
+        JSONObject json = super.get_full_state();
         json.getJSONObject("played")
                 .put("remaining_blue_tickets", remaining_blue_tickets.intValue())
                 .put("remaining_red_tickets", remaining_red_tickets.intValue())

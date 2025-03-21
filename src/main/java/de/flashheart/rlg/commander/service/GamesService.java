@@ -44,6 +44,7 @@ public class GamesService {
     private final MyYamlConfiguration myYamlConfiguration;
     private final PlayedGamesService playedGamesService;
 
+    // todo: this should be a map game_id -> game
     private final Optional<Game>[] loaded_games;
     public static final int MAX_NUMBER_OF_GAMES = 1;
     private final Multimap<Integer, StateReachedListener> gameStateListeners;
@@ -95,7 +96,7 @@ public class GamesService {
         game.addStateTransistionListener(event -> {
             if (event.getMessage().equals(Game._msg_GAME_OVER)) {
                 // save this game
-                playedGamesService.save(playedGamesService.createNew(owner, game.getState()));
+                playedGamesService.save(playedGamesService.createNew(owner, game.get_full_state()));
             }
         });
 
@@ -128,13 +129,19 @@ public class GamesService {
         return loaded_games[id - 1];
     }
 
-    public JSONObject getGameState(int id) throws ArrayIndexOutOfBoundsException {
+    public JSONObject get_full_state(int id) throws ArrayIndexOutOfBoundsException {
         if (id < 1 || id > MAX_NUMBER_OF_GAMES)
             throw new GameSetupException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
         JSONObject state = new JSONObject()
                 .put("rlgcommander", String.format("%s.%s", buildProperties.getVersion(), buildProperties.get("buildNumber")))
                 .put("timestamp", JavaTimeConverter.to_iso8601());
-        return loaded_games[id - 1].isEmpty() ? state.put("played", new JSONObject().put("game_fsm_current_state", "EMPTY")): MQTT.merge(state, loaded_games[id - 1].get().getState());
+        return loaded_games[id - 1].isEmpty() ? state.put("played", new JSONObject().put("game_fsm_current_state", "EMPTY")): MQTT.merge(state, loaded_games[id - 1].get().get_full_state());
+    }
+
+    public JSONObject get_score(int game_id) throws ArrayIndexOutOfBoundsException {
+        if (game_id < 1 || game_id > MAX_NUMBER_OF_GAMES)
+            throw new GameSetupException("MAX_GAMES allowed is " + MAX_NUMBER_OF_GAMES);
+        return loaded_games[game_id - 1].isEmpty() ? new JSONObject() : loaded_games[game_id - 1].get().get_full_state();
     }
 
     public void process_message(int id, String message) throws IllegalStateException, ArrayIndexOutOfBoundsException {
@@ -153,7 +160,7 @@ public class GamesService {
     }
 
     public JSONArray get_games() {
-        return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game.get().getState()).collect(Collectors.toList()));
+        return new JSONArray(Arrays.stream(loaded_games).map(game -> game.isEmpty() ? "{}" : game.get().get_full_state()).collect(Collectors.toList()));
     }
 
     private void check_id(int id) throws IllegalStateException, ArrayIndexOutOfBoundsException {

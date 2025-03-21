@@ -14,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
@@ -372,8 +371,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
     }
 
     @Override
-    public JSONObject getState() {
-        JSONObject json = super.getState();
+    public JSONObject get_full_state() {
+        JSONObject json = super.get_full_state();
         JSONObject played = MQTT.merge(json.getJSONObject("played"), get_broadcast_vars());
         json.put("played", played);
         return json;

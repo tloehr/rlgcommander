@@ -1,6 +1,6 @@
 {
   "comment": "FarCry Assault",
-  "file_version": 1,
+  "file_version": 2,
   "class": "de.flashheart.rlg.commander.games.Farcry",
   "game_time": 600,
   "game_mode": "farcry",

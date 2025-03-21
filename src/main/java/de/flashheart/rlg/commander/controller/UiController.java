@@ -134,7 +134,7 @@ public class UiController extends MyParentController {
 
     @GetMapping("/server")
     public String server(@RequestParam int game_id, Model model) {
-        model.addAttribute("server_status", gamesService.getGameState(game_id).toString(4));
+        model.addAttribute("server_status", gamesService.get_full_state(game_id).toString(4));
         model.addAttribute("server_active", "active");
         return "server";
     }

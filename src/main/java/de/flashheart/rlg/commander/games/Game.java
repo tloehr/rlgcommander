@@ -482,7 +482,7 @@ public abstract class Game {
      *
      * @return status information to be sent if we are asked for it
      */
-    public JSONObject getState() {
+    public JSONObject get_full_state() {
         JSONObject agent_states = new JSONObject();
         cpFSMs.forEach((agentid, fsm) -> agent_states.put(agentid, fsm.getCurrentState()));
         JSONObject json = new JSONObject()
@@ -494,6 +494,15 @@ public abstract class Game {
                         .put("agent_states", agent_states)
                 );
         return json;
+    }
+
+    /**
+     * smaller version of get_full_state when we request the score only but don't need the rest
+     *
+     * @return
+     */
+    public JSONObject get_score(){
+        return new JSONObject();
     }
 
     /**

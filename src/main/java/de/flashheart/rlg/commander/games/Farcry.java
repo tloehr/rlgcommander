@@ -300,8 +300,8 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
 
 
     @Override
-    public JSONObject getState() {
-        JSONObject json = super.getState();
+    public JSONObject get_full_state() {
+        JSONObject json = super.get_full_state();
         json.getJSONObject("played")
                 .put("capture_points_taken", active_capture_point)
                 .put("max_capture_points", cpFSMs.size());

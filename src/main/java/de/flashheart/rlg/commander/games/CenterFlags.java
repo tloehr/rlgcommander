@@ -251,8 +251,8 @@ public class CenterFlags extends Timed {
     }
 
     @Override
-    public JSONObject getState() {
-        JSONObject json = super.getState();
+    public JSONObject get_full_state() {
+        JSONObject json = super.get_full_state();
         json.getJSONObject("played")
                 .put("scores", new JSONObject(scores.columnMap()));
         return json;

@@ -351,10 +351,10 @@ public class Stronghold extends Timed {
     }
 
     @Override
-    public JSONObject getState() {
+    public JSONObject get_full_state() {
         //log.debug("getState");
-        JSONObject json = super.getState();
-        JSONObject played = MQTT.merge(super.getState().getJSONObject("played"), get_broadcast_vars());
+        JSONObject json = super.get_full_state();
+        JSONObject played = MQTT.merge(super.get_full_state().getJSONObject("played"), get_broadcast_vars());
         json.put("played", played);
         return json;
     }

@@ -1,6 +1,6 @@
 {
   "game_mode": "timed_only",
-  "file_version": 1,
+  "file_version": 2,
   "game_time": 600,
   "silent_game": false,
   "display": {

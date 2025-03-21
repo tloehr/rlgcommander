@@ -1,6 +1,6 @@
 {
   "comment": "Signal",
-  "file_version": 1,
+  "file_version": 2,
   "class": "de.flashheart.rlg.commander.games.Signal",
   "game_mode": "signal",
   "unlock_time": 10,

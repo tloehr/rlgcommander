@@ -223,8 +223,8 @@ public class Signal extends Timed implements HasDelayedReaction {
     }
 
     @Override
-    public JSONObject getState() {
-        JSONObject json = super.getState();
+    public JSONObject get_full_state() {
+        JSONObject json = super.get_full_state();
         json.getJSONObject("played")
                 .put("red_points", red_points)
                 .put("blue_points", blue_points);

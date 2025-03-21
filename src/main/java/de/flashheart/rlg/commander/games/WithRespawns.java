@@ -513,8 +513,8 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
     }
 
     @Override
-    public JSONObject getState() {
-        JSONObject json = super.getState();
+    public JSONObject get_full_state() {
+        JSONObject json = super.get_full_state();
         json.getJSONObject("played")
                 .put("game_lobby", game_lobby)
                 .put("starter_countdown", starter_countdown)

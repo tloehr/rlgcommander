@@ -1,6 +1,6 @@
 {
   "comment": "Fetch em all",
-  "file_version": 1,
+  "file_version": 2,
   "class": "de.flashheart.rlg.commander.games.FetchEm",
   "game_mode": "fetch_em",
   "winning_score": 300,

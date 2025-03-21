@@ -7,7 +7,6 @@ import de.flashheart.rlg.commander.misc.JavaTimeConverter;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
@@ -120,8 +119,8 @@ public abstract class Timed extends WithRespawns {
     }
 
     @Override
-    public JSONObject getState() {
-        JSONObject json = super.getState();
+    public JSONObject get_full_state() {
+        JSONObject json = super.get_full_state();
         json.getJSONObject("played")
                 .put("match_length", game_time)
                 .put("start_time", start_time != null ? start_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")

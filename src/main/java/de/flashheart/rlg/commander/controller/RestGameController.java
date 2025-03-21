@@ -46,11 +46,11 @@ public class RestGameController extends MyParentController {
     @PostMapping("/save")
     public ResponseEntity<?> save(@RequestParam int game_id,
                                   ApiKeyAuthentication authentication) {
-        JSONObject game_state = gamesService.getGameState(game_id);
+        JSONObject game_state = gamesService.get_full_state(game_id);
         if (!game_state.has("setup"))
             throw new IllegalArgumentException(String.format("Game %s does not exist", game_id));
         String title = game_state.getJSONObject("setup").getString("comment") + " @ " + LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM));
-        savedGamesService.createNew(title, authentication.getUser(), gamesService.getGameState(game_id).getJSONObject("setup"));
+        savedGamesService.createNew(title, authentication.getUser(), gamesService.get_full_state(game_id).getJSONObject("setup"));
         return new ResponseEntity<>(new JSONObject().put("name", title).toString(), HttpStatus.CREATED);
     }
 
@@ -77,7 +77,12 @@ public class RestGameController extends MyParentController {
 
     @GetMapping("/status")
     public ResponseEntity<?> status_game(@RequestParam(name = "game_id") int game_id) {
-        return new ResponseEntity<>(gamesService.getGameState(game_id).toString(4), HttpStatus.OK);
+        return new ResponseEntity<>(gamesService.get_full_state(game_id).toString(4), HttpStatus.OK);
+    }
+
+    @GetMapping("/score")
+    public ResponseEntity<?> get_score(@RequestParam(name = "game_id") int game_id) {
+        return new ResponseEntity<>(gamesService.get_full_state(game_id).toString(4), HttpStatus.OK);
     }
 
 //    @GetMapping("/current_state")
