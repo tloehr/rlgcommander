@@ -40,7 +40,8 @@
     "respawn_time": 0,
     "game_lobby": false,
     "intro_mp3": "<none>",
-    "intro_voice": "<none>"
+    "intro_voice": "<none>",
+    "standby_mp3": "<none>"
   },
   "class": "de.flashheart.rlg.commander.games.MagSpeed",
   "resume_countdown": "0",

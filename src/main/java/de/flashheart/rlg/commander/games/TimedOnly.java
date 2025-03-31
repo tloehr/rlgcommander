@@ -8,16 +8,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.util.Locale;
 
 @Log4j2
 public class TimedOnly extends Timed {
 
-    public TimedOnly(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public TimedOnly(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
     }
 
     @Override

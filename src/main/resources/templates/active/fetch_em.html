@@ -11,11 +11,9 @@
         <h2 th:text="#{active.message.game_info}"></h2>
         <ul>
             <li th:utext="#{active.hardpoint.game_info.winning_score(${winning_score})}"></li>
-            <li> <span th:utext="#{active.hardpoint.game_info.active_flag(${flag_time_up})}"></span>
-                &nbsp;
+            <li> <span th:utext="#{active.hardpoint.game_info.active_flag(${flag_time_up})}"></span>&nbsp;
                 <span th:utext="#{active.hardpoint.game_info.who_goes_first(${who_goes_first_style}, ${who_goes_first})}"></span>
             </li>
-            <li th:text="#{active.hardpoint.game_info.current_flag(${active_agent},${active_state})}"></li>
         </ul>
     </div>
 </section>

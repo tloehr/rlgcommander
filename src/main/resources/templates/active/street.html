@@ -1,12 +1,30 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{active/base.html}">
-<head> <title th:text="#{games.street}"></title></head>
+<head><title th:text="#{games.street}"></title></head>
 <body>
+
+<section layout:fragment="game-parameters">
+    <ul>
+        <li>
+            <div style="display: inline-block;" th:text="#{misc.capture_points}"></div>
+            :&nbsp;
+            <div style="display: inline-block;" th:text="${capture_points}"></div>
+        </li>
+    </ul>
+</section>
 
 <section layout:fragment="score">
     <div class="col-auto">
-        <h2 th:text="#{misc.coming_soon}"></h2>
+        <h2 th:text="#{misc.progress}"></h2>
+        <h3 th:text="#{active.farcry.progress_text(${taken_points.size()}, ${capture_points.size()})}"></h3>
+        <ul>
+
+            <li th:each="agent : ${taken_points}"><s th:text="${agent}"></s></li>
+            <li th:if="${game_is_in_a_running_state}"><strong th:text="${active_point}"></strong></li>
+            <li th:each="agent : ${points_to_go}" th:text="${agent}"></li>
+
+        </ul>
     </div>
 </section>
 

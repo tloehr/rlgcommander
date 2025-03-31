@@ -1,6 +1,5 @@
 package de.flashheart.rlg.commander.games;
 
-import com.github.ankzz.dynamicfsm.action.FSMAction;
 import com.github.ankzz.dynamicfsm.fsm.FSM;
 import de.flashheart.rlg.commander.controller.MQTT;
 import de.flashheart.rlg.commander.controller.MQTTOutbound;
@@ -8,25 +7,26 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
+import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Log4j2
 public class Street extends Timed {
-    public static final String _msg_GO = "go";
-    public static final String _flag_state_TAKEN = "TAKEN";
-    protected final List<String> capture_points;
+    protected final List<String> capture_points, taken_points;
     private int active_capture_point;
 
-    public Street(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
-        this.capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).collect(Collectors.toList());
+    public Street(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
+        this.capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).sorted().collect(Collectors.toList());
+        this.taken_points = new ArrayList<>();
         this.active_capture_point = 0;
     }
 
@@ -38,14 +38,6 @@ public class Street extends Timed {
             fsm.setStatesAfterTransition(_flag_state_STAND_BY, (state, obj) -> cp_to_stand_by(agent));
             fsm.setStatesAfterTransition(_flag_state_ACTIVE, (state, obj) -> cp_to_active(agent));
             fsm.setStatesAfterTransition(_flag_state_TAKEN, (state, obj) -> taken(agent));
-//            fsm.setAction(_flag_state_GET_READY, _msg_GO, new FSMAction() {
-//                @Override
-//                public boolean action(String curState, String message, String nextState, Object args) {
-//                    send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
-//                    return true;
-//                }
-//            });
-
             return fsm;
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             log.error(ex);
@@ -54,7 +46,7 @@ public class Street extends Timed {
     }
 
     protected void cp_prolog(String agent) {
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.WHITE, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.RED, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agent);
         send(MQTT.CMD_PAGED,
                 MQTT.page("page0",
@@ -67,24 +59,25 @@ public class Street extends Timed {
                 MQTT.page("page0",
                         "I am ${agentname}", "", "", "Flag standing by"),
                 agent);
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.RED, MQTT.RECURRING_SCHEME_NORMAL), agent);
     }
 
     protected void cp_to_active(String agent) {
         if (active_capture_point > 0) // after the first flag has been taken, not earlier.
             send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.RED, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.YELLOW, MQTT.RECURRING_SCHEME_NORMAL), agent);
     }
 
     protected void taken(String agent) {
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.GREEN, MQTT.RECURRING_SCHEME_NORMAL), agent);
+        taken_points.add(agent);
+        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _flag_state_TAKEN));
         if (!is_last(agent)) {
-            // the game is over now. no siren needed.
             send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.EVENT_SIREN, MQTT.SCHEME_LONG), roles.get("sirens"));
             active_capture_point++;
             cpFSMs.get(capture_points.get(active_capture_point)).ProcessFSM(_msg_GO);
             broadcast_score();
-        } else game_fsm.ProcessFSM(_msg_GAME_OVER);
+        } else game_fsm.ProcessFSM(_msg_GAME_OVER); // the game is over now. no siren needed.
     }
 
     @Override
@@ -107,6 +100,7 @@ public class Street extends Timed {
     @Override
     public void on_reset() {
         super.on_reset();
+        taken_points.clear();
         active_capture_point = 0;
     }
 
@@ -128,6 +122,20 @@ public class Street extends Timed {
         vars.put("taken", taken_flags);
         //vars.put("percent", bd_taken.divide(new BigDecimal(cpFSMs.size()), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
         return vars;
+    }
+
+
+    @Override
+    public void fill_thymeleaf_model(Model model) {
+        super.fill_thymeleaf_model(model);
+        ArrayList<String> points_to_go = new ArrayList<>(capture_points);
+        final String active_point = capture_points.get(active_capture_point);
+        points_to_go.removeAll(taken_points);
+        points_to_go.remove(active_point);
+        model.addAttribute("capture_points", capture_points);
+        model.addAttribute("active_point", active_point);
+        model.addAttribute("taken_points", taken_points);
+        model.addAttribute("points_to_go", points_to_go);
     }
 
     @Override

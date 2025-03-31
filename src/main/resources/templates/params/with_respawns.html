@@ -9,14 +9,11 @@
         function read_respawns_form() {
             game_parameters.spawns.intro_mp3 = document.getElementById('intro_mp3').value;
             game_parameters.spawns.intro_voice = document.getElementById('intro_voice').value;
-            //game_parameters.agents.audio = from_string_list(document.getElementById('audio_group').value);
+            game_parameters.spawns.standby_mp3 = document.getElementById('standby_mp3').value;
             game_parameters.silent_game = document.getElementById('check-silent').checked;
             game_parameters.spawns.game_lobby = document.getElementById('check-lobby').checked;
-
-            if (game_parameters.spawns.count_respawns_mode !== 'ask'){
-                game_parameters.spawns.count_respawns = document.getElementById('check-count-respawns').checked;
-                game_parameters.spawns.announce_sprees = document.getElementById('check-spree').checked;
-            }
+            game_parameters.spawns.count_respawns = document.getElementById('check-count-respawns').checked;
+            game_parameters.spawns.announce_sprees = document.getElementById('check-spree').checked;
 
             // we don't need a countdown timer, when both sound selections are none
             if (game_parameters.spawns.intro_mp3 === '<none>' &&
@@ -40,16 +37,17 @@
             number_of_teams = game_parameters.spawns.teams.length;
             document.getElementById('intro_mp3').value = game_parameters.spawns.intro_mp3;
             document.getElementById('intro_voice').value = game_parameters.spawns.intro_voice;
+            document.getElementById('standby_mp3').value = game_parameters.spawns.standby_mp3;
             //document.getElementById('audio_group').value = game_parameters.agents.audio ? game_parameters.agents.audio.join() : "";
             document.getElementById('check-lobby').checked = game_parameters.spawns.game_lobby;
 
             // these values are always present - no matter what the value of count_respawns_mode is
             document.getElementById('check-count-respawns').checked = game_parameters.spawns.count_respawns;
             document.getElementById('check-spree').checked = game_parameters.spawns.announce_sprees;
-            if (game_parameters.spawns.count_respawns_mode !== 'ask'){
+            if (game_parameters.spawns.count_respawns_mode !== 'ask') {
                 document.getElementById('check-count-respawns-div').classList.add("d-none"); // hide
             }
-            if (game_parameters.spawns.count_respawns_mode === 'never'){
+            if (game_parameters.spawns.count_respawns_mode === 'never') {
                 document.getElementById('check-spree-div').classList.add("d-none"); // hide
             }
 
@@ -150,6 +148,14 @@
             </select>
         </div>
 
+        <div class="col-md-3 col-sm-auto">
+            <label for="standby_mp3" class="form-label" th:text="#{params.with_respawns.standby_song}"></label>
+            <select class="form-select " style="height: 40px;" id="standby_mp3">
+                <option selected value="<none>" th:text="#{params.with_respawns.no_standby_song}"></option>
+                <option th:each="standby : ${standbys}" th:value="${standby.value0}" th:text="${standby.value1}"></option>
+            </select>
+        </div>
+
         <!-- todo: audio group tag for later -->
         <!--        <div class="d-none  col-md-3  col-sm-auto">-->
         <!--            <label for="audio_group" class="form-label" th:text="#{params.with_respawns.audio_group}"></label>-->
@@ -177,7 +183,8 @@
                 <input class="form-check-input" type="checkbox" role="switch" id="check-count-respawns" onchange="
                 document.getElementById('check-spree').checked = this.checked;
                 document.getElementById('check-spree').disabled = !this.checked;">
-                <label class="form-check-label" for="check-count-respawns" th:text="#{params.misc.count_respawns}"></label>
+                <label class="form-check-label" for="check-count-respawns"
+                       th:text="#{params.misc.count_respawns}"></label>
             </div>
 
             <div id="check-spree-div" class="col-auto align-self-center form-check form-switch">

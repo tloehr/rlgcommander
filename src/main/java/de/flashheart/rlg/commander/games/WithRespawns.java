@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -54,14 +55,14 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
 
     // will be set in javascript automatically by voice selection
     private final int starter_countdown;
-    private final String intro_mp3, intro_voice, pause_mp3;
+    private final String intro_mp3, intro_voice, standby_mp3;
     private final boolean game_lobby;
     private int team1_killing_spree_length;
     private int team2_killing_spree_length;
-    private String TEAM1, TEAM2;
+    private String TEAM1, TEAM2; // for spree announcements
     private Optional<Pair<String, Integer>> team_on_a_spree;
     private boolean announced_long_spree_already;
-    private final JobKey delayed_announcement_jobkey, deferredRunGameJob;
+    //private final JobKey delayed_announcement_jobkey, deferredRunGameJob;
     //    private final HashMap<String, JobKey> audio_jobs;
     protected final boolean count_respawns;
     private final boolean announce_sprees;
@@ -78,22 +79,22 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
     protected final int respawn_timer;
     protected int active_segment;
 
-    public WithRespawns(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public WithRespawns(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
 
         final JSONObject spawn_parameters = game_parameters.getJSONObject("spawns");
         this.respawn_timer = spawn_parameters.optInt("respawn_time");
         this.game_lobby = spawn_parameters.optBoolean("game_lobby");
         this.starter_countdown = spawn_parameters.optInt("starter_countdown");
         this.intro_mp3 = spawn_parameters.optString("intro_mp3", "<none>");
-        this.pause_mp3 = spawn_parameters.optString("pause_mp3", "in-the-air-tonight");
+        this.standby_mp3 = spawn_parameters.optString("standby_mp3", "<none>");
         this.intro_voice = spawn_parameters.optString("intro_voice", "<none>");
 
         // may be changed in subclasses
         this.count_respawns = spawn_parameters.optBoolean("count_respawns");
 
-        this.deferredRunGameJob = new JobKey("run_the_game", uuid.toString());
-        this.delayed_announcement_jobkey = new JobKey("delayedannounce", uuid.toString());
+        register_job("run_the_game");
+        register_job("delayed_announcement");
 
         //this.spawn_segments = HashBasedTable.create();
         this.spawn_segments = new ArrayList<>();
@@ -284,7 +285,8 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
     @Override
     public void on_run() {
         super.on_run();
-        deleteJob(deferredRunGameJob);
+        deleteJob("run_the_game");
+        play("standby", "",""); // Just in case we started manually
         send_message_to_agents_in_segment(active_segment, _msg_RUN);
     }
 
@@ -301,6 +303,10 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
         if (message.equals(_msg_CONTINUE)) send_message_to_agents_in_segment(active_segment, _msg_CONTINUE);
     }
 
+    @Override
+    protected void on_prepare() {
+        play("standby", AGENT_STANDBY_PATH, standby_mp3);
+    }
 
     @Override
     public void on_reset() {
@@ -315,8 +321,7 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
             }
         }
         active_segment = 0;
-        deleteJob(deferredRunGameJob);
-
+        deleteJob("run_the_game");
         send_message_to_all_inactive_segments(_msg_STANDBY);
         send_message_to_agents_in_segment(active_segment, _msg_RESET);
     }
@@ -329,13 +334,14 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
             else send_message_to_agents_in_segment(active_segment, _msg_PREPARE);
         }
         if (state.equals(_state_TEAMS_READY)) {
+            play("standby", "","");
             if (starter_countdown > 0) {
                 send_message_to_agents_in_segment(active_segment, _msg_START_COUNTDOWN);
                 // central audio handling via role "audio"
                 // the intro music and countdown are the same for all players. Hence, the "audio" group
                 play("music", AGENT_MUSIC_PATH, intro_mp3);
                 play("countdown", AGENT_VOICE_PATH, intro_voice);
-                create_job_with_reschedule(deferredRunGameJob, LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
+                create_job_with_reschedule("run_the_game", LocalDateTime.now().plusSeconds(starter_countdown), RunGameJob.class, Optional.empty());
             } else {
                 process_internal_message(_msg_RUN);
             }
@@ -393,7 +399,6 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
     @Override
     public void on_external_message(String sender, String source, JSONObject message) {
         if (source.equals(_msg_RFID)) {
-//            String spawn_role = spawn_segments.column(active_segment).get("");
             get_spawn_role_for(sender, active_segment).ifPresent(spawn_role -> {
                 on_spawn_rfid_scanned(sender, team_registry.get(spawn_role), message.getString("uid"));
             });
@@ -433,8 +438,7 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
 
         log.trace(this_team);
 
-        if (!announce_sprees) return;
-        // this is a special case only for two teams.
+        if (!announce_sprees) return; // only for two teams
         if (spawn_role.equals(TEAM1)) {
             // a respawn here resets the spree of the other tea
             team1_killing_spree_length++;
@@ -465,14 +469,14 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
 
     private void prepare_spree_announcement() {
         team_on_a_spree = Optional.empty();
-        deleteJob(delayed_announcement_jobkey);
+        deleteJob("delayed_announcement");
         if (team1_killing_spree_length > 1)
             team_on_a_spree = Optional.of(new ImmutablePair<>(TEAM1, team1_killing_spree_length));
         if (team2_killing_spree_length > 1)
             team_on_a_spree = Optional.of(new ImmutablePair<>(TEAM2, team2_killing_spree_length));
         team_on_a_spree.ifPresent(stringIntegerPair -> {
             if (!announced_long_spree_already)
-                create_job_with_reschedule(delayed_announcement_jobkey, LocalDateTime.now().plusSeconds(3), DelayedAudioJob.class, Optional.empty());
+                create_job_with_reschedule("delayed_announcement", LocalDateTime.now().plusSeconds(3), DelayedAudioJob.class, Optional.empty());
         });
     }
 

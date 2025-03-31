@@ -4,8 +4,19 @@
 <head><title>Conquest</title></head>
 <body>
 
-<section layout:fragment="score">
 
+<section layout:fragment="game-parameters">
+        <ul>
+            <li>
+                <div style="display: inline-block;"  class="fw-bold" th:text="#{params.conquest.respawn_tickets}"></div>
+                :&nbsp;
+                <div style="display: inline-block;"  th:text="${respawn_tickets}"></div>
+            </li>
+            <li th:utext="#{active.common.game_info.who_goes_first(${who_goes_first_style}, ${who_goes_first})}"></li>
+        </ul>
+</section>
+
+<section layout:fragment="score">
     <div class="col-auto">
         <h2 th:text="|Team Red &#8594; ${remaining_red_tickets} &#8660; ${remaining_blue_tickets}  &#8592; Team Blue|"></h2>
 

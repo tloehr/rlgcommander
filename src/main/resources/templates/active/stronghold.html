@@ -1,8 +1,43 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{active/base.html}">
-<head> <title th:text="#{games.stronghold}"></title></head>
+<head><title th:text="#{games.stronghold}"></title></head>
 <body>
+
+<section layout:fragment="game-parameters">
+
+        <ul>
+            <li th:if="${rings_to_go.contains('red')}">
+            <span class="text-danger fw-bold"
+                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.red}:|">
+            </span>
+                <ul>
+                    <li th:text="${role_red}"></li>
+                </ul>
+            </li>
+            <li th:if="${rings_to_go.contains('ylw')}">
+            <span class="text-warning fw-bold"
+                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.yellow}:|"></span>
+                <ul>
+                    <li th:text="${role_ylw}"></li>
+                </ul>
+            </li>
+            <li th:if="${rings_to_go.contains('grn')}">
+            <span class="text-success fw-bold"
+                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.green}:|"></span>
+                <ul>
+                    <li th:text="${role_grn}"></li>
+                </ul>
+            </li>
+            <li th:if="${rings_to_go.contains('blu')}">
+            <span class="text-primary fw-bold"
+                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.blue}:|"></span>
+                <ul>
+                    <li th:text="${role_blu}"></li>
+                </ul>
+            </li>
+        </ul>
+</section>
 
 <section layout:fragment="score">
     <h2 th:text="#{misc.progress}"></h2>
@@ -13,16 +48,18 @@
                  style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
 
-        <h3 th:if="${total_rings} gt 1"  th:text="#{active.stronghold.current_ring}"></h3>
+        <h3 th:if="${total_rings} gt 1" th:text="#{active.stronghold.current_ring}"></h3>
         <div class="progress">
             <div id="my_segment_bar" class="progress-bar" role="progressbar" aria-label="mypb1"
                  style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
 
         <div class="d-inline-block">
-            <span class="me-2" th:if="${broken_agents.size} gt 0" th:text="#{active.stronghold.broken_capture_points}+'&nbsp;'"><del id="broken_agents_list"></del>
+            <span class="me-2" th:if="${broken_agents.size} gt 0"
+                  th:text="#{active.stronghold.broken_capture_points}+'&nbsp;'"><del id="broken_agents_list"></del>
             </span>
-            <span th:if="${stable_agents.size} gt 0"  th:text="#{active.stronghold.stable_capture_points}+'&nbsp;'"><strong
+            <span th:if="${stable_agents.size} gt 0"
+                  th:text="#{active.stronghold.stable_capture_points}+'&nbsp;'"><strong
                     id="stable_agents_list"></strong>
             </span>
         </div>
@@ -36,7 +73,7 @@
         const segment_colors = ['bg-danger', 'bg-warning', 'bg-success', 'bg-primary'];
         const rings_taken = parseInt(/*[[${rings_taken}]]*/ 'default');
         const total_rings = parseInt(/*[[${total_rings}]]*/ 'default');
-        const rings_to_go = total_rings - rings_taken;
+
         const remain_in_this_segment = parseInt(/*[[${remain_in_this_segment}]]*/ 'default');
         const total_in_this_segment = parseInt(/*[[${total_in_this_segment}]]*/ 'default');
         const segment_progress = remain_in_this_segment / total_in_this_segment * 100;

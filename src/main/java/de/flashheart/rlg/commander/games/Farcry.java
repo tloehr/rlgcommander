@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.Scheduler;
 import org.quartz.SimpleScheduleBuilder;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -50,8 +51,8 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
     boolean overtime;
     private boolean ran_once_already;
 
-    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws GameSetupException, ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public Farcry(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws GameSetupException, ArrayIndexOutOfBoundsException, ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
 
         estimated_end_time = null;
 

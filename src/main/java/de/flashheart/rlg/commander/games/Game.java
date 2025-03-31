@@ -20,6 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -79,6 +80,7 @@ public abstract class Game {
     public static final String _flag_state_GET_READY = "GET_READY";
     public static final String _flag_state_STAND_BY = "STAND_BY";
     public static final String _flag_state_ACTIVE = "ACTIVE";
+    public static final String _flag_state_TAKEN = "TAKEN";
     public static final String _flag_state_AFTER_FLAG_TIME_UP = "AFTER_FLAG_TIME_IS_UP";
     public static final String[] OUT_ALL_LEDS = new String[]{OUT_LED_WHITE, OUT_LED_RED, OUT_LED_BLUE, OUT_LED_YELLOW, OUT_LED_GREEN};
     public static final List<String> _flag_ALL_RUNNING_STATES = List.of(_flag_state_RED, _flag_state_YELLOW, _flag_state_GREEN, _flag_state_BLUE);
@@ -89,7 +91,7 @@ public abstract class Game {
     public static final String AGENT_MUSIC_PATH = "music";
     public static final String AGENT_VOICE_PATH = "countdown";
     public static final String AGENT_EVENT_PATH = "events";
-    public static final String AGENT_PAUSE_PATH = "pause";
+    public static final String AGENT_STANDBY_PATH = "pause";
 
     // all message must be sent via THIS base.html classes send method to implement "SILENT_GAME"
     private final MQTTOutbound mqttOutbound;
@@ -103,6 +105,8 @@ public abstract class Game {
     private final JSONObject game_parameters;
     protected final UUID uuid;
     protected final Scheduler scheduler;
+    protected final MessageSource messageSource;
+    protected final Locale locale;
     @Getter
     protected final Multimap<String, String> agents, roles;
     protected final HashMap<String, String> map_flag_state_to_led_color;
@@ -114,7 +118,9 @@ public abstract class Game {
     protected final Map<String, FSM> cpFSMs;
     private LocalDateTime game_init_at;
 
-    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws GameSetupException, ParserConfigurationException, IOException, SAXException, JSONException {
+    Game(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws GameSetupException, ParserConfigurationException, IOException, SAXException, JSONException {
+        this.messageSource = messageSource;
+        this.locale = locale;
         log.info("\n{}", FigletFont.convertOneLine(getGameMode()));
         uuid = UUID.randomUUID();
         game_init_at = LocalDateTime.now();
@@ -231,6 +237,11 @@ public abstract class Game {
         if (message.equals(_msg_READY)) on_ready();
         if (message.equals(_msg_GAME_OVER)) on_game_over();
         if (message.equals(_msg_RESET)) on_reset();
+        if (message.equals(_msg_PREPARE)) on_prepare();
+    }
+
+    protected boolean is_in_a_running_state() {
+        return game_fsm_get_current_state().matches(_state_PAUSING + "|" + _state_RUNNING + "|" + _state_RESUMING);
     }
 
     /**
@@ -311,6 +322,8 @@ public abstract class Game {
     }
 
     protected abstract void on_ready();
+
+    protected abstract void on_prepare();
 
     public void on_game_over() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
@@ -457,11 +470,12 @@ public abstract class Game {
                 .sorted((o1, o2) -> o1.getValue3().compareTo(o2.getValue3()) * -1)
                 .collect(Collectors.toList()));
         model.addAttribute("game_fsm_current_state", game_fsm_get_current_state());
+        model.addAttribute("game_is_in_a_running_state", is_in_a_running_state());
         model.addAttribute("has_zeus", hasZeus());
         model.addAttribute("game_mode", getGameMode());
         model.addAttribute("game_init_at", JavaTimeConverter.to_iso8601(game_init_at));
         model.addAttribute("cps", new JSONArray(cpFSMs.keySet().stream().sorted(String::compareTo).collect(Collectors.toList())));
-        //game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList()));
+        roles.keySet().forEach(role -> model.addAttribute("role_" + role, roles.get(role)));
     }
 
     public String game_fsm_get_current_state() {
@@ -497,11 +511,11 @@ public abstract class Game {
     }
 
     /**
-     * smaller version of get_full_state when we request the score only but don't need the rest
+     * smaller version of get_full_state when we request the score or remaining time only but don't need the rest
      *
      * @return
      */
-    public JSONObject get_score(){
+    public JSONObject get_tiny_state() {
         return new JSONObject();
     }
 
@@ -556,6 +570,10 @@ public abstract class Game {
 
     protected String get_signal(String key, String def) {
         return game_parameters.optJSONObject("signals", new JSONObject()).optString(key, def);
+    }
+
+    protected String i18n(String message) {
+        return messageSource.getMessage(message, null, locale);
     }
 
     protected JSONObject getSpawnPages(String state) {

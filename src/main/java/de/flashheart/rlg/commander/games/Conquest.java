@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -48,7 +49,7 @@ public class Conquest extends WithRespawns {
      * <b>game_parameters</b>.
      *
      * <ul>
-     * <li><b>starting_tickets</b>: the number of respawn tickets each team starts with</li>
+     * <li><b>respawn_tickets</b>: the number of respawn tickets each team starts with</li>
      * <li><b>ticket_price_to_respawn</b>: the number of tickets lost, when a player pushes the spawn button</li>
      * <li><b>minimum_cp_for_bleeding</b>: the minimum number of capture points a team has to hold before the ticket bleeding starts for the other team</li>
      * <li><b>starting_bleed_interval</b>: number of seconds for the first bleeding interval step</li>
@@ -69,8 +70,8 @@ public class Conquest extends WithRespawns {
      * @param mqttOutbound    internal mqtt reference as this class is NOT a spring component and therefore cannot use
      *                        DI.
      */
-    public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public Conquest(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
 
         assert_two_teams_red_and_blue();
 
@@ -125,11 +126,6 @@ public class Conquest extends WithRespawns {
         log.trace("Interval Table: {}", Arrays.toString(interval_table));
         log.trace("Ticket Bleeding per {} seconds: {}", SCORE_CALCULATION_EVERY_N_SECONDS, Arrays.toString(ticket_bleed_table));
         log.trace("gametime≈{}-{}", min_time.format(DateTimeFormatter.ofPattern("mm:ss")), max_time.format(DateTimeFormatter.ofPattern("mm:ss")));
-
-        //ticketBleedingJobkey = new JobKey("ticketbleeding", uuid.toString());
-
-
-        // todo: add "who_goes_first": "blue",
 
         setGameDescription(game_parameters.getString("comment"),
                 String.format("Tickets: %s", respawn_tickets.intValue()),
@@ -343,6 +339,7 @@ public class Conquest extends WithRespawns {
         model.addAttribute("cps_held_by_red", cps_held_by_red.stream().sorted().collect(Collectors.toList()));
         model.addAttribute("remaining_blue_tickets", remaining_blue_tickets.intValue());
         model.addAttribute("remaining_red_tickets", remaining_red_tickets.intValue());
+        model.addAttribute("respawn_tickets", respawn_tickets.intValue());
         model.addAttribute("score_data_red", score_data_red.toList());
         model.addAttribute("score_data_blue", score_data_blue.toList());
 

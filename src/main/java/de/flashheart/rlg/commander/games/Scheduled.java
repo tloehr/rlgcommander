@@ -6,12 +6,14 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.*;
+import org.springframework.context.MessageSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.quartz.JobBuilder.newJob;
@@ -25,8 +27,8 @@ public abstract class Scheduled extends Game {
     private final HashMap<JobKey, Trigger> jobkey_trigger_map;
     protected final HashMap<String, JobKey> jobs;
 
-    public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public Scheduled(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
         jobkey_trigger_map = new HashMap<>();
         jobs = new HashMap<>();
         try {
@@ -36,7 +38,7 @@ public abstract class Scheduled extends Game {
         }
     }
 
-    protected void register_job(String job_key){
+    protected void register_job(String job_key) {
         jobs.put(job_key, new JobKey(job_key, uuid.toString()));
     }
 
@@ -57,9 +59,11 @@ public abstract class Scheduled extends Game {
         }
     }
 
-    private void delete_all_jobs(){
+    private void delete_all_jobs() {
         jobs.values().forEach(this::deleteJob);
-    };
+    }
+
+    ;
 
     protected void create_job(JobKey jobKey, LocalDateTime start_time, Class<? extends Job> clazz, Optional<JobDataMap> jobDataMap) {
         try {

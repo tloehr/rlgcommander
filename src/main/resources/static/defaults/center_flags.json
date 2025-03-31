@@ -24,9 +24,10 @@
   "spawns": {
     "game_lobby": true,
     "intro_mp3": "<none>",
+    "standby_mp3": "<none>",
     "intro_voice": "sharon30s",
     "starter_countdown": 0,
-    "count_respawns_mode": "never",
+    "count_respawns_mode": "ask",
     "announce_sprees": false,
     "count_respawns": false,
     "respawn_time": 0,

@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.TimeZone;
 
@@ -48,8 +50,8 @@ public abstract class Timed extends WithRespawns {
     protected ZonedDateTime ldt_game_time;
     private long last_extended_time;
 
-    Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    Timed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
         this.game_time = game_parameters.getLong("game_time");
         ldt_game_time = seconds_to_zdt(game_time);
         last_extended_time = 0L;
@@ -84,13 +86,28 @@ public abstract class Timed extends WithRespawns {
         if (end_time == null) return;
         last_extended_time = seconds;
         reschedule_job("game_timer", seconds);
-        add_in_game_event(new JSONObject().put("item", "extended timed").put("time", seconds_to_zdt(last_extended_time).format(DateTimeFormatter.ofPattern("mm:ss"))));
+        add_in_game_event(new JSONObject().put("item", "extended_timed").put("time", seconds_to_zdt(last_extended_time).format(DateTimeFormatter.ofPattern("mm:ss"))));
         end_time = end_time.plusSeconds(seconds);
+    }
+
+    @Override
+    String get_in_game_event_description(JSONObject event) {
+        String result = super.get_in_game_event_description(event);
+        if (result.isEmpty()) {
+            String type = event.getString("type");
+            if (type.equalsIgnoreCase("in_game_state_change")) {
+                if (event.getString("item").equals("extended_timed")) {
+                    return i18n("active.timed.extended_game_time_by") + " " + event.getString("time");
+                }
+            }
+        }
+        return result;
     }
 
     @Override
     public void on_reset() {
         super.on_reset();
+        last_extended_time = 0L;
         start_time = null;
         end_time = null;
     }
@@ -109,6 +126,15 @@ public abstract class Timed extends WithRespawns {
     public void game_time_is_up() {
         log.info("Game time is up");
         game_fsm.ProcessFSM(_msg_GAME_OVER);
+    }
+
+
+    @Override
+    protected JSONObject get_broadcast_vars() {
+        JSONObject vars = super.get_broadcast_vars();
+        vars.put("extended_time_label", last_extended_time > 0 ? "Game Time extended by" : "");
+        vars.put("extended_time", last_extended_time > 0 ? seconds_to_zdt(last_extended_time).format(DateTimeFormatter.ofPattern("mm:ss")) : "");
+        return vars;
     }
 
     @Override

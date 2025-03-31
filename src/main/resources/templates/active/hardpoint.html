@@ -4,24 +4,30 @@
 <head><title>Hardpoint</title></head>
 <body>
 
-<section layout:fragment="score">
+<section layout:fragment="game-parameters">
 
-    <div class="col-auto">
-        <h2 th:text="|#{active.team_red} &#8594; ${score_red} &#8660; ${score_blue} &#8592; #{active.team_blue}|"></h2>
-        <h2 th:text="#{active.message.game_info}"></h2>
         <ul>
             <li th:utext="#{active.hardpoint.game_info.winning_score(${winning_score})}"></li>
             <li th:utext="#{active.hardpoint.game_info.neutral_flag(${flag_time_out})}"></li>
-            <li> <span th:utext="#{active.hardpoint.game_info.active_flag(${flag_time_up})}"></span>
+            <li><span th:utext="#{active.hardpoint.game_info.active_flag(${flag_time_up})}"></span>
                 &nbsp;
-                <span th:utext="#{active.hardpoint.game_info.who_goes_first(${who_goes_first_style}, ${who_goes_first})}"></span>
+                <span th:utext="#{active.common.game_info.who_goes_first(${who_goes_first_style}, ${who_goes_first})}"></span>
             </li>
             <li th:if="${delay_until_next_flag > 0}"
                 th:utext="#{active.hardpoint.game_info.cool_down(${delay_until_next_flag})}"></li>
-            <li th:text="#{active.hardpoint.game_info.current_flag(${active_agent},${active_state})}"></li>
-            <li th:text="#{active.hardpoint.game_info.next_flag(${next_agent})}"></li>
+            <li>
+                <div style="display: inline-block;"  th:text="#{misc.capture_points}"></div>
+                :&nbsp;<div th:text="${capture_points}"></div>
+            </li>
         </ul>
-    </div>
+</section>
+
+<section layout:fragment="score">
+    <h2 th:text="|#{active.team_red} &#8594; ${score_red} &#8660; ${score_blue} &#8592; #{active.team_blue}|"></h2>
+    <ul>
+        <li th:text="#{active.hardpoint.game_info.current_flag(${active_agent},${active_state})}"></li>
+        <li th:text="#{active.hardpoint.game_info.next_flag(${next_agent})}"></li>
+    </ul>
 </section>
 
 </body>

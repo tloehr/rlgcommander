@@ -14,6 +14,7 @@ import org.javatuples.Quartet;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -29,14 +30,12 @@ public class CenterFlags extends Timed {
     private final Table<String, String, Long> scores;
     private final String who_goes_first;
 
-    public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public CenterFlags(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
         assert_two_teams_red_and_blue();
         this.who_goes_first = game_parameters.optString("who_goes_first", "blue");
         this.capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(o -> o.toString()).sorted().collect(Collectors.toList());
         this.scores = HashBasedTable.create();
-
-        reset_score_table();
     }
 
     private void reset_score_table() {
@@ -46,19 +45,19 @@ public class CenterFlags extends Timed {
         });
     }
 
-    private JSONObject scores_to_vars() {
-        JSONObject vars = new JSONObject();
-        Lists.newArrayList("blue", "red").forEach(color -> {
-            capture_points.forEach(agent -> {
-                vars.put(get_agent_key(agent, color), JavaTimeConverter.format(scores.get(agent, color)));
-            });
-            vars.put("score_" + color, JavaTimeConverter.format(scores.get("all", color)));
-
-            vars.put("red_respawns", team_registry.get("red_spawn").getRespawns());
-            vars.put("blue_respawns", team_registry.get("blue_spawn").getRespawns());
-        });
-        return vars;
-    }
+//    private JSONObject scores_to_vars() {
+//        JSONObject vars = new JSONObject();
+//        Lists.newArrayList("blue", "red").forEach(color -> {
+//            capture_points.forEach(agent -> {
+//                vars.put(get_agent_key(agent, color), JavaTimeConverter.format(scores.get(agent, color)));
+//            });
+//            vars.put("score_" + color, JavaTimeConverter.format(scores.get("all", color)));
+//
+//            vars.put("red_respawns", team_registry.get("red_spawn").getRespawns());
+//            vars.put("blue_respawns", team_registry.get("blue_spawn").getRespawns());
+//        });
+//        return vars;
+//    }
 
     private String get_agent_key(String agent, String state) {
         return String.format("%s_%s", state.toLowerCase(), agent);
@@ -117,8 +116,8 @@ public class CenterFlags extends Timed {
 
     @Override
     public void on_reset() {
-        super.on_reset();
         reset_score_table();
+        super.on_reset();
     }
 
     @Override
@@ -129,8 +128,14 @@ public class CenterFlags extends Timed {
 
     @Override
     protected JSONObject get_broadcast_vars() {
-        return MQTT.merge(super.get_broadcast_vars(),
-                scores_to_vars(),
+        JSONObject vars = super.get_broadcast_vars();
+        Lists.newArrayList("blue", "red").forEach(color -> {
+            capture_points.forEach(agent -> {
+                vars.put(get_agent_key(agent, color), JavaTimeConverter.format(scores.get(agent, color)));
+            });
+            vars.put("score_" + color, JavaTimeConverter.format(scores.get("all", color)));
+        });
+        return MQTT.merge(vars,
                 get_agents_states_for_lcd_with("red"),
                 get_agents_states_for_lcd_with("blue")
         );
@@ -201,6 +206,7 @@ public class CenterFlags extends Timed {
         } else
             super.on_external_message(agent_id, source, message);
     }
+
 
     @Override
     protected JSONObject getSpawnPages(String state) {
@@ -280,7 +286,6 @@ public class CenterFlags extends Timed {
         model.addAttribute("scores", my_scores);
         model.addAttribute("sum_blue", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "blue"))));
         model.addAttribute("sum_red", JavaTimeConverter.format(Instant.ofEpochMilli(scores.get("all", "red"))));
-
     }
 
     @Override

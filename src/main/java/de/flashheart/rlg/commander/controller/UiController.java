@@ -185,6 +185,12 @@ public class UiController extends MyParentController {
                         .sorted(Comparator.comparing(Pair::getValue1))
                         .collect(Collectors.toList())
         );
+        model.addAttribute("standbys",
+                myYamlConfiguration.getStandbys().entrySet().stream()
+                        .map(stringStringEntry -> new Pair<>(stringStringEntry.getKey(), stringStringEntry.getValue()))
+                        .sorted(Comparator.comparing(Pair::getValue1))
+                        .collect(Collectors.toList())
+        );
         return "params/" + game_mode;
     }
 

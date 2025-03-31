@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.*;
+import org.springframework.context.MessageSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -17,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.quartz.JobBuilder.newJob;
@@ -46,8 +48,8 @@ public abstract class Pausable extends Scheduled {
      * @throws IOException
      * @throws SAXException
      */
-    public Pausable(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public Pausable(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
         pausing_since = Optional.empty();
         this.resume_countdown = game_parameters.optInt("resume_countdown");
         this.continueGameJob = new JobKey("continue_the_game", uuid.toString());

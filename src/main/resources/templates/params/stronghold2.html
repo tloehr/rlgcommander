@@ -64,8 +64,6 @@
         <div class="col-auto">
             <div th:replace="~{fragments :: game_time}"></div>
         </div>
-
-
         <div class="col-auto align-self-center form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="check-allow-defuse">
             <label class="form-check-label" for="check-allow-defuse"
@@ -75,7 +73,7 @@
     <div class="row mb-3">
         <div class="col-auto bg-danger">
             <label for="red" class="form-label text-white bi-md" th:text="#{params.stronghold.ring_wall}+'&nbsp;1'"></label>
-            <input type="text" class="form-control text-bg-danger" id="red" required
+            <input type="text" class="form-control" id="red" required
                    pattern="^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$"/>
             <label for="time-red" class="form-label text-white bi-md" th:text="#{misc.time_limit_in_seconds}"></label>
             <input type="number" inputmode="decimal" class="form-control" id="time-red" value="600"

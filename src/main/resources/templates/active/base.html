@@ -181,17 +181,31 @@
         // sessionStorage.setItem('state_#' + get_game_id(), '[[${current_state}]]');
     </script>
 
-    <h2 th:if="${match_length != null && remaining != null}"
-        th:text="#{active.match_length}+':&nbsp;'+${match_length}+',&nbsp;'+#{active.remaining_time}+':&nbsp;'+${remaining}"></h2>
+    <div class="row">
+        <div class="col-auto">
+            <h2 th:text="#{active.message.game_setup}"></h2>
+            <section layout:fragment="game-parameters">
+            </section>
+        </div>
+    </div>
+
+    <h2 th:if="${remaining != null}"
+        th:text="#{active.remaining_time}+':&nbsp;'+${remaining}"></h2>
 
     <section layout:fragment="score">
     </section>
 
     <div class="row">
-        <div th:if="${red_respawns != null && blue_respawns != null}">
+        <!--        red is always present-->
+        <div th:if="${red_respawns != null}">
             <h2 th:text="#{active.number_of_respawns}"></h2>
             <h3 class="text-danger" th:text="#{active.team_red}+':&nbsp;' + ${red_respawns}"></h3>
-            <h3 class="text-primary" th:text="#{active.team_blue}+':&nbsp;' + ${blue_respawns}"></h3>
+            <h3 class="text-primary" th:if="${blue_respawns != null}"
+                th:text="#{active.team_blue}+':&nbsp;' + ${blue_respawns}"></h3>
+            <h3 class="text-warning" th:if="${yellow_respawns != null}"
+                th:text="#{active.team_yellow}+':&nbsp;' + ${yellow_respawns}"></h3>
+            <h3 class="text-success" th:if="${green_respawns != null}"
+                th:text="#{active.team_green}+':&nbsp;' + ${green_respawns}"></h3>
         </div>
 
         <div class="col-auto" th:unless="${classname eq 'empty'}">

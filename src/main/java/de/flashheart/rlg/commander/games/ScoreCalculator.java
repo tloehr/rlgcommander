@@ -6,12 +6,14 @@ import de.flashheart.rlg.commander.games.jobs.ScoreJob;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -25,8 +27,8 @@ public abstract class ScoreCalculator extends Pausable {
     private long last_job;
     protected long time_passed_since_last_calculation;
 
-    public ScoreCalculator(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public ScoreCalculator(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
         register_job("calculate_score");
         REPEAT_EVERY_MS = SCORE_CALCULATION_EVERY_N_SECONDS.multiply(BigDecimal.valueOf(1000L)).longValue();
 //        NUMBER_OF_BROADCAST_EVENTS_PER_MINUTE = BigDecimal.valueOf(60L).divide(SCORE_CALCULATION_EVERY_N_SECONDS, RoundingMode.HALF_UP).longValue();

@@ -42,7 +42,7 @@
     <div class="row mb-3">
 
         <div class="col-auto">
-            <label for="respawn_tickets" class="form-label">Respawn Tickets</label>
+            <label for="respawn_tickets" class="form-label" th:text="#{params.conquest.respawn_tickets}"></label>
             <input type="number" class="form-control" id="respawn_tickets" value="250" required
                    min="10" inputmode="decimal" pattern="\d*">
         </div>
@@ -56,19 +56,29 @@
                    th:text="#{params.common.who_goes_first.help}"></small>
         </div>
 
+        <!--                       _                _   _
+         _____  ___ __   ___ _ __| |_     ___  ___| |_| |_(_)_ __   __ _ ___
+        / _ \ \/ / '_ \ / _ \ '__| __|   / __|/ _ \ __| __| | '_ \ / _` / __|
+       |  __/>  <| |_) |  __/ |  | |_    \__ \  __/ |_| |_| | | | | (_| \__ \
+        \___/_/\_\ .__/ \___|_|   \__|___|___/\___|\__|\__|_|_| |_|\__, |___/
+                 |_|                |_____|                        |___/
+       -->
         <div class="col-auto">
-            <div class="accordion" id="expert_accordion">
-                <div class="accordion-item  mt-4">
-                    <h2 class="accordion-header" id="expert_heading">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#expert_content"
-                                aria-expanded="false" aria-controls="expert_content"
-                                th:text="#{misc.expert_settings}">
-                        </button>
-                    </h2>
-                    <div id="expert_content" class="accordion-collapse collapse " aria-labelledby="headingOne"
-                         data-bs-parent="#expert_accordion">
-                        <div class="accordion-body">
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal"
+                    onclick="document.getElementById('save-game-title').value = document.getElementById('comment').value;">
+                <span class="bi bi-wrench-adjustable" th:text="'&nbsp;'+#{misc.expert_settings}"></span>
+            </button>
+            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel"
+                                th:text="#{misc.expert_settings}"></h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body"> <!-- Expert Body START -->
                             <h3 th:text="#{misc.expert_settings}"></h3>
 
                             <div class="col-auto">
@@ -100,11 +110,15 @@
                                        required
                                        min="1" pattern="\d*" inputmode="decimal">
                             </div>
+                        </div> <!-- Expert Body END -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                    th:text="#{misc.close}"></button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </div> <!-- EXPERT END-->
     </div>
 </section>
 

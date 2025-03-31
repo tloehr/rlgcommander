@@ -6,11 +6,13 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -21,8 +23,8 @@ public class MagSpeed extends TimedOnly {
     private final String winning_token_uid;
     private Optional<Team> winner;
 
-    public MagSpeed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public MagSpeed(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
         this.winner = Optional.empty();
         this.winning_token_uid = game_parameters.getString("winning_token_uid");
     }

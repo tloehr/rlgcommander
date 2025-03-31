@@ -36,12 +36,7 @@ public class RestSystemController extends MyParentController {
         now.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM));
         return new ResponseEntity<>(new JSONObject().put("response", game_id).toString(4), HttpStatus.OK);
     }
-
-    @GetMapping("/max_games")
-    public ResponseEntity<?> max_number_of_games() {
-        return new ResponseEntity<>(new JSONObject().put("max_number_of_games", GamesService.MAX_NUMBER_OF_GAMES).toString(), HttpStatus.OK);
-    }
-
+    
     @PutMapping("/new_user")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> new_user(@RequestParam String username, @RequestParam String password, @RequestParam(defaultValue = "") String[] roles) {

@@ -15,6 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -45,8 +46,8 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
     private final boolean hide_next_flag;
     protected final boolean buzzer_on_flag_activation;
 
-    public Hardpoint(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public Hardpoint(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
         assert_two_teams_red_and_blue();
 
         this.who_goes_first = game_parameters.optString("who_goes_first", "blue");
@@ -58,7 +59,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
         this.delay_after_color_change = game_parameters.optBigDecimal("delay_after_color_change", BigDecimal.ONE);
         this.hide_next_flag = game_parameters.optBoolean("hide_next_flag", true);
 
-        capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).collect(Collectors.toList());
+        capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).sorted().collect(Collectors.toList());
 
         // random makes no sense with less than 4 flags
         //this.random_flag_selection = capture_points.size() > 3 && game_parameters.optBoolean("random_flag_selection", false);
@@ -242,7 +243,6 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "NEUTRAL"));
     }
 
-
     @Override
     public void timeout(JobDataMap map) {
         log.trace("flag has timed out. nobody made it to the point. next flag please.");
@@ -385,6 +385,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
         model.addAttribute("score_red", vars.getLong("score_red"));
         model.addAttribute("score_blue", vars.getLong("score_blue"));
         model.addAttribute("active_agent", get_active_flag());
+        model.addAttribute("capture_points", capture_points);
 
         int next_capture_point = active_capture_point + 1;
         if (next_capture_point >= capture_points.size()) next_capture_point = 0;

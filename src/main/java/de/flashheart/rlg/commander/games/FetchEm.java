@@ -15,12 +15,14 @@ import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,8 +40,8 @@ import java.util.stream.Collectors;
 @Log4j2
 public class FetchEm extends Hardpoint {
 
-    public FetchEm(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public FetchEm(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource,locale);
         setGameDescription(
                 game_parameters.getString("comment"),
                 String.format("Winning@ %s", this.winning_score),
@@ -50,8 +52,6 @@ public class FetchEm extends Hardpoint {
 
     @Override
     protected void setup_scheduler_jobs() {
-        register_job("flag_time_up");
-        register_job("delayed_reaction");
         capture_points.forEach(agent -> {
             register_job("delayed_reaction_" + agent);
             register_job("flag_time_up_" + agent);
@@ -128,11 +128,15 @@ public class FetchEm extends Hardpoint {
         } else
             super.on_external_message(agent_id, source, message);
     }
-
-
+    
     @Override
     public void activate(JobDataMap map) {
         // nop
+    }
+    @Override
+    public void flag_time_is_up(String agent_id) {
+        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SHUTDOWN_SIREN, MQTT.SCHEME_VERY_SHORT), roles.get("sirens"));
+        super.flag_time_is_up(agent_id);
     }
 
     @Override
@@ -144,7 +148,7 @@ public class FetchEm extends Hardpoint {
                     "BlueFor: ${score_blue}",
                     "RedFor: ${score_red}");
         }
-        if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
+        if (is_in_a_running_state()) {
             return MQTT.merge(
                     MQTT.page("page0",
                             "Red: ${score_red} Blue: ${score_blue}   ${wifi_signal}",

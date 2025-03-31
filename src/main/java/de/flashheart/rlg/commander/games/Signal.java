@@ -10,6 +10,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.quartz.JobDataMap;
 import org.quartz.Scheduler;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.Model;
 import org.xml.sax.SAXException;
 
@@ -35,8 +36,8 @@ public class Signal extends Timed implements HasDelayedReaction {
     private int blue_points, red_points;
     private final long UNLOCK_TIME;
 
-    public Signal(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound) throws ParserConfigurationException, IOException, SAXException, JSONException {
-        super(game_parameters, scheduler, mqttOutbound);
+    public Signal(JSONObject game_parameters, Scheduler scheduler, MQTTOutbound mqttOutbound, MessageSource messageSource, Locale locale) throws ParserConfigurationException, IOException, SAXException, JSONException {
+        super(game_parameters, scheduler, mqttOutbound, messageSource, locale);
         assert_two_teams_red_and_blue();
         //variables_for_score_broadcasting = new JSONObject();
         UNLOCK_TIME = game_parameters.optLong("unlock_time");
@@ -167,7 +168,7 @@ public class Signal extends Timed implements HasDelayedReaction {
                     "Blue: ${blue_points}");
         }
 
-        if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
+        if (is_in_a_running_state()) {
             return
                     MQTT.merge(
                             MQTT.page("page0",
