@@ -9,11 +9,13 @@
 
         function read_form() {
             game_parameters.game_time = parseInt(document.getElementById('game_time').value);
+            game_parameters.allow_pushback = document.getElementById('check-allow-pushback').checked;
             read_cps_sirens_form();
         }
 
         function preset_form() {
             document.getElementById('game_time').value = game_parameters.game_time;
+            document.getElementById('check-allow-pushback').checked = game_parameters.allow_pushback;
             preset_cps_sirens_form();
         }
 
@@ -34,7 +36,13 @@
         <div class="col-auto">
             <div th:replace="~{fragments :: game_time}"></div>
         </div>
-
+        <div class="col-auto align-self-center form-check form-switch"
+             data-toggle="tooltip" data-placement="top"
+             th:attr="title=#{games.street.allow_pushback.help}">
+            <input class="form-check-input" type="checkbox" role="switch" id="check-allow-pushback">
+            <label class="form-check-label" for="check-allow-pushback"
+                   th:text="#{games.street.allow_pushback}"></label>
+        </div>
     </div>
 </section>
 

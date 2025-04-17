@@ -148,7 +148,7 @@ public class FetchEm extends Hardpoint {
                     "BlueFor: ${score_blue}",
                     "RedFor: ${score_red}");
         }
-        if (is_in_a_running_state()) {
+        if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return MQTT.merge(
                     MQTT.page("page0",
                             "Red: ${score_red} Blue: ${score_blue}   ${wifi_signal}",

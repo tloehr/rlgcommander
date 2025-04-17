@@ -27,7 +27,10 @@
             sessionStorage.setItem('mqtt_ws_port', mqtt.ws_port);
 
             // set the locale only once in this session
+            console.log(/*[[${#authentication.principal.locale}]]*/ 'de')
             selectElement('locale', /*[[${#authentication.principal.locale}]]*/ 'de');
+            // https://stackoverflow.com/a/66938674/1171329
+            document.getElementById('locale').dispatchEvent(new Event('change', {'view': window, 'bubbles': true}));
         } else {
             selectElement('locale', get_locale());
         }

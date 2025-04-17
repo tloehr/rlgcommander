@@ -70,6 +70,10 @@ public abstract class Game {
     public static final String _flag_state_GREEN = "GREEN";
     public static final String _msg_TO_NEUTRAL = "to_neutral";
     public static final String _msg_DEACTIVATE = "deactivate";
+    public static final String _msg_REACTIVATE = "reactivate";
+    public static final String _msg_TAKE = "take";
+    public static final String _msg_LOCK = "lock";
+    public static final String _msg_UNLOCK = "unlock";
     public static final String _msg_TO_BLUE = "to_blue";
     public static final String _msg_TO_RED = "to_red";
     public static final String _msg_GO = "go";
@@ -80,6 +84,8 @@ public abstract class Game {
     public static final String _flag_state_GET_READY = "GET_READY";
     public static final String _flag_state_STAND_BY = "STAND_BY";
     public static final String _flag_state_ACTIVE = "ACTIVE";
+    public static final String _flag_state_INACTIVE = "INACTIVE";
+    public static final String _flag_state_LOCKED = "LOCKED";
     public static final String _flag_state_TAKEN = "TAKEN";
     public static final String _flag_state_AFTER_FLAG_TIME_UP = "AFTER_FLAG_TIME_IS_UP";
     public static final String[] OUT_ALL_LEDS = new String[]{OUT_LED_WHITE, OUT_LED_RED, OUT_LED_BLUE, OUT_LED_YELLOW, OUT_LED_GREEN};
@@ -207,7 +213,6 @@ public abstract class Game {
                     .put("event", new JSONObject().put("type", "general_game_state_change").put("message", event.getMessage()))
                     .put("new_state", event.getNewState()));
         }
-//            addEvent(event.getMessage(), event.getNewState());
         on_transition(event.getOldState(), event.getMessage(), event.getNewState());
     }
 
@@ -240,9 +245,6 @@ public abstract class Game {
         if (message.equals(_msg_PREPARE)) on_prepare();
     }
 
-    protected boolean is_in_a_running_state() {
-        return game_fsm_get_current_state().matches(_state_PAUSING + "|" + _state_RUNNING + "|" + _state_RESUMING);
-    }
 
     /**
      * sandwich method to implement silent game function
@@ -255,6 +257,14 @@ public abstract class Game {
         if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
         mqttOutbound.send(cmd, payload, agent);
     }
+
+
+    protected void send(String cmd, String signal_key, String agent) {
+        if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
+        mqttOutbound.send(cmd, signal_key, agent);
+    }
+
+
 
     protected void send(String cmd, JSONObject payload, Collection<String> agents) {
         if (silent_game && cmd.equalsIgnoreCase("acoustic")) return;
@@ -309,9 +319,6 @@ public abstract class Game {
     protected void on_reset() {
         game_init_at = LocalDateTime.now();
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_RESET));
-        //play("","","");
-//        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF), agents.keySet());
-//        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agents.keySet());
         send(MQTT.CMD_TIMERS, MQTT.toJSON("_clearall", ""), agents.keySet());
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, MQTT.SIR_ALL, MQTT.OFF), roles.get("sirens"));
     }
@@ -328,7 +335,6 @@ public abstract class Game {
     public void on_game_over() {
         cpFSMs.values().forEach(fsm -> fsm.ProcessFSM(_msg_GAME_OVER));
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR1, MQTT.GAME_ENDS), roles.get("sirens"));
-        //log.info(getState().toString(4));
     }
 
     /**
@@ -470,7 +476,6 @@ public abstract class Game {
                 .sorted((o1, o2) -> o1.getValue3().compareTo(o2.getValue3()) * -1)
                 .collect(Collectors.toList()));
         model.addAttribute("game_fsm_current_state", game_fsm_get_current_state());
-        model.addAttribute("game_is_in_a_running_state", is_in_a_running_state());
         model.addAttribute("has_zeus", hasZeus());
         model.addAttribute("game_mode", getGameMode());
         model.addAttribute("game_init_at", JavaTimeConverter.to_iso8601(game_init_at));

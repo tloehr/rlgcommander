@@ -263,7 +263,6 @@ public class Conquest extends WithRespawns {
 
     @Override
     protected JSONObject getSpawnPages(String state) {
-        log.trace(game_fsm.getCurrentState());
         if (state.equals(_state_EPILOG)) {
             String outcome = remaining_red_tickets.intValue() > remaining_blue_tickets.intValue() ? "Team Red" : "Team Blue";
             return MQTT.page("page0", "Game Over", "Red: ${red_tickets} Blue: ${blue_tickets}", "The Winner is", outcome);

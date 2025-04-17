@@ -5,7 +5,8 @@
   "game_mode": "street",
   "game_time": 180,
   "resume_countdown": 0,
-  "silent_game": true,
+  "allow_pushback": true,
+  "silent_game": false,
   "agents": {
     "capture_points": [
       "ag01",

@@ -11,6 +11,7 @@
             :&nbsp;
             <div style="display: inline-block;" th:text="${capture_points}"></div>
         </li>
+        <li th:if="${allow_pushback}" th:text="#{games.street.pushbacks_allowed}"></li>
     </ul>
 </section>
 
@@ -21,7 +22,7 @@
         <ul>
 
             <li th:each="agent : ${taken_points}"><s th:text="${agent}"></s></li>
-            <li th:if="${game_is_in_a_running_state}"><strong th:text="${active_point}"></strong></li>
+            <li th:if="${!game_fsm_current_state.equals('EPILOG')}"><strong th:text="${active_point}"></strong></li>
             <li th:each="agent : ${points_to_go}" th:text="${agent}"></li>
 
         </ul>

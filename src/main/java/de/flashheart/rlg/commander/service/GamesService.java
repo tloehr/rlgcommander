@@ -64,7 +64,7 @@ public class GamesService {
         //this.myYamlConfiguration = myYamlConfiguration;
     }
 
-    public Game load_game(final int game_id, String json, Users owner, Locale locale) throws GameSetupException, AgentInUseException, ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
+    public void load_game(final int game_id, String json, Users owner, Locale locale) throws GameSetupException, AgentInUseException, ClassNotFoundException, ArrayIndexOutOfBoundsException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, JSONException, IOException {
         if (loaded_games.containsKey(game_id)) {
             log.debug(locale.getLanguage());
             throw new GameSetupException(String.format(messageSource.getMessage("game_setup_exception.game_id_in_use", null, locale), game_id));
@@ -92,7 +92,6 @@ public class GamesService {
         });
         loaded_games.put(game_id, game);
         game.process_internal_message(Game._msg_RESET);
-        return game;
     }
 
     public void unload_game(int game_id) throws IllegalStateException, ArrayIndexOutOfBoundsException, IOException {

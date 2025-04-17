@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# curl https://raw.githubusercontent.com/tloehr/rlgcommander/refs/heads/main/src/main/resources/docker/install-commander.sh > install-commander.sh
+#
+# warning: don't use the snap versions of docker, yet
+# use the recommended way from docker
+# see: https://docs.docker.com/engine/install/ubuntu/
 clear
 
 if [ "$EUID" -ne 0 ]

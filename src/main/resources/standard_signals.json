@@ -65,5 +65,21 @@
         -250
       ]
     }
+  },
+  "taken_but_fragile": {
+    "ylw": {
+      "repeat": -1,
+      "scheme": [
+        -500,
+        500
+      ]
+    },
+    "grn": {
+      "repeat": -1,
+      "scheme": [
+        500,
+        -500
+      ]
+    }
   }
 }

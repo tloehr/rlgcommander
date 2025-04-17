@@ -11,6 +11,10 @@
     <h1 class="h1" th:text="#{agents.title}"></h1>
 
     <div class="row">
+        <div class="col-auto align-self-center form-check form-switch">
+            <label for="ignore-events" th:text="#{agents.ignore_events}"></label>
+            <input class="form-check-input" type="checkbox" id="ignore-events"/>
+        </div>&nbsp;
         <button id="select-all" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(true)"
                 th:text="#{misc.select_all}"></button>
         <button id="clear-selection" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(false)"
@@ -28,7 +32,7 @@
             </thead>
             <tbody>
             <div th:each="agent : ${agents}">
-<!--               <div th:id="'row_'+${agent.id}" th:replace="~{/fragments :: agent_table_row(${agent})}"></div>-->
+                <!--               <div th:id="'row_'+${agent.id}" th:replace="~{/fragments :: agent_table_row(${agent})}"></div>-->
                 <tr th:id="'tr-' + ${agent.id}">
                     <!-- data-toggle if für die tooltips, name verbindet alle checkboxen bzgl. ihrer Funktion
                     in der Zeile. id entspricht immer den zugehörigen agenten namen -->

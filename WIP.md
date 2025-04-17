@@ -18,8 +18,10 @@
 * Hardpoint
   * Wählen können ob blau oder rot zuerst drann kommt beim Drücken
   * Buzzer bei neu aktivierten Flaggen
+  * Punkte Berechnung korrigiert. Jetzt werden immer 500ms als Zeit gerechnet. Damit kommt es zu verlässlicheren Endergebnissen.
 * FetchEm
   * Neuer Modus - Toby
+* Habe das LOCALE Select auf der Webseite korrigiert. Wird jetzt automatisch auf den Standard gesetzt für den jeweiligen User.
   
 
 ## current work

@@ -120,6 +120,7 @@ public abstract class Timed extends WithRespawns {
 
     protected long getRemaining() {
         if (start_time == null) return game_time;
+        if (game_fsm_get_current_state().equals(_state_EPILOG)) return 0L;
         return LocalDateTime.now().until(end_time, ChronoUnit.SECONDS) + 1;
     }
 
@@ -127,7 +128,6 @@ public abstract class Timed extends WithRespawns {
         log.info("Game time is up");
         game_fsm.ProcessFSM(_msg_GAME_OVER);
     }
-
 
     @Override
     protected JSONObject get_broadcast_vars() {

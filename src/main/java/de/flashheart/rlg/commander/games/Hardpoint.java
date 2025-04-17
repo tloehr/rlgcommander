@@ -300,7 +300,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
     @Override
     protected void calculate_score() {
         super.calculate_score();
-        cpFSMs.forEach((key, value) -> add_score_for(key, value.getCurrentState(), time_passed_since_last_calculation));
+        cpFSMs.forEach((key, value) -> add_score_for(key, value.getCurrentState(), REPEAT_SCORE_CALCULATION_EVERY_MS));
     }
 
     @Override

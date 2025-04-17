@@ -111,7 +111,7 @@ public class Stronghold2 extends Stronghold {
             int index = rings_total.indexOf(color);
             double minutes = (double) ring_times.get(index) / 60d;
             model.addAttribute("time_limit_" + color, df.format(minutes) + "m");
-            if (is_in_a_running_state()) {
+            if (game_fsm_get_current_state().matches(_state_PAUSING + "|" + _state_RUNNING + "|" + _state_RESUMING)) {
                 String active_color = rings_to_go.getFirst();
                 double percent = color.equals(active_color) ?
                         ((double) stable_agents().size()) * ring_values.get(index).percent_per_agent :

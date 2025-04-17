@@ -192,6 +192,7 @@ function get_locale() {
 
 function update_agent_state_by_message(message) {
     if (window.location.pathname !== '/ui/agents') return;
+    if (document.getElementById('ignore-events').checked) return;
 
     if ('agent_state_change'.localeCompare(message.message_class) !== 0
         && 'agent_event'.localeCompare(message.message_class) !== 0) return;

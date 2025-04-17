@@ -168,7 +168,7 @@ public class Signal extends Timed implements HasDelayedReaction {
                     "Blue: ${blue_points}");
         }
 
-        if (is_in_a_running_state()) {
+        if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return
                     MQTT.merge(
                             MQTT.page("page0",

@@ -2,26 +2,29 @@
 <!-- "Street" FSM for capture points -->
 <FSM>
     <STATE id="PROLOG" type="ID">
-        <MESSAGE id="run" nextState="STAND_BY"/>
+        <MESSAGE id="run" nextState="INACTIVE"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
     </STATE>
-    <STATE id="STAND_BY">
-        <MESSAGE id="go" nextState="ACTIVE"/>
+    <STATE id="INACTIVE">
+        <MESSAGE id="activate" nextState="ACTIVE"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
     </STATE>
     <STATE id="ACTIVE">
-        <MESSAGE id="btn01" nextState="TAKEN"/>
+        <MESSAGE id="take" nextState="TAKEN"/>
         <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reset" nextState="PROLOG"/>
-        <MESSAGE id="deactivate" nextState="STAND_BY"/>
+        <MESSAGE id="deactivate" nextState="INACTIVE"/>
     </STATE>
-    <!--    todo: add crumbling state-->
-    <!--    todo: allow for pushback -->
     <STATE id="TAKEN">
         <MESSAGE id="reset" nextState="PROLOG"/>
-        <MESSAGE id="game_over" nextState="GAME_OVER"/>
         <MESSAGE id="reactivate" nextState="ACTIVE"/>
+        <MESSAGE id="lock" nextState="LOCKED"/>
+    </STATE>
+    <STATE id="LOCKED">
+        <MESSAGE id="reset" nextState="PROLOG"/>
+        <MESSAGE id="game_over" nextState="GAME_OVER"/>
+        <MESSAGE id="unlock" nextState="TAKEN"/>
     </STATE>
     <STATE id="GAME_OVER">
         <MESSAGE id="reset" nextState="PROLOG"/>
