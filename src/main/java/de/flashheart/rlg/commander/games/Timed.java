@@ -140,7 +140,7 @@ public abstract class Timed extends WithRespawns {
     @Override
     public void fill_thymeleaf_model(Model model) {
         super.fill_thymeleaf_model(model);
-        model.addAttribute("match_length", JavaTimeConverter.format(Instant.ofEpochSecond(game_time)));
+        model.addAttribute("game_time", JavaTimeConverter.format(Instant.ofEpochSecond(game_time)));
         model.addAttribute("remaining", JavaTimeConverter.format(Instant.ofEpochSecond(getRemaining())));
     }
 
@@ -148,7 +148,7 @@ public abstract class Timed extends WithRespawns {
     public JSONObject get_full_state() {
         JSONObject json = super.get_full_state();
         json.getJSONObject("played")
-                .put("match_length", game_time)
+                .put("game_time", game_time)
                 .put("start_time", start_time != null ? start_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")
                 .put("end_time", end_time != null ? end_time.format(DateTimeFormatter.ISO_DATE_TIME) : "don't know yet")
                 .put("remaining", getRemaining())

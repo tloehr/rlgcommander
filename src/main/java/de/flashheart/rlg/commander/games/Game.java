@@ -480,7 +480,7 @@ public abstract class Game {
         model.addAttribute("game_mode", getGameMode());
         model.addAttribute("game_init_at", JavaTimeConverter.to_iso8601(game_init_at));
         model.addAttribute("cps", new JSONArray(cpFSMs.keySet().stream().sorted(String::compareTo).collect(Collectors.toList())));
-        roles.keySet().forEach(role -> model.addAttribute("role_" + role, roles.get(role)));
+        roles.keySet().forEach(role -> model.addAttribute("role_" + role, roles.get(role).stream().sorted().collect(Collectors.toList())));
     }
 
     public String game_fsm_get_current_state() {

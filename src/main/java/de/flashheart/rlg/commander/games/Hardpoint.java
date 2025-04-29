@@ -257,9 +257,9 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, MQTT.DOUBLE_BUZZ), agent);
     }
 
-    private void cp_to_scoring_color(String agent, String color) {
+    protected void cp_to_scoring_color(String agent, String color) {
         String COLOR = (color.equalsIgnoreCase("blu") ? "BLUE" : "RED");
-        deleteJob("flag_time_out");
+        deleteJob("flag_time_out"); // if called from FetchEm - doesn't matter - will be ignored by superclass
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.SCHEME_MEDIUM), roles.get("sirens"));
         send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, color, MQTT.RECURRING_SCHEME_NORMAL), agent);
         send(MQTT.CMD_PAGED,

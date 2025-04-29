@@ -5,38 +5,26 @@
 <body>
 
 <section layout:fragment="game-parameters">
-
-        <ul>
-            <li th:if="${rings_to_go.contains('red')}">
-            <span class="text-danger fw-bold"
-                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.red}:|">
+    <ul>
+        <li th:text="|#{active.timed.game_time}:&nbsp;${game_time}|"></li>
+        <li th:if="${rings_total.contains('red')}">
+            <span class="text-danger"
+                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.red}:&nbsp;${role_red}|">
             </span>
-                <ul>
-                    <li th:text="${role_red}"></li>
-                </ul>
-            </li>
-            <li th:if="${rings_to_go.contains('ylw')}">
-            <span class="text-warning fw-bold"
-                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.yellow}:|"></span>
-                <ul>
-                    <li th:text="${role_ylw}"></li>
-                </ul>
-            </li>
-            <li th:if="${rings_to_go.contains('grn')}">
-            <span class="text-success fw-bold"
-                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.green}:|"></span>
-                <ul>
-                    <li th:text="${role_grn}"></li>
-                </ul>
-            </li>
-            <li th:if="${rings_to_go.contains('blu')}">
-            <span class="text-primary fw-bold"
-                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.blue}:|"></span>
-                <ul>
-                    <li th:text="${role_blu}"></li>
-                </ul>
-            </li>
-        </ul>
+        </li>
+        <li th:if="${rings_total.contains('ylw')}">
+            <span class="text-warning"
+                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.yellow}:&nbsp;${role_ylw}|"></span>
+        </li>
+        <li th:if="${rings_total.contains('grn')}">
+            <span class="text-success"
+                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.green}:&nbsp;${role_grn}|"></span>
+        </li>
+        <li th:if="${rings_total.contains('blu')}">
+            <span class="text-primary"
+                  th:text="|#{params.stronghold.ring_wall}&nbsp;#{misc.blue}:&nbsp;${role_blu}|"></span>
+        </li>
+    </ul>
 </section>
 
 <section layout:fragment="score">
@@ -55,13 +43,12 @@
         </div>
 
         <div class="d-inline-block">
-            <span class="me-2" th:if="${broken_agents.size} gt 0"
-                  th:text="#{active.stronghold.broken_capture_points}+'&nbsp;'"><del id="broken_agents_list"></del>
-            </span>
-            <span th:if="${stable_agents.size} gt 0"
-                  th:text="#{active.stronghold.stable_capture_points}+'&nbsp;'"><strong
-                    id="stable_agents_list"></strong>
-            </span>
+            <div class="me-2" th:if="${broken_agents.size} gt 0">
+                <div class="text-decoration-line-through" th:text="|#{active.stronghold.broken_capture_points}&nbsp;${broken_agents}|"></div>
+            </div>
+            <div th:if="${stable_agents.size} gt 0">
+                <div th:text="|#{active.stronghold.stable_capture_points}&nbsp;${stable_agents}|"></div>
+            </div>
         </div>
 
         <h3 id="score_text"></h3>
@@ -77,8 +64,7 @@
         const remain_in_this_segment = parseInt(/*[[${remain_in_this_segment}]]*/ 'default');
         const total_in_this_segment = parseInt(/*[[${total_in_this_segment}]]*/ 'default');
         const segment_progress = remain_in_this_segment / total_in_this_segment * 100;
-        const broken_agents = /*[[${broken_agents}]]*/ 'default';
-        const stable_agents = /*[[${stable_agents}]]*/ 'default';
+
         const i18n_text = /*[[#{active.stronghold.broken_rings}]]*/ 'Broken rings';
 
         document.getElementById("score_text").innerHTML = `${i18n_text}: ${rings_taken} / ${total_rings}`
@@ -91,12 +77,6 @@
         }
         document.getElementById("my_segment_bar").style.width = Math.max(segment_progress, 2) + "%";
         document.getElementById("my_segment_bar").classList.add(segment_colors[total_rings - rings_taken - 1]);
-
-        if (broken_agents.length > 0)
-            document.getElementById("broken_agents_list").innerHTML = broken_agents.join();
-
-        if (stable_agents.length > 0)
-            document.getElementById("stable_agents_list").innerHTML = stable_agents.join();
         /*]]>*/
     </script>
 </section>

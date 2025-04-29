@@ -329,7 +329,7 @@ public class Farcry extends Timed implements HasFlagTimer, HasTimedRespawn {
             return MQTT.page("page0", "Game Over", "Capture Points taken: ", active_capture_point + " of " + capture_points.size(), "${overtime}");
         }
         if (state.equals(_state_RUNNING))
-            return MQTT.page("page0", "Remaining: ${remaining} ${overtime}", "${active_cp}->${fused}", "", respawn_timer > 0 ? "Respawn in: ${respawn}" : "");
+            return MQTT.page("page0", "Remaining: ${remaining}", "${active_cp}->${fused}", "${overtime}", respawn_timer > 0 ? "Respawn in: ${respawn}" : "");
 
         return MQTT.page("page0", game_description);
     }

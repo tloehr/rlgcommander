@@ -339,6 +339,7 @@ public class Stronghold extends Timed {
         model.addAttribute("active_ring", vars.optString("active_ring"));
         model.addAttribute("rings_taken", vars.optInt("rings_taken"));
         model.addAttribute("rings_to_go", rings_to_go);
+        model.addAttribute("rings_total", rings_total);
         model.addAttribute("rings_progress", vars.optString("rings_progress"));
         model.addAttribute("total_rings", vars.optInt("rings_in_use"));
         model.addAttribute("total_in_this_segment", vars.optInt("total_in_this_segment"));

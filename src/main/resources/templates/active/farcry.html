@@ -1,8 +1,10 @@
 <!doctype html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{active/base.html}">
-<head><title>FarCry Game</title></head>
+<head><title th:text="#{games.farcry}"></title></head>
 <body>
+
+<!-- todo: game_parameters here -->
 
 <section layout:fragment="score">
     <div class="col-auto">

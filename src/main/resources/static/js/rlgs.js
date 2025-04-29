@@ -269,8 +269,7 @@ function update_rest_status_in_session_storage(xhttp) {
     }
 }
 
-
-function rest(rest_uri, param_json, http_method, body, callback) {
+function rest(rest_uri, param_json = {}, http_method, body, callback) {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = () => {
         console.debug(xhttp);

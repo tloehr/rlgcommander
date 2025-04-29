@@ -104,17 +104,6 @@ public class FetchEm extends Hardpoint {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", "NEUTRAL"));
     }
 
-    private void cp_to_scoring_color(String agent, String color) {
-        String COLOR = (color.equalsIgnoreCase("blu") ? "BLUE" : "RED");
-        send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.ALERT_SIREN, MQTT.SCHEME_VERY_SHORT), roles.get("sirens"));
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF, color, MQTT.RECURRING_SCHEME_NORMAL), agent);
-        send(MQTT.CMD_PAGED,
-                MQTT.page("page0",
-                        "I am ${agentname}", "", "", "Flag is " + COLOR),
-                agent);
-        add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", COLOR));
-    }
-
     @Override
     public void on_external_message(String agent_id, String source, JSONObject message) {
         if (game_fsm.getCurrentState().equals(_state_RUNNING) && capture_points.contains(agent_id)) {

@@ -11,14 +11,15 @@
     <h1 class="h1" th:text="#{agents.title}"></h1>
 
     <div class="row">
-        <div class="col-auto align-self-center form-check form-switch">
-            <label for="ignore-events" th:text="#{agents.ignore_events}"></label>
-            <input class="form-check-input" type="checkbox" id="ignore-events"/>
-        </div>&nbsp;
         <button id="select-all" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(true)"
                 th:text="#{misc.select_all}"></button>
         <button id="clear-selection" class="btn btn-outline-dark col-auto me-2" onclick="set_checkboxes(false)"
                 th:text="#{misc.clear_selection}"></button>
+        <div class="col-auto align-self-center form-check form-switch">
+            <label for="ignore-events" th:text="#{agents.ignore_events}"></label>
+            <input class="form-check-input" type="checkbox" id="ignore-events"
+                   onchange="sessionStorage.setItem('agents-ignore-events', this.checked)"/>
+        </div>&nbsp;
     </div>
     <div class="row">
         <h2 class="h2" th:text="#{agents.active}"></h2>
@@ -59,13 +60,7 @@
                               class="badge text-bg-primary"><img src="/img/buzzer-invert.png" height="28"/>&nbsp;
 
                             <script th:inline="javascript">
-                                document.getElementById([[${
-                                    agent
-                                    .id
-                                }]] + '_btn01').innerHTML += get_simplified_elapsed_time([[${
-                                    agent
-                                    .getSecondsAgo(agent.getEvents().get(agent.BTN01).getEvent_time())
-                                }]]);
+                                document.getElementById(/*[[${agent.id}]]*/'' + '_btn01').innerHTML += get_simplified_elapsed_time(/*[[${agent.getSecondsAgo(agent.getEvents().get(agent.BTN01).getEvent_time())}]]*/ 0);
                             </script>
                         </span>
                         <span class="badge text-bg-light"
@@ -183,6 +178,8 @@
     </div>
 
     <script>
+
+        document.getElementById('ignore-events').checked = JSON.parse(sessionStorage.getItem('agents-ignore-events'));
 
         function set_checkboxes(select) {
             document.getElementsByName('row_selector').forEach((element, i) => {

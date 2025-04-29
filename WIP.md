@@ -1,7 +1,16 @@
 # Work in Progress
 ## Game Testing
-### Conquest - 250321 - b885 - works
+* Conquest - 250420 - works
+* Center Flags - 250420 - works
+* FarCry - 250420 - works
+* FetchEm - 250420 - works
+* Hardpoint - 250420 - works
+* Signal - 250420 - works
+* Street - 250420 - works
+* Timed Only - 250420 - works
 
+Stronghold 1 und 2 noch fehler in der Anzeige im ACTIVE und auf den Spawn Agenten
+Signal noch Nachrichen Zeilen 1-2 hinzufügen - ähnlich wie bei Timed Only
 
 ## Transient Notes
 
@@ -22,31 +31,22 @@
 * FetchEm
   * Neuer Modus - Toby
 * Habe das LOCALE Select auf der Webseite korrigiert. Wird jetzt automatisch auf den Standard gesetzt für den jeweiligen User.
-  
-
-## current work
-i18n - testen - siehe layout #30
-
-## todo
-* FarCry Anzeige Fixen. Restzeit und Spielzeit
-* FetchEm
-  * erstellen
-* Conquest
-  * Wählen können ob blau oder rot zuerst drann kommt beim Drücken - erl.
-* CenterFlags
-  * Wählen können ob blau oder rot zuerst drann kommt beim Drücken
-* Stronghold
-  * Timelimit für eine Wall
 * ScoreBroadcasting
-  * Habe eine eigene Zwischen Klasse nur für das Score Senden und evtl. auch berechnen erstellt und einezogen. Bestehende Klassen angepasst. Testen
+  * Habe eine eigene Zwischen Klasse nur für das Score Senden und evtl. auch berechnen erstellt und einezogen. Bestehende Klassen angepasst.
     * conquest
     * center_flags
     * farcry
 
+## todo
+* FarCry Anzeige Fixen. Restzeit und Spielzeit
+* Stronghold2 das macht keinen Sinn mit der Zeit für ROT. Muss etwas anders aufgebaut sein. 
 
 ## Release Notes
 ### 1.11
 #### Vor update - Umgebung anpassen
+
+Hat sich alles durch DOCKER erledigt.
+
 * auf MQTT Server die Websockets freischalten
   * 250126 - erledigt auf pbfcmd1
 * MYSQL installieren

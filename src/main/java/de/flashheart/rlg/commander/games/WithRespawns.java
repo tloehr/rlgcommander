@@ -286,7 +286,9 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
     public void on_run() {
         super.on_run();
         deleteJob("run_the_game");
-        play("standby", "",""); // Just in case we started manually
+        // Just in case we started manually
+        play("standby", "", "");
+        play("countdown", "", "");
         send_message_to_agents_in_segment(active_segment, _msg_RUN);
     }
 
@@ -334,7 +336,7 @@ public abstract class WithRespawns extends ScoreCalculator implements HasDelayed
             else send_message_to_agents_in_segment(active_segment, _msg_PREPARE);
         }
         if (state.equals(_state_TEAMS_READY)) {
-            play("standby", "","");
+            play("standby", "", "");
             if (starter_countdown > 0) {
                 send_message_to_agents_in_segment(active_segment, _msg_START_COUNTDOWN);
                 // central audio handling via role "audio"

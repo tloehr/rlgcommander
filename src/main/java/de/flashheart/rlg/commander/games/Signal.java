@@ -171,12 +171,12 @@ public class Signal extends Timed implements HasDelayedReaction {
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return
                     MQTT.merge(
+//                            MQTT.page("page0",
+//                                    "Restzeit:  ${remaining}",
+//                                    "${line1}",
+//                                    "${line2}",
+//                                    "${line3}"),
                             MQTT.page("page0",
-                                    "Restzeit:  ${remaining}",
-                                    "${line1}",
-                                    "${line2}",
-                                    "${line3}"),
-                            MQTT.page("page1",
                                     "Restzeit:  ${remaining}",
                                     "",
                                     "Red: ${red_points}",
