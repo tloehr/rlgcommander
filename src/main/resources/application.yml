@@ -51,6 +51,8 @@ rlgs:
     sharon30s: Sharon (AI)
   access_points:
     00223f97a198: NETGEAR
+  admin:
+    set_password: adminpw
 
 mqtt:
   qos: 2
@@ -65,6 +67,10 @@ mqtt:
     topic: rlg/evt/#
   client_id: rlgcmd@release
   host: broker
+  # change this for the web client - so that
+  # it can connect to the mqtt from the outside
+  # this is relevant, when the commander runs in a Docker environment.
+  # external_host_address: broker
   port: 1883
   ws_port: 8080
   max_inflight: 1000

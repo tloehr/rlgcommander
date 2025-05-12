@@ -37,7 +37,7 @@ if [[ $DOCKER != "ActiveState=active" ]]
 fi
 
 curl --create-dirs --output /var/lib/docker/_rlgs/docker-compose.yml https://raw.githubusercontent.com/tloehr/rlgcommander/refs/heads/main/src/main/resources/docker/docker-compose.yml
-curl --create-dirs --output /var/lib/docker/_rlgs/config/application-reset-admin-pw.yml https://raw.githubusercontent.com/tloehr/rlgcommander/refs/heads/main/src/main/resources/application-reset-admin-pw.yml
+curl --create-dirs --output /var/lib/docker/_rlgs/config/application.yml https://raw.githubusercontent.com/tloehr/rlgcommander/refs/heads/main/src/main/resources/application.yml
 curl --create-dirs --output /var/lib/docker/_rlgs/mosquitto/mosquitto.conf https://raw.githubusercontent.com/tloehr/rlgcommander/refs/heads/main/src/main/resources/docker/mosquitto.conf
 
 docker compose -f /var/lib/docker/_rlgs/docker-compose.yml up -d

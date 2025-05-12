@@ -36,8 +36,8 @@ public class UiController extends MyParentController {
     public String default_locale;
     @Value("${mqtt.outbound.notification_topic}")
     public String mqtt_client_notification_topic;
-    @Value("${mqtt.host}")
-    public String mqtt_host;
+    @Value("${mqtt.external_host_address:}") // default is empty string
+    public String mqtt_external_host_address;
     @Value("${mqtt.ws_port}")
     public String mqtt_ws_port;
 
@@ -82,7 +82,7 @@ public class UiController extends MyParentController {
     @ModelAttribute("mqtt")
     public String getMqtt() {
         return new JSONObject()
-                .put("host", mqtt_host)
+                .put("host", mqtt_external_host_address)
                 .put("ws_port", mqtt_ws_port)
                 .put("client_notification_topic", mqtt_client_notification_topic)
                 .toString();

@@ -110,6 +110,7 @@ function connect_to_mqtt() {
     const client_id = "webclient@" + now.toISOString();
 
     // Create a client instance
+    // todo: if mqtt_host is missing - use web address instead. usually its the same address
     mqttClient = new Paho.Client(sessionStorage.getItem('mqtt_host'), Number(sessionStorage.getItem('mqtt_ws_port')), '/', client_id);
 
     // set callback handlers
