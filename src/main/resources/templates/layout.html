@@ -23,10 +23,13 @@
             const mqtt = [(${mqtt})];
             sessionStorage.setItem('X-API-KEY', '[(${api_key})]');
             sessionStorage.setItem('mqtt_client_notification_topic', mqtt.client_notification_topic);
-            // set to web address if mqtt.host is empty
+            // IF
+            // host is empty - window.location.hostname
+            // otherwise we use the host - of course
+            //
             sessionStorage.setItem('mqtt_host', mqtt.host === "" ? window.location.hostname : mqtt.host);
             sessionStorage.setItem('mqtt_ws_port', mqtt.ws_port);
-
+            //
             // set the locale only once in this session
             console.log(/*[[${#authentication.principal.locale}]]*/ 'de')
             selectElement('locale', /*[[${#authentication.principal.locale}]]*/ 'de');

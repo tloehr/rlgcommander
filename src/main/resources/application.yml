@@ -51,6 +51,10 @@ rlgs:
     sharon30s: Sharon (AI)
   access_points:
     00223f97a198: NETGEAR
+  standbys:
+    aquatic-ambiance: Aquatic
+  ## comment this out after the first start.
+  ## change this password to the desired one or change it later via the webinterface
   admin:
     set_password: adminpw
 
@@ -67,10 +71,8 @@ mqtt:
     topic: rlg/evt/#
   client_id: rlgcmd@release
   host: broker
-  # change this for the web client - so that
-  # it can connect to the mqtt from the outside
-  # this is relevant, when the commander runs in a Docker environment.
-  # external_host_address: broker
+  # set this to the public ip address of Your docker container
+  # client_host_address: adr
   port: 1883
   ws_port: 8080
   max_inflight: 1000

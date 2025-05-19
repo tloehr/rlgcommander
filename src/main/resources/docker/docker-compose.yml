@@ -36,7 +36,7 @@ services:
       - rlgs-net
 
   commander:
-    image: tloehr/rlgcommander:1.11b1024
+    image: tloehr/rlgcommander:1.11b1047
     depends_on:
       - db
       - broker

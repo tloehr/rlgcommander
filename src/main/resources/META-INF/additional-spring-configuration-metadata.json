@@ -6,8 +6,8 @@
       "description": "Description for mqtt.automaticReconnect."
     },
     {
-      "name": "mqtt.external_host_address",
+      "name": "mqtt.client_host_address",
       "type": "java.lang.String",
-      "description": "MQTT host address for outside access."
+      "description": "MQTT host address for the client."
     }
   ] }
