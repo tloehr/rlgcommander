@@ -17,8 +17,8 @@ fi
 INSTALLED_ALREADY=/var/lib/docker/_rlgs/docker-compose.yml
 if test -f "$INSTALLED_ALREADY";
     then
-        echo "The commander is installed already."
-        echo "Delete ${INSTALLED_ALREADY} if you want repeat the installation."
+        echo "The commander is already installed."
+        echo "Delete ${INSTALLED_ALREADY}, if you want repeat the installation."
         exit
 fi
 

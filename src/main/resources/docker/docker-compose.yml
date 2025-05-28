@@ -13,7 +13,7 @@ services:
     ports:
       - "1883:1883"
       - "8080:8080"
-    restart: unless-stopped
+    restart: always
     networks:
       - rlgs-net
 
@@ -31,7 +31,7 @@ services:
       - MYSQL_USER=rlgs_user
       - MYSQL_PASSWORD=83jg00hm1
       - MYSQL_DATABASE=rlgs_db
-    restart: unless-stopped
+    restart: always
     networks:
       - rlgs-net
 
@@ -47,7 +47,7 @@ services:
       - /var/lib/docker/_rlgs/config:/opt/rlgcommander/config
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-    restart: unless-stopped
+    restart: always
     networks:
       - rlgs-net
 
