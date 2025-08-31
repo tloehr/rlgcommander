@@ -59,10 +59,7 @@ public class Hardpoint extends WithRespawns implements HasDelayedReaction, HasAc
         this.delay_after_color_change = game_parameters.optBigDecimal("delay_after_color_change", BigDecimal.ONE);
         this.hide_next_flag = game_parameters.optBoolean("hide_next_flag", true);
 
-        capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).sorted().collect(Collectors.toList());
-
-        // random makes no sense with less than 4 flags
-        //this.random_flag_selection = capture_points.size() > 3 && game_parameters.optBoolean("random_flag_selection", false);
+        capture_points = game_parameters.getJSONObject("agents").getJSONArray("capture_points").toList().stream().map(Object::toString).collect(Collectors.toList());
 
         scores = HashBasedTable.create();
 
