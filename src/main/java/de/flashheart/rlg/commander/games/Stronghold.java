@@ -104,7 +104,7 @@ public class Stronghold extends Timed {
     }
 
     private void taken(String agent) {
-        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.SCHEME_MEDIUM), agent);
+        send(MQTT.CMD_VISUAL, MQTT.toJSON(MQTT.LED_ALL, MQTT.OFF), agent);
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_TAKEN));
     }
 
@@ -113,11 +113,12 @@ public class Stronghold extends Timed {
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _state_FUSED));
         if (!allow_defuse) cpFSMs.get(agent).ProcessFSM(_msg_LOCK);
         if (active_ring_taken()) {
-//            // the others are still locked. Need to be TAKEN now
-//            roles.get(rings_to_go.getFirst())
-//                    .stream()
-//                    .filter(s -> !cpFSMs.get(s).getCurrentState().equals(_state_TAKEN)) // only those which are not already taken
-//                    .forEach(other_agents_in_this_ring -> cpFSMs.get(other_agents_in_this_ring).ProcessFSM(_msg_TAKEN));
+            // the others are still locked. Need to be TAKEN now
+            roles.get(rings_to_go.getFirst())
+                    .stream()
+                    .filter(s -> !cpFSMs.get(s).getCurrentState().equals(_state_TAKEN)) // only those which are not already taken
+                    .forEach(other_agents_in_this_ring -> cpFSMs.get(other_agents_in_this_ring).ProcessFSM(_msg_TAKEN));
+
             add_in_game_event(new JSONObject().put("item", "ring").put("ring", rings_to_go.getFirst()).put("state", _state_TAKEN));
             rings_taken.add(rings_to_go.pop());
             if (rings_to_go.isEmpty()) game_fsm.ProcessFSM(_msg_GAME_OVER); // last ring ? we are done.
@@ -248,7 +249,7 @@ public class Stronghold extends Timed {
             variables.put("remain_in_this_segment", remain_in_this_segment);
 
             variables.put("active_progress", Tools.get_progress_bar(total_in_this_segment() - remain_in_this_segment, total_in_this_segment()));
-            variables.put("stable_agents", stable_agents());
+            variables.put("stable_agents", String.join(" ", stable_agents()));
         }
 
         variables.put("active_ring", rings_to_go.isEmpty() ? "" : rings_to_go.getFirst());

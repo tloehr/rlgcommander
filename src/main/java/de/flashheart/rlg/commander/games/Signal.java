@@ -17,6 +17,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -103,7 +104,11 @@ public class Signal extends Timed implements HasDelayedReaction {
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_CLOSE));
 
         // create unlock job
-        create_job_with_reschedule("signal_unlock", LocalDateTime.now().plusSeconds(UNLOCK_TIME), DelayedReactionJob.class, Optional.empty());
+        LocalDateTime time_to_unlock_again = LocalDateTime.now().plusSeconds(UNLOCK_TIME);
+        create_job_with_reschedule("signal_unlock", time_to_unlock_again, DelayedReactionJob.class, Optional.empty());
+
+        // send info to spawn agents, when the lock-down will be over
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("line1b", Long.toString(UNLOCK_TIME)), get_active_spawn_agents());
     }
 
     private void closed(String agent) {
@@ -123,6 +128,8 @@ public class Signal extends Timed implements HasDelayedReaction {
     private void open_all() {
         // unlocking everyone
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.SIR_ALL, MQTT.OFF, MQTT.SIR3, MQTT.SCHEME_LONG), roles.get("sirens"));
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("line1b", Long.toString(-1L)), get_active_spawn_agents());
+        //send(MQTT.CMD_VARS, MQTT.toJSON("line1a", ""), get_active_spawn_agents());
         cpFSMs.values().forEach(fsm1 -> fsm1.ProcessFSM(_msg_OPEN));
         active_color = "";
     }
@@ -171,14 +178,9 @@ public class Signal extends Timed implements HasDelayedReaction {
         if (state.matches(_state_PAUSING + "|" + _state_RUNNING)) {
             return
                     MQTT.merge(
-//                            MQTT.page("page0",
-//                                    "Restzeit:  ${remaining}",
-//                                    "${line1}",
-//                                    "${line2}",
-//                                    "${line3}"),
                             MQTT.page("page0",
                                     "Restzeit:  ${remaining}",
-                                    "",
+                                    "weiter in: ${line1b}",
                                     "Red: ${red_points}",
                                     "Blue: ${blue_points}")
                     );
@@ -207,14 +209,11 @@ public class Signal extends Timed implements HasDelayedReaction {
     public void on_reset() {
         super.on_reset();
         // spawn agents are used as display not for a specific team
-//        empty_lines();
         blue_points = 0;
         red_points = 0;
+        // no current unlock time
+        send(MQTT.CMD_TIMERS, MQTT.toJSON("line1b", "0"), get_active_spawn_agents());
     }
-
-//    void empty_lines() {
-//        variables_for_score_broadcasting = MQTT.toJSON("line1", "", "line2", "", "line3", "", "line4", "");
-//    }
 
     @Override
     protected JSONObject get_broadcast_vars() {

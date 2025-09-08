@@ -6,6 +6,10 @@
     <script th:inline="javascript">
 
         let show_agent_shuffle_button = false;
+        // check if something is stored in the session
+        // could be uploaded or loaded from the database
+        let game_parameters = sessionStorage.getItem('game_parameters') === null ? {} : JSON.parse(sessionStorage.getItem('game_parameters'));
+        sessionStorage.removeItem('game_parameters');
 
         // nothing preloaded ?
 
@@ -13,7 +17,9 @@
         const mode = url.searchParams.get('game_mode');
 
         // is there a default in the database ?
-        let game_parameters = JSON.parse(get_rest('saved_games/default', {mode}));
+        if ($.isEmptyObject(game_parameters)) {
+            game_parameters = JSON.parse(get_rest('saved_games/default', {mode}));
+        }
 
         // still empty ?
         if ($.isEmptyObject(game_parameters)) {
