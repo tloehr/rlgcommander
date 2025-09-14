@@ -17,6 +17,7 @@
 
             const acbe = [[${active_command_buttons_enabled}]]
             const haszeus = [[${has_zeus}]];
+            const game_fsm_current_state = [[${game_fsm_current_state}]]
 
             if (!sessionStorage.getItem('ctrls_locked')) {
                 sessionStorage.setItem('ctrls_locked', 'false');
@@ -46,7 +47,7 @@
             document.getElementById('btn_game_over2').disabled = !acbe[7];
 
             // zeus
-            document.getElementById('btn_zeus').disabled = !haszeus || sessionStorage.getItem("state") !== 'RUNNING';
+            document.getElementById('btn_zeus').disabled = !haszeus || game_fsm_current_state !== 'RUNNING';
         }
     </script>
 </head>

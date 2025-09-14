@@ -94,6 +94,7 @@ public class Signal extends Timed implements HasDelayedReaction {
         if (active_color.equals(MQTT.BLUE)) blue_points++;
         else red_points++;
 
+        add_in_game_event(new JSONObject().put("item", "free_text").put("message", "Team Color: " + active_color));
         add_in_game_event(new JSONObject().put("item", "capture_point").put("agent", agent).put("state", _msg_START_CLOSING));
         broadcast_score();
         send(MQTT.CMD_ACOUSTIC, MQTT.toJSON(MQTT.BUZZER, "triple_buzz"), get_all_spawn_agents());
